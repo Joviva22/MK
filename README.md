@@ -12,7 +12,7 @@ App de escritorio (Electron) para editar Markdown y LaTeX en local, sin internet
 - 26 temas de color, exportar a HTML/PDF, vista de cambios contra el último guardado.
 - Menú contextual del editor, drag & drop de assets, abrir MK con doble clic en un `.md`/`.tex`.
 
-Ver [`ESTADO.md`](./ESTADO.md) para el detalle completo de lo hecho, lo pendiente y las limitaciones conocidas. Ver [`MEJORAS.md`](./MEJORAS.md) para ideas de qué mejorar a futuro.
+Ver [`MANUAL.md`](./MANUAL.md) para la guía de uso completa (cómo usar cada función). Ver [`ESTADO.md`](./ESTADO.md) para el detalle completo de lo hecho, lo pendiente y las limitaciones conocidas. Ver [`MEJORAS.md`](./MEJORAS.md) para ideas de qué mejorar a futuro.
 
 ## Cómo correrla
 
@@ -70,6 +70,7 @@ MK/
 │   ├── run.js            # arranca Electron con MK_TEST=1 y perfil aislado
 │   └── renderer-checks.js # los checks en sí, corren dentro de la ventana
 ├── package.json
+├── MANUAL.md            # guía de uso completa
 ├── ESTADO.md            # estado real y detallado del proyecto
 └── MEJORAS.md            # qué mejoraría a futuro
 ```

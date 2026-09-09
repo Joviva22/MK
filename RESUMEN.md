@@ -56,4 +56,4 @@ Electron 32 · CodeMirror 5 · marked · KaTeX · DOMPurify · highlight.js · l
 
 ## Estado del proyecto
 
-Con control de versiones (`git init` hecho). Ver [`ESTADO.md`](./ESTADO.md) para el detalle feature por feature y las limitaciones conocidas, y [`MEJORAS.md`](./MEJORAS.md) para el roadmap de mejoras pendientes.
+Con control de versiones (`git init` hecho). Ver [`MANUAL.md`](./MANUAL.md) para la guía de uso, [`ESTADO.md`](./ESTADO.md) para el detalle feature por feature y las limitaciones conocidas, y [`MEJORAS.md`](./MEJORAS.md) para el roadmap de mejoras pendientes.
