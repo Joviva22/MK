@@ -419,6 +419,23 @@
     `entro=${!!enteredFullscreen} salio=${exitedFullscreen}`
   );
 
+  // 19b. Ctrl+B pliega/muestra el sidebar (independiente del modo enfoque)
+  // y lo persiste en config.json.
+  const sidebarContainerEl = document.querySelector('.container');
+  const sidebarVisibleBefore = !sidebarContainerEl.classList.contains('sidebar-hidden');
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+  await waitFor(() => sidebarContainerEl.classList.contains('sidebar-hidden'));
+  const sidebarHiddenAfterToggle = sidebarContainerEl.classList.contains('sidebar-hidden');
+  const sidebarPersistedOk = (await window.mdEditor.getConfig()).sidebarHidden === true;
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+  await waitFor(() => !sidebarContainerEl.classList.contains('sidebar-hidden'));
+  const sidebarShownAgain = !sidebarContainerEl.classList.contains('sidebar-hidden');
+  check(
+    'Ctrl+B pliega/muestra el sidebar y lo persiste en config.json',
+    sidebarVisibleBefore && sidebarHiddenAfterToggle && sidebarPersistedOk && sidebarShownAgain,
+    `visibleAntes=${sidebarVisibleBefore} plegadoTrasCtrlB=${sidebarHiddenAfterToggle} persistidoOk=${sidebarPersistedOk} vuelveAMostrarOk=${sidebarShownAgain}`
+  );
+
   // 20. Subir a la carpeta superior + mover archivos entre carpetas
   // (arrastrar y soltar en el sidebar)
   let navAndMoveOk = false;
@@ -492,6 +509,13 @@
   // muestra un archivo de referencia de solo lectura, y clic en el header
   // lo "promueve" a principal (pestaña editable) mientras el que era
   // principal pasa a mostrarse ahí, también de solo lectura.
+  // Regresión: "hidden" tiene que ganarle a cualquier "display" fijo en CSS
+  // (mismo bug real que ya pasó con .modal-overlay/.dropdown-menu) — antes
+  // de abrir nada, el panel secundario debe estar realmente invisible
+  // (display:none calculado), no solo con el atributo puesto.
+  const hiddenByDefaultOk = document.getElementById('secondary-pane').hidden &&
+    getComputedStyle(document.getElementById('secondary-pane')).display === 'none';
+
   let secondaryPaneOk = false;
   let secondaryPaneDetail = 'sin fixturesDir';
   if (fixtureMdPath && fixtureOtherPath) {
@@ -510,8 +534,8 @@
     window.mdSecondaryPane.close();
     const closedOk = document.getElementById('secondary-pane').hidden;
 
-    secondaryPaneOk = paneVisibleOk && showsSecondaryContentOk && promotedOk && oldPrimaryNowSecondaryOk && closedOk;
-    secondaryPaneDetail = `panelVisibleOk=${paneVisibleOk} muestraContenidoOk=${showsSecondaryContentOk} promovioOk=${promotedOk} viejoPrincipalAhoraSecundarioOk=${oldPrimaryNowSecondaryOk} cerroOk=${closedOk}`;
+    secondaryPaneOk = hiddenByDefaultOk && paneVisibleOk && showsSecondaryContentOk && promotedOk && oldPrimaryNowSecondaryOk && closedOk;
+    secondaryPaneDetail = `ocultoPorDefectoOk=${hiddenByDefaultOk} panelVisibleOk=${paneVisibleOk} muestraContenidoOk=${showsSecondaryContentOk} promovioOk=${promotedOk} viejoPrincipalAhoraSecundarioOk=${oldPrimaryNowSecondaryOk} cerroOk=${closedOk}`;
   }
   check('Panel secundario: abre de solo lectura y "promueve" al principal con un clic', secondaryPaneOk, secondaryPaneDetail);
 

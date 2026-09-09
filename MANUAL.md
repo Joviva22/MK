@@ -235,6 +235,8 @@ Los `#tag`/`[[wikilink]]` dentro de bloques de código (\`\`\`) o código inline
 
 ## 7. El sidebar: organizar tus archivos
 
+**Ocultar/mostrar el sidebar**: botón a la izquierda del todo en la toolbar (ícono de panel), o `Ctrl+B`. A diferencia del modo enfoque (que también oculta el preview), esto solo saca el árbol de archivos — editor y preview quedan igual, con más espacio. Se acuerda entre sesiones (no vuelve a aparecer solo si lo dejaste oculto).
+
 Con una carpeta abierta, el panel izquierdo muestra el árbol de archivos:
 
 - **Clic en una carpeta**: expande/colapsa. El ícono cambia entre carpeta cerrada y abierta.
@@ -418,6 +420,7 @@ Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene 
 
 | Atajo | Acción |
 |---|---|
+| `Ctrl+B` | Ocultar/mostrar el sidebar |
 | `Ctrl+N` | Nuevo documento |
 | `Ctrl+O` | Abrir archivo |
 | `Ctrl+S` | Guardar |

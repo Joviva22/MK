@@ -292,6 +292,21 @@ label.dropdown-label {
   grid-template-columns: var(--sidebar-w, 260px) 6px var(--editor-w, 1fr) 6px 1fr 6px var(--secondary-w, 380px);
 }
 
+/* Ocultar/mostrar el panel de archivos (Ctrl+B, ver sidebartoggle.js):
+   plegar solo el sidebar, sin tocar editor/preview/panel secundario. */
+.container.sidebar-hidden {
+  grid-template-columns: var(--editor-w, 1fr) 6px 1fr;
+}
+
+.container.sidebar-hidden.has-secondary {
+  grid-template-columns: var(--editor-w, 1fr) 6px 1fr 6px var(--secondary-w, 380px);
+}
+
+.container.sidebar-hidden #sidebar-pane,
+.container.sidebar-hidden #resizer-sidebar {
+  display: none;
+}
+
 /* F11 (ver F11.md): modo escritura sin distracciones — oculta toolbar y
    statusbar, el contenedor pasa a ocupar toda la ventana. */
 body.fullscreen-write .toolbar,
@@ -553,12 +568,17 @@ ul.tree.collapsed {
    principal — ver secondarypane.js sobre por qué es de solo lectura y cómo
    se "promueve" a principal con un clic. */
 .secondary-pane {
-  display: flex;
   flex-direction: column;
   height: 100%;
   min-width: 0;
   border-left: 1px solid var(--border);
   background: var(--surface);
+}
+
+/* [hidden] tiene que ganarle a "display: flex" de abajo — mismo bug ya
+   arreglado antes en .modal-overlay/.dropdown-menu, ver ESTADO.md. */
+.secondary-pane:not([hidden]) {
+  display: flex;
 }
 
 .secondary-pane-header {

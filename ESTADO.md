@@ -72,6 +72,7 @@
 - ~~"Insertar tabla" (menú contextual) pregunta filas/columnas e inserta la tabla ya armada del tamaño pedido — antes siempre insertaba una tabla fija de 2 columnas x 1 fila y había que agregar el resto a mano~~
 - ~~Selección múltiple en el sidebar con Ctrl/Cmd+clic: arrastrar cualquiera de los seleccionados los mueve todos juntos, y "Eliminar N elementos seleccionados" del menú contextual los borra en bloque con un solo diálogo de confirmación~~
 - ~~Panel secundario (pantalla dividida, `src/secondarypane.js`): "Abrir en panel secundario" (sidebar) muestra un md/PDF/`.docx`/imagen de solo lectura al lado del principal; clic en el título "promueve" ese archivo a principal (pestaña editable) y el que era principal pasa al panel secundario — sin necesitar una segunda instancia de editor~~
+- ~~Ocultar/plegar el sidebar (`Ctrl+B` o botón en la toolbar, `src/sidebartoggle.js`): independiente del modo enfoque, deja editor+preview a pantalla completa sin perder pestañas ni carpeta abierta; se persiste en `config.json`~~
 - ~~Crear/renombrar/eliminar archivos y carpetas desde el sidebar (clic derecho en un archivo, una carpeta, o la raíz de la carpeta abierta), con confirmación antes de eliminar~~
 - ~~Barra de menú nativa (Archivo/Editar/Ver) eliminada (`Menu.setApplicationMenu(null)`, ver `F11.md`)~~
 - ~~`Ctrl+N/O/S/Shift+S` movidos de `extraKeys` de CodeMirror a un listener global del documento — antes solo funcionaban con el editor enfocado, ahora andan sin importar qué parte de la app tiene el foco~~
