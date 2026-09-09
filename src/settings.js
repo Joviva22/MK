@@ -12,6 +12,24 @@ const fontSizeSelect = document.getElementById('fontsize-select');
 const fontFamilySelect = document.getElementById('fontfamily-select');
 const tabSizeSelect = document.getElementById('tabsize-select');
 const wordWrapToggle = document.getElementById('wordwrap-toggle');
+const snippetsTextarea = document.getElementById('snippets-textarea');
+
+// "/abrev = expansión", una por línea -> { "/abrev": "expansión" }
+function parseSnippetsText(text) {
+  const result = {};
+  text.split('\n').forEach((line) => {
+    const idx = line.indexOf('=');
+    if (idx === -1) return;
+    const key = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+    if (key.startsWith('/') && value) result[key] = value;
+  });
+  return result;
+}
+
+function serializeSnippets(map) {
+  return Object.entries(map).map(([key, value]) => `${key} = ${value}`).join('\n');
+}
 
 autosaveSelect.addEventListener('change', async (e) => {
   autosaveIntervalMs = Number(e.target.value);
@@ -42,6 +60,12 @@ wordWrapToggle.addEventListener('change', async (e) => {
   await window.mdEditor.setConfig({ editorWordWrap: e.target.checked });
 });
 
+snippetsTextarea.addEventListener('change', async (e) => {
+  const textSnippets = parseSnippetsText(e.target.value);
+  await window.mdEditor.setConfig({ textSnippets });
+  if (window.mdSnippets) window.mdSnippets.reload();
+});
+
 (async () => {
   const config = await window.mdEditor.getConfig();
 
@@ -64,6 +88,8 @@ wordWrapToggle.addEventListener('change', async (e) => {
   const wordWrap = config.editorWordWrap !== false;
   wordWrapToggle.checked = wordWrap;
   window.mdCodeMirror.setOption('lineWrapping', wordWrap);
+
+  snippetsTextarea.value = serializeSnippets(config.textSnippets || {});
 
   window.mdCodeMirror.refresh();
 })();

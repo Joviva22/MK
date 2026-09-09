@@ -139,6 +139,29 @@ function markMissingAssets() {
   });
 }
 
+// Diagramas ```mermaid``` renderizados como SVG en vez de bloque de código
+// (ver MANUAL.md). Corre antes que highlightCode() para que esos bloques
+// ya no sean <pre><code> cuando highlightCode los recorra.
+if (window.mermaid) {
+  window.mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'strict' });
+}
+
+function renderMermaidBlocks() {
+  const blocks = Array.from(previewPane.querySelectorAll('pre code.language-mermaid'));
+  if (!blocks.length || !window.mermaid) return;
+  blocks.forEach((code) => {
+    const div = document.createElement('div');
+    div.className = 'mermaid';
+    div.textContent = code.textContent;
+    code.parentElement.replaceWith(div);
+  });
+  try {
+    window.mermaid.run({ nodes: previewPane.querySelectorAll('.mermaid') });
+  } catch (e) {
+    // sintaxis de diagrama inválida: mermaid ya deja su propio mensaje de error adentro del div
+  }
+}
+
 function highlightCode() {
   previewPane.querySelectorAll('pre code').forEach((el) => {
     const langMatch = el.className.match(/language-(\S+)/);
@@ -163,6 +186,7 @@ function render() {
   html = restoreMath(html, store);
   previewPane.innerHTML = DOMPurify.sanitize(html, SANITIZE_CONFIG);
   markMissingAssets();
+  renderMermaidBlocks();
   highlightCode();
   if (window.onPreviewRendered) window.onPreviewRendered();
 }

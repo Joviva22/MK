@@ -9,6 +9,7 @@ const cm = CodeMirror(editorPane, {
   mode: 'markdown',
   lineWrapping: true,
   lineNumbers: true,
+  spellcheck: true,
   value: ''
 });
 

@@ -597,5 +597,61 @@
     check('Arrastrar una imagen del árbol al editor inserta el link Markdown directamente', false, 'sin fixturesDir');
   }
 
+  // 30. Plantillas con variables: {{titulo}} pide el título (prompt) y
+  // {{fecha}} se completa solo, ambas al crear desde "Nuevo ▾"
+  const originalPrompt = window.prompt;
+  window.prompt = () => 'Mi Título De Prueba';
+  let templateOk = false;
+  try {
+    const apuntesBtn = document.querySelector('#new-menu button[data-template="apuntes"]');
+    apuntesBtn.click();
+    await waitFor(() => window.mdCodeMirror.getValue().includes('Mi Título De Prueba'));
+    const content = window.mdCodeMirror.getValue();
+    const hoy = new Date().toLocaleDateString();
+    templateOk = content.includes('# Mi Título De Prueba') && content.includes(hoy) && !content.includes('{{');
+    check(
+      'Plantillas con variables: {{titulo}} y {{fecha}} se completan al crear',
+      templateOk,
+      `contieneTitulo=${content.includes('Mi Título De Prueba')} contieneFecha=${content.includes(hoy)} sinLlaves=${!content.includes('{{')}`
+    );
+  } finally {
+    window.prompt = originalPrompt;
+  }
+
+  // 31. Snippets de texto: "/fecha" seguido de espacio se expande sola
+  window.mdCodeMirror.setValue('Hoy es /fecha');
+  window.mdCodeMirror.setCursor({ line: 0, ch: window.mdCodeMirror.getValue().length });
+  window.mdCodeMirror.getInputField().dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+  await waitFor(() => !window.mdCodeMirror.getValue().includes('/fecha'));
+  const snippetOk = !window.mdCodeMirror.getValue().includes('/fecha') && window.mdCodeMirror.getValue().includes(new Date().toLocaleDateString());
+  check('Snippets de texto: "/fecha" se expande a la fecha de hoy', snippetOk, `contenido="${window.mdCodeMirror.getValue()}"`);
+
+  // 32. Nota diaria: crea (o abre) Diario/YYYY-MM-DD.md dentro de la carpeta
+  let dailyNoteOk = false;
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    await window.mdDailyNote.open();
+    const pad = (n) => String(n).padStart(2, '0');
+    const d = new Date();
+    const expectedPath = window.mdEditor.joinPath(fixturesDir, 'Diario', `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.md`);
+    await waitFor(() => window.mdState.currentFilePath === expectedPath);
+    const createdOk = window.mdState.currentFilePath === expectedPath;
+    const onDisk = await window.mdEditor.readFile(expectedPath);
+    const hasContentOk = !!onDisk && !onDisk.binary && onDisk.content.trim().length > 0;
+    dailyNoteOk = createdOk && hasContentOk;
+    check('Nota diaria: crea y abre Diario/AAAA-MM-DD.md con un encabezado', dailyNoteOk, `rutaCorrecta=${createdOk} tieneContenido=${hasContentOk}`);
+  } else {
+    check('Nota diaria: crea y abre Diario/AAAA-MM-DD.md con un encabezado', false, 'sin fixturesDir');
+  }
+
+  // 33. Diagramas Mermaid: un fence ```mermaid``` se reemplaza por un <div
+  // class="mermaid"> renderizado (SVG), no un bloque de código
+  window.mdCodeMirror.setValue('```mermaid\ngraph TD;\nA-->B;\n```\n');
+  window.renderPreview();
+  const mermaidDiv = await waitFor(() => document.querySelector('#preview-pane .mermaid'), 6000);
+  const mermaidSvg = await waitFor(() => document.querySelector('#preview-pane .mermaid svg'), 6000);
+  const mermaidOk = !!mermaidDiv && !!mermaidSvg;
+  check('Diagramas Mermaid: un fence ```mermaid``` se renderiza como SVG', mermaidOk, `div=${!!mermaidDiv} svg=${!!mermaidSvg}`);
+
   return results;
 })();

@@ -75,12 +75,19 @@
 - ~~Clic en una imagen (png/jpg/jpeg/gif/webp/bmp/svg) del sidebar la muestra en el preview en vez de intentar "editarla" como texto~~
 - ~~Panel "Plugins y comunidad" (botón 🧩 o paleta de comandos): por ahora solo informa que no hay sistema de plugins todavía, con espacio preparado para cuando exista — no carga código de terceros (decisión consciente de seguridad, ver MEJORAS.md)~~
 - ~~Arrastrar un archivo del árbol (sidebar) directo al editor inserta el link/embed de Markdown en el cursor, referenciándolo donde ya está (sin copiarlo a `assets/` — eso solo pasa al arrastrar algo de fuera de la app)~~
+- ~~Panel de plugins: lista de 12 ideas de plugins interesantes agrupadas por categoría (escritura, organización, exportar/integraciones, para programar), en vez de las 4 genéricas de antes~~
+- ~~Plantillas con variables: `{{fecha}}` y `{{titulo}}` se completan solas al crear un documento desde "Nuevo ▾" (`{{titulo}}` pregunta el título antes de crear)~~
+- ~~Snippets de texto: `/fecha` y `/hora` (dinámicos) más los que defina cada quien desde ⚙ Ajustes, se expanden solos al escribir espacio/Enter/Tab después de la abreviatura~~
+- ~~Nota diaria (`Ctrl+Shift+D` o paleta de comandos): abre o crea `Diario/AAAA-MM-DD.md` dentro de la carpeta abierta, con la fecha como encabezado si es nueva~~
+- ~~Diagramas Mermaid: un bloque \`\`\`mermaid\`\`\` se renderiza como diagrama SVG en el preview en vez de mostrarse como código~~
+- ~~Corrector ortográfico nativo (spellcheck del sistema) activado en el editor — subraya palabras no reconocidas mientras escribís (sin sugerencias por clic derecho todavía, ver limitaciones)~~
 
 ## Por hacer
 
 - [ ] Workspaces, graph view, sincronización
 - [ ] Sistema de plugins de verdad (cargar JS local de una carpeta `plugins/` con una API limitada tipo hooks `onRender`/`onSave`) — el panel actual es solo informativo, ver MEJORAS.md para por qué no se construyó ahora
 - [ ] Actualizar `bin/mk-editor` / el `.desktop` para apuntar al AppImage empaquetado en vez de `node_modules/electron` (opcional: solo vale la pena si se va a distribuir la app fuera de esta máquina)
+- [ ] Resto de ideas de plugins pendientes (vista de grafo, Kanban, exportar a EPUB/Anki, sync con git, ejecutar código) — ver MEJORAS.md
 
 ## Notas / limitaciones conocidas
 
@@ -97,3 +104,7 @@
 - ESLint solo corre `no-undef`/`no-unused-vars` a mano (`npm run lint`) — no hay CI que lo corra automáticamente en cada cambio.
 - La detección de binario (byte NUL en los primeros 8000 bytes) es una heurística, no perfecta: un archivo de texto raro con un byte NUL perdido se trataría como binario, y un binario sin bytes NUL en el muestreo inicial podría colarse como texto.
 - El panel de plugins es puramente informativo — no hay forma de instalar nada todavía.
+- El corrector ortográfico solo subraya — no hay sugerencias por clic derecho (el menú contextual propio de MK reemplaza al nativo de Chromium, que es el que las trae). Ver MEJORAS.md.
+- Los diagramas Mermaid tienen fondo blanco fijo, no se adaptan a los 26 temas de color.
+- Los snippets de texto son reemplazo literal (sin cursores/campos como los snippets de un IDE) y solo se disparan con espacio, Enter o Tab justo después de la abreviatura.
+- La nota diaria siempre va a `Diario/AAAA-MM-DD.md` en la raíz de la carpeta abierta — no es configurable todavía.

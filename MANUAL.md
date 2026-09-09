@@ -14,14 +14,15 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 6. [Etiquetas y wikilinks](#6-etiquetas-y-wikilinks)
 7. [El sidebar: organizar tus archivos](#7-el-sidebar-organizar-tus-archivos)
 8. [Buscar cosas](#8-buscar-cosas)
-9. [Historial de versiones](#9-historial-de-versiones)
-10. [Modos de vista](#10-modos-de-vista)
-11. [Personalizar MK](#11-personalizar-mk)
-12. [Exportar](#12-exportar)
-13. [Ver cambios sin guardar](#13-ver-cambios-sin-guardar)
-14. [Menú contextual del editor](#14-menú-contextual-del-editor)
-15. [Plugins y comunidad](#15-plugins-y-comunidad)
-16. [Todos los atajos de teclado](#16-todos-los-atajos-de-teclado)
+9. [Nota diaria](#9-nota-diaria)
+10. [Historial de versiones](#10-historial-de-versiones)
+11. [Modos de vista](#11-modos-de-vista)
+12. [Personalizar MK](#12-personalizar-mk)
+13. [Exportar](#13-exportar)
+14. [Ver cambios sin guardar](#14-ver-cambios-sin-guardar)
+15. [Menú contextual del editor](#15-menú-contextual-del-editor)
+16. [Plugins y comunidad](#16-plugins-y-comunidad)
+17. [Todos los atajos de teclado](#17-todos-los-atajos-de-teclado)
 
 ---
 
@@ -30,7 +31,7 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 Al abrir MK por primera vez te encontrás con una pestaña en blanco. Tenés tres formas de empezar:
 
 - **📁 Carpeta** (toolbar, arriba a la izquierda): abre una carpeta de tu sistema y la muestra como árbol en el panel izquierdo (el "sidebar"). Es la forma recomendada de trabajar — la mayoría de las funciones (etiquetas, backlinks, búsqueda, mover archivos) necesitan una carpeta abierta para tener sentido.
-- **📄 Nuevo ▾**: crea una pestaña nueva. El desplegable trae plantillas listas — Markdown vacío, Apuntes, Documentación, Trabajo universitario, README, Fórmulas matemáticas — cada una con una estructura de encabezados típica para ese uso.
+- **📄 Nuevo ▾**: crea una pestaña nueva. El desplegable trae plantillas listas — Markdown vacío, Apuntes, Documentación, Trabajo universitario, README, Fórmulas matemáticas — cada una con una estructura de encabezados típica para ese uso. Las plantillas (menos la vacía) tienen variables que se completan solas: `{{fecha}}` se reemplaza por la fecha de hoy, y si la plantilla usa `{{titulo}}` te pregunta el título antes de crear el documento.
 - **Abrir**: abre un único archivo (`.md`, `.markdown`, `.txt`, `.tex`, o cualquier otro con "Todos los archivos") con el diálogo nativo del sistema.
 
 MK recuerda la última carpeta que abriste y la vuelve a mostrar automáticamente la próxima vez que abrís la app, junto con todas las pestañas que tenías abiertas (con o sin guardar).
@@ -48,6 +49,10 @@ El editor (columna del medio) es donde escribís. A la derecha se ve el **previe
 - Los archivos `.tex` se abren automáticamente con resaltado de sintaxis LaTeX en vez de Markdown.
 
 **Autocompletado**: mientras escribís, MK sugiere palabras que ya usaste antes en el mismo documento (no es un diccionario ni completa sintaxis Markdown, solo palabras repetidas). Aparece solo después de 2 letras o más, o lo podés forzar vos con `Ctrl+Space`.
+
+**Corrector ortográfico**: nativo del sistema (el mismo que usa cualquier campo de texto de Chromium) — subraya con una línea ondulada las palabras que no reconoce mientras escribís. No hay corrección por clic derecho todavía (el menú contextual propio de MK reemplaza al nativo, que es el que trae sugerencias) — por ahora es solo aviso visual, corregís reescribiendo.
+
+**Snippets de texto**: escribí una abreviatura que empiece con `/` seguida de espacio, Enter o Tab, y se expande sola. Vienen dos por defecto: `/fecha` (fecha de hoy) y `/hora` (hora actual). Podés agregar las tuyas desde ⚙ **Ajustes** → *Snippets de texto*, una por línea con el formato `/abrev = texto a insertar` (por ejemplo `/firma = Saludos, Juli`).
 
 **Índice del documento**: botón ☰ en la toolbar, o `Ctrl+Shift+O`. Abre un panel flotante con todos los encabezados del documento activo (organizados por nivel, H1/H2/H3); clic en uno hace scroll directo hasta ahí en el preview.
 
@@ -92,6 +97,18 @@ const x = 1;
 
 Cada tipo tiene su propio color e ícono en el preview.
 
+**Diagramas** — un bloque de código con lenguaje `mermaid` se renderiza como diagrama en vez de mostrarse como texto:
+
+````markdown
+```mermaid
+graph TD;
+Inicio-->Proceso;
+Proceso-->Fin;
+```
+````
+
+Soporta lo que soporta [Mermaid](https://mermaid.js.org) — diagramas de flujo, de secuencia, Gantt, y más. El fondo del diagrama es blanco fijo (no cambia con el tema de MK).
+
 ## 4. Fórmulas matemáticas (LaTeX)
 
 Se renderizan con KaTeX:
@@ -120,7 +137,7 @@ Los archivos `.tex` completos también se editan con resaltado de sintaxis LaTeX
 
 - **Arrastrar y soltar** un archivo desde el explorador de tu sistema al editor: lo copia a una carpeta `assets/` junto al archivo actual e inserta el Markdown correspondiente automáticamente.
 - **Arrastrar una fila del sidebar** (un archivo que ya está en tu carpeta abierta) directo al editor: inserta el link/embed apuntando a donde ya está el archivo, sin copiarlo de nuevo.
-- Desde el [menú contextual](#14-menú-contextual-del-editor) del editor: "Insertar imagen".
+- Desde el [menú contextual](#15-menú-contextual-del-editor) del editor: "Insertar imagen".
 
 **Ver una imagen o un PDF sueltos**: hacé clic en el archivo desde el sidebar (no hace falta que esté referenciado en ningún `.md`) — se muestra a pantalla completa en el panel de preview. Con un PDF podés navegarlo con el visor nativo; con una imagen, se centra y ajusta al espacio disponible.
 
@@ -175,18 +192,22 @@ Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pesta
 - **Búsqueda global** (🔍 en la toolbar, o `Ctrl+Shift+F`): busca un texto en todos los archivos de la carpeta abierta (`.md`, `.markdown`, `.txt`, `.tex`), hasta 200 resultados. Clic en un resultado abre el archivo y salta directo a esa línea.
 - **Paleta de comandos** (⌘ en la toolbar, o `Ctrl+Shift+P`): lista todo lo que podés hacer en MK — nuevo, abrir, guardar, exportar, cambiar de tema, alternar vistas, ver etiquetas/backlinks/historial — con filtro por texto a medida que escribís. Navegás con las flechas y confirmás con Enter.
 
-## 9. Historial de versiones
+## 9. Nota diaria
+
+`Ctrl+Shift+D`, o desde la paleta de comandos ("Nota diaria de hoy"): abre (o crea, si no existe) una nota para el día de hoy dentro de `Diario/AAAA-MM-DD.md`, en la carpeta abierta. Si es la primera vez que la abrís ese día, la crea con la fecha como encabezado. Necesita una carpeta abierta.
+
+## 10. Historial de versiones
 
 Cada vez que se guarda un archivo (autoguardado incluido), MK respalda el contenido *anterior* antes de pisarlo — hasta 20 versiones por archivo, guardadas fuera del proyecto (en la carpeta de configuración de la app, no junto a tus notas).
 
 Para ver o recuperar una versión anterior: paleta de comandos → **"Ver versiones anteriores..."**. Elegís una fecha/hora de la lista y su contenido reemplaza lo que tenés en el editor (podés deshacer con `Ctrl+Z` si te arrepentís, antes de guardar).
 
-## 10. Modos de vista
+## 11. Modos de vista
 
 - **🎯 Modo enfoque / lectura** (botón en la toolbar, o `Ctrl+Shift+E` / `Ctrl+Shift+R`): el mismo botón cicla entre tres estados — normal, enfoque (solo editor, sin sidebar ni preview) y lectura (solo preview).
 - **`F11` — pantalla completa / escritura sin distracciones**: pone la ventana en pantalla completa real y oculta la toolbar y la barra de estado, dejando solo sidebar/editor/preview según el modo en que estés. Volvés a pulsar `F11` para salir.
 
-## 11. Personalizar MK
+## 12. Personalizar MK
 
 Desde ⚙ **Ajustes**:
 
@@ -195,12 +216,13 @@ Desde ⚙ **Ajustes**:
 - **Tipografía** del editor: JetBrains Mono, Fira Code, Consolas, o la monoespaciada del sistema.
 - **Ancho de tabulación**: 2, 4 u 8 espacios.
 - **Ajuste de línea**: activar/desactivar el word-wrap.
+- **Snippets de texto**: tus abreviaturas propias (ver [sección 2](#2-el-editor-y-las-pestañas)).
 
 Desde 🎨 **Tema**: 26 temas de color — Claro, Oscuro, y 24 más conocidos (Dracula, Nord, Gruvbox, Monokai, Solarized, One Dark Pro, Tokyo Night, Catppuccin, Rosé Pine, GitHub Dark/Light, y otros). Se guarda tu elección para la próxima vez.
 
 Todos estos ajustes se guardan automáticamente y se recuerdan entre sesiones.
 
-## 12. Exportar
+## 13. Exportar
 
 Desde ⬇ **Exportar**:
 
@@ -209,11 +231,11 @@ Desde ⬇ **Exportar**:
 
 Las fórmulas matemáticas y el resaltado de código se ven un poco distintos al exportar (una hoja de estilos simplificada, no la de la app) — es un compromiso consciente para no tener que arrastrar fuentes/librerías completas al archivo exportado.
 
-## 13. Ver cambios sin guardar
+## 14. Ver cambios sin guardar
 
 Botón 🔀 en la toolbar: compara el contenido actual del editor contra la última versión guardada en disco de ese mismo archivo, línea por línea — verde lo agregado, rojo lo borrado. Necesita que el archivo ya tenga una versión guardada en disco con la que comparar.
 
-## 14. Menú contextual del editor
+## 15. Menú contextual del editor
 
 Clic derecho dentro del editor:
 
@@ -227,16 +249,19 @@ Clic derecho dentro del editor:
 
 Cada inserción deja el cursor listo para seguir escribiendo en el lugar justo (por ejemplo, "Insertar enlace" selecciona la parte de la URL para que la pegues encima).
 
-## 15. Plugins y comunidad
+## 16. Plugins y comunidad
 
-Botón 🧩 en la toolbar (o desde la paleta de comandos): por ahora es un panel informativo — MK todavía no tiene un sistema real de plugins de terceros (es una decisión de seguridad consciente: cargar código ajeno en una app con acceso a tus archivos no es algo para improvisar). El panel queda preparado para el día que eso exista, y mientras tanto lista ideas de plugins interesantes agrupadas por categoría:
+Botón 🧩 en la toolbar (o desde la paleta de comandos): por ahora es un panel informativo — MK todavía no tiene un sistema real de plugins de terceros (es una decisión de seguridad consciente: cargar código ajeno en una app con acceso a tus archivos no es algo para improvisar).
 
-- **Escritura y edición**: corrector ortográfico en español, snippets de texto (abreviaturas propias), plantillas con variables (`{{fecha}}`, `{{titulo}}`).
-- **Organización y visualización**: vista de grafo de wikilinks, tablero Kanban a partir de listas de tareas, nota diaria automática.
+Varias de las ideas que estaban acá ya se hicieron como funciones propias de MK (no plugins de terceros, integradas a la app): corrector ortográfico, snippets de texto, plantillas con variables, nota diaria y diagramas Mermaid — todas descritas más arriba en este manual.
+
+Lo que queda como idea pendiente, agrupado por categoría:
+
+- **Organización y visualización**: vista de grafo de wikilinks, tablero Kanban a partir de listas de tareas.
 - **Exportar e integraciones**: exportar a EPUB, sincronización con git al guardar, exportar a tarjetas de memoria (tipo Anki).
-- **Para quienes programan**: diagramas como código (Mermaid/PlantUML) en el preview, ejecutar bloques de código tipo notebook.
+- **Para quienes programan**: ejecutar bloques de código tipo notebook.
 
-## 16. Todos los atajos de teclado
+## 17. Todos los atajos de teclado
 
 | Atajo | Acción |
 |---|---|
@@ -250,11 +275,13 @@ Botón 🧩 en la toolbar (o desde la paleta de comandos): por ahora es un panel
 | `Ctrl+Shift+F` | Búsqueda global |
 | `Ctrl+Shift+T` | Etiquetas de la carpeta |
 | `Ctrl+Shift+B` | Backlinks del archivo activo |
+| `Ctrl+Shift+D` | Nota diaria de hoy |
 | `Ctrl+Shift+O` | Índice del documento |
 | `Ctrl+Shift+E` | Modo enfoque |
 | `Ctrl+Shift+R` | Modo lectura |
 | `F11` | Pantalla completa / escritura sin distracciones |
 | `Ctrl+Space` | Autocompletado |
+| `/fecha`, `/hora` + espacio/Enter/Tab | Snippets de texto (más los tuyos propios) |
 | `Escape` | Cerrar el panel/menú/diálogo que esté abierto |
 
 Estos atajos funcionan sin importar qué parte de la app tenga el foco (editor, sidebar, buscador, etc.), no solo con el cursor en el editor.

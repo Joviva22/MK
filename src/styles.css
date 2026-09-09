@@ -269,6 +269,19 @@ label.dropdown-label {
   color: var(--text);
 }
 
+.snippets-textarea {
+  margin: 4px 10px 6px;
+  padding: 6px;
+  width: 220px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+
 .container {
   display: grid;
   grid-template-columns: var(--sidebar-w, 260px) 6px var(--editor-w, 1fr) 6px 1fr;
@@ -625,6 +638,18 @@ ul.tree.collapsed {
 .callout-warning { border-left-color: #e8590c; }
 .callout-important { border-left-color: #e03131; }
 .callout-caution { border-left-color: #c92a2a; }
+
+/* Diagramas ```mermaid```: fondo blanco fijo (no temizado por tema) porque
+   los colores de mermaid están pensados para fondo claro. */
+.mermaid {
+  display: flex;
+  justify-content: center;
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
 
 .md-tag {
   display: inline-block;
