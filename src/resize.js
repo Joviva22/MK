@@ -4,6 +4,7 @@
 const container = document.querySelector('.container');
 const sidebarPaneEl = document.getElementById('sidebar-pane');
 const editorColumnEl = document.querySelector('.editor-column');
+const secondaryPaneEl = document.getElementById('secondary-pane');
 
 function makeResizer(handle, varName, sizeEl, minPx, maxPx) {
   handle.addEventListener('mousedown', (e) => {
@@ -33,5 +34,6 @@ function makeResizer(handle, varName, sizeEl, minPx, maxPx) {
 
 makeResizer(document.getElementById('resizer-sidebar'), '--sidebar-w', sidebarPaneEl, 220, 400);
 makeResizer(document.getElementById('resizer-editor'), '--editor-w', editorColumnEl, 300, 1400);
+makeResizer(document.getElementById('resizer-secondary'), '--secondary-w', secondaryPaneEl, 260, 900);
 
 })();

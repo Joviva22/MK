@@ -49,7 +49,16 @@ const browserGlobals = {
   Diff: 'readonly',
   mermaid: 'readonly',
   Worker: 'readonly',
-  self: 'readonly'
+  self: 'readonly',
+  atob: 'readonly',
+  btoa: 'readonly',
+  PDFLib: 'readonly',
+  mammoth: 'readonly',
+  TurndownService: 'readonly',
+  turndownPluginGfm: 'readonly',
+  docx: 'readonly',
+  Image: 'readonly',
+  Node: 'readonly'
 };
 
 module.exports = [

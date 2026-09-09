@@ -37,6 +37,9 @@ function buildCommands() {
   cmds.push({ label: 'Nota diaria de hoy', run: () => window.mdDailyNote && window.mdDailyNote.open() });
   cmds.push({ label: 'Ver tablero Kanban', run: () => window.mdKanban && window.mdKanban.open() });
   cmds.push({ label: 'Ver grafo de notas', run: () => window.mdGraph && window.mdGraph.open() });
+  cmds.push({ label: 'Operaciones de páginas PDF (unir, separar, rotar...)', run: () => window.mdPdfPages && window.mdPdfPages.open() });
+  cmds.push({ label: 'Subrayar texto en PDF', run: () => window.mdPdfHighlight && window.mdPdfHighlight.open() });
+  cmds.push({ label: 'Sincronizar con git (elegir archivos y mensaje)...', run: () => window.mdGitPanel && window.mdGitPanel.open() });
 
   document.querySelectorAll('#theme-menu button[data-theme]').forEach((btn) => {
     cmds.push({ label: `Tema: ${btn.textContent}`, run: () => btn.click() });

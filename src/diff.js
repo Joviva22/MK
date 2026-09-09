@@ -17,12 +17,12 @@ function diffLines(oldText, newText) {
   return result;
 }
 
-function renderDiffPanel(diff) {
+function renderDiffPanel(diff, title = 'CAMBIOS SIN GUARDAR') {
   diffPanel.innerHTML = '';
 
   const header = document.createElement('div');
   header.className = 'toc-title';
-  header.textContent = 'CAMBIOS SIN GUARDAR';
+  header.textContent = title;
   const closeBtn = document.createElement('span');
   closeBtn.className = 'tab-close';
   closeBtn.textContent = '×';
@@ -41,6 +41,11 @@ function renderDiffPanel(diff) {
   diffPanel.appendChild(body);
   diffPanel.hidden = false;
 }
+
+// Expuesto para que history.js pueda mostrar diff entre una versión anterior
+// y el contenido actual, con el mismo panel/algoritmo (Myers) que "Ver
+// cambios sin guardar" — no duplicar la lógica de diff en dos lugares.
+window.mdDiff = { diffLines, renderDiffPanel };
 
 document.getElementById('btn-diff').addEventListener('click', async () => {
   const info = window.mdTabs.getActiveTabInfo();

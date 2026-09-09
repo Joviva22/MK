@@ -25,6 +25,9 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 17. [Menú contextual del editor](#17-menú-contextual-del-editor)
 18. [Plugins y comunidad](#18-plugins-y-comunidad)
 19. [Todos los atajos de teclado](#19-todos-los-atajos-de-teclado)
+20. [Operaciones de páginas PDF](#20-operaciones-de-páginas-pdf)
+21. [Subrayar texto en PDF](#21-subrayar-texto-en-pdf)
+22. [Panel secundario (pantalla dividida)](#22-panel-secundario-pantalla-dividida)
 
 ---
 
@@ -34,11 +37,21 @@ Al abrir MK por primera vez te encontrás con una pestaña en blanco. Tenés tre
 
 - **📁 Carpeta** (toolbar, arriba a la izquierda): abre una carpeta de tu sistema y la muestra como árbol en el panel izquierdo (el "sidebar"). Es la forma recomendada de trabajar — la mayoría de las funciones (etiquetas, backlinks, búsqueda, mover archivos) necesitan una carpeta abierta para tener sentido.
 - **📄 Nuevo ▾**: crea una pestaña nueva. El desplegable trae plantillas listas — Markdown vacío, Apuntes, Documentación, Trabajo universitario, README, Fórmulas matemáticas — cada una con una estructura de encabezados típica para ese uso. Las plantillas (menos la vacía) tienen variables que se completan solas: `{{fecha}}` se reemplaza por la fecha de hoy, y si la plantilla usa `{{titulo}}` te pregunta el título antes de crear el documento.
-- **Abrir**: abre un único archivo (`.md`, `.markdown`, `.txt`, `.tex`, o cualquier otro con "Todos los archivos") con el diálogo nativo del sistema.
+- **Abrir**: abre un único archivo (`.md`, `.markdown`, `.txt`, `.tex`, `.docx`, o cualquier otro con "Todos los archivos") con el diálogo nativo del sistema.
 
 MK recuerda la última carpeta que abriste y la vuelve a mostrar automáticamente la próxima vez que abrís la app, junto con todas las pestañas que tenías abiertas (con o sin guardar).
 
-También podés hacer doble clic en un `.md`/`.tex` desde el explorador de archivos de tu sistema para que se abra directo en MK.
+También podés hacer doble clic en un `.md`/`.tex`/`.docx` desde el explorador de archivos de tu sistema para que se abra directo en MK.
+
+**Abrir un `.docx`** — un `.docx` no es texto plano (es un `.zip` con XML adentro), así que MK lo convierte a Markdown antes de mostrarlo, en vez de abrirlo como si fuera un archivo de texto:
+
+1. Abrilo con "Abrir", clic en el árbol del sidebar, o doble clic desde el explorador de archivos — cualquiera de los tres.
+2. Se abre en una **pestaña nueva sin ruta** ("Sin título"), con el contenido ya convertido a Markdown.
+3. Escribís/editás como cualquier otro documento. `Ctrl+S` te va a pedir "Guardar como" — nunca pisa el `.docx` original, la conversión de entrada es de un solo sentido. Si después querés un `.docx` con tus cambios, usá ⬇ **Exportar → A Word (.docx)** ([sección 15](#15-exportar)) — arma un `.docx` nuevo, tampoco pisa el original.
+
+**Límite:** la conversión es automática vía [mammoth.js](https://github.com/mwilliamson/mammoth.js) (a HTML) + [turndown](https://github.com/mixmark-io/turndown) (a Markdown) — buena para texto, encabezados, negrita/cursiva, listas y tablas *con fila de encabezado*. Las imágenes incrustadas sobreviven, pero quedan embebidas como `data:` URI en base64 adentro del `.md` (no como archivo aparte), así que un documento con fotos puede terminar pesando bastante como texto. Lo que no sobrevive bien: estilos de formato fino (colores de fuente, tamaños puntuales), tablas sin fila de encabezado (quedan como HTML crudo dentro del `.md` — igual se ven bien en el preview, pero no como sintaxis de tabla Markdown), y estructura de página (saltos de página, encabezados/pies de página, columnas).
+
+Ese base64 de las imágenes, y las tablas sin fila de encabezado (quedan como HTML crudo, ver arriba), son texto larguísimo e ilegible — para que no te llenen la pantalla al editar, el editor los **pliega solo** en una etiqueta corta: `[imagen incrustada, ~106 KB — clic para ver/editar]` o `[tabla HTML, 2 fila(s) × 5 columna(s) — clic para ver/editar]`. Es solo visual: el contenido real (lo que se guarda/exporta) sigue intacto. Poné el cursor adentro de la etiqueta (clic o con las flechas) para desplegarla y ver/tocar el contenido real; se vuelve a plegar sola al alejar el cursor. Las tablas Markdown normales (con `|` y fila de encabezado) nunca se pliegan — ya son cortas y legibles tal cual.
 
 ## 2. El editor y las pestañas
 
@@ -82,6 +95,20 @@ Vienen dos ya cargados: `/fecha` (fecha de hoy) y `/hora` (hora actual, HH:MM) �
 ## 3. Formato Markdown
 
 MK soporta Markdown estándar — encabezados (`#`, `##`, `###`...), **negrita** (`**texto**`), *cursiva* (`*texto*`), listas, citas (`>`), y además:
+
+**Listas de tareas** (`- [ ] texto`) — en el preview, el checkbox no es decorativo:
+
+1. Escribí `- [ ] tarea` en el editor (o `- [x] tarea` si ya está hecha).
+2. En el preview aparece como un checkbox de verdad, clicable.
+3. Al hacer clic, la tarea se tacha al toque y MK reescribe esa línea en el archivo real (`[ ]` ↔ `[x]`) — mismo mecanismo que usa el [tablero Kanban](#10-tablero-kanban).
+
+**Límite:** solo funciona en el preview (modo lectura), no hay checkbox clicable directo en el editor de texto.
+
+**Subrayar / resaltar texto** (`==texto==`) — marca una parte del texto con fondo amarillo en el preview, mismo color que el subrayado de PDF ([sección 21](#21-subrayar-texto-en-pdf)):
+
+1. Escribí `==texto a resaltar==` directamente en el editor.
+2. O seleccioná el texto, clic derecho → "Subrayar / resaltar texto" (envuelve la selección con `==...==` automáticamente).
+3. En el preview aparece con fondo amarillo (`<mark>`).
 
 **Tablas**, con estilo automático (encabezado resaltado, filas alternadas):
 
@@ -225,6 +252,16 @@ Con una carpeta abierta, el panel izquierdo muestra el árbol de archivos:
 
 Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pestaña se actualiza sola para seguir apuntando al lugar correcto (así "Guardar" no crea un archivo viejo por error).
 
+**Seleccionar varios archivos a la vez** — `Ctrl` (o `Cmd` en Mac) + clic:
+
+1. Mantené `Ctrl` apretado y hacé clic en cada archivo o carpeta que querés sumar a la selección — queda resaltado, y el clic ya no lo abre (ni pliega una carpeta), solo lo suma/saca de la selección.
+2. Con dos o más elementos seleccionados podés:
+   - **Arrastrar cualquiera de los seleccionados** para moverlos todos juntos al soltar sobre una carpeta.
+   - **Clic derecho** en uno de los seleccionados → "Eliminar N elementos seleccionados" — un solo diálogo de confirmación para todos.
+3. La selección se limpia sola con `Escape`, o al hacer clic en cualquier lado sin `Ctrl` (incluida una carpeta o archivo — ese clic abre/pliega normal, no queda mezclado con la selección vieja).
+
+**Límite:** no hay selección por rango (`Shift`+clic para seleccionar "desde acá hasta allá") — hay que ir sumando de a uno con `Ctrl`.
+
 ## 8. Buscar cosas
 
 - **Búsqueda global** (🔍 en la toolbar, o `Ctrl+Shift+F`): busca un texto en todos los archivos de la carpeta abierta (`.md`, `.markdown`, `.txt`, `.tex`), hasta 200 resultados. Clic en un resultado abre el archivo y salta directo a esa línea.
@@ -265,7 +302,11 @@ Ejemplo de documento:
 - **Clic en una tarjeta**: la marca/desmarca como hecha (tacha el texto y agrega/saca `[x]` en el Markdown real, ej. `- [ ] tarea` ↔ `- [x] tarea`).
 - **Arrastrar una tarjeta a otra columna**: la mueve de verdad en el texto — MK reescribe el documento entero para reflejar el nuevo orden, así que si volvés a la vista de editor vas a ver la tarjeta ya bajo el otro `##`.
 
-Todo se guarda en el mismo archivo — no hay una base de datos aparte, el tablero *es* el Markdown, es solo otra forma de verlo y editarlo. **Límite:** solo lee la pestaña activa, no combina tareas de varios archivos en un mismo tablero.
+Todo se guarda en el mismo archivo — no hay una base de datos aparte, el tablero *es* el Markdown, es solo otra forma de verlo y editarlo.
+
+**Modo "Carpeta completa"** — botón arriba a la derecha del tablero, junto a "Archivo activo": junta las columnas del mismo título (ej. todos los `## Por hacer` de tu carpeta) en un solo tablero, mezclando tarjetas de todos tus archivos `.md`/`.markdown`/`.txt`. Cada tarjeta muestra de qué archivo vino (nombre chiquito debajo del texto). Clic en una tarjeta la marca/desmarca igual que en modo archivo activo, pero acá escribe directo al archivo de origen en disco (no al buffer del editor).
+
+**Límite:** en modo carpeta completa no se puede arrastrar una tarjeta a otra columna — a qué archivo debería ir la tarjeta movida es ambiguo si esa columna existe en más de uno. Para reordenar entre columnas, abrí el archivo puntual y arrastrá ahí (modo archivo activo). Las columnas siempre son `## Encabezado` de nivel 2 exacto, no hay subcolumnas.
 
 ## 11. Grafo de notas
 
@@ -282,13 +323,16 @@ El acomodo inicial de los nodos es automático (se alejan entre sí, los conecta
 - **Pan**: clic sostenido sobre el fondo (no sobre un nodo) y arrastrar, mueve todo el grafo.
 - **Mover un nodo a mano**: clic sostenido sobre un nodo y arrastrar lo reacomoda; si soltás sin haberlo movido, se interpreta como el clic normal de "abrir archivo".
 
-**Límite:** el reacomodo manual no se guarda — al cerrar y volver a abrir el grafo, vuelve a correr el layout automático desde cero.
+Mover un nodo a mano se guarda por carpeta — al cerrar y volver a abrir el grafo de la misma carpeta, los nodos que moviste aparecen donde los dejaste. **Límite:** el zoom/pan no se persiste (siempre arranca a escala 1), y un archivo nuevo que no tenía posición guardada arranca en el círculo del layout inicial (no vuelve a correr el layout de fuerzas para acomodarlo junto a los demás).
 
 ## 12. Historial de versiones
 
-Cada vez que se guarda un archivo (autoguardado incluido), MK respalda el contenido *anterior* antes de pisarlo — hasta 20 versiones por archivo, guardadas fuera del proyecto (en la carpeta de configuración de la app, no junto a tus notas).
+Cada vez que se guarda un archivo (autoguardado incluido), MK respalda el contenido *anterior* antes de pisarlo — hasta 20 versiones por archivo, guardadas fuera del proyecto (en la carpeta de configuración de la app, no junto a tus notas). Aparte del límite por archivo, hay un tope de espacio total (200 MB): si se pasa, se van borrando los backups más viejos de *todos* tus archivos, no solo del que estás guardando ahora.
 
-Para ver o recuperar una versión anterior: paleta de comandos → **"Ver versiones anteriores..."**. Elegís una fecha/hora de la lista y su contenido reemplaza lo que tenés en el editor (podés deshacer con `Ctrl+Z` si te arrepentís, antes de guardar).
+Para ver, comparar o recuperar una versión anterior: paleta de comandos → **"Ver versiones anteriores..."**. Cada versión de la lista tiene dos botones:
+
+- **Ver diff**: compara esa versión contra el contenido actual del editor (mismo panel verde/rojo que "Ver cambios sin guardar"), sin tocar nada — para ver qué cambió antes de decidir si restaurar.
+- **Restaurar**: reemplaza el contenido del editor con esa versión (podés deshacer con `Ctrl+Z` si te arrepentís, antes de guardar).
 
 ## 13. Modos de vista
 
@@ -310,7 +354,14 @@ Desde ⚙ **Ajustes**:
   2. Requisito: la carpeta abierta ya tiene que ser un repositorio git (con `git init` hecho de antes, a mano o desde otro programa) — **MK nunca corre `git init` por vos**, y si la carpeta no es un repo, la opción simplemente no hace nada.
   3. De ahí en más, cada `Ctrl+S` (o clic en Guardar) hace `git add -A` + `git commit` con un mensaje genérico automático.
   4. No se dispara con el autoguardado (solo con guardado manual), para no llenar el historial con commits cada 1-30 segundos.
-  - **Límite:** no hay control fino — siempre agrega todos los archivos cambiados (`git add -A`) y usa un mensaje automático, no se puede elegir qué incluir ni escribir tu propio mensaje desde MK.
+  5. **Límite:** siempre es "todo lo que cambió" con un mensaje fijo — para elegir archivos puntuales o escribir tu propio mensaje, usá el control fino de abajo.
+- **Sincronizar con git (control fino)** — paleta de comandos → "Sincronizar con git (elegir archivos y mensaje)...", independiente del toggle automático de arriba:
+  1. Abre un panel con la lista de archivos cambiados en la carpeta (mismo `git status` de siempre), cada uno con un checkbox tildado por defecto.
+  2. Destildá los que NO querés incluir en este commit.
+  3. Escribí tu propio mensaje de commit.
+  4. "Commitear seleccionados" — hace `git add` solo de los archivos tildados + `git commit -m "tu mensaje"`.
+
+**Límite** (de ambos): siempre es el archivo completo, no hunks/partes de un archivo (no hay algo como `git add -p`). Requiere que la carpeta ya sea un repo git.
 
 Desde 🎨 **Tema**: 26 temas de color — Claro, Oscuro, y 24 más conocidos (Dracula, Nord, Gruvbox, Monokai, Solarized, One Dark Pro, Tokyo Night, Catppuccin, Rosé Pine, GitHub Dark/Light, y otros). Se guarda tu elección para la próxima vez.
 
@@ -334,8 +385,11 @@ Desde ⬇ **Exportar**:
      ```
   2. Elegís "A tarjetas de memoria (Anki)" en el menú Exportar — genera un `.txt` de dos columnas separadas por tabulador (Frente/Dorso), una fila por cada `##`.
   3. En Anki: *Archivo → Importar*, elegís ese `.txt`, y en las opciones de importación poné el separador en "Tabulador". Cada fila se vuelve una tarjeta nueva.
+- **A Word (.docx)**: arma un `.docx` real (no una conversión externa — la librería [`docx`](https://docx.js.org) construye el archivo directamente) a partir del Markdown del documento activo. Es la vuelta del [importador de `.docx`](#1-primeros-pasos): abrís un `.docx`, se convierte a Markdown, lo editás como cualquier documento, y "A Word" arma un `.docx` nuevo con esos cambios — no es "guardar de vuelta" al archivo original, es un export nuevo, igual que a PDF/HTML/EPUB.
+  - Se convierten bien: encabezados, **negrita**/*cursiva*/~~tachado~~/`código`, listas (las numeradas se numeran a mano como texto, no como numeración automática de Word), citas, tablas, bloques de código (como texto con tipografía monoespaciada), imágenes (incrustadas o locales) y links.
+  - **Límite:** `[[wikilinks]]`, `#tags`, `==resaltado==`, fórmulas LaTeX (`$...$`) y diagramas Mermaid no tienen una traducción razonable a un documento de Word — quedan como el texto literal de la sintaxis (ej. ves `[[nota]]` tal cual, no un link funcional). Imágenes remotas (`http://...`) no se descargan.
 
-Las fórmulas matemáticas y el resaltado de código se ven un poco distintos al exportar (una hoja de estilos simplificada, no la de la app) — es un compromiso consciente para no tener que arrastrar fuentes/librerías completas al archivo exportado.
+Las fórmulas matemáticas y el resaltado de código se ven un poco distintos al exportar a HTML/PDF (una hoja de estilos simplificada, no la de la app) — es un compromiso consciente para no tener que arrastrar fuentes/librerías completas al archivo exportado.
 
 ## 16. Ver cambios sin guardar
 
@@ -347,17 +401,18 @@ Clic derecho dentro del editor:
 
 - **Copiar / Cortar / Pegar / Seleccionar todo**
 - **Insertar título (H2)**
-- **Insertar tabla**
+- **Insertar tabla**: pregunta cuántas columnas y filas de datos querés, e inserta la tabla ya armada del tamaño pedido (encabezados "Columna 1", "Columna 2"... incluidos) — no hace falta teclear los `|` a mano ni agregar filas/columnas después una por una.
 - **Insertar enlace**
 - **Insertar imagen**
 - **Insertar bloque de código**
 - **Insertar cita / callout**
+- **Subrayar / resaltar texto**
 
-Cada inserción deja el cursor listo para seguir escribiendo en el lugar justo (por ejemplo, "Insertar enlace" selecciona la parte de la URL para que la pegues encima).
+Cada inserción deja el cursor listo para seguir escribiendo en el lugar justo (por ejemplo, "Insertar enlace" selecciona la parte de la URL para que la pegues encima). "Subrayar / resaltar texto" envuelve la selección con `==...==` (o inserta `==texto==` con "texto" seleccionado si no habías seleccionado nada).
 
 ## 18. Plugins y comunidad
 
-Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene un sistema real de plugins de terceros (es una decisión de seguridad consciente: cargar código ajeno en una app con acceso a tus archivos no es algo para improvisar). Todo lo que había en la lista de ideas de este panel ya se implementó como función propia de la app (corrector ortográfico, snippets, plantillas con variables, nota diaria, diagramas Mermaid, grafo, Kanban, exportar a EPUB/Anki, sincronizar con git, ejecutar código JS) — todas descritas en las secciones de arriba.
+Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene un sistema real de plugins de terceros (es una decisión de seguridad consciente: cargar código ajeno en una app con acceso a tus archivos no es algo para improvisar). Todo lo que había en la lista de ideas de este panel ya se implementó como función propia de la app (corrector ortográfico, snippets, plantillas con variables, nota diaria, diagramas Mermaid, grafo, Kanban, exportar a EPUB/Anki, sincronizar con git, ejecutar código JS, operaciones de páginas PDF, subrayar texto en PDF) — todas descritas en las secciones de arriba.
 
 ## 19. Todos los atajos de teclado
 
@@ -382,6 +437,47 @@ Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene 
 | `/fecha`, `/hora` + espacio/Enter/Tab | Snippets de texto (más los tuyos propios) |
 | `Escape` | Cerrar el panel/menú/diálogo que esté abierto |
 
-Tablero Kanban y grafo de notas no tienen atajo propio todavía — se abren desde la paleta de comandos (`Ctrl+Shift+P`).
+Tablero Kanban, grafo de notas y las dos herramientas de PDF no tienen atajo propio todavía — se abren desde la paleta de comandos (`Ctrl+Shift+P`) o los botones 🗂/🖊 de la toolbar.
 
 Estos atajos funcionan sin importar qué parte de la app tenga el foco (editor, sidebar, buscador, etc.), no solo con el cursor en el editor.
+
+## 20. Operaciones de páginas PDF
+
+Botón 🗂 en la toolbar (o "Operaciones de páginas PDF..." en la paleta de comandos): unir, separar, rotar, reordenar/borrar páginas, poner una marca de agua o insertar texto/firma sobre un PDF existente. Todo corre en memoria con [pdf-lib](https://pdf-lib.js.org) — el archivo original no se toca hasta que elegís "Guardar como...".
+
+1. **Abrir PDF...**: elegí el archivo. Aparece una fila por página ("Página 1", "Página 2"...).
+2. **Rotar** (`⟲`/`⟳` en cada fila): rota esa página 90° hacia un lado u otro. La etiqueta muestra la rotación acumulada.
+3. **Borrar** (`✕` en cada fila): saca esa página del documento (no se puede borrar la última que queda).
+4. **Reordenar**: arrastrá una fila y soltala sobre otra — mismo mecanismo que las tarjetas del [tablero Kanban](#10-tablero-kanban).
+5. **Unir con otro PDF...**: elegí un segundo archivo, sus páginas se agregan al final del documento actual.
+6. **Marca de agua**: escribí un texto y "Aplicar a todas las páginas" — lo dibuja en diagonal, semitransparente, sobre cada página.
+7. **Texto / firma**: escribí un texto, la página donde va y una esquina (o el centro), "Insertar" lo dibuja ahí.
+8. **Separar (extraer páginas)**: escribí un rango (ej. `1-3,5`) y "Extraer y guardar como..." — arma un PDF nuevo solo con esas páginas, sin tocar el que tenés abierto en el panel.
+9. **Guardar como...**: escribe todos los cambios (rotación, orden, borrados, marca de agua, texto/firma, uniones) a un archivo PDF nuevo — nunca pisa el original solo.
+
+**Límite:** son operaciones de página, no edición de texto — no se puede cambiar una palabra que ya está impresa dentro del PDF (ver `MEJORAS.md` para por qué).
+
+## 21. Subrayar texto en PDF
+
+Botón 🖊 en la toolbar (o "Subrayar texto en PDF" en la paleta de comandos): marcá partes de un PDF con un subrayado amarillo real, guardado dentro del archivo.
+
+1. **Abrir PDF...**: elegí el archivo. La página 1 se renderiza en el panel (con [pdf.js](https://mozilla.github.io/pdf.js/)).
+2. **Arrastrá el mouse** sobre el texto que querés marcar — se dibuja un rectángulo amarillo semitransparente en vivo.
+3. **◀ / ▶**: cambian de página. Los subrayados quedan guardados por página mientras el panel esté abierto.
+4. **Deshacer último subrayado**: saca el último rectángulo marcado en la página actual.
+5. **Guardar como...**: recién acá se abre el PDF original con pdf-lib y se dibujan los rectángulos de verdad encima del texto (amarillo semitransparente, mezclado tipo marcador real) — se guarda como un archivo nuevo, el original no se toca.
+
+**Límite:** el subrayado es un rectángulo sobre la posición donde arrastraste, no selección de texto real — si el PDF tiene la página rotada (`/Rotate` distinto de 0°), la posición puede salir desalineada.
+
+## 22. Panel secundario (pantalla dividida)
+
+Un archivo de referencia al lado del que estás editando — md, PDF, `.docx` o imagen — de solo lectura, para consultarlo sin dejar de escribir en el principal.
+
+1. Clic derecho en un archivo del sidebar → **"Abrir en panel secundario"**. Aparece una tercera columna a la derecha con ese archivo renderizado (Markdown normal, PDF embebido, `.docx` convertido igual que al [abrirlo](#1-primeros-pasos), o la imagen).
+2. Es de **solo lectura** — no se puede editar ahí directamente.
+3. **Clic en el título** del panel (arriba, donde dice el nombre del archivo) **"promueve"** ese archivo a principal: se abre normal (pestaña editable si es md/`.tex`/`.txt`, se convierte a Markdown si es `.docx`, va al preview si es PDF/imagen) — y el archivo que estaba de principal pasa a mostrarse en el panel secundario, también de solo lectura. Es un intercambio, no una copia.
+4. **✕** cierra el panel.
+
+¿Por qué no directamente "un editor en cada lado"? MK tiene una sola instancia del editor (CodeMirror) que las pestañas comparten — dos editores de verdad, escribibles los dos al mismo tiempo, es un cambio de arquitectura más grande (ver `MEJORAS.md`). Esto da casi lo mismo para el uso real ("tengo esto de referencia mientras escribo") con mucho menos por detrás, y el título-clic hace que cambiar cuál es "el que edito" sea instantáneo.
+
+**Límite:** si el archivo principal era una pestaña nueva sin guardar todavía (sin ruta en disco), al promover el secundario esa pestaña sin guardar no tiene dónde mostrarse en modo lectura — el panel se cierra solo en vez de mostrarla.

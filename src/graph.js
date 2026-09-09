@@ -19,6 +19,26 @@ let dragMoved = false;
 let dragStartClient = null;
 let isPanning = false;
 let panStart = null;
+let currentRoot = null;
+
+// Reacomodo manual (arrastrar nodos) persistido por carpeta en config.json,
+// bajo graphPositions: { [rootPath]: { [nodeId]: {x, y} } }. Nodos nuevos
+// (archivos agregados después del último guardado) no tienen entrada ahí —
+// se ubican con el layout de fuerzas de siempre, mezclado con los que sí
+// tienen posición guardada.
+async function loadPositionsFor(root) {
+  const config = await window.mdEditor.getConfig();
+  return (config.graphPositions || {})[root] || null;
+}
+
+async function savePositionsFor(root) {
+  const config = await window.mdEditor.getConfig();
+  const graphPositions = config.graphPositions || {};
+  const saved = {};
+  nodes.forEach((n) => { saved[n.id] = { x: n.x, y: n.y }; });
+  graphPositions[root] = saved;
+  await window.mdEditor.setConfig({ graphPositions });
+}
 
 function clamp(v, lo, hi) {
   return Math.max(lo, Math.min(hi, v));
@@ -155,7 +175,7 @@ function renderEmpty(message) {
   ctx.fillText(message, 20, 30);
 }
 
-function buildAndDraw(data) {
+function buildAndDraw(data, savedPositions) {
   view = { scale: 1, tx: 0, ty: 0 };
   nodes = (data.nodes || []).map((n) => ({ id: n.id, path: n.path }));
   edges = data.edges || [];
@@ -170,7 +190,20 @@ function buildAndDraw(data) {
   }
 
   seedPositions();
-  for (let i = 0; i < 250; i++) physicsStep();
+  if (savedPositions && Object.keys(savedPositions).length) {
+    // Nodos con posición guardada la usan tal cual; los nuevos se quedan
+    // con la posición inicial en círculo de seedPositions (no vale la pena
+    // correr el layout de fuerzas de nuevo solo por ellos).
+    nodes.forEach((n) => {
+      const p = savedPositions[n.id];
+      if (p) {
+        n.x = p.x;
+        n.y = p.y;
+      }
+    });
+  } else {
+    for (let i = 0; i < 250; i++) physicsStep();
+  }
   draw();
 }
 
@@ -213,6 +246,8 @@ window.addEventListener('mouseup', () => {
   if (dragNode && !dragMoved) {
     close();
     window.openFileAtPath(dragNode.path);
+  } else if (dragNode && dragMoved && currentRoot) {
+    savePositionsFor(currentRoot);
   }
   dragNode = null;
   isPanning = false;
@@ -237,13 +272,17 @@ canvas.addEventListener('wheel', (e) => {
 async function open() {
   overlay.hidden = false;
   const root = window.mdState.rootFolder;
+  currentRoot = root;
   if (!root) {
     renderEmpty('Abrí una carpeta primero para ver el grafo.');
     return;
   }
   renderEmpty('Cargando...');
-  const data = await window.mdEditor.buildGraph(root);
-  buildAndDraw(data);
+  const [data, savedPositions] = await Promise.all([
+    window.mdEditor.buildGraph(root),
+    loadPositionsFor(root)
+  ]);
+  buildAndDraw(data, savedPositions);
 }
 
 function close() {
@@ -257,6 +296,21 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !overlay.hidden) close();
 });
 
-window.mdGraph = { open, close, getData: () => ({ nodes, edges }) };
+window.mdGraph = {
+  open,
+  close,
+  getData: () => ({ nodes, edges }),
+  // Solo para test/renderer-checks.js: mueve un nodo y persiste, sin
+  // simular el arrastre real del mouse (coordenadas de pantalla frágiles
+  // para un test automatizado).
+  moveNodeForTest: async (nodeId, x, y) => {
+    const n = nodesById[nodeId];
+    if (!n) return;
+    n.x = x;
+    n.y = y;
+    draw();
+    if (currentRoot) await savePositionsFor(currentRoot);
+  }
+};
 
 })();

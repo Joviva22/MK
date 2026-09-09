@@ -14,6 +14,7 @@ const ICONS_BY_EXT = {
   css: 'palette',
   json: 'file-json',
   pdf: 'file',
+  docx: 'file-type-2',
   png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image',
   mp4: 'video', webm: 'video',
   mp3: 'music'
@@ -30,6 +31,28 @@ const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
 // proyecto de lugar. Se cargan una vez al arrancar.
 let fileIcons = {};
 let currentTreeResult = null;
+
+// Selección múltiple con Ctrl/Cmd+clic: guarda el nodo completo (no solo la
+// ruta) para poder mover/eliminar en bloque sin tener que volver a buscarlo
+// en el árbol. Se limpia sola al hacer clic normal (sin Ctrl) en cualquier
+// lado, o con Escape — mismo criterio que el menú contextual.
+let selectedNodes = new Map(); // ruta -> node
+
+function clearSelection() {
+  if (!selectedNodes.size) return;
+  selectedNodes.clear();
+  document.querySelectorAll('.tree-row-selected').forEach((el) => el.classList.remove('tree-row-selected'));
+}
+
+function toggleSelection(row, node) {
+  if (selectedNodes.has(node.ruta)) {
+    selectedNodes.delete(node.ruta);
+    row.classList.remove('tree-row-selected');
+  } else {
+    selectedNodes.set(node.ruta, node);
+    row.classList.add('tree-row-selected');
+  }
+}
 
 function extOf(node) {
   return node.nombre.split('.').pop().toLowerCase();
@@ -93,7 +116,9 @@ async function createEntry(dirPath, isFolder) {
 // newPath. Migra la clave del icono personalizado (guardada por ruta
 // relativa a la raíz) y, si el archivo está abierto en una pestaña,
 // actualiza esa pestaña para que no siga apuntando a la ruta vieja.
-async function relocateEntry(node, newPath) {
+// Separado de refreshTree() para poder mover/eliminar varios de una y
+// refrescar el árbol una sola vez al final, no una vez por elemento.
+async function relocateEntryQuiet(node, newPath) {
   if (!node.esCarpeta) {
     const oldKey = relKeyFor(node);
     if (fileIcons[oldKey]) {
@@ -104,7 +129,6 @@ async function relocateEntry(node, newPath) {
     }
     if (window.mdTabs) window.mdTabs.updateTabPath(node.ruta, newPath);
   }
-  await refreshTree();
 }
 
 async function renameEntry(node) {
@@ -115,7 +139,8 @@ async function renameEntry(node) {
     alert(result.error);
     return;
   }
-  await relocateEntry(node, result.path);
+  await relocateEntryQuiet(node, result.path);
+  await refreshTree();
 }
 
 async function moveEntry(node, destDir) {
@@ -125,15 +150,30 @@ async function moveEntry(node, destDir) {
     alert(result.error);
     return;
   }
-  await relocateEntry(node, result.path);
+  await relocateEntryQuiet(node, result.path);
+  await refreshTree();
 }
 
-async function deleteEntry(node) {
-  const label = node.esCarpeta ? `la carpeta "${node.nombre}" y todo su contenido` : `el archivo "${node.nombre}"`;
-  if (!confirm(`¿Eliminar ${label}? Se intenta mandar a la papelera del sistema (se puede restaurar desde ahí); si no hay papelera disponible, se borra directo.`)) return;
+// Arrastre de una selección múltiple: mismo movePath uno por uno, un solo
+// refreshTree al final.
+async function moveEntries(nodes, destDir) {
+  for (const node of nodes) {
+    if (window.mdEditor.dirName(node.ruta) === destDir) continue;
+    const result = await window.mdEditor.movePath(node.ruta, destDir);
+    if (result.error) {
+      alert(`${node.nombre}: ${result.error}`);
+      continue;
+    }
+    await relocateEntryQuiet(node, result.path);
+  }
+  await refreshTree();
+  clearSelection();
+}
+
+async function deleteEntryQuiet(node) {
   const result = await window.mdEditor.deletePath(node.ruta, node.esCarpeta);
   if (result.error) {
-    alert(result.error);
+    alert(`${node.nombre}: ${result.error}`);
     return;
   }
   const key = relKeyFor(node);
@@ -141,7 +181,20 @@ async function deleteEntry(node) {
     delete fileIcons[key];
     await window.mdEditor.setConfig({ fileIcons });
   }
+}
+
+async function deleteEntry(node) {
+  const label = node.esCarpeta ? `la carpeta "${node.nombre}" y todo su contenido` : `el archivo "${node.nombre}"`;
+  if (!confirm(`¿Eliminar ${label}? Se intenta mandar a la papelera del sistema (se puede restaurar desde ahí); si no hay papelera disponible, se borra directo.`)) return;
+  await deleteEntryQuiet(node);
   await refreshTree();
+}
+
+async function deleteEntries(nodes) {
+  if (!confirm(`¿Eliminar ${nodes.length} elementos seleccionados? Se intenta mandar a la papelera del sistema (se puede restaurar desde ahí); si no hay papelera disponible, se borra directo.`)) return;
+  for (const node of nodes) await deleteEntryQuiet(node);
+  await refreshTree();
+  clearSelection();
 }
 
 // Menú contextual del árbol: iconos (solo archivos) + crear/renombrar/borrar.
@@ -164,30 +217,7 @@ function addMenuItem(label, handler) {
   sidebarMenuEl.appendChild(btn);
 }
 
-// node === null → click derecho en la raíz de la carpeta (solo crear, no
-// tiene sentido "renombrar/eliminar" la carpeta que la app tiene abierta).
-function showSidebarMenu(x, y, node) {
-  sidebarMenuEl.innerHTML = '';
-
-  const dirPath = node ? (node.esCarpeta ? node.ruta : window.mdState.rootFolder) : window.mdState.rootFolder;
-
-  if (!node || node.esCarpeta) {
-    addMenuItem('Nuevo archivo...', () => createEntry(dirPath, false));
-    addMenuItem('Nueva carpeta...', () => createEntry(dirPath, true));
-  }
-
-  if (node && !node.esCarpeta) {
-    addMenuItem('Cambiar icono...', () => window.mdIconPicker.open(node.nombre, (iconName) => setFileIcon(node, iconName)));
-    if (fileIcons[relKeyFor(node)]) {
-      addMenuItem('Quitar icono personalizado', () => setFileIcon(node, null));
-    }
-  }
-
-  if (node) {
-    addMenuItem('Renombrar...', () => renameEntry(node));
-    addMenuItem('Eliminar', () => deleteEntry(node));
-  }
-
+function positionSidebarMenu(x, y) {
   sidebarMenuEl.style.left = `${x}px`;
   sidebarMenuEl.style.top = `${y}px`;
   sidebarMenuEl.hidden = false;
@@ -199,23 +229,70 @@ function showSidebarMenu(x, y, node) {
   if (y > maxY) sidebarMenuEl.style.top = `${Math.max(4, maxY)}px`;
 }
 
+// node === null → click derecho en la raíz de la carpeta (solo crear, no
+// tiene sentido "renombrar/eliminar" la carpeta que la app tiene abierta).
+// multiNodes (2+) → clic derecho sobre una selección múltiple activa: menú
+// reducido, solo lo que tiene sentido en bloque (eliminar; mover ya se hace
+// arrastrando la selección entera, no hace falta un ítem de menú aparte).
+function showSidebarMenu(x, y, node, multiNodes) {
+  sidebarMenuEl.innerHTML = '';
+
+  if (multiNodes && multiNodes.length > 1) {
+    addMenuItem(`Eliminar ${multiNodes.length} elementos seleccionados`, () => deleteEntries(multiNodes));
+    positionSidebarMenu(x, y);
+    return;
+  }
+
+  const dirPath = node ? (node.esCarpeta ? node.ruta : window.mdState.rootFolder) : window.mdState.rootFolder;
+
+  if (!node || node.esCarpeta) {
+    addMenuItem('Nuevo archivo...', () => createEntry(dirPath, false));
+    addMenuItem('Nueva carpeta...', () => createEntry(dirPath, true));
+  }
+
+  if (node && !node.esCarpeta) {
+    addMenuItem('Abrir en panel secundario', () => window.mdSecondaryPane.open(node.ruta));
+    addMenuItem('Cambiar icono...', () => window.mdIconPicker.open(node.nombre, (iconName) => setFileIcon(node, iconName)));
+    if (fileIcons[relKeyFor(node)]) {
+      addMenuItem('Quitar icono personalizado', () => setFileIcon(node, null));
+    }
+  }
+
+  if (node) {
+    addMenuItem('Renombrar...', () => renameEntry(node));
+    addMenuItem('Eliminar', () => deleteEntry(node));
+  }
+
+  positionSidebarMenu(x, y);
+}
+
 document.addEventListener('click', (e) => {
   if (!sidebarMenuEl.contains(e.target)) hideSidebarMenu();
+  if (!e.target.closest('.tree-row')) clearSelection();
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') hideSidebarMenu();
+  if (e.key === 'Escape') {
+    hideSidebarMenu();
+    clearSelection();
+  }
 });
 
 const DRAG_MIME = 'application/x-mk-node';
 
 // Arrastrar cualquier fila (archivo o carpeta) para soltarla sobre una
-// carpeta (o la raíz) y moverla ahí. Solo carpetas son destino válido.
+// carpeta (o la raíz) y moverla ahí. Solo carpetas son destino válido. Si la
+// fila arrastrada es parte de una selección múltiple activa, se arrastran
+// todas juntas — si no, solo esa (el payload siempre es un array, para no
+// tener dos formatos de datos distintos según el caso).
 function makeDraggable(row, node) {
   row.draggable = true;
   row.addEventListener('dragstart', (e) => {
     e.stopPropagation();
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData(DRAG_MIME, JSON.stringify({ ruta: node.ruta, esCarpeta: node.esCarpeta, nombre: node.nombre }));
+    const nodes = selectedNodes.size > 1 && selectedNodes.has(node.ruta)
+      ? Array.from(selectedNodes.values())
+      : [node];
+    e.dataTransfer.setData(DRAG_MIME, JSON.stringify(nodes.map((n) => ({ ruta: n.ruta, esCarpeta: n.esCarpeta, nombre: n.nombre }))));
   });
 }
 
@@ -234,8 +311,8 @@ function makeDropTarget(el, getDestDir) {
     el.classList.remove('drag-over');
     const raw = e.dataTransfer.getData(DRAG_MIME);
     if (!raw) return;
-    const draggedNode = JSON.parse(raw);
-    moveEntry(draggedNode, getDestDir());
+    const parsed = JSON.parse(raw);
+    moveEntries(Array.isArray(parsed) ? parsed : [parsed], getDestDir());
   });
 }
 
@@ -247,6 +324,7 @@ function buildTree(nodes) {
     const li = document.createElement('li');
     const row = document.createElement('div');
     row.className = 'tree-row';
+    if (selectedNodes.has(node.ruta)) row.classList.add('tree-row-selected'); // sobrevive a un refreshTree() de otra acción
     makeDraggable(row, node);
 
     const iconEl = document.createElement('span');
@@ -260,11 +338,19 @@ function buildTree(nodes) {
 
     li.appendChild(row);
 
+    // Ctrl/Cmd+clic en cualquier fila (archivo o carpeta) la suma/saca de la
+    // selección múltiple, en vez de abrirla/plegarla — mismo criterio en
+    // ambas ramas de abajo.
     if (node.esCarpeta) {
       const childrenUl = buildTree(node.hijos || []);
       childrenUl.classList.add('collapsed');
       li.appendChild(childrenUl);
-      row.addEventListener('click', () => {
+      row.addEventListener('click', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          toggleSelection(row, node);
+          return;
+        }
+        clearSelection();
         const collapsed = childrenUl.classList.toggle('collapsed');
         iconEl.innerHTML = `<i data-lucide="${collapsed ? 'folder' : 'folder-open'}"></i>`;
         if (window.lucide) window.lucide.createIcons({ attrs: { width: 14, height: 14, 'stroke-width': 2 }, root: iconEl });
@@ -272,12 +358,22 @@ function buildTree(nodes) {
       row.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        showSidebarMenu(e.clientX, e.clientY, node);
+        if (selectedNodes.size > 1 && selectedNodes.has(node.ruta)) {
+          showSidebarMenu(e.clientX, e.clientY, null, Array.from(selectedNodes.values()));
+        } else {
+          clearSelection();
+          showSidebarMenu(e.clientX, e.clientY, node);
+        }
       });
       makeDropTarget(row, () => node.ruta);
     } else {
       row.classList.add('tree-file');
-      row.addEventListener('click', () => {
+      row.addEventListener('click', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          toggleSelection(row, node);
+          return;
+        }
+        clearSelection();
         if (extOf(node) === 'pdf') {
           window.showPdfPreview(node.ruta);
         } else if (IMAGE_EXT.test(node.nombre)) {
@@ -289,7 +385,12 @@ function buildTree(nodes) {
       row.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        showSidebarMenu(e.clientX, e.clientY, node);
+        if (selectedNodes.size > 1 && selectedNodes.has(node.ruta)) {
+          showSidebarMenu(e.clientX, e.clientY, null, Array.from(selectedNodes.values()));
+        } else {
+          clearSelection();
+          showSidebarMenu(e.clientX, e.clientY, node);
+        }
       });
     }
 
@@ -349,6 +450,16 @@ document.getElementById('btn-open-folder').addEventListener('click', async () =>
   if (result) renderFolder(result);
 })();
 
-window.mdSidebar = { renderFolder, setFileIcon, createEntry, renameEntry, deleteEntry, moveEntry, goToParent, refreshTree };
+window.mdSidebar = {
+  renderFolder, setFileIcon, createEntry, renameEntry, deleteEntry, moveEntry, goToParent, refreshTree,
+  moveEntries, deleteEntries,
+  // Solo para test/renderer-checks.js: togglear selección sin simular
+  // Ctrl+clic de verdad.
+  toggleSelectionForTest: (node) => {
+    const row = Array.from(sidebarPane.querySelectorAll('.tree-row')).find((r) => r.textContent.trim() === node.nombre);
+    if (row) toggleSelection(row, node);
+  },
+  getSelectedForTest: () => Array.from(selectedNodes.values())
+};
 
 })();

@@ -74,6 +74,15 @@ function embedTagSyntax(text) {
   return text.replace(TAG_RE, (match, pre, tag) => `${pre}<span class="md-tag" data-tag="${tag.toLowerCase()}">#${tag}</span>`);
 }
 
+// ==texto== -> <mark>texto</mark> (subrayado/resaltado, mismo estilo visual
+// que el color usado en el subrayado de PDF). Va antes de marked.parse igual
+// que wikilinks/tags, para no depender de cómo marked tokeniza "=".
+const HIGHLIGHT_RE = /==([^=\n]+)==/g;
+
+function embedHighlightSyntax(text) {
+  return text.replace(HIGHLIGHT_RE, (match, inner) => `<mark>${inner}</mark>`);
+}
+
 // Extraer $$bloque$$ y $inline$ antes de marked.parse: si no, los "_" de
 // subíndices LaTeX (F_{n-1}) se interpretan como énfasis Markdown y rompen la fórmula.
 function extractMath(text) {
@@ -142,21 +151,71 @@ function markMissingAssets() {
 // Diagramas ```mermaid``` renderizados como SVG en vez de bloque de código
 // (ver MANUAL.md). Corre antes que highlightCode() para que esos bloques
 // ya no sean <pre><code> cuando highlightCode los recorra.
+//
+// securityLevel se queda en 'strict' (no 'loose'): htmlLabels+foreignObject
+// dejaría insertar <img> directo en el label, pero DOMPurify vacía el
+// contenido de <foreignObject> pase lo que pase (protección propia contra
+// mXSS, no hay config que la desactive — probado). flowchart.htmlLabels:false
+// fuerza que mermaid arme los labels con <text>/<tspan> de SVG normal en vez
+// de <foreignObject> pase lo que pase (protección propia contra mXSS, no hay
+// config que la desactive — probado). Y mermaid v11 usa foreignObject para
+// los labels de nodo del renderer "flowchart-v2" SIEMPRE, incluso con
+// flowchart.htmlLabels:false (ese flag ya no lo respeta ese renderer —
+// también probado). Por eso mermaid.run() sigue insertando el SVG directo al
+// DOM (sin pasar por DOMPurify, igual que antes de este cambio): es seguro
+// porque 'strict' hace que mermaid escape cualquier HTML que el usuario haya
+// escrito en un label (se ve como texto literal, no se ejecuta). Lo único
+// nuevo es embedMermaidNodeImages: busca el marcador "![[archivo]]" (mismo
+// ![[...]] de video/PDF embebido, ver embedMediaSyntax) ya renderizado como
+// texto y lo reemplaza por un <img> construido a mano con las APIs del DOM
+// (nunca con un string sin sanitizar), validando la ruta igual que cualquier
+// otra imagen del documento.
 if (window.mermaid) {
   window.mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'strict' });
+}
+
+const MERMAID_IMAGE_MARKER_RE = /^!\[\[(.+)\]\]$/;
+
+function embedMermaidNodeImages(container) {
+  const basePath = window.mdState.currentFilePath;
+  const root = window.mdState.rootFolder || (basePath ? window.mdEditor.dirName(basePath) : null);
+
+  container.querySelectorAll('.nodeLabel').forEach((labelEl) => {
+    const match = labelEl.textContent.trim().match(MERMAID_IMAGE_MARKER_RE);
+    if (!match) return;
+    const filename = match[1].trim();
+    const absolute = window.mdEditor.resolveLocalPath(basePath, filename);
+    labelEl.innerHTML = '';
+
+    if (root && !window.mdEditor.isPathAllowed(root, absolute)) {
+      labelEl.textContent = `[ruta no permitida: ${filename}]`;
+      return;
+    }
+
+    const img = document.createElement('img');
+    img.src = window.mdEditor.toLocalUrl(absolute);
+    img.className = 'mermaid-node-image';
+    img.addEventListener('error', () => {
+      labelEl.textContent = `[imagen no encontrada: ${filename}]`;
+    }, { once: true });
+    labelEl.appendChild(img);
+  });
 }
 
 function renderMermaidBlocks() {
   const blocks = Array.from(previewPane.querySelectorAll('pre code.language-mermaid'));
   if (!blocks.length || !window.mermaid) return;
-  blocks.forEach((code) => {
+  const divs = blocks.map((code) => {
     const div = document.createElement('div');
     div.className = 'mermaid';
     div.textContent = code.textContent;
     code.parentElement.replaceWith(div);
+    return div;
   });
   try {
-    window.mermaid.run({ nodes: previewPane.querySelectorAll('.mermaid') });
+    window.mermaid.run({ nodes: previewPane.querySelectorAll('.mermaid') }).then(() => {
+      divs.forEach((div) => embedMermaidNodeImages(div));
+    });
   } catch (e) {
     // sintaxis de diagrama inválida: mermaid ya deja su propio mensaje de error adentro del div
   }
@@ -225,11 +284,55 @@ function addRunButtons() {
   });
 }
 
+// Líneas "- [ ] tarea" / "1. [x] tarea" del Markdown crudo, en orden de
+// aparición: se usan para mapear cada <input type=checkbox> del preview
+// (que marked ya numera en el mismo orden) de vuelta a su línea real.
+const TASK_LINE_RE = /^(\s*(?:[-*+]|\d+[.)])\s+)\[([ xX])\](.*)$/;
+
+function findTaskCheckboxLines(markdownText) {
+  const lines = markdownText.split('\n');
+  const result = [];
+  lines.forEach((line, i) => { if (TASK_LINE_RE.test(line)) result.push(i); });
+  return result;
+}
+
+// Reescribe la línea en el editor real (mismo mecanismo que el tablero
+// Kanban): el preview no tiene estado propio, "marcar" es editar el texto.
+function toggleTaskLine(lineIndex) {
+  const cm = window.mdCodeMirror;
+  const lines = cm.getValue().split('\n');
+  const line = lines[lineIndex];
+  if (line == null) return;
+  const match = line.match(TASK_LINE_RE);
+  if (!match) return;
+  const newMark = match[2].trim() === '' ? 'x' : ' ';
+  lines[lineIndex] = `${match[1]}[${newMark}]${match[3]}`;
+  cm.setValue(lines.join('\n'));
+}
+
+// Habilita los checkbox de tareas (marked los deja "disabled" por defecto)
+// y tacha visualmente al toque, sin esperar el re-render con debounce.
+function wireTaskCheckboxes(markdownText) {
+  const lineIndexes = findTaskCheckboxLines(markdownText);
+  const boxes = previewPane.querySelectorAll('li > input[type="checkbox"]');
+  boxes.forEach((box, i) => {
+    const lineIndex = lineIndexes[i];
+    box.disabled = false;
+    box.parentElement.classList.toggle('task-done', box.checked);
+    if (lineIndex == null) return;
+    box.addEventListener('click', (e) => {
+      e.stopPropagation();
+      box.parentElement.classList.toggle('task-done', box.checked);
+      toggleTaskLine(lineIndex);
+    });
+  });
+}
+
 function render() {
   previewPane.classList.remove('pdf-mode');
   const markdownText = window.mdCodeMirror.getValue();
   const { text: codeProtected, store: codeStore } = extractCode(markdownText);
-  const tagged = embedTagSyntax(embedWikilinkSyntax(embedMediaSyntax(codeProtected)));
+  const tagged = embedTagSyntax(embedWikilinkSyntax(embedHighlightSyntax(embedMediaSyntax(codeProtected))));
   const preprocessed = restoreCode(tagged, codeStore);
   const { text, store } = extractMath(preprocessed);
   let html = marked.parse(text);
@@ -241,6 +344,7 @@ function render() {
   renderMermaidBlocks();
   highlightCode();
   addRunButtons();
+  wireTaskCheckboxes(markdownText);
   if (window.onPreviewRendered) window.onPreviewRendered();
 }
 

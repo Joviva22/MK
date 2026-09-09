@@ -27,6 +27,8 @@
   const fixturesDir = params.get('mkTestFixtures') || '';
   const fixtureMdPath = fixturesDir ? window.mdEditor.joinPath(fixturesDir, 'note.md') : null;
   const fixtureOtherPath = fixturesDir ? window.mdEditor.joinPath(fixturesDir, 'other.md') : null;
+  const fixturePdfPath = fixturesDir ? window.mdEditor.joinPath(fixturesDir, 'prueba.pdf') : null;
+  const fixturePdf2Path = fixturesDir ? window.mdEditor.joinPath(fixturesDir, 'otro.pdf') : null;
 
   // 0. Esperar a que tabs.js termine su arranque (restaurar sesión / pestaña inicial)
   await waitFor(() => document.querySelectorAll('#tabbar .tab').length > 0);
@@ -91,6 +93,47 @@
   const headingOk = !!previewPane.querySelector('h1') && previewPane.querySelector('h1').textContent.includes('Titulo de prueba');
   const boldOk = !!previewPane.querySelector('strong');
   check('Preview renderiza encabezados y negrita', headingOk && boldOk, `h1=${headingOk} strong=${boldOk}`);
+
+  // 6b. Subrayar/resaltar texto en Markdown: sintaxis ==texto== -> <mark>,
+  // y el menú contextual también lo puede insertar sobre una selección.
+  window.mdCodeMirror.setValue('Esto es ==importante== en el texto.');
+  window.renderPreview();
+  await waitFor(() => previewPane.querySelector('mark'));
+  const markEl = previewPane.querySelector('mark');
+  const highlightSyntaxOk = !!markEl && markEl.textContent === 'importante';
+
+  window.mdCodeMirror.setValue('Palabra clave acá.');
+  window.mdCodeMirror.setSelection({ line: 0, ch: 0 }, { line: 0, ch: 7 });
+  document.getElementById('editor-pane').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 10 }));
+  const highlightBtn = Array.from(document.querySelectorAll('#context-menu button')).find((b) => b.textContent === 'Subrayar / resaltar texto');
+  if (highlightBtn) highlightBtn.click();
+  const highlightInsertOk = window.mdCodeMirror.getValue() === '==Palabra== clave acá.';
+  check(
+    'Subrayar/resaltar texto en Markdown: ==texto== se renderiza como <mark> y el menú contextual lo inserta',
+    highlightSyntaxOk && highlightInsertOk,
+    `sintaxis=${highlightSyntaxOk} menuContextual=${highlightInsertOk} contenido="${window.mdCodeMirror.getValue()}"`
+  );
+
+  // 6c. Menú contextual: "Insertar tabla" pregunta filas/columnas (antes
+  // insertaba siempre una tabla fija de 2 columnas x 1 fila) y arma la
+  // tabla completa de una sola vez, encabezados incluidos.
+  window.mdCodeMirror.setValue('');
+  const tableAnswers = ['3', '2']; // columnas, filas
+  const originalPromptTable = window.prompt;
+  window.prompt = () => tableAnswers.shift();
+  document.getElementById('editor-pane').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 10 }));
+  const insertTableBtn = Array.from(document.querySelectorAll('#context-menu button')).find((b) => b.textContent === 'Insertar tabla');
+  if (insertTableBtn) insertTableBtn.click();
+  window.prompt = originalPromptTable;
+  const tableLines = window.mdCodeMirror.getValue().split('\n');
+  const threeColsOk = tableLines[0] === '| Columna 1 | Columna 2 | Columna 3 |';
+  const sepRowOk = tableLines[1] === '| --- | --- | --- |';
+  const twoDataRowsOk = tableLines.length === 4;
+  check(
+    'Menú contextual: "Insertar tabla" pregunta el tamaño y arma la tabla completa',
+    !!insertTableBtn && threeColsOk && sepRowOk && twoDataRowsOk,
+    `boton=${!!insertTableBtn} encabezado=${threeColsOk} separador=${sepRowOk} filas=${twoDataRowsOk} contenido="${window.mdCodeMirror.getValue().replace(/\n/g, '\\n')}"`
+  );
 
   // 7. KaTeX renderiza fórmulas inline
   window.mdCodeMirror.setValue('Formula: $x^2 + y^2 = z^2$');
@@ -405,6 +448,73 @@
     check('Subir a la carpeta superior y mover archivos entre carpetas (drag & drop)', false, 'sin fixturesDir');
   }
 
+  // 20b. Selección múltiple con Ctrl+clic en el sidebar: Ctrl+clic en dos
+  // filas las suma a la selección (en vez de abrirlas), y "Eliminar N
+  // elementos seleccionados" del menú contextual las borra a las dos.
+  let multiSelectOk = false;
+  let multiSelectDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const multiAPath = window.mdEditor.joinPath(fixturesDir, 'multi-a.md');
+    const multiBPath = window.mdEditor.joinPath(fixturesDir, 'multi-b.md');
+    await window.mdEditor.saveFile('# A', multiAPath, false);
+    await window.mdEditor.saveFile('# B', multiBPath, false);
+    const treeResult = await window.mdEditor.readFolder(fixturesDir);
+    window.mdSidebar.renderFolder(treeResult);
+
+    const findRow = (name) => Array.from(document.querySelectorAll('.tree-row')).find((r) => r.textContent.trim() === name);
+    const rowA = findRow('multi-a.md');
+    const rowB = findRow('multi-b.md');
+    rowA.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true }));
+    rowB.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true }));
+    const bothSelectedOk = rowA.classList.contains('tree-row-selected') && rowB.classList.contains('tree-row-selected');
+    const selectedCountOk = window.mdSidebar.getSelectedForTest().length === 2;
+
+    const originalConfirmMulti = window.confirm;
+    window.confirm = () => true;
+    rowA.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 10 }));
+    // El menú del sidebar es un .context-menu propio, sin id (distinto del
+    // #context-menu del editor, ver contextmenu.js) — se ubica por
+    // descarte: el .context-menu visible que no es el del editor.
+    const sidebarMenuVisible = Array.from(document.querySelectorAll('.context-menu')).find((el) => el.id !== 'context-menu' && !el.hidden);
+    const bulkDeleteBtn = sidebarMenuVisible && Array.from(sidebarMenuVisible.querySelectorAll('button')).find((b) => b.textContent === 'Eliminar 2 elementos seleccionados');
+    if (bulkDeleteBtn) bulkDeleteBtn.click();
+    await waitFor(async () => (await window.mdEditor.readFile(multiAPath)) === null);
+    window.confirm = originalConfirmMulti;
+
+    const aGoneOk = (await window.mdEditor.readFile(multiAPath)) === null;
+    const bGoneOk = (await window.mdEditor.readFile(multiBPath)) === null;
+    multiSelectOk = bothSelectedOk && selectedCountOk && !!bulkDeleteBtn && aGoneOk && bGoneOk;
+    multiSelectDetail = `filasSeleccionadasOk=${bothSelectedOk} cuentaOk=${selectedCountOk} botonBulkEncontrado=${!!bulkDeleteBtn} aBorradoOk=${aGoneOk} bBorradoOk=${bGoneOk}`;
+  }
+  check('Sidebar: Ctrl+clic selecciona varios archivos y el menú contextual los elimina en bloque', multiSelectOk, multiSelectDetail);
+
+  // 20c. Panel secundario: "Abrir en panel secundario" (menú del sidebar)
+  // muestra un archivo de referencia de solo lectura, y clic en el header
+  // lo "promueve" a principal (pestaña editable) mientras el que era
+  // principal pasa a mostrarse ahí, también de solo lectura.
+  let secondaryPaneOk = false;
+  let secondaryPaneDetail = 'sin fixturesDir';
+  if (fixtureMdPath && fixtureOtherPath) {
+    await window.openFileAtPath(fixtureMdPath); // principal: note.md
+    await window.mdSecondaryPane.open(fixtureOtherPath); // secundario: other.md
+    await waitFor(() => !document.getElementById('secondary-pane').hidden);
+    const paneVisibleOk = !document.getElementById('secondary-pane').hidden;
+    const showsSecondaryContentOk = document.getElementById('secondary-pane-body').textContent.includes('Ver');
+
+    document.getElementById('secondary-pane-title').click();
+    await waitFor(() => window.mdState.currentFilePath === fixtureOtherPath);
+    const promotedOk = window.mdState.currentFilePath === fixtureOtherPath;
+    await waitFor(() => document.getElementById('secondary-pane-body').textContent.includes('Hola MK'));
+    const oldPrimaryNowSecondaryOk = document.getElementById('secondary-pane-body').textContent.includes('Hola MK');
+
+    window.mdSecondaryPane.close();
+    const closedOk = document.getElementById('secondary-pane').hidden;
+
+    secondaryPaneOk = paneVisibleOk && showsSecondaryContentOk && promotedOk && oldPrimaryNowSecondaryOk && closedOk;
+    secondaryPaneDetail = `panelVisibleOk=${paneVisibleOk} muestraContenidoOk=${showsSecondaryContentOk} promovioOk=${promotedOk} viejoPrincipalAhoraSecundarioOk=${oldPrimaryNowSecondaryOk} cerroOk=${closedOk}`;
+  }
+  check('Panel secundario: abre de solo lectura y "promueve" al principal con un clic', secondaryPaneOk, secondaryPaneDetail);
+
   // 21. Vista de cambios (diff.js) con el paquete "diff" (Myers) en vez del
   // LCS a mano — regresión: que siga marcando agregados/borrados bien
   let diffOk = false;
@@ -494,6 +604,32 @@
     check('Historial de versiones: guardar crea un backup y aparece en el panel', false, 'sin fixturesDir');
   }
 
+  // 24b. Historial de versiones: "Ver diff" compara la versión guardada
+  // contra el contenido actual del editor (mismo motor que "Ver cambios
+  // sin guardar"), sin necesidad de restaurar primero para poder comparar.
+  let historyDiffOk = false;
+  let historyDiffDetail = 'sin fixturesDir';
+  if (fixtureMdPath) {
+    await window.openFileAtPath(fixtureMdPath);
+    const marker = `LINEA-EXTRA-${Date.now()}`;
+    window.mdCodeMirror.setValue('Contenido base para diff.');
+    await window.mdEditor.saveFile(window.mdCodeMirror.getValue(), fixtureMdPath, false);
+    window.mdCodeMirror.setValue('Contenido base para diff.\n' + marker);
+
+    document.getElementById('diff-panel').hidden = true;
+    window.mdHistory.open();
+    const diffBtn = await waitFor(() => document.querySelector('#history-list .history-item button'));
+    const diffPanelBefore = document.getElementById('diff-panel').hidden;
+    if (diffBtn) diffBtn.click();
+    await waitFor(() => !document.getElementById('diff-panel').hidden);
+    const diffPanelAfter = document.getElementById('diff-panel').hidden;
+    const diffShowsMarker = document.getElementById('diff-panel').textContent.includes(marker);
+    document.getElementById('diff-panel').hidden = true;
+    historyDiffOk = !!diffBtn && diffPanelBefore === true && diffPanelAfter === false && diffShowsMarker;
+    historyDiffDetail = `botonEncontrado=${!!diffBtn} panelAbrio=${diffPanelBefore === true && diffPanelAfter === false} muestraLineaNueva=${diffShowsMarker}`;
+  }
+  check('Historial de versiones: "Ver diff" compara la versión guardada contra el editor actual', historyDiffOk, historyDiffDetail);
+
   // 25. Links del preview. Regresión: antes ningún <a> normal tenía
   // manejador y el clic dejaba la ventana de la app en blanco (navegaba la
   // propia ventana fuera de index.html).
@@ -544,6 +680,98 @@
   } else {
     check('Archivo binario/desconocido: no cuelga, avisa en el editor en vez de abrirlo', false, 'sin fixturesDir');
   }
+
+  // 26b. Abrir un .docx lo convierte a Markdown (mammoth + turndown, ver
+  // docximport.js) en una pestaña nueva SIN ruta — nunca pisa el .docx
+  // original, "Guardar" pediría "Guardar como".
+  let docxOk = false;
+  let docxDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const docxPath = window.mdEditor.joinPath(fixturesDir, 'prueba.docx');
+    const tabsBefore = document.querySelectorAll('#tabbar .tab').length;
+    await window.openFileAtPath(docxPath);
+    await waitFor(() => document.querySelectorAll('#tabbar .tab').length > tabsBefore);
+    await waitFor(() => window.mdCodeMirror.getValue().includes('Walking on imported air'));
+    const contentOk = window.mdCodeMirror.getValue().includes('Walking on imported air');
+    const noRealPathOk = window.mdState.currentFilePath !== docxPath;
+    docxOk = contentOk && noRealPathOk;
+    docxDetail = `convirtioTextoOk=${contentOk} noPisaOriginalOk=${noRealPathOk} contenido="${window.mdCodeMirror.getValue().slice(0, 60)}"`;
+  }
+  check('Abrir .docx lo convierte a Markdown en una pestaña nueva sin ruta', docxOk, docxDetail);
+
+  // 26d. Plegado visual de imágenes incrustadas (data: URI base64) en el
+  // editor (ver foldimages.js): no toca el contenido real, solo lo pliega
+  // en un widget para no llenar la pantalla de base64 ilegible.
+  let foldOk = false;
+  let foldDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const docxImgPath = window.mdEditor.joinPath(fixturesDir, 'prueba-imagen.docx');
+    await window.openFileAtPath(docxImgPath);
+    await waitFor(() => window.mdCodeMirror.getValue().includes('data:image'));
+    await waitFor(() => document.querySelector('.folded-image-data'));
+    const foldedWidgetOk = !!document.querySelector('.folded-image-data');
+    const rawValueIntactOk = window.mdCodeMirror.getValue().includes('data:image/png;base64,');
+    foldOk = foldedWidgetOk && rawValueIntactOk;
+    foldDetail = `widgetPlegadoOk=${foldedWidgetOk} contenidoRealIntactoOk=${rawValueIntactOk}`;
+  }
+  check('Imágenes data: URI se pliegan visualmente en el editor sin tocar el contenido real', foldOk, foldDetail);
+
+  // 26e. Tablas HTML crudas (sin fila de encabezado, ver MANUAL.md) también
+  // se pliegan, mismo mecanismo que las imágenes — no se superponen si una
+  // tabla tiene una imagen adentro (la tabla entera se pliega como una unidad).
+  let foldTableOk = false;
+  let foldTableDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const docxTablePath = window.mdEditor.joinPath(fixturesDir, 'prueba-tabla.docx');
+    await window.openFileAtPath(docxTablePath);
+    await waitFor(() => window.mdCodeMirror.getValue().includes('<table'));
+    await waitFor(() => document.querySelector('.folded-html-table'));
+    const foldedTableWidgetOk = !!document.querySelector('.folded-html-table');
+    const rawTableIntactOk = window.mdCodeMirror.getValue().includes('<table>') && window.mdCodeMirror.getValue().includes('Top left');
+    foldTableOk = foldedTableWidgetOk && rawTableIntactOk;
+    foldTableDetail = `widgetPlegadoOk=${foldedTableWidgetOk} contenidoRealIntactoOk=${rawTableIntactOk}`;
+  }
+  check('Tablas HTML crudas (sin fila de encabezado) se pliegan visualmente en el editor', foldTableOk, foldTableDetail);
+
+  // 26c. Exportar a Word (.docx): arma un .docx real (librería "docx") a
+  // partir del Markdown del editor — se relee con mammoth (mismo motor de
+  // la importación) para confirmar que es un .docx válido de verdad, no
+  // solo que el diálogo "funcionó".
+  let docxExportOk = false;
+  let docxExportDetail = '';
+  {
+    window.mdCodeMirror.setValue([
+      '# Titulo de prueba',
+      '',
+      'Texto con **negrita** y una [link](https://example.com).',
+      '',
+      '- Item uno',
+      '- Item dos',
+      '',
+      '| Col A | Col B |',
+      '| --- | --- |',
+      '| uno | dos |'
+    ].join('\n'));
+    const savedPath = await window.mdDocxExport.exportToDocx();
+    let roundtripOk = false;
+    let roundtripText = '';
+    if (savedPath) {
+      const base64 = await window.mdEditor.docxReadBytes(savedPath);
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const reopened = await mammoth.convertToHtml({ arrayBuffer: bytes.buffer });
+      roundtripText = reopened.value;
+      roundtripOk = /Titulo de prueba/.test(roundtripText) &&
+        /negrita/.test(roundtripText) &&
+        /example\.com/.test(roundtripText) &&
+        /Item uno/.test(roundtripText) &&
+        /<table/.test(roundtripText);
+    }
+    docxExportOk = !!savedPath && roundtripOk;
+    docxExportDetail = `guardado=${!!savedPath} releidoOk=${roundtripOk} html="${roundtripText.slice(0, 80)}"`;
+  }
+  check('Exportar a Word (.docx): genera un .docx real, releído con mammoth', docxExportOk, docxExportDetail);
 
   // 27. Clic en una imagen del árbol la muestra en el preview (antes
   // intentaba "editarla" como texto)
@@ -653,6 +881,33 @@
   const mermaidOk = !!mermaidDiv && !!mermaidSvg;
   check('Diagramas Mermaid: un fence ```mermaid``` se renderiza como SVG', mermaidOk, `div=${!!mermaidDiv} svg=${!!mermaidSvg}`);
 
+  // 33b. Imágenes dentro de nodos Mermaid: un label "![[archivo]]" (mismo
+  // ![[...]] de video/PDF embebido) se reemplaza por un <img> real si la
+  // ruta está permitida, y por un aviso de texto si no lo está.
+  let mermaidImgOk = false;
+  let mermaidImgDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    window.mdState.currentFilePath = fixtureMdPath;
+    window.mdCodeMirror.setValue([
+      '```mermaid',
+      'flowchart TD',
+      'A["![[photo.png]]"] --> B["Nodo de texto normal"]',
+      'B --> C["![[../fuera-de-la-carpeta.png]]"]',
+      '```'
+    ].join('\n'));
+    window.renderPreview();
+    await waitFor(() => document.querySelector('#preview-pane .mermaid svg'), 6000);
+    await waitFor(() => document.querySelector('#preview-pane .mermaid img') ||
+      Array.from(document.querySelectorAll('#preview-pane .mermaid .nodeLabel')).some((l) => l.textContent.includes('no permitida')), 3000);
+    const hasImg = !!document.querySelector('#preview-pane .mermaid img');
+    const normalTextOk = Array.from(document.querySelectorAll('#preview-pane .mermaid .nodeLabel')).some((l) => l.textContent.includes('Nodo de texto normal'));
+    const blockedOk = Array.from(document.querySelectorAll('#preview-pane .mermaid .nodeLabel')).some((l) => l.textContent.includes('no permitida'));
+    mermaidImgOk = hasImg && normalTextOk && blockedOk;
+    mermaidImgDetail = `imagenInsertada=${hasImg} textoNormalOk=${normalTextOk} rutaBloqueadaOk=${blockedOk}`;
+  }
+  check('Diagramas Mermaid: "![[archivo]]" en un nodo se reemplaza por <img> (o aviso si la ruta no está permitida)', mermaidImgOk, mermaidImgDetail);
+
   // 34. Exportar a EPUB: genera un archivo .epub real (jszip en main.js,
   // el diálogo se saltea en modo test y escribe a un temporal)
   let epubOk = false;
@@ -701,6 +956,44 @@
     check('Sincronización con git: commitea cambios en un repo existente', false, 'sin fixturesDir');
   }
 
+  // 36b. Git con control fino: el panel lista los archivos cambiados, se
+  // puede elegir cuáles entran (checkbox) y escribir un mensaje propio —
+  // el archivo destildado se queda afuera del commit.
+  let gitPanelOk = false;
+  let gitPanelDetail = 'sin fixturesDir';
+  if (gitRepoDir && (await window.mdEditor.isGitRepo(gitRepoDir))) {
+    const notePath = window.mdEditor.joinPath(gitRepoDir, 'nota.md');
+    const note2Path = window.mdEditor.joinPath(gitRepoDir, 'nota2.md');
+    await window.mdEditor.saveFile('# Nota modificada\n', notePath, false);
+    await window.mdEditor.saveFile('# Nota 2\n', note2Path, false);
+
+    window.mdState.rootFolder = gitRepoDir;
+    window.mdGitPanel.open();
+    await waitFor(() => document.querySelectorAll('#git-file-list .git-file-row').length >= 2);
+
+    const rows = Array.from(document.querySelectorAll('#git-file-list .git-file-row'));
+    const note2Checkbox = rows.find((r) => r.querySelector('.git-file-name').textContent.includes('nota2.md'))?.querySelector('input');
+    if (note2Checkbox) note2Checkbox.checked = false;
+
+    const originalAlert = window.alert;
+    let commitMsg = null;
+    window.alert = (m) => { commitMsg = m; };
+    document.getElementById('git-commit-message').value = 'MK test: commit selectivo';
+    document.getElementById('git-commit-btn').click();
+    await waitFor(() => commitMsg !== null);
+    window.alert = originalAlert;
+    window.mdGitPanel.close();
+
+    const statusAfter = await window.mdEditor.gitStatus(gitRepoDir);
+    const noteCommittedOk = !statusAfter.some((f) => f.file === 'nota.md');
+    const note2StillPendingOk = statusAfter.some((f) => f.file === 'nota2.md');
+    gitPanelOk = !!note2Checkbox && !!commitMsg && noteCommittedOk && note2StillPendingOk;
+    gitPanelDetail = `checkboxEncontrado=${!!note2Checkbox} commiteo=${!!commitMsg} notaCommiteadaOk=${noteCommittedOk} nota2QuedoFueraOk=${note2StillPendingOk}`;
+  } else {
+    gitPanelDetail = gitRepoDir ? 'git no disponible en este entorno, se saltea' : 'sin fixturesDir';
+  }
+  check('Git con control fino: elegir archivos + mensaje propio deja afuera lo destildado', gitPanelOk, gitPanelDetail);
+
   // 37. Tablero Kanban: "## Columna" + listas = columnas/tarjetas; clic
   // marca/desmarca, arrastrar mueve una tarjeta a otra columna
   window.mdCodeMirror.setValue('## Por hacer\n- [ ] tarea A\n- [ ] tarea B\n\n## Hecho\n- [x] tarea C\n');
@@ -728,6 +1021,48 @@
     `columnas=${kanbanColumnsOk} tarjetas=${kanbanCardsOk} marcar=${kanbanToggleOk} mover=${kanbanMoveOk}`
   );
 
+  // 37b. Tablero Kanban en modo "carpeta completa": junta columnas del mismo
+  // título entre varios archivos, cada tarjeta marca de qué archivo vino, y
+  // togglear una tarjeta escribe directo a SU archivo (no al buffer del
+  // editor, que puede ser un archivo totalmente distinto).
+  let kanbanFolderOk = false;
+  let kanbanFolderDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const kanbanAPath = window.mdEditor.joinPath(fixturesDir, 'kanban-a.md');
+    const kanbanBPath = window.mdEditor.joinPath(fixturesDir, 'kanban-b.md');
+    await window.mdEditor.saveFile('## Por hacer\n- [ ] tarea desde A\n', kanbanAPath, false);
+    await window.mdEditor.saveFile('## Por hacer\n- [ ] tarea desde B\n\n## Hecho\n- [x] ya hecha en B\n', kanbanBPath, false);
+
+    window.mdState.rootFolder = fixturesDir;
+    window.mdKanban.open();
+    window.mdKanban.setScope('folder');
+    // Esperar la marca propia del modo carpeta (badge de archivo de origen),
+    // no solo la cantidad de tarjetas: el render síncrono de "archivo activo"
+    // de open() puede satisfacer una condición débil antes de que termine el
+    // render async de setScope('folder').
+    await waitFor(() => document.querySelector('.kanban-card-source') && document.querySelectorAll('.kanban-card').length >= 3);
+
+    const porHacerColumn = Array.from(document.querySelectorAll('.kanban-column')).find((c) => c.querySelector('.kanban-column-title').textContent.startsWith('Por hacer'));
+    const cardsInPorHacer = porHacerColumn ? porHacerColumn.querySelectorAll('.kanban-card').length : 0;
+    const hasSourceBadge = !!document.querySelector('.kanban-card-source');
+
+    const cardFromA = Array.from(document.querySelectorAll('.kanban-card')).find((c) => c.textContent.includes('tarea desde A'));
+    if (cardFromA) cardFromA.click();
+    await waitFor(async () => {
+      const onDisk = await window.mdEditor.readFile(kanbanAPath);
+      return onDisk && onDisk.content.includes('[x] tarea desde A');
+    });
+    const diskA = await window.mdEditor.readFile(kanbanAPath);
+    const toggleWroteCorrectFileOk = !!diskA && diskA.content.includes('[x] tarea desde A');
+
+    window.mdKanban.setScope('file');
+    window.mdKanban.close();
+
+    kanbanFolderOk = cardsInPorHacer === 2 && hasSourceBadge && !!cardFromA && toggleWroteCorrectFileOk;
+    kanbanFolderDetail = `tarjetasPorHacer=${cardsInPorHacer} badgeOrigen=${hasSourceBadge} tarjetaAEncontrada=${!!cardFromA} escribioArchivoCorrecto=${toggleWroteCorrectFileOk}`;
+  }
+  check('Tablero Kanban en modo "carpeta completa": junta columnas de varios archivos y togglea el archivo correcto', kanbanFolderOk, kanbanFolderDetail);
+
   // 38. Grafo de notas: nodos = archivos de la carpeta, aristas = wikilinks
   let graphOk = false;
   if (fixturesDir) {
@@ -743,6 +1078,27 @@
     check('Grafo de notas: detecta nodos y aristas de wikilinks', false, 'sin fixturesDir');
   }
 
+  // 38b. Grafo de notas: reacomodo manual de un nodo se persiste por
+  // carpeta (config.json) y se aplica de nuevo la próxima vez que se abre.
+  let graphPersistOk = false;
+  let graphPersistDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    await window.mdGraph.open();
+    const before = window.mdGraph.getData();
+    const nodeId = before.nodes[0].id;
+    await window.mdGraph.moveNodeForTest(nodeId, 321, 123);
+    window.mdGraph.close();
+
+    await window.mdGraph.open();
+    const after = window.mdGraph.getData();
+    const moved = after.nodes.find((n) => n.id === nodeId);
+    window.mdGraph.close();
+    graphPersistOk = !!moved && Math.round(moved.x) === 321 && Math.round(moved.y) === 123;
+    graphPersistDetail = `nodo=${nodeId} x=${moved ? moved.x : null} y=${moved ? moved.y : null}`;
+  }
+  check('Grafo de notas: el reacomodo manual de un nodo se persiste por carpeta y se reaplica al reabrir', graphPersistOk, graphPersistDetail);
+
   // 39. Ejecutar código JS: botón "Ejecutar" en un bloque ```js``` corre en
   // un Worker aislado y muestra la salida (console.log + valor de retorno)
   window.mdCodeMirror.setValue('```js\nconsole.log("hola");\n2 + 2;\n```\n');
@@ -755,6 +1111,122 @@
   }, 5000);
   const runCodeOk = !!outputEl && outputEl.textContent.includes('hola') && outputEl.textContent.includes('=> 4');
   check('Ejecutar código JS: "Ejecutar" corre el bloque en un Worker y muestra la salida', runCodeOk, `salida="${outputEl ? outputEl.textContent.replace(/\n/g, '\\n') : null}"`);
+
+  // 40. Operaciones de páginas PDF: abrir (pdf-lib en memoria), rotar,
+  // reordenar (drag&drop, mismo mecanismo que el Kanban) y borrar páginas
+  let pdfPagesOk = false;
+  let pdfPagesDetail = 'sin fixturesDir';
+  if (fixturePdfPath) {
+    await window.mdPdfPages.loadFromPath(fixturePdfPath);
+    const initialCount = window.mdPdfPages.getState().pageCount;
+
+    const rows = () => document.querySelectorAll('.pdfpages-page-row');
+    rows()[0].querySelector('button[title="Rotar +90°"]').click();
+    const rotatedOk = window.mdPdfPages.getState().rotations[0] === 90;
+
+    // Arrastra la página 0 (ya rotada) hasta soltarla en la fila de la página 2
+    const dt = new DataTransfer();
+    dt.setData('application/x-mk-pdfpage', '0');
+    rows()[2].dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    const reorderedOk = JSON.stringify(window.mdPdfPages.getState().rotations) === JSON.stringify([0, 90, 0]);
+
+    rows()[rows().length - 1].querySelector('button[title="Borrar página"]').click();
+    const deletedOk = window.mdPdfPages.getState().pageCount === initialCount - 1;
+
+    await window.mdPdfPages.mergeFromPath(fixturePdf2Path);
+    const mergedOk = window.mdPdfPages.getState().pageCount === initialCount - 1 + 1;
+
+    pdfPagesOk = initialCount === 3 && rotatedOk && reorderedOk && deletedOk && mergedOk;
+    pdfPagesDetail = `inicial=${initialCount} rotado=${rotatedOk} reordenado=${reorderedOk} borrado=${deletedOk} unido=${mergedOk}`;
+  }
+  check('Editor de páginas PDF: abrir, rotar, reordenar, borrar y unir', pdfPagesOk, pdfPagesDetail);
+
+  // 41. Marca de agua, texto/firma y "separar" (extraer rango) producen PDFs
+  // válidos de verdad, no solo cambian el estado en memoria: se guardan
+  // (diálogo salteado en modo test) y se releen con PDFLib para confirmarlo.
+  let pdfWatermarkOk = false;
+  let pdfWatermarkDetail = 'sin fixturesDir';
+  if (fixturePdfPath) {
+    await window.mdPdfPages.loadFromPath(fixturePdfPath);
+    document.getElementById('pdfpages-watermark-text').value = 'BORRADOR';
+    document.getElementById('pdfpages-watermark-apply').click();
+    document.getElementById('pdfpages-stamp-text').value = 'Firmado';
+    document.getElementById('pdfpages-stamp-page').value = '2';
+    document.getElementById('pdfpages-stamp-apply').click();
+
+    const originalAlert = window.alert;
+    let savedMsg = null;
+    window.alert = (m) => { savedMsg = m; };
+    document.getElementById('pdfpages-save').click();
+    await waitFor(() => savedMsg !== null);
+    window.alert = originalAlert;
+
+    const savedPath = savedMsg ? savedMsg.replace('Guardado en: ', '') : null;
+    let reopenedOk = false;
+    if (savedPath) {
+      const base64 = await window.mdEditor.pdfReadBytes(savedPath);
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const reopened = await PDFLib.PDFDocument.load(bytes);
+      reopenedOk = reopened.getPageCount() === 3;
+    }
+
+    document.getElementById('pdfpages-split-range').value = '1-2';
+    let splitMsg = null;
+    window.alert = (m) => { splitMsg = m; };
+    document.getElementById('pdfpages-split-apply').click();
+    await waitFor(() => splitMsg !== null);
+    window.alert = originalAlert;
+    const splitPath = splitMsg ? splitMsg.replace('Guardado en: ', '') : null;
+    let splitOk = false;
+    if (splitPath) {
+      const base64 = await window.mdEditor.pdfReadBytes(splitPath);
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const extracted = await PDFLib.PDFDocument.load(bytes);
+      splitOk = extracted.getPageCount() === 2;
+    }
+
+    pdfWatermarkOk = reopenedOk && splitOk;
+    pdfWatermarkDetail = `guardadoOk=${reopenedOk} separadoOk=${splitOk} (2 de 3 páginas)`;
+  }
+  check('Editor de páginas PDF: marca de agua, firma y "separar" generan PDFs válidos al guardar', pdfWatermarkOk, pdfWatermarkDetail);
+
+  // 42. Subrayar texto en PDF: pdf.js renderiza la página, un rectángulo
+  // normalizado se hornea de verdad en el PDF (pdf-lib + blendMode Multiply)
+  // al guardar, no queda solo como dibujo en el canvas.
+  let pdfHighlightOk = false;
+  let pdfHighlightDetail = 'sin fixturesDir';
+  if (fixturePdfPath) {
+    await window.mdPdfHighlight.loadFromPath(fixturePdfPath);
+    const stateBefore = window.mdPdfHighlight.getState();
+    window.mdPdfHighlight.addHighlightForTest(0.1, 0.4, 0.5, 0.08);
+    const stateAfter = window.mdPdfHighlight.getState();
+
+    const originalAlert = window.alert;
+    let savedMsg = null;
+    window.alert = (m) => { savedMsg = m; };
+    document.getElementById('pdfhighlight-save').click();
+    await waitFor(() => savedMsg !== null);
+    window.alert = originalAlert;
+
+    const savedPath = savedMsg ? savedMsg.replace('Guardado en: ', '') : null;
+    let reopenedOk = false;
+    if (savedPath) {
+      const base64 = await window.mdEditor.pdfReadBytes(savedPath);
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const reopened = await PDFLib.PDFDocument.load(bytes);
+      reopenedOk = reopened.getPageCount() === 3;
+    }
+
+    pdfHighlightOk = stateBefore.highlightCount === 0 && stateAfter.highlightCount === 1 && reopenedOk;
+    pdfHighlightDetail = `antes=${stateBefore.highlightCount} despues=${stateAfter.highlightCount} guardadoOk=${reopenedOk}`;
+  }
+  check('Subrayar texto en PDF: agrega un rectángulo y lo hornea al guardar', pdfHighlightOk, pdfHighlightDetail);
 
   return results;
 })();

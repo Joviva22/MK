@@ -38,6 +38,8 @@
     <button id="btn-tags" class="toolbar-button" title="Etiquetas de la carpeta (Ctrl+Shift+T)"><i data-lucide="tag"></i></button>
     <button id="btn-backlinks" class="toolbar-button" title="Backlinks: qué enlaza aquí (Ctrl+Shift+B)"><i data-lucide="link-2"></i></button>
     <button id="btn-plugins" class="toolbar-button" title="Plugins y comunidad"><i data-lucide="puzzle"></i></button>
+    <button id="btn-pdfpages" class="toolbar-button" title="Operaciones de páginas PDF (unir, separar, rotar, marca de agua...)"><i data-lucide="file-stack"></i></button>
+    <button id="btn-pdfhighlight" class="toolbar-button" title="Subrayar texto en PDF"><i data-lucide="highlighter"></i></button>
 
     <div class="dropdown">
       <button id="btn-export" class="toolbar-button" title="Exportar"><i data-lucide="download"></i> Exportar ▾</button>
@@ -46,6 +48,7 @@
         <button id="btn-export-pdf">Exportar a PDF</button>
         <button id="btn-export-epub">Exportar a EPUB</button>
         <button id="btn-export-anki">Exportar a tarjetas (Anki)</button>
+        <button id="btn-export-docx">Exportar a Word (.docx)</button>
       </div>
     </div>
 
@@ -118,6 +121,15 @@
       </div>
       <div id="toc-panel" hidden></div>
       <div id="diff-panel" hidden></div>
+    </div>
+    <div class="resizer" id="resizer-secondary" hidden></div>
+    <div class="secondary-pane" id="secondary-pane" hidden>
+      <div class="secondary-pane-header">
+        <span id="secondary-pane-title"></span>
+        <span class="secondary-pane-hint">clic para editar acá</span>
+        <button id="secondary-pane-close" class="toolbar-button" title="Cerrar panel secundario">✕</button>
+      </div>
+      <div class="secondary-pane-body" id="secondary-pane-body"></div>
     </div>
   </div>
 
@@ -196,6 +208,8 @@
           <li><strong>Exportar a EPUB</strong> y <strong>a tarjetas Anki</strong> — menú ⬇ Exportar.</li>
           <li><strong>Sincronizar con git al guardar</strong> — ⚙ Ajustes (necesita que la carpeta ya sea un repo git).</li>
           <li><strong>Ejecutar código JavaScript</strong> — botón "▶ Ejecutar" en bloques <code>```js```</code> del preview (aislado en un Web Worker, sin acceso a tus archivos).</li>
+          <li><strong>Operaciones de páginas PDF</strong> — unir, separar, rotar, reordenar/borrar, marca de agua y texto/firma. Botón 🗂 de la toolbar.</li>
+          <li><strong>Subrayar texto en PDF</strong> — botón 🖊 de la toolbar.</li>
         </ul>
         <p>Ver <code>MANUAL.md</code> para el detalle de cada una.</p>
       </div>
@@ -204,7 +218,13 @@
 
   <div id="kanban-panel" class="modal-overlay palette-overlay" hidden>
     <div class="command-palette kanban-modal">
-      <div class="backlinks-title">Tablero Kanban — encabezados "## Columna" con listas debajo</div>
+      <div class="backlinks-title-row">
+        <div class="backlinks-title">Tablero Kanban — encabezados "## Columna" con listas debajo</div>
+        <div class="kanban-scope-toggle">
+          <button id="kanban-scope-file" class="toolbar-button kanban-scope-active">Archivo activo</button>
+          <button id="kanban-scope-folder" class="toolbar-button">Carpeta completa</button>
+        </div>
+      </div>
       <div id="kanban-board" class="kanban-board"></div>
     </div>
   </div>
@@ -213,6 +233,75 @@
     <div class="command-palette graph-modal">
       <div class="backlinks-title">Grafo de notas — clic en un nodo para abrirlo</div>
       <canvas id="graph-canvas" width="760" height="520"></canvas>
+    </div>
+  </div>
+
+  <div id="pdfpages-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette pdfpages-modal">
+      <div class="backlinks-title">Operaciones de páginas PDF</div>
+      <div class="pdfpages-toolbar">
+        <button id="pdfpages-open" class="toolbar-button">Abrir PDF...</button>
+        <button id="pdfpages-merge" class="toolbar-button" disabled>Unir con otro PDF...</button>
+        <button id="pdfpages-save" class="toolbar-button" disabled>Guardar como...</button>
+        <span id="pdfpages-filename" class="pdfpages-filename"></span>
+      </div>
+      <div id="pdfpages-empty" class="command-palette-empty">Abrí un PDF para empezar. Arrastrá las páginas para reordenarlas.</div>
+      <div id="pdfpages-list" class="pdfpages-list"></div>
+      <div id="pdfpages-actions" class="pdfpages-actions" hidden>
+        <div class="pdfpages-action-row">
+          <label for="pdfpages-watermark-text">Marca de agua</label>
+          <input id="pdfpages-watermark-text" type="text" placeholder="Texto, ej. BORRADOR" />
+          <button id="pdfpages-watermark-apply" class="toolbar-button">Aplicar a todas las páginas</button>
+        </div>
+        <div class="pdfpages-action-row">
+          <label for="pdfpages-stamp-text">Texto / firma</label>
+          <input id="pdfpages-stamp-text" type="text" placeholder="Texto a insertar" />
+          <input id="pdfpages-stamp-page" type="number" min="1" value="1" title="Número de página" />
+          <select id="pdfpages-stamp-pos">
+            <option value="br">Abajo derecha</option>
+            <option value="bl">Abajo izquierda</option>
+            <option value="tr">Arriba derecha</option>
+            <option value="tl">Arriba izquierda</option>
+            <option value="center">Centro</option>
+          </select>
+          <button id="pdfpages-stamp-apply" class="toolbar-button">Insertar</button>
+        </div>
+        <div class="pdfpages-action-row">
+          <label for="pdfpages-split-range">Separar (extraer páginas)</label>
+          <input id="pdfpages-split-range" type="text" placeholder="Ej. 1-3,5" />
+          <button id="pdfpages-split-apply" class="toolbar-button">Extraer y guardar como...</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pdfhighlight-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette pdfhighlight-modal">
+      <div class="backlinks-title">Subrayar texto en PDF — arrastrá el mouse sobre el texto</div>
+      <div class="pdfpages-toolbar">
+        <button id="pdfhighlight-open" class="toolbar-button">Abrir PDF...</button>
+        <button id="pdfhighlight-prev" class="toolbar-button" disabled>◀</button>
+        <span id="pdfhighlight-pageinfo" class="pdfpages-filename">–</span>
+        <button id="pdfhighlight-next" class="toolbar-button" disabled>▶</button>
+        <button id="pdfhighlight-undo" class="toolbar-button" disabled>Deshacer último subrayado</button>
+        <button id="pdfhighlight-save" class="toolbar-button" disabled>Guardar como...</button>
+      </div>
+      <div id="pdfhighlight-empty" class="command-palette-empty">Abrí un PDF para empezar.</div>
+      <div id="pdfhighlight-canvas-wrap" class="pdfhighlight-canvas-wrap" hidden>
+        <canvas id="pdfhighlight-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div id="git-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette git-modal">
+      <div class="backlinks-title">Sincronizar con git — elegir archivos y mensaje</div>
+      <div id="git-empty" class="command-palette-empty">Cargando...</div>
+      <div id="git-file-list" class="git-file-list" hidden></div>
+      <div id="git-actions" class="git-actions" hidden>
+        <input id="git-commit-message" type="text" placeholder="Mensaje del commit" autocomplete="off" spellcheck="false" />
+        <button id="git-commit-btn" class="toolbar-button">Commitear seleccionados</button>
+      </div>
     </div>
   </div>
 
@@ -227,9 +316,16 @@
   <script src="../node_modules/lucide/dist/umd/lucide.js"></script>
   <script src="../node_modules/diff/dist/diff.js"></script>
   <script src="../node_modules/mermaid/dist/mermaid.min.js"></script>
+  <script src="../node_modules/pdf-lib/dist/pdf-lib.min.js"></script>
+  <script type="module" src="pdfjs-loader.mjs"></script>
+  <script src="../node_modules/mammoth/mammoth.browser.min.js"></script>
+  <script src="../node_modules/turndown/dist/turndown.js"></script>
+  <script src="../node_modules/turndown-plugin-gfm/dist/turndown-plugin-gfm.js"></script>
+  <script src="../node_modules/docx/dist/index.iife.js"></script>
 
   <script src="editor.js"></script>
   <script src="tabs.js"></script>
+  <script src="foldclutter.js"></script>
   <script src="ui-dropdowns.js"></script>
   <script src="templates.js"></script>
   <script src="settings.js"></script>
@@ -252,8 +348,14 @@
   <script src="plugins.js"></script>
   <script src="kanban.js"></script>
   <script src="graph.js"></script>
+  <script src="pdfpages.js"></script>
+  <script src="pdfhighlight.js"></script>
+  <script src="gitpanel.js"></script>
+  <script src="docximport.js"></script>
+  <script src="docxexport.js"></script>
   <script src="exportdoc.js"></script>
   <script src="sidebar.js"></script>
+  <script src="secondarypane.js"></script>
   <script src="resize.js"></script>
   <script src="icons.js"></script>
 </body>

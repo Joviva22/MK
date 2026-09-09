@@ -25,12 +25,25 @@ function insertHeading(cm) {
   cm.focus();
 }
 
+// Antes insertaba siempre una tabla fija de 2x1 y había que agregar filas/
+// columnas a mano tecleando pipes — ahora se pregunta el tamaño y arma la
+// tabla completa de una, encabezados incluidos.
 function insertTable(cm) {
+  const colsInput = prompt('¿Cuántas columnas?', '2');
+  if (colsInput === null) return;
+  const rowsInput = prompt('¿Cuántas filas de datos? (sin contar el encabezado)', '2');
+  if (rowsInput === null) return;
+  const cols = Math.min(20, Math.max(1, parseInt(colsInput, 10) || 2));
+  const rows = Math.min(50, Math.max(1, parseInt(rowsInput, 10) || 2));
+
   ensureFreshLine(cm);
   const cursor = cm.getCursor();
-  const block = '| Columna 1 | Columna 2 |\n| --------- | --------- |\n|           |           |';
+  const header = `| ${Array.from({ length: cols }, (_, i) => `Columna ${i + 1}`).join(' | ')} |`;
+  const sep = `| ${Array.from({ length: cols }, () => '---').join(' | ')} |`;
+  const bodyRows = Array.from({ length: rows }, () => `| ${Array.from({ length: cols }, () => '  ').join(' | ')} |`);
+  const block = [header, sep, ...bodyRows].join('\n');
   cm.replaceRange(block, cursor);
-  cm.setCursor(cursor.line + 2, 2);
+  cm.setSelection({ line: cursor.line, ch: 2 }, { line: cursor.line, ch: 2 + 'Columna 1'.length });
   cm.focus();
 }
 
@@ -66,6 +79,14 @@ function insertCallout(cm) {
   cm.focus();
 }
 
+function insertHighlight(cm) {
+  const from = cm.getCursor('from');
+  const text = cm.getSelection() || 'texto';
+  cm.replaceSelection(`==${text}==`);
+  cm.setSelection({ line: from.line, ch: from.ch + 2 }, { line: from.line, ch: from.ch + 2 + text.length });
+  cm.focus();
+}
+
 let clickWordRange = null; // {anchor, head} en el cm del "word" bajo el clic derecho, si había uno
 let pendingSpellcheck = null; // último {misspelledWord, dictionarySuggestions} recibido de main.js
 
@@ -86,7 +107,8 @@ const MENU_ITEMS = [
   { label: 'Insertar enlace', action: 'link' },
   { label: 'Insertar imagen', action: 'image' },
   { label: 'Insertar bloque de código', action: 'code' },
-  { label: 'Insertar cita / callout', action: 'callout' }
+  { label: 'Insertar cita / callout', action: 'callout' },
+  { label: 'Subrayar / resaltar texto', action: 'highlight' }
 ];
 
 function runAction(action, value) {
@@ -116,6 +138,7 @@ function runAction(action, value) {
     case 'image': insertImage(cm); break;
     case 'code': insertCodeBlock(cm); break;
     case 'callout': insertCallout(cm); break;
+    case 'highlight': insertHighlight(cm); break;
     case 'spellfix': insertSpellSuggestion(cm, value); break;
     case 'spellAddWord': window.mdEditor.addWordToDictionary(value); break;
     default: break;

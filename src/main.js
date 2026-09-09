@@ -22,7 +22,7 @@ const sessionPath = path.join(app.getPath('userData'), 'session.json');
 // argumento: la posición cambia entre dev ("electron . archivo.md") y
 // empaquetado ("MK archivo.md"), pero esto funciona igual en ambos casos.
 function getFileArgFromArgv(argv) {
-  return argv.find((arg) => /\.(md|markdown|tex)$/i.test(arg) && fs.existsSync(arg)) || null;
+  return argv.find((arg) => /\.(md|markdown|tex|docx)$/i.test(arg) && fs.existsSync(arg)) || null;
 }
 
 let pendingFilePath = getFileArgFromArgv(process.argv);
@@ -171,6 +171,7 @@ ipcMain.handle('file:open', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     filters: [
       { name: 'Markdown y LaTeX', extensions: ['md', 'markdown', 'txt', 'tex'] },
+      { name: 'Word', extensions: ['docx'] },
       { name: 'Todos los archivos', extensions: ['*'] }
     ],
     properties: ['openFile']
@@ -182,12 +183,44 @@ ipcMain.handle('file:open', async () => {
 // Historial local de versiones: antes de pisar un archivo, guarda una copia
 // del contenido previo bajo userData/backups/<hash de la ruta>/. Así un
 // autoguardado con contenido no deseado no borra el trabajo anterior sin
-// dejar rastro. Se guardan como mucho las últimas MAX_BACKUPS_PER_FILE.
+// dejar rastro. Se guardan como mucho las últimas MAX_BACKUPS_PER_FILE por
+// archivo, y aparte hay un tope de espacio total (MAX_TOTAL_BACKUPS_BYTES)
+// que poda los backups más viejos de TODOS los archivos si se pasa — antes
+// solo existía el límite por archivo, así que un proyecto con muchos
+// archivos grandes podía acumular espacio sin límite real en userData.
 const backupsRoot = path.join(app.getPath('userData'), 'backups');
 const MAX_BACKUPS_PER_FILE = 20;
+// Overridable por test/run.js (MK_TEST_MAX_BACKUP_BYTES) para poder probar
+// la poda real sin tener que escribir 200 MB de backups en la suite.
+const MAX_TOTAL_BACKUPS_BYTES = Number(process.env.MK_TEST_MAX_BACKUP_BYTES) || 200 * 1024 * 1024; // 200 MB
 
 function backupDirFor(filePath) {
   return path.join(backupsRoot, crypto.createHash('md5').update(filePath).digest('hex'));
+}
+
+function pruneGlobalBackups() {
+  try {
+    const entries = [];
+    for (const dirName of fs.readdirSync(backupsRoot)) {
+      const dirPath = path.join(backupsRoot, dirName);
+      if (!fs.statSync(dirPath).isDirectory()) continue;
+      for (const fileName of fs.readdirSync(dirPath)) {
+        const filePath = path.join(dirPath, fileName);
+        const stat = fs.statSync(filePath);
+        entries.push({ filePath, size: stat.size, mtime: stat.mtimeMs });
+      }
+    }
+    let total = entries.reduce((sum, e) => sum + e.size, 0);
+    if (total <= MAX_TOTAL_BACKUPS_BYTES) return;
+    entries.sort((a, b) => a.mtime - b.mtime); // más viejo primero, sin importar de qué archivo es
+    for (const e of entries) {
+      if (total <= MAX_TOTAL_BACKUPS_BYTES) break;
+      fs.unlinkSync(e.filePath);
+      total -= e.size;
+    }
+  } catch (e) {
+    // una poda fallida no debe impedir guardar el archivo real
+  }
 }
 
 function makeBackup(filePath) {
@@ -201,6 +234,7 @@ function makeBackup(filePath) {
     while (entries.length > MAX_BACKUPS_PER_FILE) {
       fs.unlinkSync(path.join(dir, entries.shift()));
     }
+    pruneGlobalBackups();
   } catch (e) {
     // un backup fallido no debe impedir guardar el archivo real
   }
@@ -459,6 +493,19 @@ function walkTextFiles(root, onFile) {
   walk(root);
 }
 
+// Tablero Kanban en modo "carpeta completa" (ver kanban.js): junta el
+// contenido crudo de todos los archivos de texto para que el renderer arme
+// las columnas con el mismo parseColumns que ya usa en modo archivo activo
+// — la lógica de "## Columna" + lista queda en un solo lugar.
+ipcMain.handle('kanban:readFolderFiles', (event, root) => {
+  if (!root) return [];
+  const files = [];
+  walkTextFiles(root, (fullPath, content) => {
+    files.push({ path: fullPath, content });
+  });
+  return files;
+});
+
 ipcMain.handle('search:inFolder', (event, { root, query }) => {
   if (!root || !query || query.trim().length < 2) return [];
   const q = query.toLowerCase();
@@ -603,6 +650,63 @@ ipcMain.handle('graph:build', (event, root) => {
     nodes: files.map((f) => ({ id: f.name, path: f.path })),
     edges
   };
+});
+
+// Herramientas de PDF (unir/separar/rotar/reordenar/marca de agua/firma y
+// subrayado): la lógica de edición corre en el renderer con pdf-lib (no
+// necesita Node), acá solo se resuelven diálogos nativos y lectura/escritura
+// de bytes — igual separación que el resto de exportadores de este archivo.
+ipcMain.handle('pdf:pickFiles', async (event, { multi }) => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    properties: multi ? ['openFile', 'multiSelections'] : ['openFile']
+  });
+  if (result.canceled || !result.filePaths.length) return null;
+  return result.filePaths;
+});
+
+ipcMain.handle('pdf:readBytes', (event, filePath) => {
+  try {
+    return fs.readFileSync(filePath).toString('base64');
+  } catch (e) {
+    return null;
+  }
+});
+
+ipcMain.handle('pdf:saveBytes', async (event, { base64, defaultName }) => {
+  const targetPath = await resolveSavePath(defaultName || 'documento.pdf', [{ name: 'PDF', extensions: ['pdf'] }]);
+  if (!targetPath) return null;
+  fs.writeFileSync(targetPath, Buffer.from(base64, 'base64'));
+  return targetPath;
+});
+
+// Abrir .docx (ver docximport.js): mammoth+turndown corren en el renderer,
+// acá solo se leen los bytes crudos, igual separación que pdf:readBytes.
+ipcMain.handle('docx:readBytes', (event, filePath) => {
+  try {
+    return fs.readFileSync(filePath).toString('base64');
+  } catch (e) {
+    return null;
+  }
+});
+
+// Genérico, para leer los bytes de cualquier archivo local (usado por
+// docxexport.js para embeber imágenes locales al exportar a .docx) — la
+// restricción de ruta (no salir de la carpeta abierta) la valida el
+// renderer antes de llamar esto, igual que con las imágenes normales.
+ipcMain.handle('asset:readBytes', (event, filePath) => {
+  try {
+    return fs.readFileSync(filePath).toString('base64');
+  } catch (e) {
+    return null;
+  }
+});
+
+ipcMain.handle('export:docx', async (event, { base64, defaultName }) => {
+  const targetPath = await resolveSavePath(defaultName || 'documento.docx', [{ name: 'Word', extensions: ['docx'] }]);
+  if (!targetPath) return null;
+  fs.writeFileSync(targetPath, Buffer.from(base64, 'base64'));
+  return targetPath;
 });
 
 ipcMain.handle('export:html', async (event, { html, defaultName }) => {
@@ -754,6 +858,28 @@ ipcMain.handle('git:sync', async (event, root) => {
   await runGit(['add', '-A'], root);
   const commit = await runGit(['commit', '-m', 'MK: guardado automático'], root);
   if (commit.error) return { ok: false, reason: 'nothing-to-commit' };
+  return { ok: true };
+});
+
+// Control fino aparte del sync automático de arriba: lista qué cambió
+// (git status --porcelain) para elegir a mano qué archivos entran en el
+// commit y escribir el mensaje — ver gitpanel.js.
+ipcMain.handle('git:status', async (event, root) => {
+  const result = await runGit(['status', '--porcelain'], root);
+  if (result.error) return null;
+  return result.stdout.split('\n').filter(Boolean).map((line) => ({
+    status: line.slice(0, 2),
+    file: line.slice(3)
+  }));
+});
+
+ipcMain.handle('git:commitSelected', async (event, { root, files, message }) => {
+  if (!files || !files.length) return { ok: false, reason: 'no-files' };
+  if (!message || !message.trim()) return { ok: false, reason: 'no-message' };
+  const add = await runGit(['add', '--', ...files], root);
+  if (add.error) return { ok: false, reason: 'add-failed' };
+  const commit = await runGit(['commit', '-m', message], root);
+  if (commit.error) return { ok: false, reason: 'commit-failed' };
   return { ok: true };
 });
 

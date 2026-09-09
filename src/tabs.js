@@ -86,6 +86,13 @@ async function openTab(filePath) {
     activateTab(existing.id);
     return;
   }
+  // .docx no es texto plano (es un .zip con XML adentro) — se convierte a
+  // Markdown (mammoth + turndown, ver docximport.js) en vez de pasar por
+  // el camino normal de abajo, que lo detectaría como binario.
+  if (/\.docx$/i.test(filePath)) {
+    await window.mdDocxImport.openAsMarkdown(filePath);
+    return;
+  }
   const result = await window.mdEditor.readFile(filePath);
   if (result === null) return;
   if (result.binary) {
