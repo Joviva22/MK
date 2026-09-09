@@ -14,7 +14,7 @@ Editor (CodeMirror) con preview en vivo al lado, pestañas con autoguardado, y r
 También se pueden abrir y editar archivos de código (`.py`, `.c`/`.cpp`, `.java`, `.sh`) con resaltado de sintaxis propio para cada lenguaje — el preview (que renderiza Markdown) se oculta solo en esos casos, no tiene sentido ahí.
 
 ### Buscar y moverte rápido
-`Ctrl+F` busca y reemplaza dentro del archivo actual; `Ctrl+Shift+F` busca en toda la carpeta abierta. Paleta de comandos (`Ctrl+Shift+P`) para no memorizar dónde está cada botón. Ver [`COMANDOS.md`](./COMANDOS.md) para la lista completa de atajos.
+`Ctrl+F` busca y reemplaza dentro del archivo actual; `Ctrl+Shift+F` busca en toda la carpeta abierta; `Ctrl+P` abre un archivo por nombre sin tocar el mouse. Paleta de comandos (`Ctrl+Shift+P`) para no memorizar dónde está cada botón. Ver [`COMANDOS.md`](./COMANDOS.md) para la lista completa de atajos.
 
 ### Un segundo archivo al lado (split view)
 El **panel secundario** muestra un segundo archivo (Markdown, PDF, `.docx` o imagen) de solo lectura junto al principal, del mismo ancho y con su propio divisor para repartir el espacio. Un clic en el título lo "promueve" a principal — sin necesidad de una segunda instancia del editor.
@@ -31,9 +31,12 @@ Todo esto viene ya armado en la app, no son plugins de terceros:
 - Nota diaria, snippets de texto (`/fecha`, `/hora` y los tuyos propios) y plantillas con variables.
 - Historial de versiones local con diff y vista de cambios sin guardar.
 - Corrector ortográfico nativo, con sugerencias por clic derecho.
+- Temporizador **Pomodoro** con notificación de fin de fase, minutos configurables.
+- Controlar el reproductor multimedia del sistema (play/pausa/siguiente) vía `playerctl` — solo Linux.
+- Editar tablas Markdown ya escritas: agregar fila/columna o alinear, desde el menú contextual.
 
 ### Personalización
-26 temas de color, tipografía y tamaño de fuente del editor (con zoom rápido por `Ctrl+scroll`), ancho de tabulación, autoguardado configurable, y modo enfoque/lectura para escribir sin distracciones.
+26 temas de color, tipografía y tamaño de fuente del editor (con zoom rápido por `Ctrl+scroll`), ancho de tabulación, autoguardado configurable, y modo enfoque/lectura para escribir sin distracciones. Los botones de la toolbar que no uses se pueden ocultar desde ⚙ Ajustes (y ejecutar desde ahí igual, sin tener que mostrarlos primero).
 
 ## Documentación
 

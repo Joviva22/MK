@@ -79,6 +79,106 @@ function insertCallout(cm) {
   cm.focus();
 }
 
+// Editar tablas Markdown ya escritas (no solo crearlas con "Insertar
+// tabla"). Detecta el bloque de tabla en la posición del clic derecho
+// (findTableRange) y opera sobre todas sus filas a la vez.
+function isTableRow(text) {
+  return /^\s*\|.*\|\s*$/.test(text);
+}
+
+function isSeparatorRow(text) {
+  return /^\s*\|(\s*:?-{1,}:?\s*\|)+\s*$/.test(text);
+}
+
+function findTableRange(cm, line) {
+  if (line < 0 || line >= cm.lineCount() || !isTableRow(cm.getLine(line))) return null;
+  let start = line;
+  while (start - 1 >= 0 && isTableRow(cm.getLine(start - 1))) start--;
+  let end = line;
+  while (end + 1 < cm.lineCount() && isTableRow(cm.getLine(end + 1))) end++;
+  if (end - start < 1 || !isSeparatorRow(cm.getLine(start + 1))) return null;
+  return { start, end };
+}
+
+function splitCells(text) {
+  const t = text.trim().replace(/^\|/, '').replace(/\|$/, '');
+  return t.split('|').map((c) => c.trim());
+}
+
+function buildRow(cells) {
+  return `| ${cells.join(' | ')} |`;
+}
+
+function columnIndexAt(cm, pos) {
+  const before = cm.getLine(pos.line).slice(0, pos.ch);
+  const pipes = (before.match(/\|/g) || []).length;
+  return Math.max(0, pipes - 1);
+}
+
+function insertTableColumn(cm, pos) {
+  const range = findTableRange(cm, pos.line);
+  if (!range) return;
+  const colIndex = columnIndexAt(cm, pos);
+  for (let n = range.start; n <= range.end; n++) {
+    const cells = splitCells(cm.getLine(n));
+    cells.splice(colIndex + 1, 0, n === range.start + 1 ? '---' : '');
+    cm.replaceRange(buildRow(cells), { line: n, ch: 0 }, { line: n, ch: cm.getLine(n).length });
+  }
+  cm.focus();
+}
+
+function insertTableRow(cm, pos) {
+  const range = findTableRange(cm, pos.line);
+  if (!range) return;
+  const colCount = splitCells(cm.getLine(range.start)).length;
+  const newRow = buildRow(new Array(colCount).fill(''));
+  const insertAfter = pos.line === range.start ? range.start + 1 : pos.line;
+  cm.replaceRange('\n' + newRow, { line: insertAfter, ch: cm.getLine(insertAfter).length });
+  cm.focus();
+}
+
+function alignTableAt(cm, pos) {
+  const range = findTableRange(cm, pos.line);
+  if (!range) return;
+  const rows = [];
+  for (let n = range.start; n <= range.end; n++) rows.push(splitCells(cm.getLine(n)));
+  const colCount = rows.reduce((max, r) => Math.max(max, r.length), 0);
+  rows.forEach((r) => { while (r.length < colCount) r.push(''); });
+
+  const SEP = 1;
+  const aligns = rows[SEP].map((cell) => {
+    const left = cell.startsWith(':');
+    const right = cell.endsWith(':');
+    if (left && right) return 'center';
+    if (right) return 'right';
+    if (left) return 'left';
+    return 'none';
+  });
+
+  const widths = [];
+  for (let c = 0; c < colCount; c++) {
+    let w = 3;
+    rows.forEach((r, i) => { if (i !== SEP) w = Math.max(w, r[c].length); });
+    widths[c] = w;
+  }
+
+  const built = rows.map((r, i) => {
+    if (i === SEP) {
+      return buildRow(r.map((_, c) => {
+        const w = widths[c];
+        if (aligns[c] === 'center') return ':' + '-'.repeat(Math.max(1, w - 2)) + ':';
+        if (aligns[c] === 'right') return '-'.repeat(Math.max(1, w - 1)) + ':';
+        if (aligns[c] === 'left') return ':' + '-'.repeat(Math.max(1, w - 1));
+        return '-'.repeat(w);
+      }));
+    }
+    return buildRow(r.map((cell, c) => cell.padEnd(widths[c])));
+  });
+
+  cm.replaceRange(built.join('\n'), { line: range.start, ch: 0 }, { line: range.end, ch: cm.getLine(range.end).length });
+  cm.focus();
+}
+
 function insertHighlight(cm) {
   const from = cm.getCursor('from');
   const text = cm.getSelection() || 'texto';
@@ -88,6 +188,7 @@ function insertHighlight(cm) {
 }
 
 let clickWordRange = null; // {anchor, head} en el cm del "word" bajo el clic derecho, si había uno
+let clickPos = null; // posición exacta del clic derecho (el cursor real de CodeMirror no se mueve con clic derecho)
 let pendingSpellcheck = null; // último {misspelledWord, dictionarySuggestions} recibido de main.js
 
 function insertSpellSuggestion(cm, suggestion) {
@@ -139,6 +240,9 @@ function runAction(action, value) {
     case 'code': insertCodeBlock(cm); break;
     case 'callout': insertCallout(cm); break;
     case 'highlight': insertHighlight(cm); break;
+    case 'tableAddCol': insertTableColumn(cm, clickPos); break;
+    case 'tableAddRow': insertTableRow(cm, clickPos); break;
+    case 'tableAlign': alignTableAt(cm, clickPos); break;
     case 'spellfix': insertSpellSuggestion(cm, value); break;
     case 'spellAddWord': window.mdEditor.addWordToDictionary(value); break;
     default: break;
@@ -156,6 +260,12 @@ function buildItems() {
       items.push({ label: 'Sin sugerencias', disabled: true });
     }
     items.push({ label: `Agregar "${word}" al diccionario`, action: 'spellAddWord', value: word });
+    items.push({ sep: true });
+  }
+  if (clickPos && findTableRange(window.mdCodeMirror, clickPos.line)) {
+    items.push({ label: 'Agregar columna acá', action: 'tableAddCol' });
+    items.push({ label: 'Agregar fila acá', action: 'tableAddRow' });
+    items.push({ label: 'Alinear tabla', action: 'tableAlign' });
     items.push({ sep: true });
   }
   return items.concat(MENU_ITEMS);
@@ -209,6 +319,7 @@ document.getElementById('editor-pane').addEventListener('contextmenu', (e) => {
   const pos = cm.coordsChar({ left: e.clientX, top: e.clientY }, 'window');
   const word = cm.findWordAt(pos);
   clickWordRange = word && word.anchor.ch !== word.head.ch ? { anchor: word.anchor, head: word.head } : null;
+  clickPos = pos;
   showContextMenu(e.clientX, e.clientY);
 });
 

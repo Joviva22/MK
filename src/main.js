@@ -883,6 +883,34 @@ ipcMain.handle('git:commitSelected', async (event, { root, files, message }) => 
   return { ok: true };
 });
 
+// Control del reproductor multimedia del sistema vía playerctl (D-Bus/MPRIS,
+// solo Linux) — mismo patrón execFile que git arriba. playerctl no viene
+// con MK (hay que instalarlo aparte); si no está, o si no hay ningún player
+// con soporte MPRIS corriendo, se devuelve un error legible en vez de
+// romper — ver mediaplayer.js, que le muestra el motivo al usuario.
+function runPlayerctl(args) {
+  return new Promise((resolve) => {
+    execFile('playerctl', args, (error, stdout) => {
+      if (error) {
+        resolve({ ok: false, reason: error.code === 'ENOENT' ? 'not-installed' : 'no-player', detail: error.message });
+      } else {
+        resolve({ ok: true, output: stdout.trim() });
+      }
+    });
+  });
+}
+
+ipcMain.handle('media:playPause', () => runPlayerctl(['play-pause']));
+ipcMain.handle('media:next', () => runPlayerctl(['next']));
+ipcMain.handle('media:previous', () => runPlayerctl(['previous']));
+
+ipcMain.handle('media:status', async () => {
+  const status = await runPlayerctl(['status']);
+  if (!status.ok) return status;
+  const meta = await runPlayerctl(['metadata', '--format', '{{ artist }} - {{ title }}']);
+  return { ok: true, status: status.output, title: meta.ok ? meta.output : '' };
+});
+
 app.whenReady().then(() => {
   protocol.handle('md-local', (request) => {
     const filePath = decodeURIComponent(new URL(request.url).pathname);

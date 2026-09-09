@@ -3,6 +3,8 @@
 
 let autosaveIntervalMs = 1000;
 let gitSyncEnabled = false;
+let pomodoroFocusMinutes = 25;
+let pomodoroBreakMinutes = 5;
 
 window.mdGetAutosaveInterval = () => autosaveIntervalMs;
 window.mdGetGitSyncEnabled = () => gitSyncEnabled;
@@ -16,6 +18,8 @@ const tabSizeSelect = document.getElementById('tabsize-select');
 const wordWrapToggle = document.getElementById('wordwrap-toggle');
 const snippetsTextarea = document.getElementById('snippets-textarea');
 const gitSyncToggle = document.getElementById('gitsync-toggle');
+const pomodoroFocusSelect = document.getElementById('pomodoro-focus-select');
+const pomodoroBreakSelect = document.getElementById('pomodoro-break-select');
 
 // "/abrev = expansión", una por línea -> { "/abrev": "expansión" }
 function parseSnippetsText(text) {
@@ -119,6 +123,16 @@ gitSyncToggle.addEventListener('change', async (e) => {
   await window.mdEditor.setConfig({ gitSyncEnabled });
 });
 
+pomodoroFocusSelect.addEventListener('change', async (e) => {
+  pomodoroFocusMinutes = Number(e.target.value);
+  await window.mdEditor.setConfig({ pomodoroFocusMinutes });
+});
+
+pomodoroBreakSelect.addEventListener('change', async (e) => {
+  pomodoroBreakMinutes = Number(e.target.value);
+  await window.mdEditor.setConfig({ pomodoroBreakMinutes });
+});
+
 (async () => {
   const config = await window.mdEditor.getConfig();
 
@@ -146,6 +160,11 @@ gitSyncToggle.addEventListener('change', async (e) => {
 
   gitSyncEnabled = !!config.gitSyncEnabled;
   gitSyncToggle.checked = gitSyncEnabled;
+
+  pomodoroFocusMinutes = config.pomodoroFocusMinutes != null ? config.pomodoroFocusMinutes : 25;
+  pomodoroFocusSelect.value = String(pomodoroFocusMinutes);
+  pomodoroBreakMinutes = config.pomodoroBreakMinutes != null ? config.pomodoroBreakMinutes : 5;
+  pomodoroBreakSelect.value = String(pomodoroBreakMinutes);
 
   window.mdCodeMirror.refresh();
 })();

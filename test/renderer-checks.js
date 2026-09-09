@@ -141,6 +141,48 @@
     `boton=${!!insertTableBtn} encabezado=${threeColsOk} separador=${sepRowOk} filas=${twoDataRowsOk} contenido="${window.mdCodeMirror.getValue().replace(/\n/g, '\\n')}"`
   );
 
+  // 6d. Editar tablas Markdown ya escritas (no solo crearlas): "Agregar
+  // columna/fila acá" y "Alinear tabla" en el menú contextual, solo cuando
+  // el clic derecho cae dentro de un bloque de tabla.
+  window.mdCodeMirror.setValue('Texto libre\n\n| a | bb |\n| --- | --- |\n| 1 | 2 |\n\nMas texto');
+  const cmForTable = window.mdCodeMirror;
+  const rightClickAt = (line, ch) => {
+    const coords = cmForTable.charCoords({ line, ch }, 'window');
+    document.getElementById('editor-pane').dispatchEvent(
+      new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: coords.left + 2, clientY: coords.top + 5 })
+    );
+  };
+  const menuLabels = () => Array.from(document.querySelectorAll('#context-menu button')).map((b) => b.textContent);
+
+  rightClickAt(0, 2); // fuera de la tabla
+  const noTableItemsOutsideOk = !menuLabels().includes('Agregar columna acá');
+
+  rightClickAt(2, 2); // adentro de la celda "a"
+  const tableItemsInsideOk = menuLabels().includes('Agregar columna acá') &&
+    menuLabels().includes('Agregar fila acá') && menuLabels().includes('Alinear tabla');
+  const addColBtn = Array.from(document.querySelectorAll('#context-menu button')).find((b) => b.textContent === 'Agregar columna acá');
+  if (addColBtn) addColBtn.click();
+  const afterAddCol = window.mdCodeMirror.getValue().split('\n');
+  const addColOk = afterAddCol[2] === '| a |  | bb |' && afterAddCol[3] === '| --- | --- | --- |' && afterAddCol[4] === '| 1 |  | 2 |';
+
+  rightClickAt(4, 2); // última fila de datos
+  const addRowBtn = Array.from(document.querySelectorAll('#context-menu button')).find((b) => b.textContent === 'Agregar fila acá');
+  if (addRowBtn) addRowBtn.click();
+  const afterAddRow = window.mdCodeMirror.getValue().split('\n');
+  const addRowOk = afterAddRow[5] === '|  |  |  |' && afterAddRow[6] === '' && afterAddRow[7] === 'Mas texto';
+
+  rightClickAt(2, 2);
+  const alignBtn = Array.from(document.querySelectorAll('#context-menu button')).find((b) => b.textContent === 'Alinear tabla');
+  if (alignBtn) alignBtn.click();
+  const afterAlign = window.mdCodeMirror.getValue().split('\n');
+  const alignOk = afterAlign[2] === '| a   |     | bb  |' && afterAlign[3] === '| --- | --- | --- |';
+
+  check(
+    'Editar tablas existentes: agregar columna/fila y alinear (menú contextual, solo dentro de una tabla)',
+    noTableItemsOutsideOk && tableItemsInsideOk && addColOk && addRowOk && alignOk,
+    `sinItemsAfueraOk=${noTableItemsOutsideOk} itemsAdentroOk=${tableItemsInsideOk} agregarColOk=${addColOk} agregarFilaOk=${addRowOk} alinearOk=${alignOk} contenido="${window.mdCodeMirror.getValue().replace(/\n/g, '\\n')}"`
+  );
+
   // 7. KaTeX renderiza fórmulas inline
   window.mdCodeMirror.setValue('Formula: $x^2 + y^2 = z^2$');
   window.renderPreview();
@@ -226,6 +268,41 @@
     'Búsqueda global: pide carpeta si no hay una abierta, y encuentra texto en fixtures',
     searchOpenedOk && noFolderMsgOk && searchFindsFixture,
     `abierta=${searchOpenedOk} avisoSinCarpeta=${noFolderMsgOk} encontroFixture=${searchFindsFixture}`
+  );
+
+  // 12c. Abrir archivo rápido por nombre (Ctrl+P): a diferencia de Ctrl+Shift+F
+  // (busca CONTENIDO), esto filtra por NOMBRE de archivo y abre directo.
+  window.mdState.rootFolder = null;
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }));
+  const fileOpenOverlay = document.getElementById('file-open-panel');
+  const fileOpenInput = document.getElementById('file-open-input');
+  const fileOpenNoFolderMsgOk = await waitFor(() => document.querySelector('#file-open-results .command-palette-empty') !== null);
+  fileOpenInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await waitFor(() => fileOpenOverlay.hidden);
+
+  let fileOpenFindsAndOpensOk = false;
+  let fileOpenDetail = 'sin fixturesDir';
+  if (fixturesDir && fixtureOtherPath) {
+    window.mdState.rootFolder = fixturesDir;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }));
+    await waitFor(() => !fileOpenOverlay.hidden && document.querySelectorAll('#file-open-results .command-palette-item').length > 0);
+    fileOpenInput.value = 'other';
+    fileOpenInput.dispatchEvent(new Event('input'));
+    const found = await waitFor(() => document.querySelector('#file-open-results .command-palette-item'));
+    const showsCorrectFileOk = !!found && found.textContent.includes('other.md');
+
+    fileOpenInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await waitFor(() => window.mdState.currentFilePath === fixtureOtherPath);
+    const openedCorrectFileOk = window.mdState.currentFilePath === fixtureOtherPath;
+    const closedAfterOpenOk = fileOpenOverlay.hidden;
+
+    fileOpenFindsAndOpensOk = showsCorrectFileOk && openedCorrectFileOk && closedAfterOpenOk;
+    fileOpenDetail = `muestraArchivoOk=${showsCorrectFileOk} abrioArchivoOk=${openedCorrectFileOk} cerroOk=${closedAfterOpenOk}`;
+  }
+  check(
+    'Abrir archivo rápido (Ctrl+P): pide carpeta si no hay una, filtra por nombre y abre con Enter',
+    fileOpenNoFolderMsgOk && fileOpenFindsAndOpensOk,
+    `avisoSinCarpetaOk=${fileOpenNoFolderMsgOk} ${fileOpenDetail}`
   );
 
   // 12b. Buscar/reemplazar dentro del archivo actual (Ctrl+F, findreplace.js)
@@ -863,6 +940,87 @@
   }
   check('Archivo de código: sin preview (Markdown no aplica), y vuelve al abrir un .md', codeFileNoPreviewOk, codeFileNoPreviewDetail);
 
+  // 22h. Temporizador Pomodoro: arranca en foco, transiciona solo a descanso
+  // al llegar a 0, y "cancelar" vuelve a estado inicial. Minutos configurados
+  // bien cortos (config directa, sin pasar por el select) para no esperar
+  // 25 minutos de verdad en un test.
+  await window.mdEditor.setConfig({ pomodoroFocusMinutes: 0.02, pomodoroBreakMinutes: 0.02 }); // ~1.2s cada fase
+  const pomodoroStatusEl = document.getElementById('status-pomodoro');
+  window.mdPomodoro.toggle();
+  await waitFor(() => !pomodoroStatusEl.hidden && window.mdPomodoro.getState().phase === 'focus');
+  const pomodoroStartsFocusOk = window.mdPomodoro.getState().phase === 'focus' && window.mdPomodoro.getState().running;
+  const pomodoroShowsInStatusbarOk = !pomodoroStatusEl.hidden && pomodoroStatusEl.textContent.includes('Foco');
+
+  await waitFor(() => window.mdPomodoro.getState().phase === 'break', 5000);
+  const pomodoroSwitchesToBreakOk = window.mdPomodoro.getState().phase === 'break';
+
+  window.mdPomodoro.reset();
+  const pomodoroResetOk = pomodoroStatusEl.hidden && window.mdPomodoro.getState().phase === 'idle';
+
+  check(
+    'Pomodoro: arranca en foco, pasa solo a descanso, "cancelar" vuelve a inicial',
+    pomodoroStartsFocusOk && pomodoroShowsInStatusbarOk && pomodoroSwitchesToBreakOk && pomodoroResetOk,
+    `arrancaFocoOk=${pomodoroStartsFocusOk} muestraEnStatusbarOk=${pomodoroShowsInStatusbarOk} pasaADescansoOk=${pomodoroSwitchesToBreakOk} cancelarOk=${pomodoroResetOk}`
+  );
+
+  // 22i. Control del reproductor multimedia (playerctl, solo Linux): el IPC
+  // siempre devuelve {ok:boolean,...} sin tirar excepción, esté o no
+  // instalado playerctl en la máquina que corre el test — eso es justo lo
+  // que hay que blindar (no reventar si falta el binario).
+  const mediaPlayPauseResult = await window.mdEditor.mediaPlayPause();
+  const mediaResultShapeOk = typeof mediaPlayPauseResult === 'object' && typeof mediaPlayPauseResult.ok === 'boolean';
+
+  const originalAlertMedia = window.alert;
+  let mediaAlertShown = false;
+  window.alert = () => { mediaAlertShown = true; };
+  await window.mdMediaPlayer.playPause();
+  window.alert = originalAlertMedia;
+  // Si playerctl no está instalado/no hay player, tiene que avisar con alert
+  // (no fallar en silencio); si sí funcionó, no hace falta ningún aviso.
+  const mediaAlertConsistentOk = mediaPlayPauseResult.ok ? !mediaAlertShown : mediaAlertShown;
+
+  check(
+    'Reproductor multimedia (playerctl): IPC no revienta esté o no instalado, y avisa si falla',
+    mediaResultShapeOk && mediaAlertConsistentOk,
+    `formaRespuestaOk=${mediaResultShapeOk} ok=${mediaPlayPauseResult.ok} avisoConsistenteOk=${mediaAlertConsistentOk}`
+  );
+
+  // 22j. Ocultar botones de la toolbar desde Ajustes (toolbarcustomize.js):
+  // destildar esconde el botón real (regresión [hidden] — .toolbar-button
+  // tenía "display: inline-flex" sin guardar, mismo bug de siempre), y
+  // "Ejecutar" corre la acción igual sin importar si está escondido o no.
+  const pluginsBtn = document.getElementById('btn-plugins');
+  const pluginsCheckbox = document.getElementById('toolbar-vis-btn-plugins');
+  const visibleByDefaultOk = pluginsCheckbox.checked && !pluginsBtn.hidden &&
+    getComputedStyle(pluginsBtn).display !== 'none';
+
+  pluginsCheckbox.checked = false;
+  pluginsCheckbox.dispatchEvent(new Event('change'));
+  await waitFor(() => pluginsBtn.hidden);
+  const hidesRealButtonOk = pluginsBtn.hidden && getComputedStyle(pluginsBtn).display === 'none';
+  await new Promise((r) => setTimeout(r, 100));
+  const persistedHiddenOk = (await window.mdEditor.getConfig()).hiddenToolbarButtons.includes('btn-plugins');
+
+  const pluginsPanelBefore = document.getElementById('plugins-panel').hidden;
+  const pluginsRunBtn = Array.from(document.querySelectorAll('.toolbar-buttons-settings-row'))
+    .find((row) => row.querySelector('label').textContent === 'Plugins y comunidad')
+    .querySelector('.toolbar-buttons-settings-run');
+  pluginsRunBtn.click();
+  await waitFor(() => !document.getElementById('plugins-panel').hidden);
+  const runsEvenWhenHiddenOk = pluginsPanelBefore && !document.getElementById('plugins-panel').hidden;
+  document.getElementById('plugins-panel').hidden = true;
+
+  // Revertir para no afectar otros checks / dejar la app como estaba
+  pluginsCheckbox.checked = true;
+  pluginsCheckbox.dispatchEvent(new Event('change'));
+  await waitFor(() => !pluginsBtn.hidden);
+
+  check(
+    'Ajustes: ocultar botones de la toolbar (destildar) y "Ejecutar" igual aunque esté oculto',
+    visibleByDefaultOk && hidesRealButtonOk && persistedHiddenOk && runsEvenWhenHiddenOk,
+    `visibleParDefectoOk=${visibleByDefaultOk} ocultaBotonRealOk=${hidesRealButtonOk} persistidoOk=${persistedHiddenOk} corrioAunOcultoOk=${runsEvenWhenHiddenOk}`
+  );
+
   // 23. Restricción de rutas SIN carpeta abierta: antes no restringía nada;
   // ahora restringe al directorio propio del archivo suelto
   let looseFileRestrictionOk = false;
@@ -1033,6 +1191,26 @@
     foldTableDetail = `widgetPlegadoOk=${foldedTableWidgetOk} contenidoRealIntactoOk=${rawTableIntactOk}`;
   }
   check('Tablas HTML crudas (sin fila de encabezado) se pliegan visualmente en el editor', foldTableOk, foldTableDetail);
+
+  // 26bb. Regresión real: mammoth envuelve SIEMPRE el texto de una celda de
+  // tabla en <p> (hasta "<td><p>1</p></td>"), y la regla de párrafo de
+  // turndown-plugin-gfm arma la fila de tabla igual sin sacar el "\n\n" —
+  // una tabla CON encabezado (por eso no cae en el pliegue de arriba, que
+  // es para las que quedan crudas) terminaba con filas que ocupan varias
+  // líneas físicas: sintaxis de tabla Markdown inválida. Ver docximport.js.
+  const simpleCellHtml = '<table><thead><tr><th><p>Col A</p></th><th><p>Col B</p></th></tr></thead><tbody><tr><td><p>1</p></td><td><p>2</p></td></tr></tbody></table>';
+  const simpleCellMd = window.mdDocxImport.htmlToMarkdown(simpleCellHtml);
+  const cleanSingleLineRowsOk = simpleCellMd === '| Col A | Col B |\n| --- | --- |\n| 1 | 2 |';
+
+  const multiParagraphCellHtml = '<table><thead><tr><th><p>linea1</p><p>linea2</p><p>linea3</p></th></tr></thead></table>';
+  const multiParagraphCellMd = window.mdDocxImport.htmlToMarkdown(multiParagraphCellHtml);
+  const joinedWithBrOk = multiParagraphCellMd === '| linea1<br>linea2<br>linea3 |\n| --- |';
+
+  check(
+    'Abrir .docx: celdas de tabla con <p> (mammoth las envuelve siempre) no rompen la fila Markdown',
+    cleanSingleLineRowsOk && joinedWithBrOk,
+    `filaLimpiaOk=${cleanSingleLineRowsOk} (${JSON.stringify(simpleCellMd)}) parrafosUnidosOk=${joinedWithBrOk} (${JSON.stringify(multiParagraphCellMd)})`
+  );
 
   // 26c. Exportar a Word (.docx): arma un .docx real (librería "docx") a
   // partir del Markdown del editor — se relee con mammoth (mismo motor de

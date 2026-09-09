@@ -31,16 +31,20 @@
 
     <span class="toolbar-spacer"></span>
 
-    <button id="btn-diff" class="toolbar-button" title="Ver cambios desde el último guardado"><i data-lucide="file-diff"></i></button>
-    <button id="btn-toc" class="toolbar-button" title="Índice del documento (Ctrl+Shift+O)"><i data-lucide="list"></i></button>
-    <button id="btn-focus" class="toolbar-button" title="Modo enfoque / lectura (Ctrl+Shift+E / Ctrl+Shift+R)"><i data-lucide="focus"></i></button>
-    <button id="btn-search" class="toolbar-button" title="Búsqueda global en la carpeta (Ctrl+Shift+F)"><i data-lucide="search"></i></button>
-    <button id="btn-command-palette" class="toolbar-button" title="Paleta de comandos (Ctrl+Shift+P)"><i data-lucide="command"></i></button>
-    <button id="btn-tags" class="toolbar-button" title="Etiquetas de la carpeta (Ctrl+Shift+T)"><i data-lucide="tag"></i></button>
-    <button id="btn-backlinks" class="toolbar-button" title="Backlinks: qué enlaza aquí (Ctrl+Shift+B)"><i data-lucide="link-2"></i></button>
-    <button id="btn-plugins" class="toolbar-button" title="Plugins y comunidad"><i data-lucide="puzzle"></i></button>
-    <button id="btn-pdfpages" class="toolbar-button" title="Operaciones de páginas PDF (unir, separar, rotar, marca de agua...)"><i data-lucide="file-stack"></i></button>
-    <button id="btn-pdfhighlight" class="toolbar-button" title="Subrayar texto en PDF"><i data-lucide="highlighter"></i></button>
+    <button id="btn-diff" class="toolbar-button toolbar-optional" title="Ver cambios desde el último guardado"><i data-lucide="file-diff"></i></button>
+    <button id="btn-toc" class="toolbar-button toolbar-optional" title="Índice del documento (Ctrl+Shift+O)"><i data-lucide="list"></i></button>
+    <button id="btn-focus" class="toolbar-button toolbar-optional" title="Modo enfoque / lectura (Ctrl+Shift+E / Ctrl+Shift+R)"><i data-lucide="focus"></i></button>
+    <button id="btn-search" class="toolbar-button toolbar-optional" title="Búsqueda global en la carpeta (Ctrl+Shift+F)"><i data-lucide="search"></i></button>
+    <button id="btn-command-palette" class="toolbar-button toolbar-optional" title="Paleta de comandos (Ctrl+Shift+P)"><i data-lucide="command"></i></button>
+    <button id="btn-tags" class="toolbar-button toolbar-optional" title="Etiquetas de la carpeta (Ctrl+Shift+T)"><i data-lucide="tag"></i></button>
+    <button id="btn-backlinks" class="toolbar-button toolbar-optional" title="Backlinks: qué enlaza aquí (Ctrl+Shift+B)"><i data-lucide="link-2"></i></button>
+    <button id="btn-plugins" class="toolbar-button toolbar-optional" title="Plugins y comunidad"><i data-lucide="puzzle"></i></button>
+    <button id="btn-pdfpages" class="toolbar-button toolbar-optional" title="Operaciones de páginas PDF (unir, separar, rotar, marca de agua...)"><i data-lucide="file-stack"></i></button>
+    <button id="btn-pdfhighlight" class="toolbar-button toolbar-optional" title="Subrayar texto en PDF"><i data-lucide="highlighter"></i></button>
+    <button id="btn-pomodoro" class="toolbar-button toolbar-optional" title="Pomodoro: iniciar (foco/descanso configurables en Ajustes)"><i data-lucide="timer"></i></button>
+    <button id="btn-media-prev" class="toolbar-button toolbar-optional" title="Reproductor multimedia: anterior (playerctl, solo Linux)"><i data-lucide="skip-back"></i></button>
+    <button id="btn-media-playpause" class="toolbar-button toolbar-optional" title="Reproductor multimedia: play/pausa (playerctl, solo Linux)"><i data-lucide="play"></i></button>
+    <button id="btn-media-next" class="toolbar-button toolbar-optional" title="Reproductor multimedia: siguiente (playerctl, solo Linux)"><i data-lucide="skip-forward"></i></button>
 
     <div class="dropdown">
       <button id="btn-export" class="toolbar-button" title="Exportar"><i data-lucide="download"></i> Exportar ▾</button>
@@ -55,7 +59,7 @@
 
     <div class="dropdown">
       <button id="btn-settings" class="toolbar-button" title="Ajustes"><i data-lucide="settings"></i></button>
-      <div id="settings-menu" class="dropdown-menu" hidden>
+      <div id="settings-menu" class="dropdown-menu dropdown-menu-scroll" hidden>
         <label class="dropdown-label" for="autosave-select">Autoguardado</label>
         <select id="autosave-select">
           <option value="0">Desactivado</option>
@@ -99,6 +103,26 @@
         <label class="dropdown-label" for="gitsync-toggle">
           <input type="checkbox" id="gitsync-toggle" /> Sincronizar con git al guardar
         </label>
+
+        <label class="dropdown-label" for="pomodoro-focus-select">Pomodoro: minutos de foco</label>
+        <select id="pomodoro-focus-select">
+          <option value="15">15 min</option>
+          <option value="20">20 min</option>
+          <option value="25">25 min</option>
+          <option value="30">30 min</option>
+          <option value="45">45 min</option>
+          <option value="50">50 min</option>
+        </select>
+
+        <label class="dropdown-label" for="pomodoro-break-select">Pomodoro: minutos de descanso</label>
+        <select id="pomodoro-break-select">
+          <option value="5">5 min</option>
+          <option value="10">10 min</option>
+          <option value="15">15 min</option>
+        </select>
+
+        <label class="dropdown-label">Botones de la toolbar (tildado = visible)</label>
+        <div id="toolbar-buttons-settings" class="toolbar-buttons-settings"></div>
       </div>
     </div>
 
@@ -156,6 +180,7 @@
     <span id="status-mode">Markdown</span>
     <span id="status-cursor">Ln 1, Col 1</span>
     <span id="status-encoding">UTF-8</span>
+    <span id="status-pomodoro" class="status-pomodoro" hidden title="Clic para cancelar"></span>
   </div>
 
   <div id="restore-dialog" class="modal-overlay" hidden>
@@ -180,6 +205,13 @@
     <div class="command-palette search-palette">
       <input id="search-input" type="text" placeholder="Buscar en los archivos de la carpeta abierta..." autocomplete="off" spellcheck="false" />
       <div id="search-results" class="command-palette-list"></div>
+    </div>
+  </div>
+
+  <div id="file-open-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette search-palette">
+      <input id="file-open-input" type="text" placeholder="Nombre de archivo..." autocomplete="off" spellcheck="false" />
+      <div id="file-open-results" class="command-palette-list"></div>
     </div>
   </div>
 
@@ -353,6 +385,9 @@
   <script src="ui-dropdowns.js"></script>
   <script src="templates.js"></script>
   <script src="settings.js"></script>
+  <script src="pomodoro.js"></script>
+  <script src="mediaplayer.js"></script>
+  <script src="toolbarcustomize.js"></script>
   <script src="themes.js"></script>
   <script src="preview.js"></script>
   <script src="toc.js"></script>
@@ -365,6 +400,7 @@
   <script src="dailynote.js"></script>
   <script src="commandpalette.js"></script>
   <script src="search.js"></script>
+  <script src="filequickopen.js"></script>
   <script src="iconpicker.js"></script>
   <script src="tags.js"></script>
   <script src="backlinks.js"></script>

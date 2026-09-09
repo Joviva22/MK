@@ -18,7 +18,8 @@ Referencia rápida y resumida. Para la explicación completa de cada función, v
 | Atajo | Acción |
 |---|---|
 | `Ctrl+F` | Buscar/reemplazar en el archivo actual — `Enter`/`Shift+Enter` salta a la coincidencia siguiente/anterior, `Escape` cierra |
-| `Ctrl+Shift+F` | Búsqueda global en la carpeta abierta (navega a otro archivo) |
+| `Ctrl+P` | Abrir archivo rápido por nombre (filtra mientras tipeás, `Enter` abre, `↑`/`↓` navegan) |
+| `Ctrl+Shift+F` | Búsqueda global en la carpeta abierta (busca contenido, navega a otro archivo) |
 | `Ctrl+Shift+P` | Paleta de comandos — todo lo que hace MK, filtrable por texto |
 | `Ctrl+Shift+T` | Etiquetas (`#tag`) de la carpeta abierta |
 | `Ctrl+Shift+B` | Backlinks del archivo activo (qué otras notas lo enlazan) |

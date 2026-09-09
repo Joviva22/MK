@@ -28,6 +28,8 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 20. [Operaciones de páginas PDF](#20-operaciones-de-páginas-pdf)
 21. [Subrayar texto en PDF](#21-subrayar-texto-en-pdf)
 22. [Panel secundario (pantalla dividida)](#22-panel-secundario-pantalla-dividida)
+23. [Temporizador Pomodoro](#23-temporizador-pomodoro)
+24. [Controlar el reproductor multimedia](#24-controlar-el-reproductor-multimedia)
 
 ---
 
@@ -268,6 +270,7 @@ Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pesta
 
 - **Buscar y reemplazar en el archivo actual** (`Ctrl+F`, o paleta de comandos): un cuadro flotante arriba a la derecha del editor, sin tapar el documento. Escribí para buscar — resalta todas las coincidencias en el texto y muestra "posición/total" (ej. `2/5`). `Enter`/`Shift+Enter` o los botones ↓/↑ saltan a la siguiente/anterior. El botón ⇄ despliega una segunda fila para reemplazar: "Reemplazar" cambia solo la coincidencia actual, "Todo" cambia todas de una. `Escape` (o ✕) cierra y vuelve el foco al editor. Si tenías texto seleccionado al abrirlo, arranca buscando eso.
 - **Búsqueda global** (🔍 en la toolbar, o `Ctrl+Shift+F`): busca un texto en todos los archivos de la carpeta abierta (`.md`, `.markdown`, `.txt`, `.tex`), hasta 200 resultados. Clic en un resultado abre el archivo y salta directo a esa línea. A diferencia de `Ctrl+F`, esto busca en TODA la carpeta y navega a otro archivo — no reemplaza.
+- **Abrir archivo rápido por nombre** (`Ctrl+P`, o paleta de comandos): tipeá parte del nombre de un archivo (no el contenido) y saltá directo con `Enter` — más rápido que navegar el sidebar cuando la carpeta tiene muchos archivos. `↑`/`↓` mueven la selección, `Escape` cierra. Cada resultado muestra el nombre y, si no está en la raíz, la carpeta donde vive.
 - **Paleta de comandos** (⌘ en la toolbar, o `Ctrl+Shift+P`): lista todo lo que podés hacer en MK — nuevo, abrir, guardar, exportar, cambiar de tema, alternar vistas, ver etiquetas/backlinks/historial/Kanban/grafo — con filtro por texto a medida que escribís. Navegás con las flechas y confirmás con Enter.
 
 ## 9. Nota diaria
@@ -366,6 +369,8 @@ Desde ⚙ **Ajustes**:
 
 **Límite** (de ambos): siempre es el archivo completo, no hunks/partes de un archivo (no hay algo como `git add -p`). Requiere que la carpeta ya sea un repo git.
 
+- **Botones de la toolbar**: al final de Ajustes hay una lista con todos los botones "sueltos" de la toolbar (los que no son Nuevo/Abrir/Guardar). Destildar uno lo esconde de la toolbar — útil si tenés muchos y no usás todos, para no tener que buscar el que sí usás en medio de una fila larga de íconos. Cada fila tiene además un botón **▶** que ejecuta esa acción ahí mismo, esté tildado o no — así podés seguir usando algo puntualmente aunque lo tengas escondido, sin ir a destildarlo primero. Qué se esconde queda guardado entre sesiones.
+
 Desde 🎨 **Tema**: 26 temas de color — Claro, Oscuro, y 24 más conocidos (Dracula, Nord, Gruvbox, Monokai, Solarized, One Dark Pro, Tokyo Night, Catppuccin, Rosé Pine, GitHub Dark/Light, y otros). Se guarda tu elección para la próxima vez.
 
 Todos estos ajustes se guardan automáticamente y se recuerdan entre sesiones.
@@ -413,6 +418,14 @@ Clic derecho dentro del editor:
 
 Cada inserción deja el cursor listo para seguir escribiendo en el lugar justo (por ejemplo, "Insertar enlace" selecciona la parte de la URL para que la pegues encima). "Subrayar / resaltar texto" envuelve la selección con `==...==` (o inserta `==texto==` con "texto" seleccionado si no habías seleccionado nada).
 
+**Editar una tabla que ya existe** — con "Insertar tabla" alcanza para crearla, pero para modificarla ya escrita, clic derecho **adentro** de la tabla suma tres ítems más arriba del menú:
+
+- **Agregar columna acá**: inserta una columna vacía justo a la derecha de en qué celda cayó el clic, en todas las filas de la tabla (encabezado, separador y datos) a la vez.
+- **Agregar fila acá**: agrega una fila de datos vacía. Si el clic fue en el encabezado, la agrega como primera fila de datos; si fue en cualquier otra fila, la agrega justo debajo.
+- **Alinear tabla**: reformatea los `|` para que todas las columnas queden parejas (mismo ancho, como lo haría un formateador tipo Prettier) — respeta la alineación (`:---`, `:---:`, `---:`) que ya tuviera cada columna.
+
+Estos tres ítems solo aparecen cuando el clic derecho cae dentro de un bloque de tabla — en cualquier otro lugar del editor, el menú es el de siempre.
+
 ## 18. Plugins y comunidad
 
 Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene un sistema real de plugins de terceros (es una decisión de seguridad consciente: cargar código ajeno en una app con acceso a tus archivos no es algo para improvisar). Todo lo que había en la lista de ideas de este panel ya se implementó como función propia de la app (corrector ortográfico, snippets, plantillas con variables, nota diaria, diagramas Mermaid, grafo, Kanban, exportar a EPUB/Anki, sincronizar con git, ejecutar código JS, operaciones de páginas PDF, subrayar texto en PDF) — todas descritas en las secciones de arriba.
@@ -429,6 +442,7 @@ Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene 
 | `Ctrl+W` | Cerrar pestaña activa |
 | `Ctrl+Tab` / `Ctrl+Shift+Tab` | Pestaña siguiente / anterior |
 | `Ctrl+F` | Buscar/reemplazar en el archivo actual |
+| `Ctrl+P` | Abrir archivo rápido por nombre |
 | `Ctrl+Shift+P` | Paleta de comandos |
 | `Ctrl+Shift+F` | Búsqueda global |
 | `Ctrl+Shift+T` | Etiquetas de la carpeta |
@@ -490,3 +504,26 @@ El sidebar, el modo enfoque/lectura del principal y este panel secundario son tr
 ¿Por qué no directamente "un editor en cada lado"? MK tiene una sola instancia del editor (CodeMirror) que las pestañas comparten — dos editores de verdad, escribibles los dos al mismo tiempo, es un cambio de arquitectura más grande (ver `MEJORAS.md`). Esto da casi lo mismo para el uso real ("tengo esto de referencia mientras escribo") con mucho menos por detrás, y el título-clic hace que cambiar cuál es "el que edito" sea instantáneo.
 
 **Límite:** si el archivo principal era una pestaña nueva sin guardar todavía (sin ruta en disco), al promover el secundario esa pestaña sin guardar no tiene dónde mostrarse en modo lectura — el panel se cierra solo en vez de mostrarla.
+
+## 23. Temporizador Pomodoro
+
+Botón ⏱ en la toolbar (o desde la paleta de comandos: "Pomodoro: iniciar/pausar").
+
+1. **Clic** arranca un ciclo de foco (25 minutos por defecto). Aparece en la barra de estado, abajo: `🍅 Foco 24:59`.
+2. **Clic de nuevo** pausa/reanuda el conteo (queda `(pausado)` en la barra de estado).
+3. Al llegar a 0, el foco pasa **solo** a un descanso (`☕ Descanso 4:59`) y avisa con una notificación del sistema — y viceversa, el descanso vuelve a pasar solo a un nuevo foco. Los ciclos siguen así indefinidamente hasta que lo canceles.
+4. **Clic en el texto de la barra de estado** cancela el Pomodoro y vuelve al estado inicial (el botón de la toolbar también lo indica).
+
+Los minutos de cada fase se configuran en ⚙ **Ajustes** → "Pomodoro: minutos de foco" / "minutos de descanso" — el cambio aplica desde la próxima fase que arranque, no interrumpe la que está corriendo.
+
+**Límite:** no se combina automáticamente con el modo enfoque ni anota los pomodoros completados en la nota diaria — es solo el temporizador con notificación.
+
+## 24. Controlar el reproductor multimedia
+
+Tres botones en la toolbar (⏮ anterior, ▶ play/pausa, ⏭ siguiente) para controlar lo que esté sonando en el sistema — Spotify, un reproductor en el navegador, VLC, cualquiera con soporte **MPRIS** — sin salir de MK.
+
+Usa [`playerctl`](https://github.com/altdesktop/playerctl) por debajo, así que:
+
+- **Solo funciona en Linux** (MPRIS es un estándar de D-Bus, no existe en Windows/Mac).
+- **`playerctl` no viene instalado con MK** — hay que instalarlo aparte con el gestor de paquetes del sistema (ej. `sudo apt install playerctl`, `sudo pacman -S playerctl`).
+- Si falta el binario, o no hay ningún reproductor con soporte MPRIS corriendo en ese momento, el botón avisa con un mensaje claro en vez de no hacer nada.
