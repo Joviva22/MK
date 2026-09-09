@@ -229,7 +229,12 @@ Cada inserción deja el cursor listo para seguir escribiendo en el lugar justo (
 
 ## 15. Plugins y comunidad
 
-Botón 🧩 en la toolbar (o desde la paleta de comandos): por ahora es un panel informativo — MK todavía no tiene un sistema real de plugins de terceros (es una decisión de seguridad consciente: cargar código ajeno en una app con acceso a tus archivos no es algo para improvisar). El panel queda preparado para el día que eso exista.
+Botón 🧩 en la toolbar (o desde la paleta de comandos): por ahora es un panel informativo — MK todavía no tiene un sistema real de plugins de terceros (es una decisión de seguridad consciente: cargar código ajeno en una app con acceso a tus archivos no es algo para improvisar). El panel queda preparado para el día que eso exista, y mientras tanto lista ideas de plugins interesantes agrupadas por categoría:
+
+- **Escritura y edición**: corrector ortográfico en español, snippets de texto (abreviaturas propias), plantillas con variables (`{{fecha}}`, `{{titulo}}`).
+- **Organización y visualización**: vista de grafo de wikilinks, tablero Kanban a partir de listas de tareas, nota diaria automática.
+- **Exportar e integraciones**: exportar a EPUB, sincronización con git al guardar, exportar a tarjetas de memoria (tipo Anki).
+- **Para quienes programan**: diagramas como código (Mermaid/PlantUML) en el preview, ejecutar bloques de código tipo notebook.
 
 ## 16. Todos los atajos de teclado
 

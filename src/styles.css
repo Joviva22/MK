@@ -893,9 +893,26 @@ ul.tree.collapsed {
 }
 
 .plugins-body ul {
-  margin: 0;
+  margin: 0 0 14px;
   padding-left: 20px;
   color: var(--text-muted);
+}
+
+.plugins-body li {
+  margin-bottom: 4px;
+}
+
+.plugins-body strong {
+  color: var(--text);
+}
+
+.plugins-body code {
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  font-size: 12px;
 }
 
 .icon-picker-grid {
