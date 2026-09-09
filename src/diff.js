@@ -3,33 +3,17 @@
 
 const diffPanel = document.getElementById('diff-panel');
 
-// LCS clásico. O(n*m) en líneas — de sobra para notas de tamaño normal.
-function diffLines(oldLines, newLines) {
-  const m = oldLines.length;
-  const n = newLines.length;
-  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-  for (let i = m - 1; i >= 0; i--) {
-    for (let j = n - 1; j >= 0; j--) {
-      dp[i][j] = oldLines[i] === newLines[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
-    }
-  }
+// Myers diff real (paquete "diff", el mismo algoritmo que usa git) en vez
+// del LCS O(n·m) escrito a mano de antes — escala mejor con archivos largos.
+function diffLines(oldText, newText) {
+  const parts = Diff.diffLines(oldText, newText);
   const result = [];
-  let i = 0;
-  let j = 0;
-  while (i < m && j < n) {
-    if (oldLines[i] === newLines[j]) {
-      result.push({ type: 'ctx', text: oldLines[i] });
-      i++; j++;
-    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
-      result.push({ type: 'del', text: oldLines[i] });
-      i++;
-    } else {
-      result.push({ type: 'add', text: newLines[j] });
-      j++;
-    }
-  }
-  while (i < m) result.push({ type: 'del', text: oldLines[i++] });
-  while (j < n) result.push({ type: 'add', text: newLines[j++] });
+  parts.forEach((part) => {
+    const type = part.added ? 'add' : part.removed ? 'del' : 'ctx';
+    const lines = part.value.split('\n');
+    if (lines.length && lines[lines.length - 1] === '') lines.pop();
+    lines.forEach((text) => result.push({ type, text }));
+  });
   return result;
 }
 
@@ -73,7 +57,7 @@ document.getElementById('btn-diff').addEventListener('click', async () => {
     alert('No hay cambios sin guardar.');
     return;
   }
-  renderDiffPanel(diffLines(onDisk.split('\n'), info.content.split('\n')));
+  renderDiffPanel(diffLines(onDisk, info.content));
 });
 
 })();

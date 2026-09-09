@@ -31,6 +31,13 @@ fs.writeFileSync(
   'Ver [[note]] para más info. #proyecto\n',
   'utf-8'
 );
+// Estructura para probar "subir a la carpeta superior" y "mover entre
+// carpetas": fixturesDir/nested/child-root/ (root inicial) y dos carpetas
+// hermanas (moveA/moveB) con un archivo para arrastrar entre ellas.
+fs.mkdirSync(path.join(fixturesDir, 'nested', 'child-root'), { recursive: true });
+fs.mkdirSync(path.join(fixturesDir, 'moveA'), { recursive: true });
+fs.mkdirSync(path.join(fixturesDir, 'moveB'), { recursive: true });
+fs.writeFileSync(path.join(fixturesDir, 'moveA', 'move-me.md'), '# Muevanme\n', 'utf-8');
 
 function cleanup() {
   fs.rmSync(profileDir, { recursive: true, force: true });

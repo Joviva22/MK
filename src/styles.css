@@ -224,6 +224,13 @@ html, body {
   overflow-y: auto;
 }
 
+/* Dropdowns pegados al lado derecho de la toolbar: crecen hacia la
+   izquierda en vez de hacia la derecha, para no salirse de la ventana. */
+#export-menu, #settings-menu, #theme-menu {
+  left: auto;
+  right: 0;
+}
+
 .dropdown-menu button {
   text-align: left;
   padding: 7px 10px;
@@ -245,6 +252,14 @@ html, body {
   padding: 4px 10px 0;
 }
 
+label.dropdown-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 4px;
+  cursor: pointer;
+}
+
 .dropdown-menu select {
   margin: 4px 10px 6px;
   padding: 5px;
@@ -258,6 +273,17 @@ html, body {
   display: grid;
   grid-template-columns: var(--sidebar-w, 260px) 6px var(--editor-w, 1fr) 6px 1fr;
   height: calc(100% - 45px - 26px);
+}
+
+/* F11 (ver F11.md): modo escritura sin distracciones — oculta toolbar y
+   statusbar, el contenedor pasa a ocupar toda la ventana. */
+body.fullscreen-write .toolbar,
+body.fullscreen-write .statusbar {
+  display: none;
+}
+
+body.fullscreen-write .container {
+  height: 100%;
 }
 
 .resizer {
@@ -323,6 +349,18 @@ ul.tree {
   padding: 2px 4px;
   border-radius: 5px;
   white-space: nowrap;
+}
+
+.tree-row.drag-over,
+.tree-root-label.drag-over {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  outline: 1px dashed var(--accent);
+  outline-offset: -1px;
+}
+
+.tree-up {
+  color: var(--text-muted);
+  margin-bottom: 2px;
 }
 
 .tree-icon {
@@ -400,8 +438,8 @@ ul.tree.collapsed {
 
 #editor-pane .CodeMirror {
   height: 100%;
-  font-size: 14px;
-  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  font-size: var(--editor-font-size, 14px);
+  font-family: var(--editor-font-family, "JetBrains Mono", "Fira Code", Consolas, monospace);
   background: var(--bg);
   color: var(--text);
 }

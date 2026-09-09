@@ -17,6 +17,10 @@ contextBridge.exposeInMainWorld('mdEditor', {
   createFolder: (dirPath, name) => ipcRenderer.invoke('fs:createFolder', { dirPath, name }),
   renamePath: (targetPath, newName) => ipcRenderer.invoke('fs:rename', { targetPath, newName }),
   deletePath: (targetPath, isFolder) => ipcRenderer.invoke('fs:delete', { targetPath, isFolder }),
+  movePath: (sourcePath, destDir) => ipcRenderer.invoke('fs:move', { sourcePath, destDir }),
+  listBackups: (filePath) => ipcRenderer.invoke('backups:list', filePath),
+  readBackup: (backupPath) => ipcRenderer.invoke('backups:read', backupPath),
+  toggleFullscreen: () => ipcRenderer.invoke('window:toggleFullscreen'),
   saveSession: (data) => ipcRenderer.invoke('session:save', data),
   loadSession: () => ipcRenderer.invoke('session:load'),
   getConfig: () => ipcRenderer.invoke('config:get'),
@@ -28,10 +32,6 @@ contextBridge.exposeInMainWorld('mdEditor', {
   listBacklinks: (root, target) => ipcRenderer.invoke('backlinks:list', { root, target }),
   exportHtml: (html, defaultName) => ipcRenderer.invoke('export:html', { html, defaultName }),
   exportPdf: (html, defaultName) => ipcRenderer.invoke('export:pdf', { html, defaultName }),
-  onMenuNew: (callback) => ipcRenderer.on('menu:new', callback),
-  onMenuOpen: (callback) => ipcRenderer.on('menu:open', callback),
-  onMenuSave: (callback) => ipcRenderer.on('menu:save', callback),
-  onMenuSaveAs: (callback) => ipcRenderer.on('menu:save-as', callback),
   onOpenExternalFile: (callback) => ipcRenderer.on('open-external-file', (event, filePath) => callback(filePath)),
   resolveLocalPath: (baseFilePath, relativePath) => {
     if (!baseFilePath) return relativePath;

@@ -33,4 +33,15 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// F11 (ver F11.md): pantalla completa real de la ventana + oculta
+// toolbar/statusbar para un modo "escritura sin distracciones". No toca
+// sidebar/modo enfoque-lectura, así vuelven tal cual estaban al salir.
+document.addEventListener('keydown', async (e) => {
+  if (e.key !== 'F11') return;
+  e.preventDefault();
+  const isFullscreen = await window.mdEditor.toggleFullscreen();
+  document.body.classList.toggle('fullscreen-write', isFullscreen);
+  if (window.mdCodeMirror) window.mdCodeMirror.refresh();
+});
+
 })();

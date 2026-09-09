@@ -25,20 +25,26 @@ document.getElementById('btn-open').addEventListener('click', () => window.mdTab
 document.getElementById('btn-save').addEventListener('click', () => window.mdTabs.saveActive(false));
 document.getElementById('btn-save-as').addEventListener('click', () => window.mdTabs.saveActive(true));
 
-window.mdEditor.onMenuNew(() => window.mdTabs.newTab());
-window.mdEditor.onMenuOpen(() => window.mdTabs.openViaDialog());
-window.mdEditor.onMenuSave(() => window.mdTabs.saveActive(false));
-window.mdEditor.onMenuSaveAs(() => window.mdTabs.saveActive(true));
-
-cm.setOption('extraKeys', {
-  'Ctrl-S': () => window.mdTabs.saveActive(false),
-  'Cmd-S': () => window.mdTabs.saveActive(false),
-  'Ctrl-Shift-S': () => window.mdTabs.saveActive(true),
-  'Cmd-Shift-S': () => window.mdTabs.saveActive(true),
-  'Ctrl-O': () => window.mdTabs.openViaDialog(),
-  'Cmd-O': () => window.mdTabs.openViaDialog(),
-  'Ctrl-N': () => window.mdTabs.newTab(),
-  'Cmd-N': () => window.mdTabs.newTab()
+// Sin menú nativo (ver F11.md): estos atajos antes dependían de los
+// accelerators del menú de Electron. Van a nivel de documento (no en el
+// keymap de CodeMirror) para que funcionen tenga el foco el editor u otra
+// parte de la app (sidebar, búsqueda, etc.).
+document.addEventListener('keydown', (e) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  const key = e.key.toLowerCase();
+  if (key === 's' && e.shiftKey) {
+    e.preventDefault();
+    window.mdTabs.saveActive(true);
+  } else if (key === 's') {
+    e.preventDefault();
+    window.mdTabs.saveActive(false);
+  } else if (key === 'o') {
+    e.preventDefault();
+    window.mdTabs.openViaDialog();
+  } else if (key === 'n') {
+    e.preventDefault();
+    window.mdTabs.newTab();
+  }
 });
 
 })();

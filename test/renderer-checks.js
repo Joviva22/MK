@@ -363,5 +363,136 @@
     check('Gestión de archivos: crear/renombrar/eliminar desde el sidebar', false, 'sin fixturesDir');
   }
 
+  // 19. F11 (ver F11.md): sin menú nativo, el atajo pasa por
+  // window.mdEditor.toggleFullscreen() y alterna body.fullscreen-write
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F11' }));
+  const enteredFullscreen = await waitFor(() => document.body.classList.contains('fullscreen-write'));
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F11' }));
+  await waitFor(() => !document.body.classList.contains('fullscreen-write'));
+  const exitedFullscreen = !document.body.classList.contains('fullscreen-write');
+  check(
+    'F11 alterna el modo pantalla completa / escritura sin distracciones',
+    !!enteredFullscreen && exitedFullscreen,
+    `entro=${!!enteredFullscreen} salio=${exitedFullscreen}`
+  );
+
+  // 20. Subir a la carpeta superior + mover archivos entre carpetas
+  // (arrastrar y soltar en el sidebar)
+  let navAndMoveOk = false;
+  if (fixturesDir) {
+    const childRoot = window.mdEditor.joinPath(fixturesDir, 'nested', 'child-root');
+    const childResult = await window.mdEditor.readFolder(childRoot);
+    window.mdSidebar.renderFolder(childResult);
+    await window.mdSidebar.goToParent();
+    const parentOk = window.mdState.rootFolder === window.mdEditor.joinPath(fixturesDir, 'nested');
+
+    const moveADir = window.mdEditor.joinPath(fixturesDir, 'moveA');
+    const moveBDir = window.mdEditor.joinPath(fixturesDir, 'moveB');
+    const moveASrc = window.mdEditor.joinPath(moveADir, 'move-me.md');
+    window.mdSidebar.renderFolder({ rootPath: fixturesDir, tree: [] });
+    await window.mdSidebar.moveEntry({ ruta: moveASrc, esCarpeta: false, nombre: 'move-me.md' }, moveBDir);
+    const movedDest = window.mdEditor.joinPath(moveBDir, 'move-me.md');
+    const movedOnDisk = await window.mdEditor.readFile(movedDest);
+    const oldGoneOnDisk = await window.mdEditor.readFile(moveASrc);
+
+    navAndMoveOk = parentOk && movedOnDisk !== null && oldGoneOnDisk === null;
+    check(
+      'Subir a la carpeta superior y mover archivos entre carpetas (drag & drop)',
+      navAndMoveOk,
+      `subioAlPadre=${parentOk} movidoADestino=${movedOnDisk !== null} salioDeOrigen=${oldGoneOnDisk === null}`
+    );
+  } else {
+    check('Subir a la carpeta superior y mover archivos entre carpetas (drag & drop)', false, 'sin fixturesDir');
+  }
+
+  // 21. Vista de cambios (diff.js) con el paquete "diff" (Myers) en vez del
+  // LCS a mano — regresión: que siga marcando agregados/borrados bien
+  let diffOk = false;
+  if (fixtureMdPath) {
+    await window.openFileAtPath(fixtureMdPath);
+    const onDisk = await window.mdEditor.readFile(fixtureMdPath);
+    window.mdCodeMirror.setValue(onDisk + '\nLinea agregada para el diff.\n');
+    document.getElementById('btn-diff').click();
+    await waitFor(() => !document.getElementById('diff-panel').hidden);
+    const hasAdd = !!document.querySelector('#diff-panel .diff-add');
+    diffOk = hasAdd;
+    document.getElementById('diff-panel').hidden = true;
+    check('Vista de cambios (diff con Myers) marca líneas agregadas', diffOk);
+  } else {
+    check('Vista de cambios (diff con Myers) marca líneas agregadas', false, 'sin fixturesDir');
+  }
+
+  // 22. Ajustes de editor: tamaño de fuente, tipografía, tabulación y ajuste
+  // de línea se aplican a CodeMirror y persisten en config.json
+  const fontSizeSelect = document.getElementById('fontsize-select');
+  fontSizeSelect.value = '18';
+  fontSizeSelect.dispatchEvent(new Event('change'));
+  const fontSizeVarOk = await waitFor(() => getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size').trim() === '18px');
+
+  const tabSizeSelect = document.getElementById('tabsize-select');
+  tabSizeSelect.value = '8';
+  tabSizeSelect.dispatchEvent(new Event('change'));
+  const tabSizeOk = window.mdCodeMirror.getOption('tabSize') === 8;
+
+  const wordWrapToggle = document.getElementById('wordwrap-toggle');
+  wordWrapToggle.checked = false;
+  wordWrapToggle.dispatchEvent(new Event('change'));
+  const wordWrapOk = window.mdCodeMirror.getOption('lineWrapping') === false;
+
+  await new Promise((r) => setTimeout(r, 100));
+  const persistedConfig = await window.mdEditor.getConfig();
+  const persistedOk = persistedConfig.editorFontSize === '18' && persistedConfig.editorTabSize === 8 && persistedConfig.editorWordWrap === false;
+
+  check(
+    'Ajustes de editor (fuente/tabulación/ajuste de línea) se aplican y persisten',
+    !!fontSizeVarOk && tabSizeOk && wordWrapOk && persistedOk,
+    `fontSize=${!!fontSizeVarOk} tabSize=${tabSizeOk} wordWrap=${wordWrapOk} persistido=${persistedOk}`
+  );
+  // Revertir para no afectar otros checks (ninguno depende de esto, pero prolijo)
+  wordWrapToggle.checked = true;
+  wordWrapToggle.dispatchEvent(new Event('change'));
+
+  // 23. Restricción de rutas SIN carpeta abierta: antes no restringía nada;
+  // ahora restringe al directorio propio del archivo suelto
+  let looseFileRestrictionOk = false;
+  if (fixtureMdPath) {
+    window.mdState.rootFolder = null;
+    await window.openFileAtPath(fixtureMdPath);
+    window.mdCodeMirror.setValue('![fuera](../../../../etc/passwd.png)');
+    window.renderPreview();
+    await new Promise((r) => setTimeout(r, 150));
+    looseFileRestrictionOk = !!document.querySelector('#preview-pane [data-blocked-src], #preview-pane .asset-missing');
+    check('Restricción de rutas aplica también sin carpeta abierta (archivo suelto)', looseFileRestrictionOk);
+  } else {
+    check('Restricción de rutas aplica también sin carpeta abierta (archivo suelto)', false, 'sin fixturesDir');
+  }
+
+  // 24. Historial de versiones: guardar crea un backup, listBackups lo ve,
+  // y el panel (paleta de comandos -> "Ver versiones anteriores...") lo lista
+  let historyOk = false;
+  if (fixtureMdPath) {
+    window.mdState.rootFolder = fixturesDir || null;
+    await window.openFileAtPath(fixtureMdPath);
+    const before = await window.mdEditor.listBackups(fixtureMdPath);
+    window.mdCodeMirror.setValue('Version A ' + Date.now());
+    await window.mdEditor.saveFile(window.mdCodeMirror.getValue(), fixtureMdPath, false);
+    const after = await window.mdEditor.listBackups(fixtureMdPath);
+    const backupCreatedOk = after.length > before.length;
+
+    window.mdHistory.open();
+    const panelItem = await waitFor(() => document.querySelector('#history-list .command-palette-item'));
+    const panelShowsOk = !!panelItem;
+    window.mdHistory.close();
+
+    historyOk = backupCreatedOk && panelShowsOk;
+    check(
+      'Historial de versiones: guardar crea un backup y aparece en el panel',
+      historyOk,
+      `backupCreado=${backupCreatedOk} panelLoMuestra=${panelShowsOk}`
+    );
+  } else {
+    check('Historial de versiones: guardar crea un backup y aparece en el panel', false, 'sin fixturesDir');
+  }
+
   return results;
 })();

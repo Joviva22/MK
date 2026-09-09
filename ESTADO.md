@@ -54,6 +54,22 @@
 - ~~Wikilinks `[[Nota]]` / `[[Nota|texto]]`: se renderizan como link clicable que resuelve el archivo por nombre dentro de la carpeta abierta y lo abre (o se marca como roto si no existe)~~
 - ~~Backlinks (`Ctrl+Shift+B` o botón 🔗): panel con todos los archivos de la carpeta que enlazan al archivo activo vía `[[NombreActivo]]`, clic en un resultado abre el archivo y salta a la línea~~
 - ~~Empaquetado con electron-builder: `npm run dist` genera un AppImage standalone (`dist/*.AppImage`, ~110 MB, incluye Electron + todas las dependencias) que no depende de `node_modules/` como el lanzador actual — probado end-to-end (arranca, carga toda la UI, llega a ejecutar JS en la ventana)~~
+- ~~Repo git inicializado (`git init` + `.gitignore` + commit inicial de 37 archivos) — el proyecto no tenía control de versiones~~
+- ~~Icono personalizado por archivo guardado por ruta relativa a la raíz (no absoluta) — sobrevive a mover/renombrar la carpeta entera, y el renombrado desde el sidebar migra la clave automáticamente~~
+- ~~`#tag` y `[[wikilink]]` ya no se activan dentro de \`código inline\` ni \`\`\`fences\`\`\` (mismo mecanismo de placeholders que `extractMath`), tanto en el preview como en el escaneo de toda la carpeta (etiquetas/backlinks)~~
+- ~~AppImage con icono propio (`build/icon.png`) y `mimeTypes` (`text/markdown`, `text/x-markdown`) registrados en el `.desktop` embebido~~
+- ~~Crear/renombrar/eliminar archivos y carpetas desde el sidebar (clic derecho en un archivo, una carpeta, o la raíz de la carpeta abierta), con confirmación antes de eliminar~~
+- ~~Barra de menú nativa (Archivo/Editar/Ver) eliminada (`Menu.setApplicationMenu(null)`, ver `F11.md`)~~
+- ~~`Ctrl+N/O/S/Shift+S` movidos de `extraKeys` de CodeMirror a un listener global del documento — antes solo funcionaban con el editor enfocado, ahora andan sin importar qué parte de la app tiene el foco~~
+- ~~`F11` alterna pantalla completa real de la ventana + modo "escritura sin distracciones" (oculta toolbar y barra de estado) — vuelve a pulsarlo restaura todo~~
+- ~~Sidebar: subir a la carpeta superior (fila "↑ .." arriba del árbol) — reabre el padre de la carpeta actual como nueva raíz, sin diálogo~~
+- ~~Sidebar: mover archivos y carpetas arrastrándolos y soltándolos sobre otra carpeta (o la raíz) — migra el icono personalizado y actualiza la pestaña si el archivo movido está abierto~~
+- ~~Historial local de versiones: cada `Guardar` respalda el contenido previo del archivo en `userData/backups/` (hasta 20 versiones por archivo) antes de pisarlo; "Ver versiones anteriores..." (paleta de comandos) las lista y permite traer una al editor~~
+- ~~ESLint (`npm run lint`, config plana en `eslint.config.js`) con `no-undef`/`no-unused-vars` sobre `src/` y `test/` — pensado como red de seguridad barata contra el tipo de bugs reales que salieron en este proyecto (colisión de globals, variables sin declarar)~~
+- ~~Ajustes de editor (dropdown ⚙): tamaño de fuente, tipografía, ancho de tabulación y ajuste de línea, antes fijos en CSS/CodeMirror, ahora configurables y persistidos en `config.json`~~
+- ~~Restricción de rutas de assets aplica también sin carpeta abierta: un archivo suelto ahora restringe al directorio propio del archivo en vez de no restringir nada~~
+- ~~Vista de cambios (diff) reemplazada de un LCS O(n·m) escrito a mano por el algoritmo de Myers real (paquete `diff`, el mismo que usa git) — escala mejor con archivos largos~~
+- ~~Eliminar desde el sidebar manda a la papelera del sistema (`shell.trashItem`, se puede restaurar) en vez de borrar directo; si la papelera falla (sin gio/kioclient/trash-cli, o moviendo entre sistemas de archivos distintos) cae de vuelta a borrado directo para no dejar la operación a medias~~
 
 ## Por hacer
 
@@ -63,11 +79,13 @@
 ## Notas / limitaciones conocidas
 
 - Exportar a PDF/HTML usa una hoja de estilos propia simplificada (no la del preview real) — las fórmulas KaTeX se ven aproximadas porque no embebe `katex.min.css` ni sus fuentes (decisión consciente para no arrastrar fuentes al portar el HTML a otra máquina).
-- El diff usa un algoritmo LCS línea a línea escrito a mano (sin dependencia nueva) — O(n·m), de sobra para notas pero no pensado para archivos enormes.
 - Las paletas de los 24 temas de `Temas.md` son aproximaciones fieles reconstruidas de memoria, no los hex oficiales exactos de cada tema (no hay una fuente única/paquete npm con las 24 paletas listas). El resaltado de código (`.hljs-*`) usa colores fijos, no cambia por tema — sería bastante más trabajo (24 paletas de sintaxis en vez de 24 paletas de UI).
-- La restricción de rutas solo aplica si hay una carpeta abierta en el sidebar; abrir un archivo suelto (sin carpeta) no restringe nada.
 - La búsqueda global solo indexa `.md`/`.markdown`/`.txt`/`.tex` (coincide con lo editable en la app), es substring simple sin fuzzy matching, y corta a los primeros 200 resultados — de sobra para notas pero no para carpetas gigantes.
 - El autocompletado es "anyword" (palabras ya escritas en el documento actual), no un diccionario ni snippets de Markdown/LaTeX.
-- Los regex de etiquetas/wikilinks no distinguen bloques de código: un `#tag` o `[[link]]` dentro de \`código\` o \`\`\`fences\`\`\` también se transforma (limitación conocida, aceptable para notas normales).
-- El icono personalizado se guarda por ruta absoluta en `config.json`; si movés o renombrás el archivo, pierde el icono (hay que asignarlo de nuevo).
-- `dist/` (salida de `npm run dist`) no se versiona/limpia automáticamente — se regenera cuando haga falta, no hace falta conservarlo entre sesiones.
+- El icono personalizado se guarda por ruta relativa a la raíz; si renombrás/movés el archivo desde fuera de MK (no desde el sidebar), pierde el icono igual. También puede colisionar si dos carpetas distintas abiertas en momentos distintos tienen un archivo con el mismo nombre relativo.
+- `dist/` (salida de `npm run dist`) no se versiona/limpia automáticamente (está en `.gitignore`) — se regenera cuando haga falta.
+- El icono de `build/icon.png` es un placeholder generado (fondo azul + "MK"), no un diseño real.
+- Mover un archivo/carpeta con drag & drop en el sidebar no valida visualmente destinos inválidos mientras arrastrás (ej. una carpeta dentro de sí misma) — se bloquea recién al soltar, con un `alert()`.
+- Renombrar/mover desde el sidebar actualiza la pestaña abierta si el archivo estaba abierto; si se renombra/mueve desde fuera de MK (el explorador de archivos del sistema) mientras está abierto, la pestaña sigue apuntando a la ruta vieja.
+- El historial de versiones vive en `userData/backups/` (no en el proyecto), no tiene diff entre versiones (solo reemplaza el contenido del editor al restaurar) y no se limpia si borrás el archivo original.
+- ESLint solo corre `no-undef`/`no-unused-vars` a mano (`npm run lint`) — no hay CI que lo corra automáticamente en cada cambio.

@@ -61,6 +61,19 @@ async function refreshTree() {
   if (fresh) renderFolder(fresh);
 }
 
+// Sube un nivel: abre la carpeta padre de la que está abierta ahora como
+// nueva raíz (igual que "Abrir carpeta" pero sin diálogo, y persiste el
+// cambio para la próxima sesión).
+async function goToParent() {
+  if (!currentTreeResult) return;
+  const parent = window.mdEditor.dirName(currentTreeResult.rootPath);
+  if (!parent || parent === currentTreeResult.rootPath) return;
+  const result = await window.mdEditor.readFolder(parent);
+  if (!result) return;
+  await window.mdEditor.setConfig({ lastFolder: parent });
+  renderFolder(result);
+}
+
 async function createEntry(dirPath, isFolder) {
   const name = prompt(isFolder ? 'Nombre de la nueva carpeta:' : 'Nombre del nuevo archivo:');
   if (!name || !name.trim()) return;
@@ -75,27 +88,48 @@ async function createEntry(dirPath, isFolder) {
   if (!isFolder) window.openFileAtPath(result.path);
 }
 
+// Común a renombrar y mover: el archivo/carpeta pasó de node.ruta a
+// newPath. Migra la clave del icono personalizado (guardada por ruta
+// relativa a la raíz) y, si el archivo está abierto en una pestaña,
+// actualiza esa pestaña para que no siga apuntando a la ruta vieja.
+async function relocateEntry(node, newPath) {
+  if (!node.esCarpeta) {
+    const oldKey = relKeyFor(node);
+    if (fileIcons[oldKey]) {
+      const newKey = relKeyFor({ ruta: newPath });
+      fileIcons[newKey] = fileIcons[oldKey];
+      delete fileIcons[oldKey];
+      await window.mdEditor.setConfig({ fileIcons });
+    }
+    if (window.mdTabs) window.mdTabs.updateTabPath(node.ruta, newPath);
+  }
+  await refreshTree();
+}
+
 async function renameEntry(node) {
   const newName = prompt('Nuevo nombre:', node.nombre);
   if (!newName || !newName.trim() || newName.trim() === node.nombre) return;
-  const oldKey = relKeyFor(node);
   const result = await window.mdEditor.renamePath(node.ruta, newName.trim());
   if (result.error) {
     alert(result.error);
     return;
   }
-  if (!node.esCarpeta && fileIcons[oldKey]) {
-    const newKey = oldKey.replace(/[^/\\]*$/, newName.trim());
-    fileIcons[newKey] = fileIcons[oldKey];
-    delete fileIcons[oldKey];
-    await window.mdEditor.setConfig({ fileIcons });
+  await relocateEntry(node, result.path);
+}
+
+async function moveEntry(node, destDir) {
+  if (window.mdEditor.dirName(node.ruta) === destDir) return; // ya está ahí
+  const result = await window.mdEditor.movePath(node.ruta, destDir);
+  if (result.error) {
+    alert(result.error);
+    return;
   }
-  await refreshTree();
+  await relocateEntry(node, result.path);
 }
 
 async function deleteEntry(node) {
   const label = node.esCarpeta ? `la carpeta "${node.nombre}" y todo su contenido` : `el archivo "${node.nombre}"`;
-  if (!confirm(`¿Eliminar ${label}? Esta acción no se puede deshacer.`)) return;
+  if (!confirm(`¿Eliminar ${label}? Se intenta mandar a la papelera del sistema (se puede restaurar desde ahí); si no hay papelera disponible, se borra directo.`)) return;
   const result = await window.mdEditor.deletePath(node.ruta, node.esCarpeta);
   if (result.error) {
     alert(result.error);
@@ -171,6 +205,39 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') hideSidebarMenu();
 });
 
+const DRAG_MIME = 'application/x-mk-node';
+
+// Arrastrar cualquier fila (archivo o carpeta) para soltarla sobre una
+// carpeta (o la raíz) y moverla ahí. Solo carpetas son destino válido.
+function makeDraggable(row, node) {
+  row.draggable = true;
+  row.addEventListener('dragstart', (e) => {
+    e.stopPropagation();
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData(DRAG_MIME, JSON.stringify({ ruta: node.ruta, esCarpeta: node.esCarpeta, nombre: node.nombre }));
+  });
+}
+
+function makeDropTarget(el, getDestDir) {
+  el.addEventListener('dragover', (e) => {
+    if (!e.dataTransfer.types.includes(DRAG_MIME)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    el.classList.add('drag-over');
+  });
+  el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+  el.addEventListener('drop', (e) => {
+    if (!e.dataTransfer.types.includes(DRAG_MIME)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    el.classList.remove('drag-over');
+    const raw = e.dataTransfer.getData(DRAG_MIME);
+    if (!raw) return;
+    const draggedNode = JSON.parse(raw);
+    moveEntry(draggedNode, getDestDir());
+  });
+}
+
 function buildTree(nodes) {
   const ul = document.createElement('ul');
   ul.className = 'tree';
@@ -179,6 +246,7 @@ function buildTree(nodes) {
     const li = document.createElement('li');
     const row = document.createElement('div');
     row.className = 'tree-row';
+    makeDraggable(row, node);
 
     const iconEl = document.createElement('span');
     iconEl.className = 'tree-icon';
@@ -205,6 +273,7 @@ function buildTree(nodes) {
         e.stopPropagation();
         showSidebarMenu(e.clientX, e.clientY, node);
       });
+      makeDropTarget(row, () => node.ruta);
     } else {
       row.classList.add('tree-file');
       row.addEventListener('click', () => {
@@ -232,6 +301,17 @@ function renderFolder(result) {
   window.mdState.rootFolder = result.rootPath;
   sidebarPane.innerHTML = '';
 
+  const parentPath = window.mdEditor.dirName(result.rootPath);
+  if (parentPath && parentPath !== result.rootPath) {
+    const upRow = document.createElement('div');
+    upRow.className = 'tree-row tree-up';
+    upRow.title = 'Subir a la carpeta superior';
+    upRow.innerHTML = '<span class="tree-icon"><i data-lucide="arrow-up"></i></span><span>..</span>';
+    upRow.addEventListener('click', goToParent);
+    makeDropTarget(upRow, () => parentPath);
+    sidebarPane.appendChild(upRow);
+  }
+
   const rootLabel = document.createElement('div');
   rootLabel.className = 'tree-root-label';
   const rootIconEl = document.createElement('span');
@@ -244,6 +324,7 @@ function renderFolder(result) {
     e.stopPropagation();
     showSidebarMenu(e.clientX, e.clientY, null);
   });
+  makeDropTarget(rootLabel, () => result.rootPath);
   sidebarPane.appendChild(rootLabel);
   sidebarPane.appendChild(buildTree(result.tree));
 
@@ -265,6 +346,6 @@ document.getElementById('btn-open-folder').addEventListener('click', async () =>
   if (result) renderFolder(result);
 })();
 
-window.mdSidebar = { renderFolder, setFileIcon, createEntry, renameEntry, deleteEntry, refreshTree };
+window.mdSidebar = { renderFolder, setFileIcon, createEntry, renameEntry, deleteEntry, moveEntry, goToParent, refreshTree };
 
 })();

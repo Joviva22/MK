@@ -1,7 +1,8 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, net } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, net, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -89,7 +90,10 @@ function createWindow() {
 
   const loadOptions = isTestMode ? { query: { mkTestFixtures: testFixturesDir } } : undefined;
   mainWindow.loadFile(path.join(__dirname, 'index.html'), loadOptions);
-  buildMenu();
+  // Sin barra de menú nativa (Archivo/Editar/Ver): la toolbar de la app ya
+  // cubre esas acciones, y sus atajos (Ctrl+N/O/S/Shift+S) están registrados
+  // aparte en el renderer (editor.js), no dependen de accelerators de menú.
+  Menu.setApplicationMenu(null);
 
   mainWindow.webContents.on('did-finish-load', () => {
     if (pendingFilePath) {
@@ -114,40 +118,11 @@ async function runTests() {
   }
 }
 
-function buildMenu() {
-  const template = [
-    {
-      label: 'Archivo',
-      submenu: [
-        { label: 'Nuevo', accelerator: 'CmdOrCtrl+N', click: () => mainWindow.webContents.send('menu:new') },
-        { label: 'Abrir...', accelerator: 'CmdOrCtrl+O', click: () => mainWindow.webContents.send('menu:open') },
-        { label: 'Guardar', accelerator: 'CmdOrCtrl+S', click: () => mainWindow.webContents.send('menu:save') },
-        { label: 'Guardar como...', accelerator: 'CmdOrCtrl+Shift+S', click: () => mainWindow.webContents.send('menu:save-as') },
-        { type: 'separator' },
-        { role: 'quit', label: 'Salir' }
-      ]
-    },
-    {
-      label: 'Editar',
-      submenu: [
-        { role: 'undo', label: 'Deshacer' },
-        { role: 'redo', label: 'Rehacer' },
-        { type: 'separator' },
-        { role: 'cut', label: 'Cortar' },
-        { role: 'copy', label: 'Copiar' },
-        { role: 'paste', label: 'Pegar' }
-      ]
-    },
-    {
-      label: 'Ver',
-      submenu: [
-        { role: 'toggleDevTools', label: 'Herramientas de desarrollo' },
-        { role: 'reload', label: 'Recargar' }
-      ]
-    }
-  ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
-}
+ipcMain.handle('window:toggleFullscreen', () => {
+  const next = !mainWindow.isFullScreen();
+  mainWindow.setFullScreen(next);
+  return next;
+});
 
 ipcMain.handle('file:open', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
@@ -163,6 +138,33 @@ ipcMain.handle('file:open', async () => {
   return { filePath, content };
 });
 
+// Historial local de versiones: antes de pisar un archivo, guarda una copia
+// del contenido previo bajo userData/backups/<hash de la ruta>/. Así un
+// autoguardado con contenido no deseado no borra el trabajo anterior sin
+// dejar rastro. Se guardan como mucho las últimas MAX_BACKUPS_PER_FILE.
+const backupsRoot = path.join(app.getPath('userData'), 'backups');
+const MAX_BACKUPS_PER_FILE = 20;
+
+function backupDirFor(filePath) {
+  return path.join(backupsRoot, crypto.createHash('md5').update(filePath).digest('hex'));
+}
+
+function makeBackup(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return;
+    const dir = backupDirFor(filePath);
+    fs.mkdirSync(dir, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    fs.copyFileSync(filePath, path.join(dir, `${stamp}__${path.basename(filePath)}`));
+    const entries = fs.readdirSync(dir).sort();
+    while (entries.length > MAX_BACKUPS_PER_FILE) {
+      fs.unlinkSync(path.join(dir, entries.shift()));
+    }
+  } catch (e) {
+    // un backup fallido no debe impedir guardar el archivo real
+  }
+}
+
 ipcMain.handle('file:save', async (event, { content, filePath, forceDialog }) => {
   let target = filePath;
   if (!target || forceDialog) {
@@ -176,8 +178,35 @@ ipcMain.handle('file:save', async (event, { content, filePath, forceDialog }) =>
     if (result.canceled || !result.filePath) return null;
     target = result.filePath;
   }
+  makeBackup(target);
   fs.writeFileSync(target, content, 'utf-8');
   return target;
+});
+
+ipcMain.handle('backups:list', (event, filePath) => {
+  if (!filePath) return [];
+  const dir = backupDirFor(filePath);
+  try {
+    return fs.readdirSync(dir)
+      .sort()
+      .reverse()
+      .map((name) => {
+        const backupPath = path.join(dir, name);
+        return { path: backupPath, mtime: fs.statSync(backupPath).mtimeMs };
+      });
+  } catch (e) {
+    return [];
+  }
+});
+
+ipcMain.handle('backups:read', (event, backupPath) => {
+  const rel = path.relative(backupsRoot, backupPath || '');
+  if (rel.startsWith('..') || path.isAbsolute(rel)) return null; // solo lee de backupsRoot
+  try {
+    return fs.readFileSync(backupPath, 'utf-8');
+  } catch (e) {
+    return null;
+  }
 });
 
 ipcMain.handle('file:read', (event, filePath) => {
@@ -275,12 +304,45 @@ ipcMain.handle('fs:rename', (event, { targetPath, newName }) => {
   }
 });
 
-ipcMain.handle('fs:delete', (event, { targetPath, isFolder }) => {
+// true si child es igual a parent o está adentro de parent (para no
+// permitir mover una carpeta dentro de sí misma o de un hijo suyo).
+function isInside(parent, child) {
+  if (parent === child) return true;
+  const rel = path.relative(parent, child);
+  return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+}
+
+ipcMain.handle('fs:move', (event, { sourcePath, destDir }) => {
+  if (isInside(sourcePath, destDir)) {
+    return { error: 'No se puede mover una carpeta dentro de sí misma.' };
+  }
+  const dest = path.join(destDir, path.basename(sourcePath));
+  if (dest === sourcePath) return { path: sourcePath };
+  if (fs.existsSync(dest)) return { error: 'Ya existe un archivo o carpeta con ese nombre ahí.' };
   try {
-    fs.rmSync(targetPath, { recursive: !!isFolder, force: false });
-    return { ok: true };
+    fs.renameSync(sourcePath, dest);
+    return { path: dest };
   } catch (e) {
     return { error: e.message };
+  }
+});
+
+// Manda a la papelera del sistema (shell.trashItem) en vez de borrar directo
+// con fs.rmSync — así "Eliminar" desde el sidebar se puede deshacer.
+ipcMain.handle('fs:delete', async (event, { targetPath, isFolder }) => {
+  try {
+    await shell.trashItem(targetPath);
+    return { ok: true };
+  } catch (e) {
+    // La papelera del sistema puede fallar (sin gio/kioclient/trash-cli, o
+    // moviendo entre distintos sistemas de archivos/puntos de montaje) —
+    // en ese caso, borrar directo en vez de dejar la operación a medias.
+    try {
+      fs.rmSync(targetPath, { recursive: !!isFolder, force: false });
+      return { ok: true };
+    } catch (e2) {
+      return { error: e2.message };
+    }
   }
 });
 

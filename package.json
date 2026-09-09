@@ -6,15 +6,18 @@
   "scripts": {
     "start": "electron .",
     "test": "node test/run.js",
+    "lint": "eslint .",
     "dist": "electron-builder --linux AppImage"
   },
   "license": "MIT",
   "devDependencies": {
     "electron": "^32.0.0",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "eslint": "^10.10.0"
   },
   "dependencies": {
     "codemirror": "^5.65.16",
+    "diff": "^9.0.0",
     "dompurify": "^3.4.15",
     "highlight.js": "^11.12.0",
     "katex": "^0.18.7",
@@ -38,11 +41,16 @@
       "!node_modules/electron-builder/**/*"
     ],
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Office",
       "executableName": "mk-editor",
       "icon": "build/icon.png",
-      "mimeTypes": ["text/markdown", "text/x-markdown"]
+      "mimeTypes": [
+        "text/markdown",
+        "text/x-markdown"
+      ]
     }
   }
 }

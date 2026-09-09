@@ -254,7 +254,24 @@ function showRestoreDialog(unsavedTabs) {
   };
 }
 
-window.mdTabs = { newTab, openTab, openViaDialog, saveActive, closeTab, cycleTab, getActiveTabInfo };
+// Si el archivo de una pestaña ya abierta se renombra/mueve desde el
+// sidebar, actualiza esa pestaña para que "Guardar" siga escribiendo en el
+// lugar correcto en vez de resucitar el archivo en su ruta vieja.
+function updateTabPath(oldPath, newPath) {
+  const tab = tabs.find((t) => t.filePath === oldPath);
+  if (!tab) return;
+  tab.filePath = newPath;
+  tab.mode = modeForPath(newPath);
+  if (tab.id === activeId) {
+    tabCm.setOption('mode', tab.mode);
+    window.mdState.currentFilePath = newPath;
+    window.mdStatusMode.textContent = tab.mode === 'stex' ? 'LaTeX' : 'Markdown';
+  }
+  renderTabbar();
+  persistSession();
+}
+
+window.mdTabs = { newTab, openTab, openViaDialog, saveActive, closeTab, cycleTab, getActiveTabInfo, updateTabPath };
 window.openFileAtPath = openTab;
 
 window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));

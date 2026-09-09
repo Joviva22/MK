@@ -36,11 +36,14 @@ function embedMediaSyntax(text) {
   });
 }
 
-// Si hay una carpeta abierta, las rutas de assets no pueden escaparse de ella
-// (evita que un .md ajeno con "../../../../etc/passwd" filtre archivos del sistema).
+// Las rutas de assets no pueden escaparse de la carpeta abierta (evita que
+// un .md ajeno con "../../../../etc/passwd" filtre archivos del sistema).
+// Sin carpeta abierta (archivo suelto) se restringe igual, pero al
+// directorio propio del archivo en vez de a un root explícito — antes ese
+// caso no tenía ninguna restricción.
 function resolveAssetPaths(html) {
   const basePath = window.mdState.currentFilePath;
-  const root = window.mdState.rootFolder;
+  const root = window.mdState.rootFolder || (basePath ? window.mdEditor.dirName(basePath) : null);
   return html.replace(/\ssrc="(?!https?:\/\/|data:|md-local:\/\/)([^"]+)"/g, (match, relPath) => {
     const absolute = window.mdEditor.resolveLocalPath(basePath, decodeURIComponent(relPath));
     if (root && !window.mdEditor.isPathAllowed(root, absolute)) {
