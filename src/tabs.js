@@ -9,8 +9,37 @@ let activeId = null;
 let nextId = 1;
 let sessionTimer = null;
 
-function modeForPath(filePath) {
-  return filePath && /\.tex$/i.test(filePath) ? 'stex' : 'markdown';
+// Resaltado de sintaxis más allá de Markdown/LaTeX: código fuente en otros
+// lenguajes se puede abrir y editar/guardar sin problema (es texto plano),
+// pero sin esto CodeMirror lo intentaba resaltar como si fuera Markdown.
+const MODE_BY_EXT = {
+  tex: { mode: 'stex', label: 'LaTeX' },
+  c: { mode: 'text/x-csrc', label: 'C' },
+  h: { mode: 'text/x-csrc', label: 'C' },
+  cpp: { mode: 'text/x-c++src', label: 'C++' },
+  cc: { mode: 'text/x-c++src', label: 'C++' },
+  cxx: { mode: 'text/x-c++src', label: 'C++' },
+  hpp: { mode: 'text/x-c++src', label: 'C++' },
+  java: { mode: 'text/x-java', label: 'Java' },
+  py: { mode: 'python', label: 'Python' },
+  sh: { mode: 'shell', label: 'Shell' },
+  bash: { mode: 'shell', label: 'Shell' }
+};
+
+function modeInfoForPath(filePath) {
+  const ext = filePath ? filePath.split('.').pop().toLowerCase() : '';
+  return MODE_BY_EXT[ext] || { mode: 'markdown', label: 'Markdown' };
+}
+
+// Código fuente (no LaTeX/Markdown): el preview de MK renderiza Markdown,
+// que no tiene sentido para estos archivos (los "#" de los comentarios se
+// leían como encabezados, etc.) — ver preview.js, ahí se usa esto para no
+// renderizar nada y darle todo el ancho al editor.
+const CODE_MODES = new Set(Object.values(MODE_BY_EXT).map((m) => m.mode).filter((m) => m !== 'stex'));
+
+function isActiveTabCode() {
+  const tab = tabs.find((t) => t.id === activeId);
+  return !!tab && CODE_MODES.has(tab.mode);
 }
 
 function labelFor(tab) {
@@ -18,9 +47,9 @@ function labelFor(tab) {
 }
 
 function createTab(filePath, content) {
-  const mode = modeForPath(filePath);
-  const doc = new CodeMirror.Doc(content, mode);
-  const tab = { id: nextId++, filePath, doc, mode, modified: false, autosaveTimer: null };
+  const modeInfo = modeInfoForPath(filePath);
+  const doc = new CodeMirror.Doc(content, modeInfo.mode);
+  const tab = { id: nextId++, filePath, doc, mode: modeInfo.mode, modeLabel: modeInfo.label, modified: false, autosaveTimer: null };
   tabs.push(tab);
   return tab;
 }
@@ -58,7 +87,7 @@ function activateTab(id) {
   tabCm.swapDoc(tab.doc);
   tabCm.setOption('mode', tab.mode);
   window.mdState.currentFilePath = tab.filePath;
-  window.mdStatusMode.textContent = tab.mode === 'stex' ? 'LaTeX' : 'Markdown';
+  window.mdStatusMode.textContent = tab.modeLabel;
   renderTabbar();
   if (window.renderPreview) window.renderPreview();
   persistSession();
@@ -125,10 +154,12 @@ async function saveActive(forceDialog = false) {
   const filePath = await window.mdEditor.saveFile(content, tab.filePath, forceDialog);
   if (!filePath) return;
   tab.filePath = filePath;
-  tab.mode = modeForPath(filePath);
+  const modeInfo = modeInfoForPath(filePath);
+  tab.mode = modeInfo.mode;
+  tab.modeLabel = modeInfo.label;
   tabCm.setOption('mode', tab.mode);
   window.mdState.currentFilePath = filePath;
-  window.mdStatusMode.textContent = tab.mode === 'stex' ? 'LaTeX' : 'Markdown';
+  window.mdStatusMode.textContent = tab.modeLabel;
   markModified(tab.id, false);
   persistSession();
 
@@ -278,17 +309,19 @@ function updateTabPath(oldPath, newPath) {
   const tab = tabs.find((t) => t.filePath === oldPath);
   if (!tab) return;
   tab.filePath = newPath;
-  tab.mode = modeForPath(newPath);
+  const modeInfo = modeInfoForPath(newPath);
+  tab.mode = modeInfo.mode;
+  tab.modeLabel = modeInfo.label;
   if (tab.id === activeId) {
     tabCm.setOption('mode', tab.mode);
     window.mdState.currentFilePath = newPath;
-    window.mdStatusMode.textContent = tab.mode === 'stex' ? 'LaTeX' : 'Markdown';
+    window.mdStatusMode.textContent = tab.modeLabel;
   }
   renderTabbar();
   persistSession();
 }
 
-window.mdTabs = { newTab, openTab, openViaDialog, saveActive, closeTab, cycleTab, getActiveTabInfo, updateTabPath };
+window.mdTabs = { newTab, openTab, openViaDialog, saveActive, closeTab, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode };
 window.openFileAtPath = openTab;
 
 window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));

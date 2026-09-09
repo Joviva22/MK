@@ -86,7 +86,13 @@
   check('Guardar escribe el contenido editado en el archivo correcto (fixture)', roundTrip);
 
   // 6. Preview renderiza Markdown básico
-  window.mdCodeMirror.setValue('# Titulo de prueba\n\nTexto en **negrita**.');
+  // A partir de acá (6-7) el contenido es solo para probar edición/render,
+  // sin importar qué archivo esté abierto — se arranca una pestaña nueva
+  // sin ruta (en vez de seguir escribiendo en la pestaña de fixtureMdPath)
+  // para no dejar el autoguardado (scheduleAutosave, por-tab con debounce)
+  // esperando escribir contenido de prueba encima del fixture real si el
+  // timing de tests más adelante lo deja disparar.
+  window.mdTabs.newTab('# Titulo de prueba\n\nTexto en **negrita**.');
   window.renderPreview();
   await waitFor(() => document.querySelector('#preview-pane h1'));
   const previewPane = document.getElementById('preview-pane');
@@ -220,6 +226,43 @@
     'Búsqueda global: pide carpeta si no hay una abierta, y encuentra texto en fixtures',
     searchOpenedOk && noFolderMsgOk && searchFindsFixture,
     `abierta=${searchOpenedOk} avisoSinCarpeta=${noFolderMsgOk} encontroFixture=${searchFindsFixture}`
+  );
+
+  // 12b. Buscar/reemplazar dentro del archivo actual (Ctrl+F, findreplace.js)
+  window.mdTabs.newTab('gato perro gato pajaro gato');
+  const findWidget = document.getElementById('find-widget');
+  const findInputEl = document.getElementById('find-input');
+  const findCountEl = document.getElementById('find-count');
+  const findReplaceRow = document.getElementById('find-replace-row');
+  const replaceInputEl = document.getElementById('replace-input');
+
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', ctrlKey: true }));
+  const findOpensOk = !findWidget.hidden && getComputedStyle(findWidget).display !== 'none';
+  const replaceRowHiddenByDefaultOk = findReplaceRow.hidden && getComputedStyle(findReplaceRow).display === 'none';
+
+  findInputEl.value = 'gato';
+  findInputEl.dispatchEvent(new Event('input'));
+  await waitFor(() => findCountEl.textContent === '1/3');
+  const findsThreeMatchesOk = findCountEl.textContent === '1/3';
+  const highlightsAllMatchesOk = document.querySelectorAll('.cm-find-match, .cm-find-match-current').length === 3;
+
+  document.getElementById('find-next').click();
+  const nextAdvancesOk = findCountEl.textContent === '2/3';
+
+  document.getElementById('find-toggle-replace').click();
+  const replaceRowVisibleOk = !findReplaceRow.hidden && getComputedStyle(findReplaceRow).display !== 'none';
+  replaceInputEl.value = 'gallina';
+  document.getElementById('replace-all').click();
+  const replaceAllOk = window.mdCodeMirror.getValue() === 'gallina perro gallina pajaro gallina';
+
+  window.mdFindReplace.close();
+  const closesOk = findWidget.hidden && getComputedStyle(findWidget).display === 'none';
+
+  check(
+    'Buscar/reemplazar en el archivo actual (Ctrl+F): encuentra, resalta, navega y reemplaza todo',
+    findOpensOk && replaceRowHiddenByDefaultOk && findsThreeMatchesOk && highlightsAllMatchesOk &&
+      nextAdvancesOk && replaceRowVisibleOk && replaceAllOk && closesOk,
+    `abreOk=${findOpensOk} reemplazoOcultoPorDefectoOk=${replaceRowHiddenByDefaultOk} encuentraTresOk=${findsThreeMatchesOk} resaltaTodosOk=${highlightsAllMatchesOk} siguienteAvanzaOk=${nextAdvancesOk} filaReemplazoVisibleOk=${replaceRowVisibleOk} reemplazaTodoOk=${replaceAllOk} cierraOk=${closesOk}`
   );
 
   // 13. Autocompletado: Ctrl-Space muestra sugerencias basadas en palabras del documento
@@ -539,6 +582,152 @@
   }
   check('Panel secundario: abre de solo lectura y "promueve" al principal con un clic', secondaryPaneOk, secondaryPaneDetail);
 
+  // 20d. Panel secundario: botón "Código" muestra la fuente cruda (sin
+  // renderizar) de un archivo de texto, "Vista" vuelve al renderizado.
+  // Solo tiene sentido para md/txt/tex — para PDF/imagen/docx el botón
+  // queda oculto (no hay "fuente" que mostrar).
+  let secondaryViewModeOk = false;
+  let secondaryViewModeDetail = 'sin fixturesDir';
+  if (fixturesDir && fixturePdfPath) {
+    // Archivo propio de este check (no comparte note.md/other.md con otros
+    // tests, que los van mutando a lo largo de la suite): contenido fijo y
+    // conocido, así "# Encabezado" solo puede aparecer en modo código.
+    const viewModeFixturePath = window.mdEditor.joinPath(fixturesDir, 'secondary-viewmode-test.md');
+    await window.mdEditor.saveFile('# Encabezado\n\nTexto plano.\n', viewModeFixturePath, false);
+
+    await window.mdSecondaryPane.open(viewModeFixturePath);
+    await waitFor(() => !document.getElementById('secondary-pane').hidden);
+    const viewModeBtn = document.getElementById('secondary-pane-viewmode');
+    const btnVisibleForTextOk = !viewModeBtn.hidden;
+    const renderedFirstOk = !document.getElementById('secondary-pane-body').textContent.includes('# Encabezado');
+
+    viewModeBtn.click();
+    await waitFor(() => document.getElementById('secondary-pane-body').textContent.includes('# Encabezado'));
+    const showsRawSourceOk = document.getElementById('secondary-pane-body').textContent.includes('# Encabezado');
+
+    viewModeBtn.click();
+    await waitFor(() => !document.getElementById('secondary-pane-body').textContent.includes('# Encabezado'));
+    const backToRenderedOk = !document.getElementById('secondary-pane-body').textContent.includes('# Encabezado');
+
+    await window.mdSecondaryPane.open(fixturePdfPath);
+    await waitFor(() => !document.getElementById('secondary-pane').hidden);
+    const btnHiddenForPdfOk = viewModeBtn.hidden;
+
+    window.mdSecondaryPane.close();
+
+    secondaryViewModeOk = btnVisibleForTextOk && renderedFirstOk && showsRawSourceOk && backToRenderedOk && btnHiddenForPdfOk;
+    secondaryViewModeDetail = `botonVisibleEnTextoOk=${btnVisibleForTextOk} primeroRenderizadoOk=${renderedFirstOk} muestraFuenteOk=${showsRawSourceOk} vuelveARenderizadoOk=${backToRenderedOk} botonOcultoEnPdfOk=${btnHiddenForPdfOk}`;
+  }
+  check('Panel secundario: botón Código/Vista alterna fuente cruda y renderizado', secondaryViewModeOk, secondaryViewModeDetail);
+
+  // 20e. El modo enfoque/lectura del principal (Ctrl+Shift+E / Ctrl+Shift+R)
+  // es un eje independiente del sidebar y del panel secundario: los tres
+  // se pueden combinar (ej: sidebar visible + panel secundario abierto +
+  // principal en modo código). Regresión: antes, mode-focus/mode-read
+  // ocultaban el sidebar Y el panel secundario a la fuerza.
+  let modeAxesIndependentOk = false;
+  let modeAxesDetail = 'sin fixturesDir';
+  if (fixturesDir && fixtureMdPath && fixtureOtherPath) {
+    window.mdSidebar.renderFolder(await window.mdEditor.readFolder(fixturesDir));
+    await window.openFileAtPath(fixtureMdPath);
+    await window.mdSecondaryPane.open(fixtureOtherPath);
+    await waitFor(() => !document.getElementById('secondary-pane').hidden);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'E', ctrlKey: true, shiftKey: true }));
+    await waitFor(() => sidebarContainerEl.classList.contains('mode-focus'));
+    const sidebarVisibleInFocusOk = getComputedStyle(document.getElementById('sidebar-pane')).display !== 'none';
+    const secondaryVisibleInFocusOk = getComputedStyle(document.getElementById('secondary-pane')).display !== 'none';
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'E', ctrlKey: true, shiftKey: true })); // vuelve a normal
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'R', ctrlKey: true, shiftKey: true }));
+    await waitFor(() => sidebarContainerEl.classList.contains('mode-read'));
+    const sidebarVisibleInReadOk = getComputedStyle(document.getElementById('sidebar-pane')).display !== 'none';
+    const secondaryVisibleInReadOk = getComputedStyle(document.getElementById('secondary-pane')).display !== 'none';
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'R', ctrlKey: true, shiftKey: true })); // vuelve a normal
+    window.mdSecondaryPane.close();
+
+    modeAxesIndependentOk = sidebarVisibleInFocusOk && secondaryVisibleInFocusOk && sidebarVisibleInReadOk && secondaryVisibleInReadOk;
+    modeAxesDetail = `sidebarVisibleEnFocoOk=${sidebarVisibleInFocusOk} secundarioVisibleEnFocoOk=${secondaryVisibleInFocusOk} sidebarVisibleEnLecturaOk=${sidebarVisibleInReadOk} secundarioVisibleEnLecturaOk=${secondaryVisibleInReadOk}`;
+  }
+  check('Modo enfoque/lectura no oculta el sidebar ni el panel secundario (ejes independientes)', modeAxesIndependentOk, modeAxesDetail);
+
+  // 20f. Panel secundario: mismo ancho que el principal por defecto (los
+  // dos "pantalla" quedan 1fr/1fr en el grid, ver styles.css), y el propio
+  // divisor (#resizer-secondary) permite repartir el ancho entre los dos
+  // arrastrando, igual que el resto de los resizers de la app.
+  let splitWidthOk = false;
+  let splitWidthDetail = 'sin fixturesDir';
+  if (fixtureMdPath && fixtureOtherPath) {
+    await window.openFileAtPath(fixtureMdPath);
+    await window.mdSecondaryPane.open(fixtureOtherPath);
+    await waitFor(() => !document.getElementById('secondary-pane').hidden);
+    await new Promise((r) => setTimeout(r, 100));
+
+    const primaryEl = document.querySelector('.primary-pane');
+    const secondaryEl = document.getElementById('secondary-pane');
+    const primaryWidthBefore = primaryEl.getBoundingClientRect().width;
+    const secondaryWidthBefore = secondaryEl.getBoundingClientRect().width;
+    const equalByDefaultOk = Math.abs(primaryWidthBefore - secondaryWidthBefore) < 2;
+
+    const handle = document.getElementById('resizer-secondary');
+    const r = handle.getBoundingClientRect();
+    handle.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: r.x + 3, clientY: r.y + 10 }));
+    document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: r.x - 100, clientY: r.y + 10 }));
+    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: r.x - 100, clientY: r.y + 10 }));
+    await waitFor(() => secondaryEl.getBoundingClientRect().width < secondaryWidthBefore - 50);
+    const secondaryWidthAfter = secondaryEl.getBoundingClientRect().width;
+    const primaryWidthAfter = primaryEl.getBoundingClientRect().width;
+    const draggedOk = secondaryWidthAfter < secondaryWidthBefore - 50 && primaryWidthAfter > primaryWidthBefore + 50;
+
+    window.mdSecondaryPane.close();
+
+    splitWidthOk = equalByDefaultOk && draggedOk;
+    splitWidthDetail = `parejoPorDefectoOk=${equalByDefaultOk} (principal=${primaryWidthBefore.toFixed(0)} secundario=${secondaryWidthBefore.toFixed(0)}) arrastreOk=${draggedOk} (principal=${primaryWidthAfter.toFixed(0)} secundario=${secondaryWidthAfter.toFixed(0)})`;
+  }
+  check('Panel secundario: mismo ancho que el principal por defecto, divisor lo reparte al arrastrar', splitWidthOk, splitWidthDetail);
+
+  // 20g. Cada panel scrollea por su cuenta (preview y panel secundario),
+  // sin que el contenido largo empuje la altura de .container ni haga
+  // scrollear la página entera. Regresión real: un grid anidado (ver
+  // .primary-pane) sin min-height:0 en cada nivel deja que los hijos
+  // crezcan al alto de su contenido en vez de recortarse a la altura
+  // disponible — cada panel "crecía" en vez de tener su propia barra.
+  let independentScrollOk = false;
+  let independentScrollDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const longContent = '# Largo\n\n' + Array.from({ length: 200 }, (_, i) => `Linea ${i} de contenido bien largo para forzar overflow vertical y probar el scroll interno de cada panel.`).join('\n\n');
+    const scrollFixtureA = window.mdEditor.joinPath(fixturesDir, 'scroll-test-a.md');
+    const scrollFixtureB = window.mdEditor.joinPath(fixturesDir, 'scroll-test-b.md');
+    await window.mdEditor.saveFile(longContent, scrollFixtureA, false);
+    await window.mdEditor.saveFile(longContent, scrollFixtureB, false);
+
+    await window.openFileAtPath(scrollFixtureA);
+    await window.mdSecondaryPane.open(scrollFixtureB);
+    await waitFor(() => !document.getElementById('secondary-pane').hidden);
+    await new Promise((r) => setTimeout(r, 150));
+
+    const containerEl2 = document.querySelector('.container');
+    const previewScrollEl = document.getElementById('preview-scroll');
+    const secondaryBodyEl = document.getElementById('secondary-pane-body');
+
+    const containerNotOverflowingOk = containerEl2.scrollHeight <= containerEl2.clientHeight + 2;
+    const bodyNotScrollingOk = document.body.scrollHeight <= document.body.clientHeight + 20;
+    const previewHasOwnScrollOk = previewScrollEl.scrollHeight > previewScrollEl.clientHeight + 50;
+    const secondaryHasOwnScrollOk = secondaryBodyEl.scrollHeight > secondaryBodyEl.clientHeight + 50;
+
+    previewScrollEl.scrollTop = 300;
+    secondaryBodyEl.scrollTop = 150;
+    await new Promise((r) => setTimeout(r, 50));
+    const scrollIndependentOk = previewScrollEl.scrollTop === 300 && secondaryBodyEl.scrollTop === 150;
+
+    window.mdSecondaryPane.close();
+
+    independentScrollOk = containerNotOverflowingOk && bodyNotScrollingOk && previewHasOwnScrollOk && secondaryHasOwnScrollOk && scrollIndependentOk;
+    independentScrollDetail = `containerNoDesbordaOk=${containerNotOverflowingOk} paginaNoScrolleaOk=${bodyNotScrollingOk} previewScrollPropioOk=${previewHasOwnScrollOk} secundarioScrollPropioOk=${secondaryHasOwnScrollOk} scrollIndependienteOk=${scrollIndependentOk}`;
+  }
+  check('Cada panel (editor/preview/secundario) scrollea por su cuenta, sin empujar la altura de la ventana', independentScrollOk, independentScrollDetail);
+
   // 21. Vista de cambios (diff.js) con el paquete "diff" (Myers) en vez del
   // LCS a mano — regresión: que siga marcando agregados/borrados bien
   let diffOk = false;
@@ -585,6 +774,94 @@
   // Revertir para no afectar otros checks (ninguno depende de esto, pero prolijo)
   wordWrapToggle.checked = true;
   wordWrapToggle.dispatchEvent(new Event('change'));
+
+  // 22b. Ajuste rápido de tamaño de fuente: Ctrl+=/Ctrl+-, Ctrl+scroll sobre
+  // el editor, Ctrl+0 para volver al tamaño por defecto (14px) — todo
+  // sincronizado con el mismo config.json que usa el select de Ajustes.
+  fontSizeSelect.value = '14';
+  fontSizeSelect.dispatchEvent(new Event('change'));
+  await waitFor(() => getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size').trim() === '14px');
+
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: '=', ctrlKey: true }));
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: '=', ctrlKey: true }));
+  await waitFor(() => getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size').trim() === '16px');
+  const zoomInOk = getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size').trim() === '16px';
+
+  document.getElementById('editor-pane').dispatchEvent(
+    new WheelEvent('wheel', { bubbles: true, cancelable: true, ctrlKey: true, deltaY: -100 })
+  );
+  await waitFor(() => getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size').trim() === '17px');
+  const wheelZoomOk = getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size').trim() === '17px';
+
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: '-', ctrlKey: true }));
+  await waitFor(() => getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size').trim() === '16px');
+  const zoomOutOk = getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size').trim() === '16px';
+
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: '0', ctrlKey: true }));
+  await waitFor(() => getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size').trim() === '14px');
+  const zoomResetOk = getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size').trim() === '14px';
+
+  await new Promise((r) => setTimeout(r, 100));
+  const zoomPersistedOk = (await window.mdEditor.getConfig()).editorFontSize === '14';
+
+  check(
+    'Ctrl+=/Ctrl+-/Ctrl+scroll/Ctrl+0 ajustan el tamaño de fuente y persisten en config.json',
+    zoomInOk && wheelZoomOk && zoomOutOk && zoomResetOk && zoomPersistedOk,
+    `zoomInOk=${zoomInOk} zoomRuedaOk=${wheelZoomOk} zoomOutOk=${zoomOutOk} reseteoOk=${zoomResetOk} persistidoOk=${zoomPersistedOk}`
+  );
+
+  // 22c. Resaltado de sintaxis por extensión (no solo Markdown/LaTeX): antes
+  // modeForPath solo distinguía .tex, cualquier otro archivo (aunque fuera
+  // texto plano editable, como .py/.c) se resaltaba como si fuera Markdown.
+  let langModesOk = false;
+  let langModesDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const langFiles = {
+      py: { path: window.mdEditor.joinPath(fixturesDir, 'script.py'), mode: 'python', label: 'Python' },
+      c: { path: window.mdEditor.joinPath(fixturesDir, 'main.c'), mode: 'text/x-csrc', label: 'C' },
+      cpp: { path: window.mdEditor.joinPath(fixturesDir, 'main.cpp'), mode: 'text/x-c++src', label: 'C++' },
+      java: { path: window.mdEditor.joinPath(fixturesDir, 'Main.java'), mode: 'text/x-java', label: 'Java' },
+      sh: { path: window.mdEditor.joinPath(fixturesDir, 'run.sh'), mode: 'shell', label: 'Shell' }
+    };
+    const results = {};
+    for (const [key, info] of Object.entries(langFiles)) {
+      await window.mdEditor.saveFile('contenido de prueba\n', info.path, false);
+      await window.openFileAtPath(info.path);
+      await waitFor(() => window.mdCodeMirror.getOption('mode') === info.mode);
+      results[key] = window.mdCodeMirror.getOption('mode') === info.mode &&
+        document.getElementById('status-mode').textContent === info.label;
+    }
+    langModesOk = Object.values(results).every(Boolean);
+    langModesDetail = Object.entries(results).map(([k, v]) => `${k}=${v}`).join(' ');
+  }
+  check('Resaltado de sintaxis: .py/.c/.cpp/.java/.sh usan el modo de CodeMirror correcto (no Markdown)', langModesOk, langModesDetail);
+
+  // 22d. En un archivo de código no tiene sentido el preview (renderiza
+  // Markdown, y "# comentario" se leía como encabezado) — se oculta y el
+  // editor pasa a ocupar todo el ancho del principal. Al volver a un .md
+  // normal, el preview tiene que reaparecer.
+  let codeFileNoPreviewOk = false;
+  let codeFileNoPreviewDetail = 'sin fixturesDir';
+  if (fixturesDir && fixtureMdPath) {
+    const pyPath = window.mdEditor.joinPath(fixturesDir, 'script.py');
+    await window.openFileAtPath(pyPath);
+    await waitFor(() => document.querySelector('.container').classList.contains('code-file'));
+    const containerEl2 = document.querySelector('.container');
+    const previewWrapperEl = document.querySelector('.preview-wrapper');
+    const codeFileClassOk = containerEl2.classList.contains('code-file');
+    const previewHiddenOk = getComputedStyle(previewWrapperEl).display === 'none';
+    const previewEmptyOk = document.getElementById('preview-pane').innerHTML.trim() === '';
+
+    await window.openFileAtPath(fixtureMdPath);
+    await waitFor(() => !document.querySelector('.container').classList.contains('code-file'));
+    const backToMdClassOk = !containerEl2.classList.contains('code-file');
+    const previewVisibleAgainOk = getComputedStyle(previewWrapperEl).display !== 'none' &&
+      document.getElementById('preview-pane').innerHTML.trim() !== '';
+
+    codeFileNoPreviewOk = codeFileClassOk && previewHiddenOk && previewEmptyOk && backToMdClassOk && previewVisibleAgainOk;
+    codeFileNoPreviewDetail = `claseEnCodigoOk=${codeFileClassOk} previewOcultoOk=${previewHiddenOk} previewVacioOk=${previewEmptyOk} claseSacadaOk=${backToMdClassOk} previewVuelveOk=${previewVisibleAgainOk}`;
+  }
+  check('Archivo de código: sin preview (Markdown no aplica), y vuelve al abrir un .md', codeFileNoPreviewOk, codeFileNoPreviewDetail);
 
   // 23. Restricción de rutas SIN carpeta abierta: antes no restringía nada;
   // ahora restringe al directorio propio del archivo suelto

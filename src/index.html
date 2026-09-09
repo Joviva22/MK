@@ -111,22 +111,40 @@
   <div class="container">
     <div id="sidebar-pane"><div class="sidebar-empty">Sin carpeta abierta</div></div>
     <div class="resizer" id="resizer-sidebar"></div>
-    <div class="editor-column">
-      <div id="tabbar"></div>
-      <div id="editor-pane"></div>
-    </div>
-    <div class="resizer" id="resizer-editor"></div>
-    <div class="preview-wrapper">
-      <div id="preview-scroll">
-        <div id="preview-pane"></div>
+    <div class="primary-pane">
+      <div class="editor-column">
+        <div id="tabbar"></div>
+        <div id="editor-pane"></div>
+        <div id="find-widget" class="find-widget" hidden>
+          <div class="find-row">
+            <input id="find-input" type="text" placeholder="Buscar..." autocomplete="off" spellcheck="false" />
+            <span id="find-count" class="find-count">0/0</span>
+            <button id="find-prev" class="toolbar-button find-widget-btn" title="Anterior (Shift+Enter)">↑</button>
+            <button id="find-next" class="toolbar-button find-widget-btn" title="Siguiente (Enter)">↓</button>
+            <button id="find-toggle-replace" class="toolbar-button find-widget-btn" title="Reemplazar">⇄</button>
+            <button id="find-close" class="toolbar-button find-widget-btn" title="Cerrar (Escape)">✕</button>
+          </div>
+          <div id="find-replace-row" class="find-row" hidden>
+            <input id="replace-input" type="text" placeholder="Reemplazar por..." autocomplete="off" spellcheck="false" />
+            <button id="replace-one" class="toolbar-button find-widget-btn" title="Reemplazar esta coincidencia">Reemplazar</button>
+            <button id="replace-all" class="toolbar-button find-widget-btn" title="Reemplazar todas las coincidencias">Todo</button>
+          </div>
+        </div>
       </div>
-      <div id="toc-panel" hidden></div>
-      <div id="diff-panel" hidden></div>
+      <div class="resizer" id="resizer-editor"></div>
+      <div class="preview-wrapper">
+        <div id="preview-scroll">
+          <div id="preview-pane"></div>
+        </div>
+        <div id="toc-panel" hidden></div>
+        <div id="diff-panel" hidden></div>
+      </div>
     </div>
     <div class="resizer" id="resizer-secondary" hidden></div>
     <div class="secondary-pane" id="secondary-pane" hidden>
       <div class="secondary-pane-header">
         <span id="secondary-pane-title"></span>
+        <button id="secondary-pane-viewmode" class="toolbar-button secondary-pane-viewmode-btn" hidden></button>
         <span class="secondary-pane-hint">clic para editar acá</span>
         <button id="secondary-pane-close" class="toolbar-button" title="Cerrar panel secundario">✕</button>
       </div>
@@ -309,8 +327,12 @@
   <script src="../node_modules/codemirror/lib/codemirror.js"></script>
   <script src="../node_modules/codemirror/mode/markdown/markdown.js"></script>
   <script src="../node_modules/codemirror/mode/stex/stex.js"></script>
+  <script src="../node_modules/codemirror/mode/clike/clike.js"></script>
+  <script src="../node_modules/codemirror/mode/python/python.js"></script>
+  <script src="../node_modules/codemirror/mode/shell/shell.js"></script>
   <script src="../node_modules/codemirror/addon/hint/show-hint.js"></script>
   <script src="../node_modules/codemirror/addon/hint/anyword-hint.js"></script>
+  <script src="../node_modules/codemirror/addon/search/searchcursor.js"></script>
   <script src="../node_modules/marked/lib/marked.umd.js"></script>
   <script src="../node_modules/katex/dist/katex.min.js"></script>
   <script src="../node_modules/dompurify/dist/purify.js"></script>
@@ -327,6 +349,7 @@
   <script src="editor.js"></script>
   <script src="tabs.js"></script>
   <script src="foldclutter.js"></script>
+  <script src="findreplace.js"></script>
   <script src="ui-dropdowns.js"></script>
   <script src="templates.js"></script>
   <script src="settings.js"></script>

@@ -282,24 +282,68 @@ label.dropdown-label {
   resize: vertical;
 }
 
+/* Columnas del grid armadas con variables en vez de una lista fija por
+   combinación: sidebar, modo enfoque/lectura y panel secundario son tres
+   ejes independientes (cada uno pisa solo sus propias variables), así se
+   pueden combinar libremente sin escribir una regla por combo — ej:
+   sidebar visible + panel secundario abierto + principal en modo código.
+
+   El principal (editor+preview) vive en un grid ANIDADO (.primary-pane, más
+   abajo) en vez de columnas sueltas acá: así "pantalla principal" y "panel
+   secundario" son cada una UNA sola columna de este grid externo, las dos
+   1fr por defecto → mismo ancho, arrastrables con su propio divisor sin
+   que el split interno editor/preview interfiera. --gt-editor/--gt-re/
+   --gt-preview quedan definidas acá igual (son custom properties, heredan
+   hacia adentro) porque el modo enfoque/lectura las pisa sobre .container. */
 .container {
+  --gt-sidebar: var(--sidebar-w, 260px);
+  --gt-rs: 6px;
+  --gt-primary: 1fr;
+  --gt-rsec: 0px;
+  --gt-secondary: 0px;
+  --gt-editor: var(--editor-w, 1fr);
+  --gt-re: 6px;
+  --gt-preview: 1fr;
   display: grid;
-  grid-template-columns: var(--sidebar-w, 260px) 6px var(--editor-w, 1fr) 6px 1fr;
+  grid-template-columns: var(--gt-sidebar) var(--gt-rs) var(--gt-primary) var(--gt-rsec) var(--gt-secondary);
   height: calc(100% - 45px - 26px);
 }
 
 .container.has-secondary {
-  grid-template-columns: var(--sidebar-w, 260px) 6px var(--editor-w, 1fr) 6px 1fr 6px var(--secondary-w, 380px);
+  --gt-rsec: 6px;
+  --gt-secondary: var(--secondary-w, 1fr);
 }
+
+.primary-pane {
+  display: grid;
+  grid-template-columns: var(--gt-editor, 1fr) var(--gt-re, 6px) var(--gt-preview, 1fr);
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+/* Posiciones de columna explícitas: display:none dentro de un grid saca al
+   elemento de la lista de "grid items" del todo (no solo lo hace invisible),
+   así que el auto-placement por defecto reacomoda a los hermanos siguientes
+   en las columnas que quedan libres — corriendo, por ejemplo, el preview a
+   la columna del editor cuando el editor se oculta en modo lectura. Con
+   grid-column fijo por elemento cada uno se queda en su columna pase lo que
+   pase con los demás. */
+#sidebar-pane { grid-column: 1; }
+#resizer-sidebar { grid-column: 2; }
+.primary-pane { grid-column: 3; }
+#resizer-secondary { grid-column: 4; }
+#secondary-pane { grid-column: 5; }
+.editor-column { grid-column: 1; }
+#resizer-editor { grid-column: 2; }
+.preview-wrapper { grid-column: 3; }
 
 /* Ocultar/mostrar el panel de archivos (Ctrl+B, ver sidebartoggle.js):
-   plegar solo el sidebar, sin tocar editor/preview/panel secundario. */
+   plegar solo el sidebar, sin tocar editor/preview/panel secundario ni el
+   modo enfoque/lectura. */
 .container.sidebar-hidden {
-  grid-template-columns: var(--editor-w, 1fr) 6px 1fr;
-}
-
-.container.sidebar-hidden.has-secondary {
-  grid-template-columns: var(--editor-w, 1fr) 6px 1fr 6px var(--secondary-w, 380px);
+  --gt-sidebar: 0px;
+  --gt-rs: 0px;
 }
 
 .container.sidebar-hidden #sidebar-pane,
@@ -346,6 +390,7 @@ body.resizing {
 
 #sidebar-pane {
   min-width: 0;
+  min-height: 0;
   height: 100%;
   overflow: auto;
   padding: 8px;
@@ -421,10 +466,80 @@ ul.tree.collapsed {
 }
 
 .editor-column {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   height: 100%;
+}
+
+/* Buscar/reemplazar (Ctrl+F, ver findreplace.js): flotante arriba a la
+   derecha del editor en vez de un modal-overlay bloqueante — a diferencia
+   de la búsqueda global (Ctrl+Shift+F, que sí navega a otro archivo), acá
+   tiene sentido seguir viendo el documento mientras se busca/reemplaza. */
+.find-widget {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  padding: 6px;
+}
+
+/* [hidden] tiene que ganarle a "display: flex" — mismo bug ya arreglado
+   antes en .modal-overlay/.dropdown-menu/.secondary-pane, ver ESTADO.md. */
+.find-widget[hidden] {
+  display: none;
+}
+
+.find-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Misma trampa que .find-widget[hidden] arriba: #find-replace-row tiene
+   la clase .find-row Y el atributo hidden a la vez cuando está plegado. */
+.find-row[hidden] {
+  display: none;
+}
+
+.find-row input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 13px;
+  width: 180px;
+}
+
+.find-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 36px;
+  text-align: center;
+}
+
+.find-widget-btn {
+  padding: 3px 7px;
+  font-size: 12px;
+}
+
+.cm-find-match {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.cm-find-match-current {
+  background: var(--accent);
+  color: #fff;
 }
 
 #tabbar {
@@ -507,6 +622,7 @@ ul.tree.collapsed {
 .preview-wrapper {
   position: relative;
   min-width: 0;
+  min-height: 0;
   height: 100%;
   overflow: hidden;
 }
@@ -571,6 +687,7 @@ ul.tree.collapsed {
   flex-direction: column;
   height: 100%;
   min-width: 0;
+  min-height: 0;
   border-left: 1px solid var(--border);
   background: var(--surface);
 }
@@ -605,6 +722,11 @@ ul.tree.collapsed {
   font-style: italic;
 }
 
+.secondary-pane-viewmode-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+}
+
 .secondary-pane-body {
   flex: 1;
   min-height: 0;
@@ -613,6 +735,15 @@ ul.tree.collapsed {
   line-height: 1.6;
   font-size: 14px;
   cursor: pointer;
+}
+
+.secondary-pane-code {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  font-size: 13px;
+  cursor: text;
 }
 
 .secondary-pane-body:hover {
@@ -1494,24 +1625,44 @@ li.CodeMirror-hint-active {
   outline-offset: -2px;
 }
 
-/* Modo enfoque / lectura */
+/* Modo enfoque / lectura: eje independiente del sidebar y del panel
+   secundario (ver comentario sobre --gt-* más arriba) — colapsa solo el
+   split propio del principal (editor <-> preview). Así se puede tener,
+   por ejemplo, sidebar visible + panel secundario en modo lectura + el
+   principal en modo código (solo editor), todo a la vez. */
 .container.mode-focus {
-  grid-template-columns: 1fr;
+  --gt-editor: 1fr;
+  --gt-re: 0px;
+  --gt-preview: 0px;
 }
-.container.mode-focus #sidebar-pane,
-.container.mode-focus .resizer,
 .container.mode-focus .preview-wrapper,
-.container.mode-focus .secondary-pane {
+.container.mode-focus #resizer-editor {
   display: none;
 }
 
 .container.mode-read {
-  grid-template-columns: 1fr;
+  --gt-editor: 0px;
+  --gt-re: 0px;
+  --gt-preview: 1fr;
 }
-.container.mode-read #sidebar-pane,
-.container.mode-read .resizer,
 .container.mode-read .editor-column,
-.container.mode-read .secondary-pane {
+.container.mode-read #resizer-editor {
+  display: none;
+}
+
+/* Archivo de código (.py/.c/.cpp/.java/.sh, ver tabs.js isActiveTabCode):
+   el preview renderiza Markdown, que no tiene sentido para código fuente —
+   se oculta y el editor pasa a ocupar todo el ancho del principal. Va
+   DESPUÉS de mode-focus/mode-read a propósito: gana la cascada sobre un
+   modo lectura que hubiera quedado activo de un archivo anterior (no hay
+   nada que "leer" en un preview de código, así que código manda). */
+.container.code-file {
+  --gt-editor: 1fr;
+  --gt-re: 0px;
+  --gt-preview: 0px;
+}
+.container.code-file .preview-wrapper,
+.container.code-file #resizer-editor {
   display: none;
 }
 

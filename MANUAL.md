@@ -61,7 +61,7 @@ El editor (columna del medio) es donde escribís. A la derecha se ve el **previe
 - `Ctrl+W` cierra la pestaña activa (pide confirmación si tiene cambios sin guardar). `Ctrl+Tab` / `Ctrl+Shift+Tab` cicla entre pestañas.
 - **Autoguardado**: por defecto guarda cada 1 segundo, pero solo si la pestaña ya tiene una ruta en disco (una pestaña "Sin título" no se autoguarda hasta que la guardes vos una vez). Podés cambiar el intervalo o desactivarlo del todo desde ⚙ **Ajustes** → *Autoguardado*.
 - Si cerrás MK con cambios sin guardar, al volver a abrirla te pregunta si querés **restaurar** esos cambios o **descartarlos** y volver a la versión guardada en disco.
-- Los archivos `.tex` se abren automáticamente con resaltado de sintaxis LaTeX en vez de Markdown.
+- Los archivos `.tex` se abren automáticamente con resaltado de sintaxis LaTeX en vez de Markdown. También hay resaltado propio para código fuente: `.c`/`.h` (C), `.cpp`/`.cc`/`.cxx`/`.hpp` (C++), `.java`, `.py` (Python) y `.sh`/`.bash` (Shell) — se editan y guardan igual que cualquier archivo de texto (no hace falta que sea Markdown), MK solo elige el resaltado según la extensión. El nombre del lenguaje aparece en la barra de estado, abajo a la izquierda. En estos archivos el preview se oculta solo (renderizar Markdown no tiene sentido para código) y el editor pasa a ocupar todo el ancho — vuelve a aparecer al abrir un `.md`/`.tex`.
 
 **Autocompletado**: mientras escribís, MK sugiere palabras que ya usaste antes en el mismo documento (no es un diccionario ni completa sintaxis Markdown, solo palabras repetidas). Aparece solo después de 2 letras o más, o lo podés forzar vos con `Ctrl+Space`.
 
@@ -235,7 +235,7 @@ Los `#tag`/`[[wikilink]]` dentro de bloques de código (\`\`\`) o código inline
 
 ## 7. El sidebar: organizar tus archivos
 
-**Ocultar/mostrar el sidebar**: botón a la izquierda del todo en la toolbar (ícono de panel), o `Ctrl+B`. A diferencia del modo enfoque (que también oculta el preview), esto solo saca el árbol de archivos — editor y preview quedan igual, con más espacio. Se acuerda entre sesiones (no vuelve a aparecer solo si lo dejaste oculto).
+**Ocultar/mostrar el sidebar**: botón a la izquierda del todo en la toolbar (ícono de panel), o `Ctrl+B`. Es un eje independiente del modo enfoque/lectura y del [panel secundario](#22-panel-secundario-pantalla-dividida) — se combinan libremente (ej: sidebar oculto + panel secundario abierto + principal en modo enfoque, los tres a la vez). Se acuerda entre sesiones (no vuelve a aparecer solo si lo dejaste oculto).
 
 Con una carpeta abierta, el panel izquierdo muestra el árbol de archivos:
 
@@ -266,7 +266,8 @@ Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pesta
 
 ## 8. Buscar cosas
 
-- **Búsqueda global** (🔍 en la toolbar, o `Ctrl+Shift+F`): busca un texto en todos los archivos de la carpeta abierta (`.md`, `.markdown`, `.txt`, `.tex`), hasta 200 resultados. Clic en un resultado abre el archivo y salta directo a esa línea.
+- **Buscar y reemplazar en el archivo actual** (`Ctrl+F`, o paleta de comandos): un cuadro flotante arriba a la derecha del editor, sin tapar el documento. Escribí para buscar — resalta todas las coincidencias en el texto y muestra "posición/total" (ej. `2/5`). `Enter`/`Shift+Enter` o los botones ↓/↑ saltan a la siguiente/anterior. El botón ⇄ despliega una segunda fila para reemplazar: "Reemplazar" cambia solo la coincidencia actual, "Todo" cambia todas de una. `Escape` (o ✕) cierra y vuelve el foco al editor. Si tenías texto seleccionado al abrirlo, arranca buscando eso.
+- **Búsqueda global** (🔍 en la toolbar, o `Ctrl+Shift+F`): busca un texto en todos los archivos de la carpeta abierta (`.md`, `.markdown`, `.txt`, `.tex`), hasta 200 resultados. Clic en un resultado abre el archivo y salta directo a esa línea. A diferencia de `Ctrl+F`, esto busca en TODA la carpeta y navega a otro archivo — no reemplaza.
 - **Paleta de comandos** (⌘ en la toolbar, o `Ctrl+Shift+P`): lista todo lo que podés hacer en MK — nuevo, abrir, guardar, exportar, cambiar de tema, alternar vistas, ver etiquetas/backlinks/historial/Kanban/grafo — con filtro por texto a medida que escribís. Navegás con las flechas y confirmás con Enter.
 
 ## 9. Nota diaria
@@ -338,7 +339,7 @@ Para ver, comparar o recuperar una versión anterior: paleta de comandos → **"
 
 ## 13. Modos de vista
 
-- **🎯 Modo enfoque / lectura** (botón en la toolbar, o `Ctrl+Shift+E` / `Ctrl+Shift+R`): el mismo botón cicla entre tres estados — normal, enfoque (solo editor, sin sidebar ni preview) y lectura (solo preview).
+- **🎯 Modo enfoque / lectura** (botón en la toolbar, o `Ctrl+Shift+E` / `Ctrl+Shift+R`): el mismo botón cicla entre tres estados — normal, enfoque (solo editor, sin preview) y lectura (solo preview). Solo afecta a esa mitad principal: el sidebar (`Ctrl+B`) y el [panel secundario](#22-panel-secundario-pantalla-dividida), si están abiertos, se quedan como estaban — se puede tener, por ejemplo, el principal en modo enfoque con el panel secundario todavía visible al lado.
 - **`F11` — pantalla completa / escritura sin distracciones**: pone la ventana en pantalla completa real y oculta la toolbar y la barra de estado, dejando solo sidebar/editor/preview según el modo en que estés. Volvés a pulsar `F11` para salir.
 
 ## 14. Personalizar MK
@@ -346,7 +347,7 @@ Para ver, comparar o recuperar una versión anterior: paleta de comandos → **"
 Desde ⚙ **Ajustes**:
 
 - **Autoguardado**: desactivado, cada 1s, cada 5s, cada 30s.
-- **Tamaño de fuente** del editor: 12 a 18px.
+- **Tamaño de fuente** del editor: 12 a 18px (dropdown), o ajuste rápido con `Ctrl+scroll` sobre el editor, `Ctrl+=`/`Ctrl+-` (de a 1px, entre 10 y 28), y `Ctrl+0` para volver a 14px — quedan sincronizados con el mismo dropdown y se guardan igual.
 - **Tipografía** del editor: JetBrains Mono, Fira Code, Consolas, o la monoespaciada del sistema.
 - **Ancho de tabulación**: 2, 4 u 8 espacios.
 - **Ajuste de línea**: activar/desactivar el word-wrap.
@@ -427,6 +428,7 @@ Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene 
 | `Ctrl+Shift+S` | Guardar como |
 | `Ctrl+W` | Cerrar pestaña activa |
 | `Ctrl+Tab` / `Ctrl+Shift+Tab` | Pestaña siguiente / anterior |
+| `Ctrl+F` | Buscar/reemplazar en el archivo actual |
 | `Ctrl+Shift+P` | Paleta de comandos |
 | `Ctrl+Shift+F` | Búsqueda global |
 | `Ctrl+Shift+T` | Etiquetas de la carpeta |
@@ -437,6 +439,7 @@ Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene 
 | `Ctrl+Shift+R` | Modo lectura |
 | `F11` | Pantalla completa / escritura sin distracciones |
 | `Ctrl+Space` | Autocompletado |
+| `Ctrl+scroll` / `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Achicar/agrandar/resetear tamaño de fuente |
 | `/fecha`, `/hora` + espacio/Enter/Tab | Snippets de texto (más los tuyos propios) |
 | `Escape` | Cerrar el panel/menú/diálogo que esté abierto |
 
@@ -476,10 +479,13 @@ Botón 🖊 en la toolbar (o "Subrayar texto en PDF" en la paleta de comandos): 
 
 Un archivo de referencia al lado del que estás editando — md, PDF, `.docx` o imagen — de solo lectura, para consultarlo sin dejar de escribir en el principal.
 
-1. Clic derecho en un archivo del sidebar → **"Abrir en panel secundario"**. Aparece una tercera columna a la derecha con ese archivo renderizado (Markdown normal, PDF embebido, `.docx` convertido igual que al [abrirlo](#1-primeros-pasos), o la imagen).
+1. Clic derecho en un archivo del sidebar → **"Abrir en panel secundario"**. Aparece una tercera columna a la derecha con ese archivo renderizado (Markdown normal, PDF embebido, `.docx` convertido igual que al [abrirlo](#1-primeros-pasos), o la imagen) — principal y secundario arrancan del **mismo ancho**, mitad y mitad. Arrastrando el divisor entre los dos (la franja angosta, cursor de cambiar tamaño) se reparte el espacio entre ambos como se quiera.
 2. Es de **solo lectura** — no se puede editar ahí directamente.
 3. **Clic en el título** del panel (arriba, donde dice el nombre del archivo) **"promueve"** ese archivo a principal: se abre normal (pestaña editable si es md/`.tex`/`.txt`, se convierte a Markdown si es `.docx`, va al preview si es PDF/imagen) — y el archivo que estaba de principal pasa a mostrarse en el panel secundario, también de solo lectura. Es un intercambio, no una copia.
-4. **✕** cierra el panel.
+4. **Código / Vista** (botón junto al título, solo aparece para md/`.tex`/`.txt`): alterna entre el renderizado normal y la fuente cruda sin renderizar — para leer el Markdown tal cual está escrito (encabezados con `#`, wikilinks `[[así]]`, etc.) sin promoverlo a principal. No aplica a PDF/imagen/`.docx`, ahí el botón queda oculto.
+5. **✕** cierra el panel.
+
+El sidebar, el modo enfoque/lectura del principal y este panel secundario son tres ejes independientes — se combinan libremente. Por ejemplo: sidebar oculto (`Ctrl+B`) + principal en modo enfoque (solo editor) + panel secundario en modo "Código" (fuente cruda del archivo de referencia), los tres a la vez.
 
 ¿Por qué no directamente "un editor en cada lado"? MK tiene una sola instancia del editor (CodeMirror) que las pestañas comparten — dos editores de verdad, escribibles los dos al mismo tiempo, es un cambio de arquitectura más grande (ver `MEJORAS.md`). Esto da casi lo mismo para el uso real ("tengo esto de referencia mientras escribo") con mucho menos por detrás, y el título-clic hace que cambiar cuál es "el que edito" sea instantáneo.
 

@@ -2,6 +2,7 @@
 'use strict';
 
 const previewPane = document.getElementById('preview-pane');
+const containerEl = document.querySelector('.container');
 
 const VIDEO_EXT = /\.(mp4|webm|ogv|ogg)$/i;
 const PDF_EXT = /\.pdf$/i;
@@ -329,6 +330,14 @@ function wireTaskCheckboxes(markdownText) {
 }
 
 function render() {
+  const isCode = window.mdTabs && window.mdTabs.isActiveTabCode && window.mdTabs.isActiveTabCode();
+  containerEl.classList.toggle('code-file', isCode);
+  if (isCode) {
+    previewPane.innerHTML = '';
+    if (window.mdCodeMirror) window.mdCodeMirror.refresh();
+    return;
+  }
+
   previewPane.classList.remove('pdf-mode');
   const markdownText = window.mdCodeMirror.getValue();
   const { text: codeProtected, store: codeStore } = extractCode(markdownText);

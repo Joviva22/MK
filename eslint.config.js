@@ -39,6 +39,7 @@ const browserGlobals = {
   DragEvent: 'readonly',
   DataTransfer: 'readonly',
   KeyboardEvent: 'readonly',
+  WheelEvent: 'readonly',
   URLSearchParams: 'readonly',
   // Librerías cargadas como <script> antes de los archivos de la app.
   CodeMirror: 'readonly',

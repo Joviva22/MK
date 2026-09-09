@@ -18,6 +18,7 @@ const containerEl = document.querySelector('.container');
 const paneEl = document.getElementById('secondary-pane');
 const resizerEl = document.getElementById('resizer-secondary');
 const titleEl = document.getElementById('secondary-pane-title');
+const viewModeBtn = document.getElementById('secondary-pane-viewmode');
 const bodyEl = document.getElementById('secondary-pane-body');
 const closeBtn = document.getElementById('secondary-pane-close');
 
@@ -27,6 +28,20 @@ const DOCX_EXT = /\.docx$/i;
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
 
 let currentPath = null;
+// 'read' (renderizado) | 'code' (fuente cruda, sin renderizar) — solo
+// tiene sentido para archivos de texto (md/txt/tex), el botón se oculta
+// para PDF/imagen/docx. Es el "modo" propio del panel secundario: el
+// principal ya elige código/lectura con el botón de enfoque existente,
+// esto le da el mismo eje al secundario.
+let viewMode = 'read';
+
+function updateViewModeBtn(filePath) {
+  const isText = MD_EXT.test(filePath);
+  viewModeBtn.hidden = !isText;
+  if (!isText) return;
+  viewModeBtn.textContent = viewMode === 'code' ? '👁 Vista' : '🔤 Código';
+  viewModeBtn.title = viewMode === 'code' ? 'Ver renderizado' : 'Ver fuente sin renderizar';
+}
 
 function base64ToArrayBuffer(base64) {
   const binary = atob(base64);
@@ -37,6 +52,7 @@ function base64ToArrayBuffer(base64) {
 
 async function renderContent(filePath) {
   bodyEl.innerHTML = '';
+  updateViewModeBtn(filePath);
 
   if (PDF_EXT.test(filePath)) {
     const embed = document.createElement('embed');
@@ -76,7 +92,14 @@ async function renderContent(filePath) {
       bodyEl.textContent = 'No se pudo leer el archivo.';
       return;
     }
-    bodyEl.innerHTML = DOMPurify.sanitize(marked.parse(result.content));
+    if (viewMode === 'code') {
+      const pre = document.createElement('pre');
+      pre.className = 'secondary-pane-code';
+      pre.textContent = result.content;
+      bodyEl.appendChild(pre);
+    } else {
+      bodyEl.innerHTML = DOMPurify.sanitize(marked.parse(result.content));
+    }
     return;
   }
 
@@ -85,6 +108,7 @@ async function renderContent(filePath) {
 
 async function open(filePath) {
   currentPath = filePath;
+  viewMode = 'read';
   titleEl.textContent = filePath.split(/[\\/]/).pop();
   containerEl.classList.add('has-secondary');
   paneEl.hidden = false;
@@ -136,6 +160,11 @@ titleEl.addEventListener('click', promote);
 closeBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   close();
+});
+viewModeBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  viewMode = viewMode === 'code' ? 'read' : 'code';
+  renderContent(currentPath);
 });
 
 window.mdSecondaryPane = { open, close };

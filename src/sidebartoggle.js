@@ -1,10 +1,11 @@
 (function () {
 'use strict';
 
-// Ocultar/mostrar el panel de archivos sin pasar por el modo enfoque (ese
-// oculta sidebar Y preview juntos) — acá se pliega solo el sidebar,
-// editor+preview quedan como estaban. Se persiste en config.json para que
-// no vuelva a aparecer solo al reabrir la app.
+// Ocultar/mostrar el panel de archivos, eje independiente del modo
+// enfoque/lectura y del panel secundario (ver styles.css, sección
+// "--gt-*") — acá se pliega solo el sidebar, el resto queda como estaba.
+// Se persiste en config.json para que no vuelva a aparecer solo al
+// reabrir la app.
 
 const containerEl = document.querySelector('.container');
 const toggleBtn = document.getElementById('btn-toggle-sidebar');

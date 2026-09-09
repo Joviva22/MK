@@ -45,6 +45,51 @@ fontSizeSelect.addEventListener('change', async (e) => {
   await window.mdEditor.setConfig({ editorFontSize: e.target.value });
 });
 
+// Ajuste rápido de tamaño de fuente sin pasar por el dropdown de Ajustes:
+// Ctrl+scroll sobre el editor, o Ctrl+=/Ctrl+- en cualquier lado (Ctrl+0
+// vuelve al tamaño por defecto) — mismo mecanismo/config que el select de
+// arriba, así quedan siempre sincronizados.
+const MIN_FONT_SIZE = 10;
+const MAX_FONT_SIZE = 28;
+const DEFAULT_FONT_SIZE = 14;
+
+function currentFontSize() {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size');
+  return parseInt(raw, 10) || DEFAULT_FONT_SIZE;
+}
+
+async function setFontSize(px) {
+  const clamped = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, px));
+  document.documentElement.style.setProperty('--editor-font-size', `${clamped}px`);
+  window.mdCodeMirror.refresh();
+  fontSizeSelect.value = String(clamped);
+  await window.mdEditor.setConfig({ editorFontSize: String(clamped) });
+}
+
+document.getElementById('editor-pane').addEventListener(
+  'wheel',
+  (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    setFontSize(currentFontSize() + (e.deltaY < 0 ? 1 : -1));
+  },
+  { passive: false }
+);
+
+document.addEventListener('keydown', (e) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  if (e.key === '=' || e.key === '+') {
+    e.preventDefault();
+    setFontSize(currentFontSize() + 1);
+  } else if (e.key === '-') {
+    e.preventDefault();
+    setFontSize(currentFontSize() - 1);
+  } else if (e.key === '0') {
+    e.preventDefault();
+    setFontSize(DEFAULT_FONT_SIZE);
+  }
+});
+
 fontFamilySelect.addEventListener('change', async (e) => {
   document.documentElement.style.setProperty('--editor-font-family', e.target.value);
   window.mdCodeMirror.refresh();

@@ -30,6 +30,7 @@ function buildCommands() {
   cmds.push({ label: 'Ver cambios desde el último guardado', run: () => document.getElementById('btn-diff').click() });
   cmds.push({ label: 'Alternar modo enfoque / lectura', run: () => document.getElementById('btn-focus').click() });
   cmds.push({ label: 'Búsqueda global en la carpeta', run: () => window.mdSearch && window.mdSearch.open() });
+  cmds.push({ label: 'Buscar y reemplazar en el archivo actual', run: () => window.mdFindReplace && window.mdFindReplace.open() });
   cmds.push({ label: 'Ver todas las etiquetas', run: () => window.mdTags && window.mdTags.open() });
   cmds.push({ label: 'Backlinks: qué enlaza aquí', run: () => window.mdBacklinks && window.mdBacklinks.open() });
   cmds.push({ label: 'Ver versiones anteriores...', run: () => window.mdHistory && window.mdHistory.open() });

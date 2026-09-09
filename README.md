@@ -6,7 +6,8 @@ App de escritorio (Electron) para editar Markdown y LaTeX en local, sin internet
 
 **Edición y organización**
 - Editor (CodeMirror) + preview en vivo, con pestañas, autoguardado y restauración de sesión.
-- Markdown con imágenes/vídeos/PDF embebidos, tablas, callouts, resaltado de código, subrayado (`==texto==`), y LaTeX (`$...$` / `$$...$$` vía KaTeX, archivos `.tex` con su propio modo de resaltado).
+- Markdown con imágenes/vídeos/PDF embebidos, tablas, callouts, resaltado de código en el preview, subrayado (`==texto==`), y LaTeX (`$...$` / `$$...$$` vía KaTeX). El editor también resalta sintaxis de `.tex`, `.py`, `.c`/`.cpp`, `.java` y `.sh` — se abren y editan igual que cualquier archivo de texto.
+- Buscar/reemplazar en el archivo actual (`Ctrl+F`) y zoom rápido de fuente (`Ctrl+scroll`/`Ctrl+=`/`Ctrl+-`).
 - Etiquetas `#tag` y wikilinks `[[Nota]]` con backlinks — navegar y organizar notas dentro de una carpeta.
 - Sidebar de carpetas con icono personalizable por archivo, selección múltiple (Ctrl+clic) para mover/eliminar en bloque.
 - **Panel secundario (split view)**: un segundo archivo (md/PDF/`.docx`/imagen) de solo lectura al lado del principal — clic en el título lo promueve a principal.
@@ -40,6 +41,7 @@ npm start
 | `Ctrl+B` | Ocultar/mostrar el sidebar |
 | `Ctrl+N` / `Ctrl+O` / `Ctrl+S` / `Ctrl+Shift+S` | Nuevo / Abrir / Guardar / Guardar como |
 | `Ctrl+W` / `Ctrl+Tab` | Cerrar pestaña / ciclar pestañas |
+| `Ctrl+F` | Buscar/reemplazar en el archivo actual |
 | `Ctrl+Shift+P` | Paleta de comandos |
 | `Ctrl+Shift+F` | Búsqueda global en la carpeta abierta |
 | `Ctrl+Shift+T` | Etiquetas de la carpeta |
@@ -47,6 +49,7 @@ npm start
 | `Ctrl+Shift+O` | Índice del documento |
 | `Ctrl+Shift+E` / `Ctrl+Shift+R` | Modo enfoque / modo lectura |
 | `Ctrl+Space` | Autocompletado |
+| `Ctrl+scroll` / `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Zoom de fuente del editor |
 
 ## Tests
 
