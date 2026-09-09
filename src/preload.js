@@ -38,6 +38,8 @@ contextBridge.exposeInMainWorld('mdEditor', {
   isGitRepo: (root) => ipcRenderer.invoke('git:isRepo', root),
   gitSync: (root) => ipcRenderer.invoke('git:sync', root),
   buildGraph: (root) => ipcRenderer.invoke('graph:build', root),
+  addWordToDictionary: (word) => ipcRenderer.invoke('spellcheck:addWord', word),
+  onSpellcheckSuggestions: (callback) => ipcRenderer.on('spellcheck:suggestions', (event, data) => callback(data)),
   onOpenExternalFile: (callback) => ipcRenderer.on('open-external-file', (event, filePath) => callback(filePath)),
   resolveLocalPath: (baseFilePath, relativePath) => {
     if (!baseFilePath) return relativePath;

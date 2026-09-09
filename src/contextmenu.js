@@ -66,6 +66,15 @@ function insertCallout(cm) {
   cm.focus();
 }
 
+let clickWordRange = null; // {anchor, head} en el cm del "word" bajo el clic derecho, si había uno
+let pendingSpellcheck = null; // último {misspelledWord, dictionarySuggestions} recibido de main.js
+
+function insertSpellSuggestion(cm, suggestion) {
+  if (!clickWordRange) return;
+  cm.replaceRange(suggestion, clickWordRange.anchor, clickWordRange.head);
+  cm.focus();
+}
+
 const MENU_ITEMS = [
   { label: 'Copiar', action: 'copy' },
   { label: 'Cortar', action: 'cut' },
@@ -80,7 +89,7 @@ const MENU_ITEMS = [
   { label: 'Insertar cita / callout', action: 'callout' }
 ];
 
-function runAction(action) {
+function runAction(action, value) {
   const cm = window.mdCodeMirror;
   switch (action) {
     case 'copy':
@@ -107,14 +116,32 @@ function runAction(action) {
     case 'image': insertImage(cm); break;
     case 'code': insertCodeBlock(cm); break;
     case 'callout': insertCallout(cm); break;
+    case 'spellfix': insertSpellSuggestion(cm, value); break;
+    case 'spellAddWord': window.mdEditor.addWordToDictionary(value); break;
     default: break;
   }
+}
+
+function buildItems() {
+  const items = [];
+  if (pendingSpellcheck && pendingSpellcheck.misspelledWord && clickWordRange) {
+    const word = pendingSpellcheck.misspelledWord;
+    const suggestions = (pendingSpellcheck.dictionarySuggestions || []).slice(0, 5);
+    if (suggestions.length) {
+      suggestions.forEach((s) => items.push({ label: s, action: 'spellfix', value: s }));
+    } else {
+      items.push({ label: 'Sin sugerencias', disabled: true });
+    }
+    items.push({ label: `Agregar "${word}" al diccionario`, action: 'spellAddWord', value: word });
+    items.push({ sep: true });
+  }
+  return items.concat(MENU_ITEMS);
 }
 
 function renderMenuItems() {
   contextMenuEl.innerHTML = '';
   const hasSelection = window.mdCodeMirror.somethingSelected();
-  MENU_ITEMS.forEach((item) => {
+  buildItems().forEach((item) => {
     if (item.sep) {
       const sep = document.createElement('div');
       sep.className = 'context-menu-sep';
@@ -123,12 +150,12 @@ function renderMenuItems() {
     }
     const btn = document.createElement('button');
     btn.textContent = item.label;
-    if ((item.action === 'copy' || item.action === 'cut') && !hasSelection) {
+    if (item.disabled || ((item.action === 'copy' || item.action === 'cut') && !hasSelection)) {
       btn.disabled = true;
     }
     btn.addEventListener('click', () => {
       hideContextMenu();
-      runAction(item.action);
+      runAction(item.action, item.value);
     });
     contextMenuEl.appendChild(btn);
   });
@@ -153,8 +180,21 @@ function hideContextMenu() {
 
 document.getElementById('editor-pane').addEventListener('contextmenu', (e) => {
   e.preventDefault();
-  window.mdCodeMirror.focus();
+  const cm = window.mdCodeMirror;
+  cm.focus();
+  pendingSpellcheck = null;
+  const pos = cm.coordsChar({ left: e.clientX, top: e.clientY }, 'window');
+  const word = cm.findWordAt(pos);
+  clickWordRange = word && word.anchor.ch !== word.head.ch ? { anchor: word.anchor, head: word.head } : null;
   showContextMenu(e.clientX, e.clientY);
+});
+
+// Llega async desde main.js (evento 'context-menu' de webContents) — casi
+// siempre después de que el menú ya se mostró, así que si sigue abierto lo
+// volvemos a dibujar para sumarle las sugerencias arriba.
+window.mdEditor.onSpellcheckSuggestions((data) => {
+  pendingSpellcheck = data;
+  if (!contextMenuEl.hidden) renderMenuItems();
 });
 
 document.addEventListener('click', (e) => {

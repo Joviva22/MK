@@ -52,9 +52,30 @@ El editor (columna del medio) es donde escribís. A la derecha se ve el **previe
 
 **Autocompletado**: mientras escribís, MK sugiere palabras que ya usaste antes en el mismo documento (no es un diccionario ni completa sintaxis Markdown, solo palabras repetidas). Aparece solo después de 2 letras o más, o lo podés forzar vos con `Ctrl+Space`.
 
-**Corrector ortográfico**: nativo del sistema (el mismo que usa cualquier campo de texto de Chromium) — subraya con una línea ondulada las palabras que no reconoce mientras escribís. No hay corrección por clic derecho todavía (el menú contextual propio de MK reemplaza al nativo, que es el que trae sugerencias) — por ahora es solo aviso visual, corregís reescribiendo.
+**Corrector ortográfico** — no hay que activarlo, ya está prendido:
 
-**Snippets de texto**: escribí una abreviatura que empiece con `/` seguida de espacio, Enter o Tab, y se expande sola. Vienen dos por defecto: `/fecha` (fecha de hoy) y `/hora` (hora actual). Podés agregar las tuyas desde ⚙ **Ajustes** → *Snippets de texto*, una por línea con el formato `/abrev = texto a insertar` (por ejemplo `/firma = Saludos, Juli`).
+1. Escribí normal. Cualquier palabra que el sistema no reconozca queda subrayada con una línea ondulada roja, en el momento.
+2. Clic derecho justo sobre la palabra subrayada: si el sistema tiene sugerencias, aparecen como botones arriba del [menú del editor](#17-menú-contextual-del-editor) (hasta 5) — clic en una la reemplaza en el texto.
+3. Si no es un error, sino una palabra tuya que el diccionario no conoce (un nombre propio, jerga técnica): usá el botón "Agregar '...' al diccionario" que aparece junto a las sugerencias — no vuelve a subrayarla.
+
+Las sugerencias tardan un instante en aparecer (llegan async del corrector nativo del sistema) — si abrís el menú y hacés clic muy rápido antes de que carguen, no vas a ver botones de sugerencia todavía, solo el menú base.
+
+**Snippets de texto** — abreviaturas que se expanden solas:
+
+1. En cualquier parte del editor, escribí `/` seguido de una palabra (sin espacios), por ejemplo `/fecha`.
+2. Apretá espacio, Enter o Tab justo después.
+3. El texto `/fecha` desaparece y se reemplaza por el valor de hoy (ej. `9/9/2026`).
+
+Vienen dos ya cargados: `/fecha` (fecha de hoy) y `/hora` (hora actual, HH:MM) — estos dos son "vivos", cambian según el momento en que los usás. Para agregar los tuyos propios (texto fijo, no cambia):
+
+1. Abrí ⚙ **Ajustes** (toolbar).
+2. En el cuadro de texto "Snippets de texto", escribí una línea por abreviatura, formato `/abrev = texto a insertar`. Ejemplo:
+   ```
+   /firma = Saludos, Juli
+   /msj = Gracias por tu mensaje, te respondo a la brevedad.
+   ```
+3. Hacé clic afuera del cuadro (o Tab) para que se guarde — queda para siempre, no hace falta repetirlo cada vez.
+4. Probalo: escribí `/firma` en el editor y apretá espacio.
 
 **Índice del documento**: botón ☰ en la toolbar, o `Ctrl+Shift+O`. Abre un panel flotante con todos los encabezados del documento activo (organizados por nivel, H1/H2/H3); clic en uno hace scroll directo hasta ahí en el preview.
 
@@ -78,7 +99,20 @@ const x = 1;
 ```
 ````
 
-Un bloque ```` ```js ```` (o ```` ```javascript ````) tiene además un botón **"▶ Ejecutar"** debajo, en el preview: corre el código y muestra la salida (`console.log` y el valor de la última línea, si es una expresión suelta — no hace falta escribir `return`). Corre en un **Web Worker** nuevo por cada ejecución: sin acceso a `window`, a tus archivos ni al resto de MK — aislado de verdad, no una promesa vacía. Se corta solo a los 3 segundos si no terminó. Solo JavaScript por ahora, no otros lenguajes.
+**Ejecutar código JavaScript** — un bloque ```` ```js ```` (o ```` ```javascript ````) tiene un botón **"▶ Ejecutar"** debajo, en el preview:
+
+1. Escribí tu código en el bloque, en el editor.
+2. Andá al preview y hacé clic en "▶ Ejecutar" debajo de ese bloque.
+3. Debajo del botón aparece la salida: todo lo que imprimiste con `console.log(...)`, y además el valor de la última línea si es una expresión suelta (estilo "notebook" — no hace falta escribir `return`). Ejemplo:
+   ````markdown
+   ```js
+   console.log("suma parcial:");
+   2 + 2
+   ```
+   ````
+   da como salida `suma parcial:` seguido de `=> 4`.
+
+Corre en un **Web Worker** nuevo por cada ejecución: sin acceso a `window`, a tus archivos ni al resto de MK — aislado de verdad, no una promesa vacía. Si el código no termina, se corta solo a los 3 segundos. Solo JavaScript por ahora, no otros lenguajes (correr Python u otros exigiría lanzar un proceso real del sistema, un salto de riesgo que se dejó afuera a propósito).
 
 **Callouts** (recuadros destacados para notas, avisos, etc.):
 
@@ -111,7 +145,7 @@ Proceso-->Fin;
 ```
 ````
 
-Soporta lo que soporta [Mermaid](https://mermaid.js.org) — diagramas de flujo, de secuencia, Gantt, y más. El fondo del diagrama es blanco fijo (no cambia con el tema de MK).
+No hace falta instalar ni activar nada — basta con escribir el bloque, y en el preview aparece dibujado en vez de mostrarse como texto. Soporta lo que soporta [Mermaid](https://mermaid.js.org) — diagramas de flujo (`graph`), de secuencia (`sequenceDiagram`), Gantt (`gantt`), y más. **Límite:** el fondo del diagrama es blanco fijo, no se adapta a los 26 temas de color de MK — si usás un tema oscuro, igual vas a ver el diagrama sobre fondo blanco.
 
 ## 4. Fórmulas matemáticas (LaTeX)
 
@@ -198,11 +232,23 @@ Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pesta
 
 ## 9. Nota diaria
 
-`Ctrl+Shift+D`, o desde la paleta de comandos ("Nota diaria de hoy"): abre (o crea, si no existe) una nota para el día de hoy dentro de `Diario/AAAA-MM-DD.md`, en la carpeta abierta. Si es la primera vez que la abrís ese día, la crea con la fecha como encabezado. Necesita una carpeta abierta.
+Pensada para llevar un diario o un registro rápido del día, sin tener que crear el archivo a mano cada vez.
+
+1. Apretá `Ctrl+Shift+D`, o buscá "Nota diaria de hoy" en la paleta de comandos (`Ctrl+Shift+P`).
+2. MK busca (o crea, si no existe todavía) el archivo `Diario/AAAA-MM-DD.md` con la fecha de hoy, dentro de tu carpeta abierta — por ejemplo `Diario/2026-09-09.md`.
+3. Si es la primera vez que la abrís ese día, la crea con la fecha como encabezado; si ya escribiste algo hoy, la abre tal cual la dejaste.
+
+El atajo siempre te lleva a la nota de *hoy* — para ayer o mañana hay que abrir el archivo a mano desde el sidebar (`Diario/2026-09-08.md`, etc.). Necesita una carpeta abierta (si no tenés ninguna carpeta abierta, no sabe dónde crear `Diario/`).
 
 ## 10. Tablero Kanban
 
-Desde la paleta de comandos ("Ver tablero Kanban"): arma un tablero a partir del **documento activo** — cada encabezado `## Nombre` es una columna, y cada ítem de lista debajo (`- algo` o `- [ ] algo`) es una tarjeta:
+Convierte cualquier documento con esta estructura en un tablero visual, sin archivos ni configuración aparte:
+
+1. Escribí el documento con encabezados `## Nombre` como columnas, y una lista debajo de cada uno como tarjetas de esa columna.
+2. Abrí la paleta de comandos (`Ctrl+Shift+P`) y elegí "Ver tablero Kanban".
+3. Se abre el tablero con una columna por cada `##` y una tarjeta por cada ítem de lista.
+
+Ejemplo de documento:
 
 ```markdown
 ## Por hacer
@@ -216,16 +262,27 @@ Desde la paleta de comandos ("Ver tablero Kanban"): arma un tablero a partir del
 - [x] Investigar el tema
 ```
 
-- **Clic en una tarjeta**: la marca/desmarca como hecha (tacha el texto y agrega/saca `[x]` en el Markdown real).
-- **Arrastrar una tarjeta a otra columna**: la mueve de verdad en el texto, reescribiendo el documento.
+- **Clic en una tarjeta**: la marca/desmarca como hecha (tacha el texto y agrega/saca `[x]` en el Markdown real, ej. `- [ ] tarea` ↔ `- [x] tarea`).
+- **Arrastrar una tarjeta a otra columna**: la mueve de verdad en el texto — MK reescribe el documento entero para reflejar el nuevo orden, así que si volvés a la vista de editor vas a ver la tarjeta ya bajo el otro `##`.
 
-Todo se guarda en el mismo archivo — no hay una base de datos aparte, el tablero *es* el Markdown. Solo lee la pestaña activa, no combina tareas de varios archivos.
+Todo se guarda en el mismo archivo — no hay una base de datos aparte, el tablero *es* el Markdown, es solo otra forma de verlo y editarlo. **Límite:** solo lee la pestaña activa, no combina tareas de varios archivos en un mismo tablero.
 
 ## 11. Grafo de notas
 
-Desde la paleta de comandos ("Ver grafo de notas"): mapa visual de qué nota enlaza con cuál, a partir de los `[[wikilinks]]` de toda la carpeta abierta. Cada punto es un archivo; las líneas son los enlaces entre ellos. Clic en un nodo abre ese archivo.
+Mapa visual de qué nota enlaza con cuál, útil para ver de un vistazo cómo se conectan tus notas en una carpeta grande.
 
-El acomodo de los nodos es automático (se alejan entre sí, los conectados por un link se atraen) y queda fijo una vez calculado — no se puede arrastrar nodos ni hacer zoom todavía.
+1. Escribí enlaces entre tus notas con la sintaxis `[[nombre del archivo]]` (ver [sección 6](#6-etiquetas-y-wikilinks)).
+2. Abrí la paleta de comandos (`Ctrl+Shift+P`) y elegí "Ver grafo de notas".
+3. MK escanea toda la carpeta abierta: cada archivo `.md` es un punto (nodo), y cada `[[wikilink]]` entre dos archivos es una línea que los conecta.
+4. Clic corto en un nodo abre ese archivo directamente.
+
+El acomodo inicial de los nodos es automático (se alejan entre sí, los conectados por un link se atraen entre sí) y se calcula una sola vez al abrir el grafo. Desde ahí podés moverte:
+
+- **Zoom**: rueda del mouse — acerca/aleja centrado justo donde tenés el cursor, no al centro del panel.
+- **Pan**: clic sostenido sobre el fondo (no sobre un nodo) y arrastrar, mueve todo el grafo.
+- **Mover un nodo a mano**: clic sostenido sobre un nodo y arrastrar lo reacomoda; si soltás sin haberlo movido, se interpreta como el clic normal de "abrir archivo".
+
+**Límite:** el reacomodo manual no se guarda — al cerrar y volver a abrir el grafo, vuelve a correr el layout automático desde cero.
 
 ## 12. Historial de versiones
 
@@ -248,7 +305,12 @@ Desde ⚙ **Ajustes**:
 - **Ancho de tabulación**: 2, 4 u 8 espacios.
 - **Ajuste de línea**: activar/desactivar el word-wrap.
 - **Snippets de texto**: tus abreviaturas propias (ver [sección 2](#2-el-editor-y-las-pestañas)).
-- **Sincronizar con git al guardar** (apagado por defecto): si la carpeta que tenés abierta ya es un repositorio git (con `git init` hecho de antes — MK nunca lo crea por vos), cada vez que guardás manualmente (`Ctrl+S` o el botón Guardar) hace `git add` + `git commit` de todo lo que cambió. No se dispara con el autoguardado, solo con guardado manual, para no llenar el historial de commits. Si la carpeta no es un repo git, no hace nada.
+- **Sincronizar con git al guardar** (apagado por defecto): commitea sola cada guardado manual, para tener un historial de versiones real sin escribir `git commit` a mano.
+  1. Activá el toggle en Ajustes.
+  2. Requisito: la carpeta abierta ya tiene que ser un repositorio git (con `git init` hecho de antes, a mano o desde otro programa) — **MK nunca corre `git init` por vos**, y si la carpeta no es un repo, la opción simplemente no hace nada.
+  3. De ahí en más, cada `Ctrl+S` (o clic en Guardar) hace `git add -A` + `git commit` con un mensaje genérico automático.
+  4. No se dispara con el autoguardado (solo con guardado manual), para no llenar el historial con commits cada 1-30 segundos.
+  - **Límite:** no hay control fino — siempre agrega todos los archivos cambiados (`git add -A`) y usa un mensaje automático, no se puede elegir qué incluir ni escribir tu propio mensaje desde MK.
 
 Desde 🎨 **Tema**: 26 temas de color — Claro, Oscuro, y 24 más conocidos (Dracula, Nord, Gruvbox, Monokai, Solarized, One Dark Pro, Tokyo Night, Catppuccin, Rosé Pine, GitHub Dark/Light, y otros). Se guarda tu elección para la próxima vez.
 
@@ -260,8 +322,18 @@ Desde ⬇ **Exportar**:
 
 - **A HTML**: un archivo `.html` standalone (con el CSS embebido adentro), que se puede abrir en cualquier navegador sin depender de MK.
 - **A PDF**: renderizado directo a PDF.
-- **A EPUB**: genera un libro electrónico válido con el documento activo como único capítulo — para abrir en cualquier lector de EPUB (Calibre, tu e-reader, etc.).
-- **A tarjetas de memoria (Anki)**: convierte encabezados `## Pregunta` en tarjetas — el texto hasta el próximo `##` es el dorso de la tarjeta. Genera un `.txt` de dos columnas (Frente/Dorso); en Anki: *Archivo → Importar*, elegís ese archivo con separador "Tabulador".
+- **A EPUB**: genera un libro electrónico válido a partir del documento activo, para abrir en cualquier lector de EPUB (Calibre, tu e-reader, etc.). Elegís "A EPUB" en el menú Exportar, elegís dónde guardar el `.epub`, y listo. **Límite:** el documento entero se mete como un único capítulo — no arma un libro con varios archivos como capítulos separados, y no tiene portada.
+- **A tarjetas de memoria (Anki)**: pensado para convertir apuntes en tarjetas de estudio.
+  1. Escribí el documento con un encabezado `## Pregunta` por cada tarjeta que querés crear; todo el texto hasta el próximo `##` es la respuesta (el "dorso") de esa tarjeta. Ejemplo:
+     ```markdown
+     ## ¿Capital de Francia?
+     París.
+
+     ## ¿Capital de Japón?
+     Tokio.
+     ```
+  2. Elegís "A tarjetas de memoria (Anki)" en el menú Exportar — genera un `.txt` de dos columnas separadas por tabulador (Frente/Dorso), una fila por cada `##`.
+  3. En Anki: *Archivo → Importar*, elegís ese `.txt`, y en las opciones de importación poné el separador en "Tabulador". Cada fila se vuelve una tarjeta nueva.
 
 Las fórmulas matemáticas y el resaltado de código se ven un poco distintos al exportar (una hoja de estilos simplificada, no la de la app) — es un compromiso consciente para no tener que arrastrar fuentes/librerías completas al archivo exportado.
 

@@ -112,6 +112,19 @@ function createWindow() {
     return { action: 'deny' };
   });
 
+  // El menú propio del editor (contextmenu.js) reemplaza al menú nativo de
+  // Chromium, pero este evento se dispara igual en el proceso principal en
+  // cada clic derecho — es la única forma de obtener las sugerencias del
+  // corrector ortográfico nativo (misspelledWord/dictionarySuggestions).
+  // Se lo mandamos al renderer para que arme sus propios botones con esto.
+  mainWindow.webContents.on('context-menu', (event, params) => {
+    if (!params.misspelledWord) return;
+    mainWindow.webContents.send('spellcheck:suggestions', {
+      misspelledWord: params.misspelledWord,
+      dictionarySuggestions: params.dictionarySuggestions
+    });
+  });
+
   mainWindow.webContents.on('did-finish-load', () => {
     if (pendingFilePath) {
       sendOpenExternalFile(pendingFilePath);
@@ -134,6 +147,10 @@ async function runTests() {
     app.exit(1);
   }
 }
+
+ipcMain.handle('spellcheck:addWord', (event, word) => {
+  if (typeof word === 'string' && word) mainWindow.webContents.session.addWordToSpellCheckerDictionary(word);
+});
 
 ipcMain.handle('window:toggleFullscreen', () => {
   const next = !mainWindow.isFullScreen();

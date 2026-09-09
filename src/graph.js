@@ -9,6 +9,33 @@ let nodes = [];
 let edges = [];
 let nodesById = {};
 
+// Vista interactiva: pan/zoom sobre el layout ya calculado, y arrastre de
+// nodos individuales. El layout en sí (nodes[].x/y) sigue siendo el mismo
+// cálculo de fuerzas de siempre — esto solo agrega una transformación
+// mundo→pantalla encima, más la posibilidad de mover un nodo a mano.
+let view = { scale: 1, tx: 0, ty: 0 };
+let dragNode = null;
+let dragMoved = false;
+let dragStartClient = null;
+let isPanning = false;
+let panStart = null;
+
+function clamp(v, lo, hi) {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+function toCanvasCoords(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: ((clientX - rect.left) / rect.width) * canvas.width,
+    y: ((clientY - rect.top) / rect.height) * canvas.height
+  };
+}
+
+function toWorld(canvasX, canvasY) {
+  return { x: (canvasX - view.tx) / view.scale, y: (canvasY - view.ty) / view.scale };
+}
+
 function themeColor(varName, fallback) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
   return v || fallback;
@@ -88,6 +115,10 @@ function draw() {
   ctx.fillStyle = themeColor('--surface', '#f5f7fa');
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  ctx.save();
+  ctx.translate(view.tx, view.ty);
+  ctx.scale(view.scale, view.scale);
+
   ctx.strokeStyle = themeColor('--border', '#d8dee8');
   ctx.lineWidth = 1;
   edges.forEach((e) => {
@@ -111,6 +142,8 @@ function draw() {
     ctx.font = '12px sans-serif';
     ctx.fillText(n.id, n.x + 10, n.y + 4);
   });
+
+  ctx.restore();
 }
 
 function renderEmpty(message) {
@@ -123,6 +156,7 @@ function renderEmpty(message) {
 }
 
 function buildAndDraw(data) {
+  view = { scale: 1, tx: 0, ty: 0 };
   nodes = (data.nodes || []).map((n) => ({ id: n.id, path: n.path }));
   edges = data.edges || [];
   nodesById = {};
@@ -140,16 +174,65 @@ function buildAndDraw(data) {
   draw();
 }
 
-canvas.addEventListener('click', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
-  const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
-  const hit = nodes.find((n) => Math.hypot(n.x - x, n.y - y) < 14);
+canvas.style.cursor = 'grab';
+
+canvas.addEventListener('mousedown', (e) => {
+  dragStartClient = { x: e.clientX, y: e.clientY };
+  dragMoved = false;
+  const c = toCanvasCoords(e.clientX, e.clientY);
+  const w = toWorld(c.x, c.y);
+  const hit = nodes.find((n) => Math.hypot(n.x - w.x, n.y - w.y) < 14);
   if (hit) {
-    close();
-    window.openFileAtPath(hit.path);
+    dragNode = hit;
+    dragNode.vx = 0;
+    dragNode.vy = 0;
+  } else {
+    isPanning = true;
+    panStart = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty };
+    canvas.style.cursor = 'grabbing';
   }
 });
+
+window.addEventListener('mousemove', (e) => {
+  if (!dragNode && !isPanning) return;
+  if (dragStartClient && Math.hypot(e.clientX - dragStartClient.x, e.clientY - dragStartClient.y) > 3) dragMoved = true;
+  if (dragNode) {
+    const c = toCanvasCoords(e.clientX, e.clientY);
+    const w = toWorld(c.x, c.y);
+    dragNode.x = w.x;
+    dragNode.y = w.y;
+    draw();
+  } else if (isPanning) {
+    view.tx = panStart.tx + (e.clientX - panStart.x);
+    view.ty = panStart.ty + (e.clientY - panStart.y);
+    draw();
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  if (dragNode && !dragMoved) {
+    close();
+    window.openFileAtPath(dragNode.path);
+  }
+  dragNode = null;
+  isPanning = false;
+  panStart = null;
+  dragStartClient = null;
+  canvas.style.cursor = 'grab';
+});
+
+// Zoom centrado en el cursor: el punto del mundo bajo el mouse se queda fijo
+// en pantalla mientras cambia la escala, para no "perder" el lugar al hacer zoom.
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const c = toCanvasCoords(e.clientX, e.clientY);
+  const before = toWorld(c.x, c.y);
+  const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+  view.scale = clamp(view.scale * factor, 0.25, 4);
+  view.tx = c.x - before.x * view.scale;
+  view.ty = c.y - before.y * view.scale;
+  draw();
+}, { passive: false });
 
 async function open() {
   overlay.hidden = false;

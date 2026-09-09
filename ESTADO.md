@@ -87,6 +87,9 @@
 - ~~Exportar a tarjetas de memoria/Anki (menú ⬇ Exportar): cada `## Pregunta` + el texto hasta el próximo encabezado se exporta como una tarjeta Frente/Dorso en un `.txt` importable desde Anki~~
 - ~~Sincronizar con git al guardar (⚙ Ajustes, apagado por defecto): si la carpeta abierta ya es un repo git, cada `Ctrl+S`/"Guardar" manual dispara `git add -A && git commit` — nunca corre `git init`, y no se dispara en cada tick de autoguardado (solo en guardado manual, para no llenar el historial)~~
 - ~~Ejecutar bloques de código JavaScript: botón "▶ Ejecutar" bajo cada \`\`\`js\`\`\` del preview, corre en un Web Worker nuevo por ejecución (sin `window`/`document`/`require`/`window.mdEditor` — no puede tocar archivos ni el resto de la app), con timeout de 3s y estilo notebook (la última expresión suelta se muestra sola, sin necesidad de `return`)~~
+- ~~CI en GitHub Actions (`.github/workflows/ci.yml`): en cada push/PR corre `npm ci` + `npm run lint` + `npm test` (con Xvfb, porque Electron real necesita un display) sobre `ubuntu-latest`~~
+- ~~Corrector ortográfico con sugerencias por clic derecho: `webContents.on('context-menu', ...)` en main.js capta `misspelledWord`/`dictionarySuggestions` de Chromium y se los manda al renderer, que los agrega como botones arriba del menú propio (más "Agregar al diccionario")~~
+- ~~Grafo de notas interactivo: zoom con la rueda (centrado en el cursor) y pan arrastrando el fondo, más arrastrar un nodo individual a mano para reacomodarlo — un clic corto (sin arrastre) sigue abriendo el archivo~~
 
 ## Por hacer
 
@@ -106,14 +109,14 @@
 - Mover un archivo/carpeta con drag & drop en el sidebar no valida visualmente destinos inválidos mientras arrastrás (ej. una carpeta dentro de sí misma) — se bloquea recién al soltar, con un `alert()`.
 - Renombrar/mover desde el sidebar actualiza la pestaña abierta si el archivo estaba abierto; si se renombra/mueve desde fuera de MK (el explorador de archivos del sistema) mientras está abierto, la pestaña sigue apuntando a la ruta vieja.
 - El historial de versiones vive en `userData/backups/` (no en el proyecto), no tiene diff entre versiones (solo reemplaza el contenido del editor al restaurar) y no se limpia si borrás el archivo original.
-- ESLint solo corre `no-undef`/`no-unused-vars` a mano (`npm run lint`) — no hay CI que lo corra automáticamente en cada cambio.
+- ESLint solo corre `no-undef`/`no-unused-vars`.
 - La detección de binario (byte NUL en los primeros 8000 bytes) es una heurística, no perfecta: un archivo de texto raro con un byte NUL perdido se trataría como binario, y un binario sin bytes NUL en el muestreo inicial podría colarse como texto.
 - El panel de plugins es puramente informativo — no hay forma de instalar nada todavía.
-- El corrector ortográfico solo subraya — no hay sugerencias por clic derecho (el menú contextual propio de MK reemplaza al nativo de Chromium, que es el que las trae). Ver MEJORAS.md.
+- Las sugerencias del corrector llegan async desde main.js (evento `context-menu` de Chromium) — si el diccionario del sistema no está cargado en un entorno dado, el menú se abre igual pero sin botones de sugerencia arriba.
 - Los diagramas Mermaid tienen fondo blanco fijo, no se adaptan a los 26 temas de color.
 - Los snippets de texto son reemplazo literal (sin cursores/campos como los snippets de un IDE) y solo se disparan con espacio, Enter o Tab justo después de la abreviatura.
 - La nota diaria siempre va a `Diario/AAAA-MM-DD.md` en la raíz de la carpeta abierta — no es configurable todavía.
-- El grafo de notas no tiene animación continua ni se puede arrastrar nodos — corre un layout de fuerzas fijo (250 iteraciones) antes de dibujar y queda estático; con muchos archivos (cientos) puede verse apretado.
+- El grafo de notas corre un layout de fuerzas fijo (250 iteraciones) antes de dibujar; ahora se puede hacer zoom/pan y arrastrar nodos a mano, pero el reacomodo manual no se guarda — se pierde al cerrar y reabrir el grafo (vuelve a correr el layout automático desde cero).
 - El tablero Kanban solo lee/escribe el documento activo (no combina tareas de varios archivos), y las columnas son siempre `## Encabezado` de nivel 2 exacto — no soporta subcolumnas ni otros niveles.
 - El export a EPUB genera un solo capítulo (todo el documento activo) y una portada mínima sin imagen de tapa — no arma un libro con varios archivos como capítulos separados.
 - El export a Anki es un `.txt` de dos columnas (Frente/Dorso) para importar a mano en Anki — no genera un `.apkg` real, y solo reconoce `## Pregunta` como delimitador (no callouts, aunque la idea original los mencionaba).
