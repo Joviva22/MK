@@ -70,10 +70,15 @@
 - ~~Restricción de rutas de assets aplica también sin carpeta abierta: un archivo suelto ahora restringe al directorio propio del archivo en vez de no restringir nada~~
 - ~~Vista de cambios (diff) reemplazada de un LCS O(n·m) escrito a mano por el algoritmo de Myers real (paquete `diff`, el mismo que usa git) — escala mejor con archivos largos~~
 - ~~Eliminar desde el sidebar manda a la papelera del sistema (`shell.trashItem`, se puede restaurar) en vez de borrar directo; si la papelera falla (sin gio/kioclient/trash-cli, o moviendo entre sistemas de archivos distintos) cae de vuelta a borrado directo para no dejar la operación a medias~~
+- ~~Fix: clic en un link del preview dejaba la ventana en blanco (navegaba la propia ventana de la app fuera de `index.html`). Ahora todo `<a>` se intercepta: externos (http/mailto) se abren con el navegador/cliente del sistema (`shell.openExternal`, con `will-navigate`/`setWindowOpenHandler` como red de seguridad en `main.js`), relativos a otro archivo local lo abren como pestaña~~
+- ~~Fix: abrir un archivo de extensión desconocida o binario (imagen suelta, .zip, etc.) colgaba la app — se decodificaba como utf-8 a ciegas y CodeMirror intentaba renderizar una "línea" de miles de caracteres basura. Ahora `file:read` olfatea contenido binario (byte NUL, la misma heurística de git) antes de devolverlo; si es binario, se abre una pestaña sin archivo real de por medio avisando "no se puede editar" (así "Guardar" no pisa el binario original)~~
+- ~~Clic en una imagen (png/jpg/jpeg/gif/webp/bmp/svg) del sidebar la muestra en el preview en vez de intentar "editarla" como texto~~
+- ~~Panel "Plugins y comunidad" (botón 🧩 o paleta de comandos): por ahora solo informa que no hay sistema de plugins todavía, con espacio preparado para cuando exista — no carga código de terceros (decisión consciente de seguridad, ver MEJORAS.md)~~
 
 ## Por hacer
 
-- [ ] Workspaces, graph view, plugins, sincronización
+- [ ] Workspaces, graph view, sincronización
+- [ ] Sistema de plugins de verdad (cargar JS local de una carpeta `plugins/` con una API limitada tipo hooks `onRender`/`onSave`) — el panel actual es solo informativo, ver MEJORAS.md para por qué no se construyó ahora
 - [ ] Actualizar `bin/mk-editor` / el `.desktop` para apuntar al AppImage empaquetado en vez de `node_modules/electron` (opcional: solo vale la pena si se va a distribuir la app fuera de esta máquina)
 
 ## Notas / limitaciones conocidas
@@ -89,3 +94,5 @@
 - Renombrar/mover desde el sidebar actualiza la pestaña abierta si el archivo estaba abierto; si se renombra/mueve desde fuera de MK (el explorador de archivos del sistema) mientras está abierto, la pestaña sigue apuntando a la ruta vieja.
 - El historial de versiones vive en `userData/backups/` (no en el proyecto), no tiene diff entre versiones (solo reemplaza el contenido del editor al restaurar) y no se limpia si borrás el archivo original.
 - ESLint solo corre `no-undef`/`no-unused-vars` a mano (`npm run lint`) — no hay CI que lo corra automáticamente en cada cambio.
+- La detección de binario (byte NUL en los primeros 8000 bytes) es una heurística, no perfecta: un archivo de texto raro con un byte NUL perdido se trataría como binario, y un binario sin bytes NUL en el muestreo inicial podría colarse como texto.
+- El panel de plugins es puramente informativo — no hay forma de instalar nada todavía.

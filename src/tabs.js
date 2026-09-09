@@ -86,24 +86,28 @@ async function openTab(filePath) {
     activateTab(existing.id);
     return;
   }
-  const content = await window.mdEditor.readFile(filePath);
-  if (content === null) return;
-  const tab = createTab(filePath, content);
+  const result = await window.mdEditor.readFile(filePath);
+  if (result === null) return;
+  if (result.binary) {
+    // No se abre como pestaña real de ese archivo (filePath: null) para que
+    // "Guardar" no pueda pisar el binario original con este aviso — a lo
+    // sumo pide "Guardar como" si alguien igual le da a guardar.
+    const name = filePath.split(/[\\/]/).pop();
+    const tab = createTab(
+      null,
+      `No se puede editar "${name}": formato desconocido o binario.\n\nEste archivo no se abrió — lo que escribas acá no lo va a sobreescribir. Si es una imagen, hacé clic en ella desde el árbol de la izquierda para verla.`
+    );
+    activateTab(tab.id);
+    return;
+  }
+  const tab = createTab(filePath, result.content);
   activateTab(tab.id);
 }
 
 async function openViaDialog() {
-  const result = await window.mdEditor.openFile();
-  if (!result) return;
-  const existing = findTabByPath(result.filePath);
-  if (existing) {
-    existing.doc.setValue(result.content);
-    markModified(existing.id, false);
-    activateTab(existing.id);
-    return;
-  }
-  const tab = createTab(result.filePath, result.content);
-  activateTab(tab.id);
+  const filePath = await window.mdEditor.openFile();
+  if (!filePath) return;
+  await openTab(filePath);
 }
 
 async function saveActive(forceDialog = false) {
@@ -239,9 +243,9 @@ function showRestoreDialog(unsavedTabs) {
     overlay.hidden = true;
     for (const t of unsavedTabs) {
       if (t.filePath) {
-        const diskContent = await window.mdEditor.readFile(t.filePath);
-        if (diskContent !== null) {
-          t.doc.setValue(diskContent);
+        const result = await window.mdEditor.readFile(t.filePath);
+        if (result !== null && !result.binary) {
+          t.doc.setValue(result.content);
           t.modified = false;
         }
       } else {

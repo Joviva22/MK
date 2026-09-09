@@ -167,23 +167,50 @@ function render() {
   if (window.onPreviewRendered) window.onPreviewRendered();
 }
 
+// Antes un link normal ([texto](https://...) o a otro archivo) no tenía
+// ningún manejador: el click navegaba la propia ventana de la app fuera de
+// index.html y la dejaba en blanco. Ahora todo clic en un <a> del preview
+// se intercepta acá — nunca se deja navegar la ventana misma.
 previewPane.addEventListener('click', async (e) => {
-  const link = e.target.closest('.md-wikilink');
-  if (!link) return;
-  e.preventDefault();
-  const root = window.mdState.rootFolder;
-  if (!root) {
-    link.classList.add('md-wikilink-missing');
-    link.title = 'Abrí una carpeta para poder navegar wikilinks';
+  const wikilink = e.target.closest('.md-wikilink');
+  if (wikilink) {
+    e.preventDefault();
+    const root = window.mdState.rootFolder;
+    if (!root) {
+      wikilink.classList.add('md-wikilink-missing');
+      wikilink.title = 'Abrí una carpeta para poder navegar wikilinks';
+      return;
+    }
+    const resolved = await window.mdEditor.resolveWikilink(root, wikilink.dataset.target);
+    if (resolved) {
+      window.openFileAtPath(resolved);
+    } else {
+      wikilink.classList.add('md-wikilink-missing');
+      wikilink.title = `No se encontró "${wikilink.dataset.target}" en la carpeta abierta`;
+    }
     return;
   }
-  const resolved = await window.mdEditor.resolveWikilink(root, link.dataset.target);
-  if (resolved) {
-    window.openFileAtPath(resolved);
-  } else {
-    link.classList.add('md-wikilink-missing');
-    link.title = `No se encontró "${link.dataset.target}" en la carpeta abierta`;
+
+  const link = e.target.closest('a[href]');
+  if (!link) return;
+  e.preventDefault();
+  const href = link.getAttribute('href');
+  if (!href || href === '#') return;
+
+  if (/^https?:|^mailto:/i.test(href)) {
+    window.mdEditor.openExternal(href);
+    return;
   }
+
+  // Link relativo a otro archivo local (ej. [ver detalle](otra-nota.md)):
+  // resolverlo contra el archivo actual y abrirlo, respetando la misma
+  // restricción de rutas que las imágenes/assets.
+  const basePath = window.mdState.currentFilePath;
+  if (!basePath) return;
+  const absolute = window.mdEditor.resolveLocalPath(basePath, decodeURIComponent(href.split('#')[0]));
+  const root = window.mdState.rootFolder || window.mdEditor.dirName(basePath);
+  if (root && !window.mdEditor.isPathAllowed(root, absolute)) return;
+  window.openFileAtPath(absolute);
 });
 
 window.renderPreview = render;
@@ -192,6 +219,15 @@ window.showPdfPreview = function (filePath) {
   const url = window.mdEditor.toLocalUrl(filePath);
   previewPane.classList.add('pdf-mode');
   previewPane.innerHTML = `<embed src="${url}" type="application/pdf" class="pdf-embed">`;
+};
+
+// Clic en una imagen del sidebar: mostrarla en el preview en vez de
+// intentar "editarla" como texto (eso era lo que colgaba la app antes).
+window.showImagePreview = function (filePath) {
+  const url = window.mdEditor.toLocalUrl(filePath);
+  const name = filePath.split(/[\\/]/).pop();
+  previewPane.classList.add('pdf-mode');
+  previewPane.innerHTML = `<div class="image-preview"><img src="${url}" alt="${name}"></div>`;
 };
 
 let debounceTimer = null;

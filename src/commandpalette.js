@@ -33,6 +33,7 @@ function buildCommands() {
   cmds.push({ label: 'Ver todas las etiquetas', run: () => window.mdTags && window.mdTags.open() });
   cmds.push({ label: 'Backlinks: qué enlaza aquí', run: () => window.mdBacklinks && window.mdBacklinks.open() });
   cmds.push({ label: 'Ver versiones anteriores...', run: () => window.mdHistory && window.mdHistory.open() });
+  cmds.push({ label: 'Plugins y comunidad', run: () => window.mdPlugins && window.mdPlugins.open() });
 
   document.querySelectorAll('#theme-menu button[data-theme]').forEach((btn) => {
     cmds.push({ label: `Tema: ${btn.textContent}`, run: () => btn.click() });

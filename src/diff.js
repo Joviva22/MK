@@ -48,11 +48,12 @@ document.getElementById('btn-diff').addEventListener('click', async () => {
     alert('Este documento no tiene una versión guardada en disco con la que compararlo.');
     return;
   }
-  const onDisk = await window.mdEditor.readFile(info.filePath);
-  if (onDisk === null) {
+  const result = await window.mdEditor.readFile(info.filePath);
+  if (result === null || result.binary) {
     alert('No se pudo leer el archivo original.');
     return;
   }
+  const onDisk = result.content;
   if (onDisk === info.content) {
     alert('No hay cambios sin guardar.');
     return;

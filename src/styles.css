@@ -509,6 +509,22 @@ ul.tree.collapsed {
   display: block;
 }
 
+.image-preview {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  background: var(--surface);
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 #preview-pane img {
   max-width: 100%;
   height: auto;
@@ -852,6 +868,33 @@ ul.tree.collapsed {
   padding: 12px 14px 0;
   font-size: 13px;
   font-weight: 600;
+  color: var(--text-muted);
+}
+
+.plugins-modal {
+  max-height: 70vh;
+}
+
+.plugins-body {
+  padding: 14px 18px 18px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.plugins-body p {
+  margin: 0 0 10px;
+}
+
+.plugins-ideas-title {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.plugins-body ul {
+  margin: 0;
+  padding-left: 20px;
   color: var(--text-muted);
 }
 

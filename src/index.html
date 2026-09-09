@@ -37,6 +37,7 @@
     <button id="btn-command-palette" class="toolbar-button" title="Paleta de comandos (Ctrl+Shift+P)"><i data-lucide="command"></i></button>
     <button id="btn-tags" class="toolbar-button" title="Etiquetas de la carpeta (Ctrl+Shift+T)"><i data-lucide="tag"></i></button>
     <button id="btn-backlinks" class="toolbar-button" title="Backlinks: qué enlaza aquí (Ctrl+Shift+B)"><i data-lucide="link-2"></i></button>
+    <button id="btn-plugins" class="toolbar-button" title="Plugins y comunidad"><i data-lucide="puzzle"></i></button>
 
     <div class="dropdown">
       <button id="btn-export" class="toolbar-button" title="Exportar"><i data-lucide="download"></i> Exportar ▾</button>
@@ -170,6 +171,23 @@
     </div>
   </div>
 
+  <div id="plugins-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette plugins-modal">
+      <div class="backlinks-title">Plugins y comunidad</div>
+      <div class="plugins-body">
+        <p>MK todavía no tiene sistema de plugins — todo lo que ves (temas, exportar, etiquetas, etc.) viene integrado en la app, no hay forma de instalar extensiones de terceros por ahora.</p>
+        <p>Este panel queda preparado para cuando eso exista: un lugar donde vas a poder ver e instalar plugins hechos por la comunidad.</p>
+        <p class="plugins-ideas-title">Ideas para cuando exista:</p>
+        <ul>
+          <li>Temas de color adicionales, más allá de los 26 incluidos</li>
+          <li>Exportadores nuevos (ej. a EPUB, a Notion)</li>
+          <li>Snippets/plantillas compartidas</li>
+          <li>Integraciones con otras apps (calendarios, gestores de tareas)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
   <script src="../node_modules/codemirror/lib/codemirror.js"></script>
   <script src="../node_modules/codemirror/mode/markdown/markdown.js"></script>
   <script src="../node_modules/codemirror/mode/stex/stex.js"></script>
@@ -200,6 +218,7 @@
   <script src="tags.js"></script>
   <script src="backlinks.js"></script>
   <script src="history.js"></script>
+  <script src="plugins.js"></script>
   <script src="exportdoc.js"></script>
   <script src="sidebar.js"></script>
   <script src="resize.js"></script>

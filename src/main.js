@@ -95,6 +95,21 @@ function createWindow() {
   // aparte en el renderer (editor.js), no dependen de accelerators de menú.
   Menu.setApplicationMenu(null);
 
+  // Red de seguridad a nivel ventana: un link (http/mailto/etc.) clicado en
+  // el preview antes navegaba la propia ventana de la app fuera de
+  // index.html, dejándola en blanco. preview.js ya intercepta los clics,
+  // pero esto cubre cualquier otro intento de navegación (target="_blank",
+  // programático, etc.) mandándolo siempre al navegador del sistema.
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url === mainWindow.webContents.getURL()) return;
+    event.preventDefault();
+    if (/^https?:|^mailto:/i.test(url)) shell.openExternal(url);
+  });
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:|^mailto:/i.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
   mainWindow.webContents.on('did-finish-load', () => {
     if (pendingFilePath) {
       sendOpenExternalFile(pendingFilePath);
@@ -124,6 +139,15 @@ ipcMain.handle('window:toggleFullscreen', () => {
   return next;
 });
 
+// Solo http(s)/mailto — nunca abrir esquemas arbitrarios (file:, md-local:,
+// etc.) que un .md ajeno podría meter en un link.
+ipcMain.handle('shell:openExternal', (event, url) => {
+  if (typeof url === 'string' && /^https?:|^mailto:/i.test(url)) {
+    // En modo test no se abre un navegador/cliente de mail real.
+    if (!isTestMode) shell.openExternal(url);
+  }
+});
+
 ipcMain.handle('file:open', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     filters: [
@@ -133,9 +157,7 @@ ipcMain.handle('file:open', async () => {
     properties: ['openFile']
   });
   if (result.canceled || result.filePaths.length === 0) return null;
-  const filePath = result.filePaths[0];
-  const content = fs.readFileSync(filePath, 'utf-8');
-  return { filePath, content };
+  return result.filePaths[0];
 });
 
 // Historial local de versiones: antes de pisar un archivo, guarda una copia
@@ -209,9 +231,22 @@ ipcMain.handle('backups:read', (event, backupPath) => {
   }
 });
 
+// Antes esto decodificaba cualquier archivo como utf-8 a ciegas: abrir un
+// binario (imagen sin pasar por el visor, un .zip, etc.) generaba una
+// "línea" de miles de caracteres basura que colgaba a CodeMirror al
+// renderizarla. Ahora se olfatea si el contenido es binario (heurística
+// estándar: byte NUL en los primeros bytes, la misma que usa git) antes de
+// devolverlo como texto.
+function looksBinary(buffer) {
+  const sample = buffer.subarray(0, 8000);
+  return sample.includes(0);
+}
+
 ipcMain.handle('file:read', (event, filePath) => {
   try {
-    return fs.readFileSync(filePath, 'utf-8');
+    const buffer = fs.readFileSync(filePath);
+    if (looksBinary(buffer)) return { content: null, binary: true };
+    return { content: buffer.toString('utf-8'), binary: false };
   } catch (e) {
     return null;
   }

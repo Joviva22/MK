@@ -79,7 +79,7 @@
     window.mdCodeMirror.setValue(window.mdCodeMirror.getValue() + '\n\n' + marker);
     await window.mdTabs.saveActive(false);
     const onDisk = await window.mdEditor.readFile(fixtureMdPath);
-    roundTrip = !!onDisk && onDisk.includes(marker);
+    roundTrip = !!onDisk && !onDisk.binary && onDisk.content.includes(marker);
   }
   check('Guardar escribe el contenido editado en el archivo correcto (fixture)', roundTrip);
 
@@ -411,7 +411,7 @@
   if (fixtureMdPath) {
     await window.openFileAtPath(fixtureMdPath);
     const onDisk = await window.mdEditor.readFile(fixtureMdPath);
-    window.mdCodeMirror.setValue(onDisk + '\nLinea agregada para el diff.\n');
+    window.mdCodeMirror.setValue(onDisk.content + '\nLinea agregada para el diff.\n');
     document.getElementById('btn-diff').click();
     await waitFor(() => !document.getElementById('diff-panel').hidden);
     const hasAdd = !!document.querySelector('#diff-panel .diff-add');
@@ -493,6 +493,82 @@
   } else {
     check('Historial de versiones: guardar crea un backup y aparece en el panel', false, 'sin fixturesDir');
   }
+
+  // 25. Links del preview. Regresión: antes ningún <a> normal tenía
+  // manejador y el clic dejaba la ventana de la app en blanco (navegaba la
+  // propia ventana fuera de index.html).
+  // - Un link externo (http) tiene que quedar interceptado (preventDefault)
+  //   en vez de dejarse navegar; no se hace click real para no disparar un
+  //   shell.openExternal de verdad (abriría un navegador real en cada test run).
+  // - Un link relativo a otro archivo local sí tiene que abrirlo como pestaña.
+  let linksOk = false;
+  if (fixturesDir && fixtureOtherPath) {
+    await window.openFileAtPath(fixtureMdPath);
+    window.mdCodeMirror.setValue('[externo](https://example.com/pagina) y [interno](other.md)');
+    window.renderPreview();
+
+    const externalLink = await waitFor(() => Array.from(document.querySelectorAll('#preview-pane a')).find((a) => /example\.com/.test(a.getAttribute('href') || '')));
+    const notCancelled = externalLink.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const externalOk = notCancelled === false; // false = alguien llamó preventDefault()
+
+    const internalLink = document.querySelector('#preview-pane a[href="other.md"]');
+    internalLink.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    await waitFor(() => window.mdState.currentFilePath === fixtureOtherPath);
+    const internalOk = window.mdState.currentFilePath === fixtureOtherPath;
+
+    linksOk = externalOk && internalOk;
+    check(
+      'Links del preview: externo se intercepta (no navega la ventana), interno abre el archivo',
+      linksOk,
+      `externoInterceptado=${externalOk} internoAbrio=${internalOk}`
+    );
+  } else {
+    check('Links del preview: externo se intercepta (no navega la ventana), interno abre el archivo', false, 'sin fixturesDir');
+  }
+
+  // 26. Abrir un archivo binario/de extensión desconocida no cuelga la app:
+  // muestra un aviso en el editor en vez de decodificar basura como texto
+  let binaryOk = false;
+  if (fixturesDir) {
+    const binaryPath = window.mdEditor.joinPath(fixturesDir, 'binary.dat');
+    await window.openFileAtPath(binaryPath);
+    await waitFor(() => window.mdCodeMirror.getValue().includes('binario'));
+    const showsWarningOk = window.mdCodeMirror.getValue().includes('binario');
+    const noRealPathOk = window.mdState.currentFilePath !== binaryPath; // no quedó "abierto" de verdad
+    binaryOk = showsWarningOk && noRealPathOk;
+    check(
+      'Archivo binario/desconocido: no cuelga, avisa en el editor en vez de abrirlo',
+      binaryOk,
+      `avisoEnEditor=${showsWarningOk} noQuedoComoArchivoReal=${noRealPathOk}`
+    );
+  } else {
+    check('Archivo binario/desconocido: no cuelga, avisa en el editor en vez de abrirlo', false, 'sin fixturesDir');
+  }
+
+  // 27. Clic en una imagen del árbol la muestra en el preview (antes
+  // intentaba "editarla" como texto)
+  let imagePreviewOk = false;
+  if (fixturesDir) {
+    const imgPath = window.mdEditor.joinPath(fixturesDir, 'photo.png');
+    window.showImagePreview(imgPath);
+    await waitFor(() => document.querySelector('#preview-pane .image-preview img'));
+    const img = document.querySelector('#preview-pane .image-preview img');
+    imagePreviewOk = !!img && img.getAttribute('src') === window.mdEditor.toLocalUrl(imgPath);
+    check('Clic en una imagen del árbol la muestra en el preview', imagePreviewOk);
+  } else {
+    check('Clic en una imagen del árbol la muestra en el preview', false, 'sin fixturesDir');
+  }
+
+  // 28. Panel de plugins/comunidad: abre y cierra
+  document.getElementById('btn-plugins').click();
+  const pluginsOpenedOk = !document.getElementById('plugins-panel').hidden;
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+  const pluginsClosedOk = document.getElementById('plugins-panel').hidden;
+  check(
+    'Panel de plugins y comunidad abre y cierra',
+    pluginsOpenedOk && pluginsClosedOk,
+    `abierto=${pluginsOpenedOk} cerrado=${pluginsClosedOk}`
+  );
 
   return results;
 })();

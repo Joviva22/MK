@@ -38,6 +38,11 @@ fs.mkdirSync(path.join(fixturesDir, 'nested', 'child-root'), { recursive: true }
 fs.mkdirSync(path.join(fixturesDir, 'moveA'), { recursive: true });
 fs.mkdirSync(path.join(fixturesDir, 'moveB'), { recursive: true });
 fs.writeFileSync(path.join(fixturesDir, 'moveA', 'move-me.md'), '# Muevanme\n', 'utf-8');
+// Un binario con byte NUL (antes colgaba la app al abrirlo como si fuera
+// texto) y un ".png" (no hace falta que decodifique, el test solo mira el
+// <img> del DOM, no que la imagen sea válida).
+fs.writeFileSync(path.join(fixturesDir, 'binary.dat'), Buffer.from([0x00, 0x01, 0xff, 0xfe, 0x00, 0x41, 0x42]));
+fs.writeFileSync(path.join(fixturesDir, 'photo.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x01, 0x02]));
 
 function cleanup() {
   fs.rmSync(profileDir, { recursive: true, force: true });

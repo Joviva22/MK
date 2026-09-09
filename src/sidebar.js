@@ -19,6 +19,7 @@ const ICONS_BY_EXT = {
   mp3: 'music'
 };
 const DEFAULT_FILE_ICON = 'paperclip';
+const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
 
 // Iconos personalizados por archivo (lucide), guardados en config.json bajo
 // fileIcons: { "ruta/relativa/a/la/raiz.md": "star" }. Se guarda por ruta
@@ -279,6 +280,8 @@ function buildTree(nodes) {
       row.addEventListener('click', () => {
         if (extOf(node) === 'pdf') {
           window.showPdfPreview(node.ruta);
+        } else if (IMAGE_EXT.test(node.nombre)) {
+          window.showImagePreview(node.ruta);
         } else {
           window.openFileAtPath(node.ruta);
         }

@@ -15,6 +15,13 @@ Opinión propia, no pedida por ninguna feature en curso. Ordenado por impacto re
 - ~~**Restricción de rutas solo con carpeta abierta.** Un archivo suelto (sin carpeta) ahora restringe los assets a su propio directorio en vez de no restringir nada.~~
 - ~~**Diff es O(n·m) hecho a mano.** Reemplazado por el paquete `diff` (algoritmo de Myers, el mismo que usa git) — `Diff.diffLines` cargado como script suelto igual que las demás libs.~~
 - ~~**`fs:delete` no usa la papelera del sistema.** Ahora usa `shell.trashItem`; si falla (sin gio/kioclient/trash-cli, o moviendo entre sistemas de archivos distintos — lo vi fallar así en este mismo entorno de pruebas) cae de vuelta a `fs.rmSync` para no dejar la operación a medias.~~
+- ~~**Clic en un link deja la ventana en blanco.** Ningún `<a>` del preview tenía manejador — el clic navegaba la propia ventana de Electron fuera de `index.html`. Ahora `preview.js` intercepta todo clic: externos van a `shell.openExternal` (validado a solo http/https/mailto), relativos abren el archivo local como pestaña; `main.js` además bloquea cualquier `will-navigate`/ventana nueva como red de seguridad extra a nivel de la ventana.~~
+- ~~**Abrir un archivo de extensión desconocida cuelga la app.** Se leía cualquier archivo como utf-8 a ciegas — un binario (imagen suelta, zip, etc.) se convertía en una "línea" de miles de caracteres basura que colgaba a CodeMirror al renderizarla. `file:read` ahora olfatea binario (byte NUL, heurística de git) antes de devolver el contenido; si es binario, se muestra un aviso en el editor en vez de abrirlo (con `filePath: null` para que "Guardar" no pueda pisar el binario original).~~
+- ~~**Ver imágenes.** Clic en una imagen del sidebar ahora la muestra en el preview (mismo mecanismo que el PDF a pantalla completa) en vez de intentar abrirla como texto.~~
+
+## Ideas descartadas (por ahora)
+
+- **Sistema de plugins de verdad (JS de terceros).** Se pidió explícitamente, pero al preguntar por el alcance el usuario eligió el panel informativo (opción segura) en vez de un cargador de JS real — cargar código de terceros en una app con acceso a disco es una decisión de seguridad seria que no se debe improvisar. El panel "Plugins y comunidad" (🧩) queda como placeholder honesto; si más adelante se quiere un sistema real, la forma más segura sería scripts locales en una carpeta `plugins/` (no descargados de internet), con una API explícita y limitada (hooks tipo `onRender`/`onSave`, no acceso libre a `require`/`fs`), revisados a mano antes de habilitarse.
 
 ## Prioridad baja / a futuro
 
@@ -22,3 +29,4 @@ Opinión propia, no pedida por ninguna feature en curso. Ordenado por impacto re
 2. **Exportar a PDF/HTML no embebe KaTeX real.** Usa una hoja de estilos simplificada; las fórmulas se ven aproximadas. Decisión consciente en su momento para no arrastrar fuentes, pero vale la pena revisar si molesta en la práctica.
 3. **Sin CI.** Los checks de `npm test` (y ahora `npm run lint`) solo corren si alguien se acuerda de correrlos a mano. Con git y GitHub ya en pie, un workflow de Actions simple lo resolvería sin mucho esfuerzo.
 4. **Historial de versiones sin diff ni límite de espacio real.** Guarda copias completas (no deltas) y el tope es "20 por archivo", no un tamaño total — en un proyecto con muchos archivos grandes podría acumular bastante en `userData`.
+5. **La detección de binario es una heurística.** Byte NUL en los primeros 8000 bytes (lo mismo que usa git) — no es perfecta, pero es la misma que usan herramientas ya probadas.

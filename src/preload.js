@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('mdEditor', {
   listBackups: (filePath) => ipcRenderer.invoke('backups:list', filePath),
   readBackup: (backupPath) => ipcRenderer.invoke('backups:read', backupPath),
   toggleFullscreen: () => ipcRenderer.invoke('window:toggleFullscreen'),
+  openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   saveSession: (data) => ipcRenderer.invoke('session:save', data),
   loadSession: () => ipcRenderer.invoke('session:load'),
   getConfig: () => ipcRenderer.invoke('config:get'),
