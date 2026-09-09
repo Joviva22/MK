@@ -570,5 +570,32 @@
     `abierto=${pluginsOpenedOk} cerrado=${pluginsClosedOk}`
   );
 
+  // 29. Arrastrar una imagen (u otro archivo) desde el árbol hasta el editor
+  // inserta directamente el link/embed de Markdown, sin copiarla a assets/
+  // (ya está dentro del proyecto) — a diferencia de arrastrar un archivo
+  // nuevo desde fuera de la app, que sí se copia.
+  let sidebarDragOk = false;
+  if (fixturesDir && fixtureMdPath) {
+    await window.openFileAtPath(fixtureMdPath);
+    window.mdCodeMirror.setValue('Texto previo.\n');
+    window.mdCodeMirror.setCursor({ line: 1, ch: 0 });
+
+    const imgPath = window.mdEditor.joinPath(fixturesDir, 'photo.png');
+    const dt = new DataTransfer();
+    dt.setData('application/x-mk-node', JSON.stringify({ ruta: imgPath, esCarpeta: false, nombre: 'photo.png' }));
+    const dropEvent = new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt });
+    document.getElementById('editor-pane').dispatchEvent(dropEvent);
+    await waitFor(() => window.mdCodeMirror.getValue().includes('photo.png'));
+
+    sidebarDragOk = window.mdCodeMirror.getValue().includes('![photo.png](photo.png)');
+    check(
+      'Arrastrar una imagen del árbol al editor inserta el link Markdown directamente',
+      sidebarDragOk,
+      `contenido="${window.mdCodeMirror.getValue().replace(/\n/g, '\\n')}"`
+    );
+  } else {
+    check('Arrastrar una imagen del árbol al editor inserta el link Markdown directamente', false, 'sin fixturesDir');
+  }
+
   return results;
 })();

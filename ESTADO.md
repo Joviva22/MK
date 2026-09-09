@@ -74,6 +74,7 @@
 - ~~Fix: abrir un archivo de extensión desconocida o binario (imagen suelta, .zip, etc.) colgaba la app — se decodificaba como utf-8 a ciegas y CodeMirror intentaba renderizar una "línea" de miles de caracteres basura. Ahora `file:read` olfatea contenido binario (byte NUL, la misma heurística de git) antes de devolverlo; si es binario, se abre una pestaña sin archivo real de por medio avisando "no se puede editar" (así "Guardar" no pisa el binario original)~~
 - ~~Clic en una imagen (png/jpg/jpeg/gif/webp/bmp/svg) del sidebar la muestra en el preview en vez de intentar "editarla" como texto~~
 - ~~Panel "Plugins y comunidad" (botón 🧩 o paleta de comandos): por ahora solo informa que no hay sistema de plugins todavía, con espacio preparado para cuando exista — no carga código de terceros (decisión consciente de seguridad, ver MEJORAS.md)~~
+- ~~Arrastrar un archivo del árbol (sidebar) directo al editor inserta el link/embed de Markdown en el cursor, referenciándolo donde ya está (sin copiarlo a `assets/` — eso solo pasa al arrastrar algo de fuera de la app)~~
 
 ## Por hacer
 

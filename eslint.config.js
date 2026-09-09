@@ -36,6 +36,8 @@ const browserGlobals = {
   getComputedStyle: 'readonly',
   Event: 'readonly',
   MouseEvent: 'readonly',
+  DragEvent: 'readonly',
+  DataTransfer: 'readonly',
   KeyboardEvent: 'readonly',
   URLSearchParams: 'readonly',
   // Librerías cargadas como <script> antes de los archivos de la app.
