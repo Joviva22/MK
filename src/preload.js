@@ -33,6 +33,11 @@ contextBridge.exposeInMainWorld('mdEditor', {
   listBacklinks: (root, target) => ipcRenderer.invoke('backlinks:list', { root, target }),
   exportHtml: (html, defaultName) => ipcRenderer.invoke('export:html', { html, defaultName }),
   exportPdf: (html, defaultName) => ipcRenderer.invoke('export:pdf', { html, defaultName }),
+  exportEpub: (html, title, defaultName) => ipcRenderer.invoke('export:epub', { html, title, defaultName }),
+  exportAnki: (cards, defaultName) => ipcRenderer.invoke('export:anki', { cards, defaultName }),
+  isGitRepo: (root) => ipcRenderer.invoke('git:isRepo', root),
+  gitSync: (root) => ipcRenderer.invoke('git:sync', root),
+  buildGraph: (root) => ipcRenderer.invoke('graph:build', root),
   onOpenExternalFile: (callback) => ipcRenderer.on('open-external-file', (event, filePath) => callback(filePath)),
   resolveLocalPath: (baseFilePath, relativePath) => {
     if (!baseFilePath) return relativePath;

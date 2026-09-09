@@ -49,4 +49,42 @@ document.getElementById('btn-export-pdf').addEventListener('click', async () => 
   await window.mdEditor.exportPdf(buildStandaloneHtml(), `${exportBaseName()}.pdf`);
 });
 
+document.getElementById('btn-export-epub').addEventListener('click', async () => {
+  document.getElementById('export-menu').hidden = true;
+  if (!isPreviewExportable()) return;
+  const bodyHtml = document.getElementById('preview-pane').innerHTML;
+  await window.mdEditor.exportEpub(bodyHtml, exportBaseName(), `${exportBaseName()}.epub`);
+});
+
+// "## Encabezado" -> frente de la tarjeta; el texto hasta el próximo "##" -> dorso.
+function parseAnkiCards(markdownText) {
+  const lines = markdownText.split('\n');
+  const cards = [];
+  let current = null;
+  lines.forEach((line) => {
+    const match = line.match(/^##\s+(.*)/);
+    if (match) {
+      if (current && current.back.trim()) cards.push(current);
+      current = { front: match[1].trim(), back: '' };
+    } else if (current) {
+      current.back += `${line}\n`;
+    }
+  });
+  if (current && current.back.trim()) cards.push(current);
+  return cards;
+}
+
+document.getElementById('btn-export-anki').addEventListener('click', async () => {
+  document.getElementById('export-menu').hidden = true;
+  const cards = parseAnkiCards(window.mdCodeMirror.getValue());
+  if (!cards.length) {
+    alert('No se encontraron tarjetas: usá encabezados "## Pregunta" seguidos del texto de la respuesta.');
+    return;
+  }
+  const saved = await window.mdEditor.exportAnki(cards, `${exportBaseName()}.txt`);
+  if (saved) {
+    alert(`${cards.length} tarjeta(s) exportadas. En Anki: Archivo → Importar → elegí este .txt (separador: tabulador).`);
+  }
+});
+
 })();

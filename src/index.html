@@ -44,6 +44,8 @@
       <div id="export-menu" class="dropdown-menu" hidden>
         <button id="btn-export-html">Exportar a HTML</button>
         <button id="btn-export-pdf">Exportar a PDF</button>
+        <button id="btn-export-epub">Exportar a EPUB</button>
+        <button id="btn-export-anki">Exportar a tarjetas (Anki)</button>
       </div>
     </div>
 
@@ -89,6 +91,10 @@
 
         <label class="dropdown-label" for="snippets-textarea">Snippets de texto (uno por línea)</label>
         <textarea id="snippets-textarea" class="snippets-textarea" rows="3" placeholder="/firma = Saludos, Tu Nombre"></textarea>
+
+        <label class="dropdown-label" for="gitsync-toggle">
+          <input type="checkbox" id="gitsync-toggle" /> Sincronizar con git al guardar
+        </label>
       </div>
     </div>
 
@@ -179,27 +185,34 @@
       <div class="backlinks-title">Plugins y comunidad</div>
       <div class="plugins-body">
         <p>MK todavía no tiene sistema de plugins — todo lo que ves (temas, exportar, etiquetas, etc.) viene integrado en la app, no hay forma de instalar extensiones de terceros por ahora.</p>
-        <p>Algunas de las ideas que estaban acá ya se hicieron como funciones propias de MK: corrector ortográfico (nativo, mientras escribís), snippets de texto (⚙ Ajustes), plantillas con variables (<code>{{fecha}}</code>/<code>{{titulo}}</code> en "Nuevo ▾"), nota diaria (paleta de comandos) y diagramas Mermaid (bloque <code>```mermaid```</code> en el preview) — ver <code>MANUAL.md</code> para cómo usarlas.</p>
-        <p>Lo que queda pendiente:</p>
-
-        <p class="plugins-ideas-title">Organización y visualización</p>
+        <p>Toda la lista de ideas que estaba acá ya se hizo como funciones propias de MK, integradas a la app (no plugins de terceros):</p>
         <ul>
-          <li><strong>Vista de grafo</strong> — mapa visual de qué nota enlaza con cuál, a partir de los wikilinks.</li>
-          <li><strong>Tablero Kanban</strong> — armado automáticamente a partir de listas de tareas (<code>- [ ]</code>) agrupadas por columna.</li>
+          <li><strong>Corrector ortográfico</strong> — nativo, mientras escribís.</li>
+          <li><strong>Snippets de texto</strong> — ⚙ Ajustes.</li>
+          <li><strong>Plantillas con variables</strong> — <code>{{fecha}}</code>/<code>{{titulo}}</code> en "Nuevo ▾".</li>
+          <li><strong>Nota diaria</strong> — <code>Ctrl+Shift+D</code> o paleta de comandos.</li>
+          <li><strong>Diagramas Mermaid</strong> — bloque <code>```mermaid```</code> en el preview.</li>
+          <li><strong>Vista de grafo</strong> y <strong>tablero Kanban</strong> — paleta de comandos.</li>
+          <li><strong>Exportar a EPUB</strong> y <strong>a tarjetas Anki</strong> — menú ⬇ Exportar.</li>
+          <li><strong>Sincronizar con git al guardar</strong> — ⚙ Ajustes (necesita que la carpeta ya sea un repo git).</li>
+          <li><strong>Ejecutar código JavaScript</strong> — botón "▶ Ejecutar" en bloques <code>```js```</code> del preview (aislado en un Web Worker, sin acceso a tus archivos).</li>
         </ul>
-
-        <p class="plugins-ideas-title">Exportar e integraciones</p>
-        <ul>
-          <li><strong>Exportar a EPUB</strong> — para apuntes largos o libros armados en Markdown.</li>
-          <li><strong>Sincronización con git</strong> — commit automático de la carpeta al guardar, sin salir de MK.</li>
-          <li><strong>Exportar a tarjetas de memoria</strong> (tipo Anki) — a partir de encabezados o callouts.</li>
-        </ul>
-
-        <p class="plugins-ideas-title">Para quienes programan</p>
-        <ul>
-          <li><strong>Ejecutar bloques de código</strong> — correr un bloque ```python``` o ```js``` y ver el resultado ahí mismo, tipo notebook.</li>
-        </ul>
+        <p>Ver <code>MANUAL.md</code> para el detalle de cada una.</p>
       </div>
+    </div>
+  </div>
+
+  <div id="kanban-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette kanban-modal">
+      <div class="backlinks-title">Tablero Kanban — encabezados "## Columna" con listas debajo</div>
+      <div id="kanban-board" class="kanban-board"></div>
+    </div>
+  </div>
+
+  <div id="graph-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette graph-modal">
+      <div class="backlinks-title">Grafo de notas — clic en un nodo para abrirlo</div>
+      <canvas id="graph-canvas" width="760" height="520"></canvas>
     </div>
   </div>
 
@@ -237,6 +250,8 @@
   <script src="backlinks.js"></script>
   <script src="history.js"></script>
   <script src="plugins.js"></script>
+  <script src="kanban.js"></script>
+  <script src="graph.js"></script>
   <script src="exportdoc.js"></script>
   <script src="sidebar.js"></script>
   <script src="resize.js"></script>

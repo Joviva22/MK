@@ -81,13 +81,18 @@
 - ~~Nota diaria (`Ctrl+Shift+D` o paleta de comandos): abre o crea `Diario/AAAA-MM-DD.md` dentro de la carpeta abierta, con la fecha como encabezado si es nueva~~
 - ~~Diagramas Mermaid: un bloque \`\`\`mermaid\`\`\` se renderiza como diagrama SVG en el preview en vez de mostrarse como código~~
 - ~~Corrector ortográfico nativo (spellcheck del sistema) activado en el editor — subraya palabras no reconocidas mientras escribís (sin sugerencias por clic derecho todavía, ver limitaciones)~~
+- ~~Vista de grafo (paleta de comandos): nodos = archivos de la carpeta abierta, aristas = wikilinks resueltos entre ellos, layout de fuerzas simple (repulsión + resortes) en canvas; clic en un nodo abre ese archivo~~
+- ~~Tablero Kanban (paleta de comandos): cada `## Encabezado` del documento activo es una columna, cada `- item` debajo una tarjeta; clic marca/desmarca (`[x]`), arrastrar mueve la tarjeta a otra columna reescribiendo el Markdown~~
+- ~~Exportar a EPUB (menú ⬇ Exportar): genera un `.epub` válido (mimetype/container.xml/content.opf/toc.ncx + capítulo XHTML) con `jszip`, un solo capítulo con el documento activo~~
+- ~~Exportar a tarjetas de memoria/Anki (menú ⬇ Exportar): cada `## Pregunta` + el texto hasta el próximo encabezado se exporta como una tarjeta Frente/Dorso en un `.txt` importable desde Anki~~
+- ~~Sincronizar con git al guardar (⚙ Ajustes, apagado por defecto): si la carpeta abierta ya es un repo git, cada `Ctrl+S`/"Guardar" manual dispara `git add -A && git commit` — nunca corre `git init`, y no se dispara en cada tick de autoguardado (solo en guardado manual, para no llenar el historial)~~
+- ~~Ejecutar bloques de código JavaScript: botón "▶ Ejecutar" bajo cada \`\`\`js\`\`\` del preview, corre en un Web Worker nuevo por ejecución (sin `window`/`document`/`require`/`window.mdEditor` — no puede tocar archivos ni el resto de la app), con timeout de 3s y estilo notebook (la última expresión suelta se muestra sola, sin necesidad de `return`)~~
 
 ## Por hacer
 
-- [ ] Workspaces, graph view, sincronización
+- [ ] Workspaces, sincronización con otros dispositivos
 - [ ] Sistema de plugins de verdad (cargar JS local de una carpeta `plugins/` con una API limitada tipo hooks `onRender`/`onSave`) — el panel actual es solo informativo, ver MEJORAS.md para por qué no se construyó ahora
 - [ ] Actualizar `bin/mk-editor` / el `.desktop` para apuntar al AppImage empaquetado en vez de `node_modules/electron` (opcional: solo vale la pena si se va a distribuir la app fuera de esta máquina)
-- [ ] Resto de ideas de plugins pendientes (vista de grafo, Kanban, exportar a EPUB/Anki, sync con git, ejecutar código) — ver MEJORAS.md
 
 ## Notas / limitaciones conocidas
 
@@ -108,3 +113,9 @@
 - Los diagramas Mermaid tienen fondo blanco fijo, no se adaptan a los 26 temas de color.
 - Los snippets de texto son reemplazo literal (sin cursores/campos como los snippets de un IDE) y solo se disparan con espacio, Enter o Tab justo después de la abreviatura.
 - La nota diaria siempre va a `Diario/AAAA-MM-DD.md` en la raíz de la carpeta abierta — no es configurable todavía.
+- El grafo de notas no tiene animación continua ni se puede arrastrar nodos — corre un layout de fuerzas fijo (250 iteraciones) antes de dibujar y queda estático; con muchos archivos (cientos) puede verse apretado.
+- El tablero Kanban solo lee/escribe el documento activo (no combina tareas de varios archivos), y las columnas son siempre `## Encabezado` de nivel 2 exacto — no soporta subcolumnas ni otros niveles.
+- El export a EPUB genera un solo capítulo (todo el documento activo) y una portada mínima sin imagen de tapa — no arma un libro con varios archivos como capítulos separados.
+- El export a Anki es un `.txt` de dos columnas (Frente/Dorso) para importar a mano en Anki — no genera un `.apkg` real, y solo reconoce `## Pregunta` como delimitador (no callouts, aunque la idea original los mencionaba).
+- La sincronización con git es todo o nada por commit (`git add -A`): no se puede elegir qué archivos incluir desde MK, y el mensaje de commit es siempre el mismo genérico.
+- Ejecutar código solo soporta JavaScript (no Python ni otros lenguajes) — ejecutar procesos reales del sistema desde una nota es un riesgo de seguridad mayor que se dejó fuera a propósito.

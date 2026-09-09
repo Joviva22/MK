@@ -653,5 +653,108 @@
   const mermaidOk = !!mermaidDiv && !!mermaidSvg;
   check('Diagramas Mermaid: un fence ```mermaid``` se renderiza como SVG', mermaidOk, `div=${!!mermaidDiv} svg=${!!mermaidSvg}`);
 
+  // 34. Exportar a EPUB: genera un archivo .epub real (jszip en main.js,
+  // el diálogo se saltea en modo test y escribe a un temporal)
+  let epubOk = false;
+  if (fixtureMdPath) {
+    await window.openFileAtPath(fixtureMdPath);
+    window.mdCodeMirror.setValue('# Capitulo Uno\n\nTexto de prueba.\n');
+    window.renderPreview();
+    await waitFor(() => document.querySelector('#preview-pane h1'));
+    const savedPath = await window.mdEditor.exportEpub(document.getElementById('preview-pane').innerHTML, 'Mi Libro', 'test.epub');
+    epubOk = !!savedPath && savedPath.endsWith('.epub');
+    check('Exportar a EPUB genera un archivo .epub', epubOk, `ruta=${savedPath}`);
+  } else {
+    check('Exportar a EPUB genera un archivo .epub', false, 'sin fixturesDir');
+  }
+
+  // 35. Exportar a Anki: "## Pregunta" + texto -> tarjetas Frente/Dorso
+  let ankiOk = false;
+  {
+    window.mdCodeMirror.setValue('## Pregunta uno\n\nRespuesta uno.\n\n## Pregunta dos\n\nRespuesta dos.\n');
+    const originalAlert = window.alert;
+    let alertMsg = null;
+    window.alert = (msg) => {
+      alertMsg = msg;
+    };
+    document.getElementById('btn-export-anki').click();
+    await new Promise((r) => setTimeout(r, 300));
+    window.alert = originalAlert;
+    ankiOk = !!alertMsg && /2 tarjeta/.test(alertMsg);
+    check('Exportar a tarjetas Anki: detecta preguntas de "## Encabezado"', ankiOk, `alerta="${alertMsg}"`);
+  }
+
+  // 36. Sincronización con git al guardar: en un repo git real, guardar +
+  // gitSync deja un commit nuevo
+  const gitRepoDir = fixturesDir ? window.mdEditor.joinPath(fixturesDir, 'gitrepo') : null;
+  if (gitRepoDir) {
+    const isRepo = await window.mdEditor.isGitRepo(gitRepoDir);
+    if (isRepo) {
+      const notePath = window.mdEditor.joinPath(gitRepoDir, 'nota.md');
+      await window.mdEditor.saveFile('# Nota nueva\n', notePath, false);
+      const syncResult = await window.mdEditor.gitSync(gitRepoDir);
+      check('Sincronización con git: commitea cambios en un repo existente', !!syncResult.ok, JSON.stringify(syncResult));
+    } else {
+      check('Sincronización con git: commitea cambios en un repo existente', false, 'git no disponible en este entorno, se saltea');
+    }
+  } else {
+    check('Sincronización con git: commitea cambios en un repo existente', false, 'sin fixturesDir');
+  }
+
+  // 37. Tablero Kanban: "## Columna" + listas = columnas/tarjetas; clic
+  // marca/desmarca, arrastrar mueve una tarjeta a otra columna
+  window.mdCodeMirror.setValue('## Por hacer\n- [ ] tarea A\n- [ ] tarea B\n\n## Hecho\n- [x] tarea C\n');
+  window.mdKanban.open();
+  await waitFor(() => document.querySelectorAll('.kanban-column').length === 2);
+  const kanbanColumnsOk = document.querySelectorAll('.kanban-column').length === 2;
+  const kanbanCardsOk = document.querySelectorAll('.kanban-card').length === 3;
+
+  const firstCard = document.querySelector('.kanban-card');
+  firstCard.click();
+  await waitFor(() => window.mdCodeMirror.getValue().includes('[x] tarea A'));
+  const kanbanToggleOk = window.mdCodeMirror.getValue().includes('[x] tarea A');
+
+  const hechoColumn = Array.from(document.querySelectorAll('.kanban-column')).find((c) => c.querySelector('.kanban-column-title').textContent.startsWith('Hecho'));
+  const dt = new DataTransfer();
+  dt.setData('application/x-mk-kanban-card', '2'); // línea de "- [ ] tarea B" en el contenido original
+  hechoColumn.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+  await waitFor(() => /## Hecho\n[\s\S]*tarea B/.test(window.mdCodeMirror.getValue()));
+  const kanbanMoveOk = /## Hecho\n[\s\S]*tarea B/.test(window.mdCodeMirror.getValue());
+  window.mdKanban.close();
+
+  check(
+    'Tablero Kanban: columnas/tarjetas desde encabezados+listas, marcar y mover funcionan',
+    kanbanColumnsOk && kanbanCardsOk && kanbanToggleOk && kanbanMoveOk,
+    `columnas=${kanbanColumnsOk} tarjetas=${kanbanCardsOk} marcar=${kanbanToggleOk} mover=${kanbanMoveOk}`
+  );
+
+  // 38. Grafo de notas: nodos = archivos de la carpeta, aristas = wikilinks
+  let graphOk = false;
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    await window.mdGraph.open();
+    const graphData = window.mdGraph.getData();
+    window.mdGraph.close();
+    const hasNodesOk = graphData.nodes.length > 0;
+    const hasEdgeOk = graphData.edges.some((e) => e.source === 'other' && e.target === 'note');
+    graphOk = hasNodesOk && hasEdgeOk;
+    check('Grafo de notas: detecta nodos y aristas de wikilinks', graphOk, `nodos=${graphData.nodes.length} aristaOtherNote=${hasEdgeOk}`);
+  } else {
+    check('Grafo de notas: detecta nodos y aristas de wikilinks', false, 'sin fixturesDir');
+  }
+
+  // 39. Ejecutar código JS: botón "Ejecutar" en un bloque ```js``` corre en
+  // un Worker aislado y muestra la salida (console.log + valor de retorno)
+  window.mdCodeMirror.setValue('```js\nconsole.log("hola");\n2 + 2;\n```\n');
+  window.renderPreview();
+  const runBtn = await waitFor(() => document.querySelector('#preview-pane .run-code-btn'));
+  runBtn.click();
+  const outputEl = await waitFor(() => {
+    const el = document.querySelector('#preview-pane .run-code-output');
+    return el && !el.hidden && el.textContent !== 'Ejecutando...' ? el : null;
+  }, 5000);
+  const runCodeOk = !!outputEl && outputEl.textContent.includes('hola') && outputEl.textContent.includes('=> 4');
+  check('Ejecutar código JS: "Ejecutar" corre el bloque en un Worker y muestra la salida', runCodeOk, `salida="${outputEl ? outputEl.textContent.replace(/\n/g, '\\n') : null}"`);
+
   return results;
 })();

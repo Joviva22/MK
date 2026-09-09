@@ -46,7 +46,10 @@ const browserGlobals = {
   katex: 'readonly',
   DOMPurify: 'readonly',
   lucide: 'readonly',
-  Diff: 'readonly'
+  Diff: 'readonly',
+  mermaid: 'readonly',
+  Worker: 'readonly',
+  self: 'readonly'
 };
 
 module.exports = [

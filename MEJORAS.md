@@ -2,20 +2,10 @@
 
 Opinión propia, no pedida por ninguna feature en curso. Ordenado por impacto real, no por lo divertido que sea implementarlo. Lo ya hecho se saca de acá (queda trackeado en `ESTADO.md`) para que esto no crezca infinito.
 
-## Ideas de plugins pendientes
-
-De la lista de plugins interesantes (ver panel 🧩 y `MANUAL.md`), las que se implementaron como funciones propias de MK (corrector ortográfico, snippets de texto, plantillas con variables, nota diaria, diagramas Mermaid) ya no están acá. Quedan pendientes:
-
-1. **Vista de grafo.** Mapa visual de qué nota enlaza con cuál, a partir de los wikilinks — la más pedida en este tipo de apps (Obsidian), pero la más grande de implementar bien (layout de grafo, zoom/pan, actualización en vivo).
-2. **Tablero Kanban.** Armado automáticamente a partir de listas de tareas (`- [ ]`) agrupadas por columna — necesitaría definir una convención (¿una carpeta por tablero? ¿un encabezado por columna?).
-3. **Exportar a EPUB.** Para apuntes largos o libros armados en Markdown — nueva librería/formato, no reutiliza el pipeline de exportar a HTML/PDF que ya existe.
-4. **Sincronización con git al guardar.** Commit automático de la carpeta sin salir de MK — hay que pensar bien cuándo (¿cada guardado sería demasiado ruido de commits?) y qué pasa si la carpeta no es un repo git todavía.
-5. **Exportar a tarjetas de memoria (tipo Anki).** A partir de encabezados o callouts — formato de exportación nuevo (`.apkg` o CSV para importar).
-6. **Ejecutar bloques de código tipo notebook.** Correr un bloque ```python``` o ```js``` y ver el resultado ahí mismo — la más riesgosa de las seis: ejecutar código arbitrario desde una nota necesita pensarse bien en términos de seguridad antes de tocarla.
-
 ## Ideas descartadas (por ahora)
 
 - **Sistema de plugins de verdad (JS de terceros).** Se pidió explícitamente, pero al preguntar por el alcance el usuario eligió el panel informativo (opción segura) en vez de un cargador de JS real — cargar código de terceros en una app con acceso a disco es una decisión de seguridad seria que no se debe improvisar. El panel "Plugins y comunidad" (🧩) queda como placeholder honesto; si más adelante se quiere un sistema real, la forma más segura sería scripts locales en una carpeta `plugins/` (no descargados de internet), con una API explícita y limitada (hooks tipo `onRender`/`onSave`, no acceso libre a `require`/`fs`), revisados a mano antes de habilitarse.
+- **Ejecutar código en otros lenguajes (Python, etc.), no solo JavaScript.** El JS corre aislado en un Web Worker (sin acceso a archivos ni a la app). Python u otros lenguajes necesitarían invocar un proceso real del sistema — un salto de riesgo grande que no se debe hacer sin pensarlo aparte.
 
 ## Prioridad baja / a futuro
 
@@ -26,3 +16,7 @@ De la lista de plugins interesantes (ver panel 🧩 y `MANUAL.md`), las que se i
 5. **La detección de binario es una heurística.** Byte NUL en los primeros 8000 bytes (lo mismo que usa git) — no es perfecta, pero es la misma que usan herramientas ya probadas.
 6. **Corrector ortográfico sin sugerencias por clic derecho.** El menú contextual propio de MK reemplaza al nativo de Chromium, que es el que trae las sugerencias de corrección — hoy el corrector solo subraya, no corrige. Arreglarlo bien necesita escuchar `context-menu` en `main.js` (ahí sí llegan `misspelledWord`/`dictionarySuggestions`) y coordinar con el menú del renderer, con el timing async correcto — no es trivial, quedó afuera de esta pasada.
 7. **Diagramas Mermaid con fondo fijo blanco.** No se adapta a los 26 temas de color — se podría pasar `theme: 'dark'` de Mermaid cuando el tema de MK es oscuro, pero no todos los temas mapean limpiamente a "claro u oscuro" (quedaría para revisar caso por caso).
+8. **Grafo de notas sin interacción (no se puede arrastrar nodos ni hacer zoom).** Layout de fuerzas fijo que corre una vez y queda estático — con carpetas grandes (cientos de notas) se pondría apretado; arrastrar nodos y zoom/pan lo haría mucho más usable.
+9. **Kanban limitado a un solo archivo.** No combina tareas de varios documentos ni soporta subcolumnas — sería más potente si pudiera armar un tablero a partir de una carpeta entera, no solo el archivo activo.
+10. **Export a EPUB de un solo capítulo.** No arma un libro multi-archivo (cada nota como capítulo) ni tiene portada — para "apuntes largos" de un solo documento ya sirve, para un libro real de varios archivos faltaría.
+11. **Sincronización con git sin control fino.** Siempre `git add -A` con un mensaje genérico — no se puede elegir qué archivos incluir ni escribir un mensaje de commit propio desde MK.

@@ -173,6 +173,58 @@ function highlightCode() {
   });
 }
 
+// Ejecuta JS en un Web Worker nuevo por corrida (sin window/document/require
+// ni window.mdEditor: no puede tocar tus archivos ni el resto de la app).
+// Se corta solo a los 3s si no terminó.
+function runJsBlock(code, outputEl) {
+  outputEl.hidden = false;
+  outputEl.textContent = 'Ejecutando...';
+  outputEl.classList.remove('run-code-error');
+
+  const worker = new Worker('jsworker.js');
+  const timeout = setTimeout(() => {
+    worker.terminate();
+    outputEl.textContent = '(cancelado: tardó más de 3s)';
+    outputEl.classList.add('run-code-error');
+  }, 3000);
+
+  worker.onmessage = (e) => {
+    clearTimeout(timeout);
+    worker.terminate();
+    outputEl.textContent = e.data.output || '(sin salida)';
+    if (!e.data.ok) outputEl.classList.add('run-code-error');
+  };
+  worker.onerror = (e) => {
+    clearTimeout(timeout);
+    worker.terminate();
+    outputEl.textContent = `Error: ${e.message}`;
+    outputEl.classList.add('run-code-error');
+  };
+  worker.postMessage(code);
+}
+
+function addRunButtons() {
+  previewPane.querySelectorAll('pre code.language-js, pre code.language-javascript').forEach((code) => {
+    const pre = code.parentElement;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'runnable-code';
+    pre.replaceWith(wrapper);
+    wrapper.appendChild(pre);
+
+    const outputEl = document.createElement('pre');
+    outputEl.className = 'run-code-output';
+    outputEl.hidden = true;
+
+    const runBtn = document.createElement('button');
+    runBtn.className = 'run-code-btn';
+    runBtn.textContent = '▶ Ejecutar';
+    runBtn.addEventListener('click', () => runJsBlock(code.textContent, outputEl));
+
+    wrapper.appendChild(runBtn);
+    wrapper.appendChild(outputEl);
+  });
+}
+
 function render() {
   previewPane.classList.remove('pdf-mode');
   const markdownText = window.mdCodeMirror.getValue();
@@ -188,6 +240,7 @@ function render() {
   markMissingAssets();
   renderMermaidBlocks();
   highlightCode();
+  addRunButtons();
   if (window.onPreviewRendered) window.onPreviewRendered();
 }
 

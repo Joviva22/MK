@@ -2,8 +2,10 @@
 'use strict';
 
 let autosaveIntervalMs = 1000;
+let gitSyncEnabled = false;
 
 window.mdGetAutosaveInterval = () => autosaveIntervalMs;
+window.mdGetGitSyncEnabled = () => gitSyncEnabled;
 
 window.initDropdown('btn-settings', 'settings-menu');
 
@@ -13,6 +15,7 @@ const fontFamilySelect = document.getElementById('fontfamily-select');
 const tabSizeSelect = document.getElementById('tabsize-select');
 const wordWrapToggle = document.getElementById('wordwrap-toggle');
 const snippetsTextarea = document.getElementById('snippets-textarea');
+const gitSyncToggle = document.getElementById('gitsync-toggle');
 
 // "/abrev = expansión", una por línea -> { "/abrev": "expansión" }
 function parseSnippetsText(text) {
@@ -66,6 +69,11 @@ snippetsTextarea.addEventListener('change', async (e) => {
   if (window.mdSnippets) window.mdSnippets.reload();
 });
 
+gitSyncToggle.addEventListener('change', async (e) => {
+  gitSyncEnabled = e.target.checked;
+  await window.mdEditor.setConfig({ gitSyncEnabled });
+});
+
 (async () => {
   const config = await window.mdEditor.getConfig();
 
@@ -90,6 +98,9 @@ snippetsTextarea.addEventListener('change', async (e) => {
   window.mdCodeMirror.setOption('lineWrapping', wordWrap);
 
   snippetsTextarea.value = serializeSnippets(config.textSnippets || {});
+
+  gitSyncEnabled = !!config.gitSyncEnabled;
+  gitSyncToggle.checked = gitSyncEnabled;
 
   window.mdCodeMirror.refresh();
 })();

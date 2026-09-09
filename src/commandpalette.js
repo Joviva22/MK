@@ -35,6 +35,8 @@ function buildCommands() {
   cmds.push({ label: 'Ver versiones anteriores...', run: () => window.mdHistory && window.mdHistory.open() });
   cmds.push({ label: 'Plugins y comunidad', run: () => window.mdPlugins && window.mdPlugins.open() });
   cmds.push({ label: 'Nota diaria de hoy', run: () => window.mdDailyNote && window.mdDailyNote.open() });
+  cmds.push({ label: 'Ver tablero Kanban', run: () => window.mdKanban && window.mdKanban.open() });
+  cmds.push({ label: 'Ver grafo de notas', run: () => window.mdGraph && window.mdGraph.open() });
 
   document.querySelectorAll('#theme-menu button[data-theme]').forEach((btn) => {
     cmds.push({ label: `Tema: ${btn.textContent}`, run: () => btn.click() });

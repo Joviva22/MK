@@ -3,6 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const crypto = require('crypto');
+const JSZip = require('jszip');
+const { execFile } = require('child_process');
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -552,6 +554,40 @@ ipcMain.handle('backlinks:list', (event, { root, target }) => {
   return results;
 });
 
+// Nodos = archivos de texto de la carpeta; aristas = wikilinks resueltos
+// entre ellos (mismo criterio que wikilink:resolve, por nombre de archivo).
+ipcMain.handle('graph:build', (event, root) => {
+  if (!root) return { nodes: [], edges: [] };
+
+  const files = [];
+  walkTextFiles(root, (fullPath, content) => {
+    files.push({ path: fullPath, name: path.basename(fullPath, path.extname(fullPath)), content });
+  });
+
+  const byNameLower = new Map(files.map((f) => [f.name.toLowerCase(), f]));
+  const edgeKeys = new Set();
+  const edges = [];
+
+  files.forEach((f) => {
+    const scanText = stripCodeForScan(f.content);
+    WIKILINK_RE.lastIndex = 0;
+    let m;
+    while ((m = WIKILINK_RE.exec(scanText))) {
+      const target = byNameLower.get(m[1].trim().toLowerCase());
+      if (!target || target.name === f.name) continue;
+      const key = `${f.name}->${target.name}`;
+      if (edgeKeys.has(key)) continue;
+      edgeKeys.add(key);
+      edges.push({ source: f.name, target: target.name });
+    }
+  });
+
+  return {
+    nodes: files.map((f) => ({ id: f.name, path: f.path })),
+    edges
+  };
+});
+
 ipcMain.handle('export:html', async (event, { html, defaultName }) => {
   const result = await dialog.showSaveDialog(mainWindow, {
     defaultPath: defaultName || 'documento.html',
@@ -581,6 +617,127 @@ ipcMain.handle('export:pdf', async (event, { html, defaultName }) => {
     fs.unlinkSync(tmpPath);
   }
   return result.filePath;
+});
+
+// data:image/... -> <img>/<br>/<hr>/<embed>/<link>/<meta>/<input> sin cerrar
+// (marked/DOMPurify no producen XHTML estricto) se cierran solos para que
+// el .xhtml del EPUB sea válido.
+function toXhtmlVoidElements(html) {
+  return html.replace(/<(img|br|hr|input|meta|link|embed)\b([^>]*?)\/?>/gi, (match, tag, attrs) => `<${tag}${attrs}/>`);
+}
+
+// En modo test evita el diálogo nativo (bloquearía la suite esperando un
+// clic que nunca llega) y escribe directo a un archivo temporal.
+async function resolveSavePath(defaultName, filters) {
+  if (isTestMode) {
+    return path.join(os.tmpdir(), `mk-test-export-${Date.now()}-${defaultName}`);
+  }
+  const result = await dialog.showSaveDialog(mainWindow, { defaultPath: defaultName, filters });
+  if (result.canceled || !result.filePath) return null;
+  return result.filePath;
+}
+
+ipcMain.handle('export:epub', async (event, { html, title, defaultName }) => {
+  const targetPath = await resolveSavePath(defaultName || 'documento.epub', [{ name: 'EPUB', extensions: ['epub'] }]);
+  if (!targetPath) return null;
+
+  const safeTitle = (title || 'Documento').replace(/[<>&]/g, '');
+  const uid = 'urn:uuid:' + crypto.randomUUID();
+  const xhtmlBody = toXhtmlVoidElements(html);
+
+  const chapterXhtml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><meta charset="utf-8" /><title>${safeTitle}</title></head>
+<body>
+${xhtmlBody}
+</body>
+</html>`;
+
+  const containerXml = `<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles>
+    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>`;
+
+  const contentOpf = `<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="2.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>${safeTitle}</dc:title>
+    <dc:language>es</dc:language>
+    <dc:identifier id="BookId">${uid}</dc:identifier>
+  </metadata>
+  <manifest>
+    <item id="chapter1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="chapter1"/>
+  </spine>
+</package>`;
+
+  const tocNcx = `<?xml version="1.0" encoding="UTF-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+  <head><meta name="dtb:uid" content="${uid}"/></head>
+  <docTitle><text>${safeTitle}</text></docTitle>
+  <navMap>
+    <navPoint id="chapter1" playOrder="1">
+      <navLabel><text>${safeTitle}</text></navLabel>
+      <content src="chapter1.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>`;
+
+  const zip = new JSZip();
+  zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+  zip.folder('META-INF').file('container.xml', containerXml);
+  const oebps = zip.folder('OEBPS');
+  oebps.file('content.opf', contentOpf);
+  oebps.file('toc.ncx', tocNcx);
+  oebps.file('chapter1.xhtml', chapterXhtml);
+
+  const buffer = await zip.generateAsync({ type: 'nodebuffer' });
+  fs.writeFileSync(targetPath, buffer);
+  return targetPath;
+});
+
+ipcMain.handle('export:anki', async (event, { cards, defaultName }) => {
+  const targetPath = await resolveSavePath(defaultName || 'tarjetas.txt', [{ name: 'Texto (importable en Anki)', extensions: ['txt'] }]);
+  if (!targetPath) return null;
+  // Formato de importación simple de Anki: una tarjeta por línea, campos
+  // separados por tabulador (Frente\tDorso). Ver Archivo > Importar en Anki.
+  const lines = cards.map(({ front, back }) =>
+    `${front.replace(/\t/g, ' ')}\t${back.replace(/\t/g, ' ').replace(/\n/g, '<br>')}`
+  );
+  fs.writeFileSync(targetPath, lines.join('\n'), 'utf-8');
+  return targetPath;
+});
+
+// Sincronización con git al guardar (opt-in, ver settings.js): solo actúa
+// si la carpeta ya es un repo git existente — nunca corre "git init" por
+// cuenta propia. Nada bloqueante ni ruidoso: si no hay nada para commitear,
+// no es un error.
+function runGit(args, cwd) {
+  return new Promise((resolve) => {
+    execFile('git', args, { cwd }, (error, stdout, stderr) => {
+      resolve({ error, stdout, stderr });
+    });
+  });
+}
+
+ipcMain.handle('git:isRepo', async (event, root) => {
+  const { error } = await runGit(['rev-parse', '--is-inside-work-tree'], root);
+  return !error;
+});
+
+ipcMain.handle('git:sync', async (event, root) => {
+  const check = await runGit(['rev-parse', '--is-inside-work-tree'], root);
+  if (check.error) return { ok: false, reason: 'not-a-repo' };
+  await runGit(['add', '-A'], root);
+  const commit = await runGit(['commit', '-m', 'MK: guardado automático'], root);
+  if (commit.error) return { ok: false, reason: 'nothing-to-commit' };
+  return { ok: true };
 });
 
 app.whenReady().then(() => {

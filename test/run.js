@@ -44,6 +44,21 @@ fs.writeFileSync(path.join(fixturesDir, 'moveA', 'move-me.md'), '# Muevanme\n', 
 fs.writeFileSync(path.join(fixturesDir, 'binary.dat'), Buffer.from([0x00, 0x01, 0xff, 0xfe, 0x00, 0x41, 0x42]));
 fs.writeFileSync(path.join(fixturesDir, 'photo.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x01, 0x02]));
 
+// Repo git real para probar "sincronizar con git al guardar". Si el
+// entorno no tiene git disponible, el check correspondiente se saltea solo.
+const { execSync } = require('child_process');
+const gitRepoDir = path.join(fixturesDir, 'gitrepo');
+fs.mkdirSync(gitRepoDir, { recursive: true });
+try {
+  execSync('git init -q', { cwd: gitRepoDir });
+  execSync('git config user.email "mk-test@example.com"', { cwd: gitRepoDir });
+  execSync('git config user.name "MK Test"', { cwd: gitRepoDir });
+  fs.writeFileSync(path.join(gitRepoDir, 'seed.md'), '# seed\n', 'utf-8');
+  execSync('git add -A && git commit -q -m seed', { cwd: gitRepoDir });
+} catch (e) {
+  // sin git en PATH u otro problema de entorno: el check de git sync avisa y se saltea
+}
+
 function cleanup() {
   fs.rmSync(profileDir, { recursive: true, force: true });
   fs.rmSync(fixturesDir, { recursive: true, force: true });

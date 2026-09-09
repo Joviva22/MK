@@ -124,6 +124,12 @@ async function saveActive(forceDialog = false) {
   window.mdStatusMode.textContent = tab.mode === 'stex' ? 'LaTeX' : 'Markdown';
   markModified(tab.id, false);
   persistSession();
+
+  // Sync con git: solo en guardado manual (no en cada tick de autoguardado,
+  // para no llenar el historial de commits) y solo si está prendido.
+  if (window.mdGetGitSyncEnabled && window.mdGetGitSyncEnabled() && window.mdState.rootFolder) {
+    window.mdEditor.gitSync(window.mdState.rootFolder);
+  }
 }
 
 function closeTab(id) {
