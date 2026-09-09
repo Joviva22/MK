@@ -1,6 +1,6 @@
 # Manual de uso — MK
 
-Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](./README.md); para saber qué está hecho y qué no, [`ESTADO.md`](./ESTADO.md).
+Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](./README.md); para saber qué está hecho y qué no, [`ESTADO.md`](./ESTADO.md); para una referencia rápida de atajos sin tanto texto, [`COMANDOS.md`](./COMANDOS.md).
 
 > Esta guía se actualiza cada vez que se agrega una función nueva a MK — si ves algo en la app que no está acá, avisá.
 

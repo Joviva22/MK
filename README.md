@@ -1,31 +1,48 @@
 # MK — Editor de Markdown Local
 
-App de escritorio (Electron) para editar Markdown y LaTeX en local, sin internet, sin cuenta y sin depender de servicios externos.
+App de escritorio (Electron) para escribir y organizar notas en Markdown y LaTeX, guardadas como archivos de texto normales en tu disco — sin cuenta, sin nube, sin conexión a internet. Todo lo que hace corre local: nada de lo que escribís sale de tu computadora.
 
-## Qué hace
+## Por qué existe
 
-**Edición y organización**
-- Editor (CodeMirror) + preview en vivo, con pestañas, autoguardado y restauración de sesión.
-- Markdown con imágenes/vídeos/PDF embebidos, tablas, callouts, resaltado de código en el preview, subrayado (`==texto==`), y LaTeX (`$...$` / `$$...$$` vía KaTeX). El editor también resalta sintaxis de `.tex`, `.py`, `.c`/`.cpp`, `.java` y `.sh` — se abren y editan igual que cualquier archivo de texto.
-- Buscar/reemplazar en el archivo actual (`Ctrl+F`) y zoom rápido de fuente (`Ctrl+scroll`/`Ctrl+=`/`Ctrl+-`).
-- Etiquetas `#tag` y wikilinks `[[Nota]]` con backlinks — navegar y organizar notas dentro de una carpeta.
-- Sidebar de carpetas con icono personalizable por archivo, selección múltiple (Ctrl+clic) para mover/eliminar en bloque.
-- **Panel secundario (split view)**: un segundo archivo (md/PDF/`.docx`/imagen) de solo lectura al lado del principal — clic en el título lo promueve a principal.
-- Historial de versiones local con diff, vista de cambios sin guardar, corrector ortográfico con sugerencias.
+La idea es simple: un editor que se sienta como una app de notas moderna (pestañas, preview en vivo, búsqueda, temas, atajos) pero que por dentro sea texto plano de toda la vida — tus notas siguen siendo `.md` normales, abribles con cualquier otro editor, versionables con git, sin formato propietario ni base de datos oculta.
 
-**Word y PDF**
-- Abrir `.docx`: se convierte a Markdown editable (mammoth + turndown), con tablas GFM. Exportar de vuelta a `.docx` real (librería `docx`).
-- Operaciones de páginas PDF: unir, separar, rotar, reordenar, marca de agua, texto/firma (`pdf-lib`).
-- Subrayar texto en PDF (arrastrar el mouse) y exportar a PDF/HTML/EPUB/tarjetas Anki.
+## Qué podés hacer
 
-**Herramientas integradas** (no plugins de terceros, todo built-in)
-- Tablero Kanban (por archivo o carpeta completa), grafo de notas interactivo (zoom/pan/arrastrar nodos, posiciones persistidas), diagramas Mermaid (incluso con imágenes en los nodos), ejecutar bloques de código JS en un Web Worker aislado.
-- Sincronización con git al guardar, o con control fino (elegir archivos + mensaje propio).
-- Nota diaria, snippets de texto, plantillas con variables.
-- Command Palette (`Ctrl+Shift+P`), búsqueda global (`Ctrl+Shift+F`), autocompletado.
-- 26 temas de color.
+### Escribir y organizar
+Editor (CodeMirror) con preview en vivo al lado, pestañas con autoguardado, y restauración de sesión si cerrás con cambios sin guardar. Markdown completo: imágenes/vídeos/PDF embebidos, tablas, callouts, subrayado (`==texto==`) y fórmulas con LaTeX (`$...$` / `$$...$$` vía KaTeX). El sidebar de carpetas deja poner un ícono propio por archivo y seleccionar varios a la vez (`Ctrl+clic`) para mover o eliminar en bloque. Etiquetas `#tag` y wikilinks `[[Nota]]` con backlinks para enlazar notas entre sí, más un grafo interactivo para verlas todas conectadas.
 
-Ver [`MANUAL.md`](./MANUAL.md) para la guía de uso completa (cómo usar cada función, paso a paso). Ver [`ESTADO.md`](./ESTADO.md) para el detalle completo de lo hecho, lo pendiente y las limitaciones conocidas. Ver [`MEJORAS.md`](./MEJORAS.md) para ideas de qué mejorar a futuro.
+También se pueden abrir y editar archivos de código (`.py`, `.c`/`.cpp`, `.java`, `.sh`) con resaltado de sintaxis propio para cada lenguaje — el preview (que renderiza Markdown) se oculta solo en esos casos, no tiene sentido ahí.
+
+### Buscar y moverte rápido
+`Ctrl+F` busca y reemplaza dentro del archivo actual; `Ctrl+Shift+F` busca en toda la carpeta abierta. Paleta de comandos (`Ctrl+Shift+P`) para no memorizar dónde está cada botón. Ver [`COMANDOS.md`](./COMANDOS.md) para la lista completa de atajos.
+
+### Un segundo archivo al lado (split view)
+El **panel secundario** muestra un segundo archivo (Markdown, PDF, `.docx` o imagen) de solo lectura junto al principal, del mismo ancho y con su propio divisor para repartir el espacio. Un clic en el título lo "promueve" a principal — sin necesidad de una segunda instancia del editor.
+
+### Word y PDF
+Abrir un `.docx` lo convierte a Markdown editable al vuelo (con tablas), y se puede exportar de vuelta a un `.docx` real. Del lado de PDF: unir, separar, rotar, reordenar páginas, agregar marca de agua o firma, y subrayar texto arrastrando el mouse. Exportar notas a PDF, HTML, EPUB o tarjetas de Anki.
+
+### Herramientas integradas
+Todo esto viene ya armado en la app, no son plugins de terceros:
+- Tablero **Kanban** (por archivo o por carpeta completa) armado a partir de encabezados y listas.
+- Diagramas **Mermaid**, incluso con imágenes propias adentro de los nodos.
+- Ejecutar bloques de código JavaScript en un Web Worker aislado (sin acceso a tus archivos).
+- Sincronización con **git** al guardar, automática o eligiendo a mano qué archivos entran en cada commit.
+- Nota diaria, snippets de texto (`/fecha`, `/hora` y los tuyos propios) y plantillas con variables.
+- Historial de versiones local con diff y vista de cambios sin guardar.
+- Corrector ortográfico nativo, con sugerencias por clic derecho.
+
+### Personalización
+26 temas de color, tipografía y tamaño de fuente del editor (con zoom rápido por `Ctrl+scroll`), ancho de tabulación, autoguardado configurable, y modo enfoque/lectura para escribir sin distracciones.
+
+## Documentación
+
+| Archivo | Para qué sirve |
+|---|---|
+| [`MANUAL.md`](./MANUAL.md) | Guía completa: cómo usar cada función, paso a paso |
+| [`COMANDOS.md`](./COMANDOS.md) | Referencia rápida de todos los atajos de teclado |
+| [`ESTADO.md`](./ESTADO.md) | Qué está hecho, qué falta, y limitaciones conocidas |
+| [`MEJORAS.md`](./MEJORAS.md) | Ideas de qué mejorar a futuro |
 
 ## Cómo correrla
 
@@ -33,23 +50,6 @@ Ver [`MANUAL.md`](./MANUAL.md) para la guía de uso completa (cómo usar cada fu
 npm install
 npm start
 ```
-
-## Atajos principales
-
-| Atajo | Acción |
-|---|---|
-| `Ctrl+B` | Ocultar/mostrar el sidebar |
-| `Ctrl+N` / `Ctrl+O` / `Ctrl+S` / `Ctrl+Shift+S` | Nuevo / Abrir / Guardar / Guardar como |
-| `Ctrl+W` / `Ctrl+Tab` | Cerrar pestaña / ciclar pestañas |
-| `Ctrl+F` | Buscar/reemplazar en el archivo actual |
-| `Ctrl+Shift+P` | Paleta de comandos |
-| `Ctrl+Shift+F` | Búsqueda global en la carpeta abierta |
-| `Ctrl+Shift+T` | Etiquetas de la carpeta |
-| `Ctrl+Shift+B` | Backlinks del archivo activo |
-| `Ctrl+Shift+O` | Índice del documento |
-| `Ctrl+Shift+E` / `Ctrl+Shift+R` | Modo enfoque / modo lectura |
-| `Ctrl+Space` | Autocompletado |
-| `Ctrl+scroll` / `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Zoom de fuente del editor |
 
 ## Tests
 
@@ -90,9 +90,11 @@ MK/
 ├── test/
 │   ├── run.js             # arranca Electron con MK_TEST=1 y perfil aislado, arma los fixtures (incluye .docx reales)
 │   └── renderer-checks.js  # los checks en sí, corren dentro de la ventana
+├── Ejemplos/               # archivos de muestra para probar cada función en vivo
 ├── .github/workflows/ci.yml # lint + test en cada push/PR
 ├── package.json
 ├── MANUAL.md             # guía de uso completa
+├── COMANDOS.md           # referencia rápida de atajos
 ├── ESTADO.md             # estado real y detallado del proyecto
 └── MEJORAS.md             # qué mejoraría a futuro
 ```
