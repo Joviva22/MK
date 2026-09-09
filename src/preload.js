@@ -1,0 +1,61 @@
+const { contextBridge, ipcRenderer, webUtils, clipboard } = require('electron');
+const path = require('path');
+// El paquete npm de highlight.js no trae un build listo para <script>: su
+// carpeta "es/" reexporta la build CommonJS, que un <script type="module">
+// no puede resolver (rompe con "require is not defined"). Como preload.js
+// sí corre en contexto Node, lo cargamos acá y lo exponemos ya resuelto.
+const hljs = require('highlight.js/lib/common');
+
+contextBridge.exposeInMainWorld('mdEditor', {
+  openFile: () => ipcRenderer.invoke('file:open'),
+  saveFile: (content, filePath, forceDialog = false) => ipcRenderer.invoke('file:save', { content, filePath, forceDialog }),
+  readFile: (filePath) => ipcRenderer.invoke('file:read', filePath),
+  openFolder: () => ipcRenderer.invoke('folder:open'),
+  getLastFolder: () => ipcRenderer.invoke('folder:getLast'),
+  readFolder: (rootPath) => ipcRenderer.invoke('folder:read', rootPath),
+  createFile: (dirPath, name) => ipcRenderer.invoke('fs:createFile', { dirPath, name }),
+  createFolder: (dirPath, name) => ipcRenderer.invoke('fs:createFolder', { dirPath, name }),
+  renamePath: (targetPath, newName) => ipcRenderer.invoke('fs:rename', { targetPath, newName }),
+  deletePath: (targetPath, isFolder) => ipcRenderer.invoke('fs:delete', { targetPath, isFolder }),
+  saveSession: (data) => ipcRenderer.invoke('session:save', data),
+  loadSession: () => ipcRenderer.invoke('session:load'),
+  getConfig: () => ipcRenderer.invoke('config:get'),
+  setConfig: (partial) => ipcRenderer.invoke('config:set', partial),
+  copyAsset: (srcPath, targetDir) => ipcRenderer.invoke('asset:copy', { srcPath, targetDir }),
+  searchInFolder: (root, query) => ipcRenderer.invoke('search:inFolder', { root, query }),
+  listTags: (root) => ipcRenderer.invoke('tags:list', root),
+  resolveWikilink: (root, target) => ipcRenderer.invoke('wikilink:resolve', { root, target }),
+  listBacklinks: (root, target) => ipcRenderer.invoke('backlinks:list', { root, target }),
+  exportHtml: (html, defaultName) => ipcRenderer.invoke('export:html', { html, defaultName }),
+  exportPdf: (html, defaultName) => ipcRenderer.invoke('export:pdf', { html, defaultName }),
+  onMenuNew: (callback) => ipcRenderer.on('menu:new', callback),
+  onMenuOpen: (callback) => ipcRenderer.on('menu:open', callback),
+  onMenuSave: (callback) => ipcRenderer.on('menu:save', callback),
+  onMenuSaveAs: (callback) => ipcRenderer.on('menu:save-as', callback),
+  onOpenExternalFile: (callback) => ipcRenderer.on('open-external-file', (event, filePath) => callback(filePath)),
+  resolveLocalPath: (baseFilePath, relativePath) => {
+    if (!baseFilePath) return relativePath;
+    return path.resolve(path.dirname(baseFilePath), relativePath);
+  },
+  toLocalUrl: (absolutePath) => 'md-local://file' + encodeURI(absolutePath),
+  isPathAllowed: (root, absolutePath) => {
+    if (!root) return true;
+    const rel = path.relative(root, absolutePath);
+    return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+  },
+  dirName: (p) => path.dirname(p),
+  joinPath: (...parts) => path.join(...parts),
+  relativePath: (fromFile, toPath) => path.relative(path.dirname(fromFile), toPath),
+  relativeToRoot: (root, filePath) => path.relative(root, filePath),
+  getPathForFile: (file) => webUtils.getPathForFile(file),
+  clipboardWriteText: (text) => clipboard.writeText(text),
+  clipboardReadText: () => clipboard.readText(),
+  highlightCode: (code, language) => {
+    try {
+      const result = language && hljs.getLanguage(language) ? hljs.highlight(code, { language }) : hljs.highlightAuto(code);
+      return result.value;
+    } catch (e) {
+      return null;
+    }
+  }
+});

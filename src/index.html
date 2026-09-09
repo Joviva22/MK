@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Editor de Markdown Local</title>
+  <link rel="stylesheet" href="../node_modules/codemirror/lib/codemirror.css" />
+  <link rel="stylesheet" href="../node_modules/codemirror/addon/hint/show-hint.css" />
+  <link rel="stylesheet" href="../node_modules/katex/dist/katex.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="toolbar">
+    <button id="btn-open-folder" class="toolbar-button" title="Abrir carpeta"><i data-lucide="folder-open"></i> Carpeta</button>
+
+    <div class="dropdown">
+      <button id="btn-new" class="toolbar-button" title="Nuevo (Ctrl+N)"><i data-lucide="file-plus"></i> Nuevo ▾</button>
+      <div id="new-menu" class="dropdown-menu" hidden>
+        <button data-template="vacio">Markdown vacío</button>
+        <button data-template="apuntes">Apuntes</button>
+        <button data-template="documentacion">Documentación</button>
+        <button data-template="trabajo">Trabajo universitario</button>
+        <button data-template="readme">README</button>
+        <button data-template="formulas">Fórmulas matemáticas</button>
+      </div>
+    </div>
+
+    <button id="btn-open" class="toolbar-button" title="Abrir (Ctrl+O)"><i data-lucide="file"></i> Abrir</button>
+    <button id="btn-save" class="toolbar-button" title="Guardar (Ctrl+S)"><i data-lucide="save"></i> Guardar</button>
+    <button id="btn-save-as" class="toolbar-button" title="Guardar como (Ctrl+Shift+S)"><i data-lucide="save-all"></i> Guardar como</button>
+
+    <span class="toolbar-spacer"></span>
+
+    <button id="btn-diff" class="toolbar-button" title="Ver cambios desde el último guardado"><i data-lucide="file-diff"></i></button>
+    <button id="btn-toc" class="toolbar-button" title="Índice del documento (Ctrl+Shift+O)"><i data-lucide="list"></i></button>
+    <button id="btn-focus" class="toolbar-button" title="Modo enfoque / lectura (Ctrl+Shift+E / Ctrl+Shift+R)"><i data-lucide="focus"></i></button>
+    <button id="btn-search" class="toolbar-button" title="Búsqueda global en la carpeta (Ctrl+Shift+F)"><i data-lucide="search"></i></button>
+    <button id="btn-command-palette" class="toolbar-button" title="Paleta de comandos (Ctrl+Shift+P)"><i data-lucide="command"></i></button>
+    <button id="btn-tags" class="toolbar-button" title="Etiquetas de la carpeta (Ctrl+Shift+T)"><i data-lucide="tag"></i></button>
+    <button id="btn-backlinks" class="toolbar-button" title="Backlinks: qué enlaza aquí (Ctrl+Shift+B)"><i data-lucide="link-2"></i></button>
+
+    <div class="dropdown">
+      <button id="btn-export" class="toolbar-button" title="Exportar"><i data-lucide="download"></i> Exportar ▾</button>
+      <div id="export-menu" class="dropdown-menu" hidden>
+        <button id="btn-export-html">Exportar a HTML</button>
+        <button id="btn-export-pdf">Exportar a PDF</button>
+      </div>
+    </div>
+
+    <div class="dropdown">
+      <button id="btn-settings" class="toolbar-button" title="Ajustes"><i data-lucide="settings"></i></button>
+      <div id="settings-menu" class="dropdown-menu" hidden>
+        <label class="dropdown-label" for="autosave-select">Autoguardado</label>
+        <select id="autosave-select">
+          <option value="0">Desactivado</option>
+          <option value="1000">Cada 1 segundo</option>
+          <option value="5000">Cada 5 segundos</option>
+          <option value="30000">Cada 30 segundos</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="dropdown">
+      <button id="btn-theme" class="toolbar-button" title="Cambiar tema"><i data-lucide="palette"></i> Tema ▾</button>
+      <div id="theme-menu" class="dropdown-menu dropdown-menu-scroll" hidden></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="sidebar-pane"><div class="sidebar-empty">Sin carpeta abierta</div></div>
+    <div class="resizer" id="resizer-sidebar"></div>
+    <div class="editor-column">
+      <div id="tabbar"></div>
+      <div id="editor-pane"></div>
+    </div>
+    <div class="resizer" id="resizer-editor"></div>
+    <div class="preview-wrapper">
+      <div id="preview-scroll">
+        <div id="preview-pane"></div>
+      </div>
+      <div id="toc-panel" hidden></div>
+      <div id="diff-panel" hidden></div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <span id="status-mode">Markdown</span>
+    <span id="status-cursor">Ln 1, Col 1</span>
+    <span id="status-encoding">UTF-8</span>
+  </div>
+
+  <div id="restore-dialog" class="modal-overlay" hidden>
+    <div class="modal">
+      <p>Se encontraron cambios sin guardar de la sesión anterior:</p>
+      <ul id="restore-file-list"></ul>
+      <div class="modal-actions">
+        <button id="btn-restore-discard" class="toolbar-button">Descartar cambios</button>
+        <button id="btn-restore-keep" class="toolbar-button">Restaurar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="command-palette" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette">
+      <input id="command-palette-input" type="text" placeholder="Escribe un comando..." autocomplete="off" spellcheck="false" />
+      <div id="command-palette-list" class="command-palette-list"></div>
+    </div>
+  </div>
+
+  <div id="search-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette search-palette">
+      <input id="search-input" type="text" placeholder="Buscar en los archivos de la carpeta abierta..." autocomplete="off" spellcheck="false" />
+      <div id="search-results" class="command-palette-list"></div>
+    </div>
+  </div>
+
+  <div id="icon-picker" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette">
+      <input id="icon-picker-input" type="text" placeholder="Buscar icono (star, heart, rocket...)" autocomplete="off" spellcheck="false" />
+      <div id="icon-picker-list" class="icon-picker-grid"></div>
+    </div>
+  </div>
+
+  <div id="tags-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette">
+      <input id="tags-input" type="text" placeholder="Filtrar etiquetas..." autocomplete="off" spellcheck="false" />
+      <div id="tags-list" class="command-palette-list"></div>
+    </div>
+  </div>
+
+  <div id="backlinks-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette">
+      <div id="backlinks-title" class="backlinks-title">Backlinks</div>
+      <div id="backlinks-list" class="command-palette-list"></div>
+    </div>
+  </div>
+
+  <script src="../node_modules/codemirror/lib/codemirror.js"></script>
+  <script src="../node_modules/codemirror/mode/markdown/markdown.js"></script>
+  <script src="../node_modules/codemirror/mode/stex/stex.js"></script>
+  <script src="../node_modules/codemirror/addon/hint/show-hint.js"></script>
+  <script src="../node_modules/codemirror/addon/hint/anyword-hint.js"></script>
+  <script src="../node_modules/marked/lib/marked.umd.js"></script>
+  <script src="../node_modules/katex/dist/katex.min.js"></script>
+  <script src="../node_modules/dompurify/dist/purify.js"></script>
+  <script src="../node_modules/lucide/dist/umd/lucide.js"></script>
+
+  <script src="editor.js"></script>
+  <script src="tabs.js"></script>
+  <script src="ui-dropdowns.js"></script>
+  <script src="templates.js"></script>
+  <script src="settings.js"></script>
+  <script src="themes.js"></script>
+  <script src="preview.js"></script>
+  <script src="toc.js"></script>
+  <script src="diff.js"></script>
+  <script src="modes.js"></script>
+  <script src="dragdrop.js"></script>
+  <script src="contextmenu.js"></script>
+  <script src="autocomplete.js"></script>
+  <script src="commandpalette.js"></script>
+  <script src="search.js"></script>
+  <script src="iconpicker.js"></script>
+  <script src="tags.js"></script>
+  <script src="backlinks.js"></script>
+  <script src="exportdoc.js"></script>
+  <script src="sidebar.js"></script>
+  <script src="resize.js"></script>
+  <script src="icons.js"></script>
+</body>
+</html>

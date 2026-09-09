@@ -1,0 +1,48 @@
+{
+  "name": "md-editor-local",
+  "version": "1.0.0",
+  "description": "Editor de Markdown sencillo para usar en local, sin depender de servicios externos ni conexión a internet.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/run.js",
+    "dist": "electron-builder --linux AppImage"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "codemirror": "^5.65.16",
+    "dompurify": "^3.4.15",
+    "highlight.js": "^11.12.0",
+    "katex": "^0.18.7",
+    "lucide": "^1.43.0",
+    "marked": "^12.0.2"
+  },
+  "allowScripts": {
+    "electron@32.3.3": true
+  },
+  "build": {
+    "appId": "local.mk.editor",
+    "productName": "MK",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/**/*",
+      "package.json",
+      "!node_modules/electron/**/*",
+      "!node_modules/electron-builder/**/*"
+    ],
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Office",
+      "executableName": "mk-editor",
+      "icon": "build/icon.png",
+      "mimeTypes": ["text/markdown", "text/x-markdown"]
+    }
+  }
+}
