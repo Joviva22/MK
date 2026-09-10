@@ -88,6 +88,7 @@ function activateTab(id) {
   tabCm.setOption('mode', tab.mode);
   window.mdState.currentFilePath = tab.filePath;
   window.mdStatusMode.textContent = tab.modeLabel;
+  if (window.mdModes) window.mdModes.releasePdfForcedReadMode();
   renderTabbar();
   if (window.renderPreview) window.renderPreview();
   persistSession();

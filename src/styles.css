@@ -365,6 +365,7 @@ label.dropdown-label {
 }
 
 .primary-pane {
+  position: relative;
   display: grid;
   grid-template-columns: var(--gt-editor, 1fr) var(--gt-re, 6px) var(--gt-preview, 1fr);
   min-width: 0;
@@ -688,7 +689,7 @@ ul.tree.collapsed {
 #preview-pane {
   padding: 40px;
   line-height: 1.7;
-  font-size: 15px;
+  font-size: var(--preview-font-size, 15px);
   max-width: 900px;
   margin: 0 auto;
 }

@@ -15,6 +15,7 @@ function buildCommands() {
   const cmds = [];
 
   cmds.push({ label: 'Abrir carpeta', run: () => document.getElementById('btn-open-folder').click() });
+  cmds.push({ label: 'Refrescar archivos (ver si hay nuevos)', run: () => document.getElementById('btn-refresh-tree').click() });
   cmds.push({ label: 'Abrir archivo', run: () => document.getElementById('btn-open').click() });
   cmds.push({ label: 'Guardar', run: () => document.getElementById('btn-save').click() });
   cmds.push({ label: 'Guardar como', run: () => document.getElementById('btn-save-as').click() });

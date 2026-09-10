@@ -277,6 +277,12 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// Refrescar el árbol contra el disco: si agregaste/borraste/renombraste
+// algo desde afuera de MK (terminal, otro programa) mientras la carpeta
+// ya estaba abierta, el sidebar no se entera solo — este botón vuelve a
+// leer la carpeta actual y redibuja. No hace nada si no hay carpeta abierta.
+document.getElementById('btn-refresh-tree').addEventListener('click', () => refreshTree());
+
 const DRAG_MIME = 'application/x-mk-node';
 
 // Indirección propia (no llamar window.mdEditor.startFileDrag directo acá

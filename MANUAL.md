@@ -206,7 +206,7 @@ Los archivos `.tex` completos también se editan con resaltado de sintaxis LaTeX
 - **Arrastrar una fila del sidebar** (un archivo que ya está en tu carpeta abierta) directo al editor: inserta el link/embed apuntando a donde ya está el archivo, sin copiarlo de nuevo.
 - Desde el [menú contextual](#17-menú-contextual-del-editor) del editor: "Insertar imagen".
 
-**Ver una imagen o un PDF sueltos**: hacé clic en el archivo desde el sidebar (no hace falta que esté referenciado en ningún `.md`) — se muestra a pantalla completa en el panel de preview. Con un PDF podés navegarlo con el visor nativo; con una imagen, se centra y ajusta al espacio disponible.
+**Ver una imagen o un PDF sueltos**: hacé clic en el archivo desde el sidebar (no hace falta que esté referenciado en ningún `.md`) — se muestra a pantalla completa en el panel de preview. Con un PDF podés navegarlo con el visor nativo; con una imagen, se centra y ajusta al espacio disponible. Se abre siempre en **modo lectura** (aunque estuvieras en modo enfoque o normal) — así nunca queda tapado detrás de otro modo ni compartiendo pantalla con un editor mostrando un archivo sin relación.
 
 ## 6. Etiquetas y wikilinks
 
@@ -239,6 +239,8 @@ Los `#tag`/`[[wikilink]]` dentro de bloques de código (\`\`\`) o código inline
 
 **Ocultar/mostrar el sidebar**: botón a la izquierda del todo en la toolbar (ícono de panel), o `Ctrl+B`. Es un eje independiente del modo enfoque/lectura y del [panel secundario](#22-panel-secundario-pantalla-dividida) — se combinan libremente (ej: sidebar oculto + panel secundario abierto + principal en modo enfoque, los tres a la vez). Se acuerda entre sesiones (no vuelve a aparecer solo si lo dejaste oculto).
 
+**Refrescar archivos** (🔄 en la toolbar, junto a "Carpeta", o desde la paleta de comandos): el sidebar no se entera solo si agregás, borrás o renombrás algo desde afuera de MK (terminal, otro programa, sincronización en la nube) mientras la carpeta ya estaba abierta. Este botón vuelve a leer la carpeta actual del disco y redibuja el árbol.
+
 Con una carpeta abierta, el panel izquierdo muestra el árbol de archivos:
 
 - **Clic en una carpeta**: expande/colapsa. El ícono cambia entre carpeta cerrada y abierta.
@@ -270,7 +272,7 @@ Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pesta
 
 ## 8. Buscar cosas
 
-- **Buscar y reemplazar en el archivo actual** (`Ctrl+F`, o paleta de comandos): un cuadro flotante arriba a la derecha del editor, sin tapar el documento. Escribí para buscar — resalta todas las coincidencias en el texto y muestra "posición/total" (ej. `2/5`). `Enter`/`Shift+Enter` o los botones ↓/↑ saltan a la siguiente/anterior. El botón ⇄ despliega una segunda fila para reemplazar: "Reemplazar" cambia solo la coincidencia actual, "Todo" cambia todas de una. `Escape` (o ✕) cierra y vuelve el foco al editor. Si tenías texto seleccionado al abrirlo, arranca buscando eso.
+- **Buscar y reemplazar en el archivo actual** (`Ctrl+F`, o paleta de comandos): un cuadro flotante arriba a la derecha, sin tapar el documento. Escribí para buscar — resalta todas las coincidencias en el texto y muestra "posición/total" (ej. `2/5`). `Enter`/`Shift+Enter` o los botones ↓/↑ saltan a la siguiente/anterior. El botón ⇄ despliega una segunda fila para reemplazar: "Reemplazar" cambia solo la coincidencia actual, "Todo" cambia todas de una. `Escape` (o ✕) cierra y vuelve el foco al editor. Si tenías texto seleccionado al abrirlo, arranca buscando eso. También funciona en **modo lectura** (el cuadro es independiente del editor, así que se ve y busca igual aunque el editor esté oculto).
 - **Búsqueda global** (🔍 en la toolbar, o `Ctrl+Shift+F`): busca un texto en todos los archivos de la carpeta abierta (`.md`, `.markdown`, `.txt`, `.tex`), hasta 200 resultados. Clic en un resultado abre el archivo y salta directo a esa línea. A diferencia de `Ctrl+F`, esto busca en TODA la carpeta y navega a otro archivo — no reemplaza.
 - **Abrir archivo rápido por nombre** (`Ctrl+P`, o paleta de comandos): tipeá parte del nombre de un archivo (no el contenido) y saltá directo con `Enter` — más rápido que navegar el sidebar cuando la carpeta tiene muchos archivos. `↑`/`↓` mueven la selección, `Escape` cierra. Cada resultado muestra el nombre y, si no está en la raíz, la carpeta donde vive.
 - **Paleta de comandos** (⌘ en la toolbar, o `Ctrl+Shift+P`): lista todo lo que podés hacer en MK — nuevo, abrir, guardar, exportar, cambiar de tema, alternar vistas, ver etiquetas/backlinks/historial/Kanban/grafo — con filtro por texto a medida que escribís. Navegás con las flechas y confirmás con Enter.
@@ -352,7 +354,7 @@ Para ver, comparar o recuperar una versión anterior: paleta de comandos → **"
 Desde ⚙ **Ajustes**:
 
 - **Autoguardado**: desactivado, cada 1s, cada 5s, cada 30s.
-- **Tamaño de fuente** del editor: 12 a 18px (dropdown), o ajuste rápido con `Ctrl+scroll` sobre el editor, `Ctrl+=`/`Ctrl+-` (de a 1px, entre 10 y 28), y `Ctrl+0` para volver a 14px — quedan sincronizados con el mismo dropdown y se guardan igual.
+- **Tamaño de fuente** del editor: 12 a 18px (dropdown), o ajuste rápido con `Ctrl+scroll`, `Ctrl+=`/`Ctrl+-` (de a 1px, entre 10 y 28), y `Ctrl+0` para volver a 14px — quedan sincronizados con el mismo dropdown y se guardan igual. El preview se agranda/achica junto con el editor (mismo movimiento, cada uno desde su propio tamaño de base) — `Ctrl+scroll` funciona tanto sobre el editor como sobre el preview, así que también sirve estando en modo lectura (ahí el editor está oculto).
 - **Tipografía** del editor: JetBrains Mono, Fira Code, Consolas, o la monoespaciada del sistema.
 - **Ancho de tabulación**: 2, 4 u 8 espacios.
 - **Ajuste de línea**: activar/desactivar el word-wrap.

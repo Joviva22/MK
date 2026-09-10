@@ -405,10 +405,30 @@ previewPane.addEventListener('click', async (e) => {
 
 window.renderPreview = render;
 
+// Siempre en modo lectura (editor oculto, preview a todo el ancho): sin
+// esto, un PDF/imagen se mostraba en el preview mientras el editor seguía
+// con lo que fuera que hubiera abierto antes (otro archivo sin relación) —
+// y si el modo era "enfoque" (editor solo), el preview quedaba oculto del
+// todo y el PDF ni se veía. Forzarlo acá evita esa combinación rota — pero
+// es un forzado "suave" (forcedByPdf:true), se suelta solo en cuanto se
+// abre un archivo de verdad (ver modes.js/releasePdfForcedReadMode).
+// También saca "code-file" (ver tabs.js/isActiveTabCode): si el tab activo
+// era un archivo de código, esa clase fuerza ocultar el preview y le gana
+// a mode-read en el CSS a propósito — sin sacarla, un PDF quedaría tapado.
+// Y actualiza mdState.currentFilePath: sin esto, el panel secundario no se
+// entera de que el PDF/imagen es "lo que era principal" al promover otra
+// cosa — lo perdía en vez de mandarlo al panel secundario.
+function forceReadModeForPdf(filePath) {
+  containerEl.classList.remove('code-file');
+  window.mdState.currentFilePath = filePath;
+  if (window.mdModes) window.mdModes.setLayoutMode('read', { forcedByPdf: true });
+}
+
 window.showPdfPreview = function (filePath) {
   const url = window.mdEditor.toLocalUrl(filePath);
   previewPane.classList.add('pdf-mode');
   previewPane.innerHTML = `<embed src="${url}" type="application/pdf" class="pdf-embed">`;
+  forceReadModeForPdf(filePath);
 };
 
 // Clic en una imagen del sidebar: mostrarla en el preview en vez de
@@ -418,6 +438,7 @@ window.showImagePreview = function (filePath) {
   const name = filePath.split(/[\\/]/).pop();
   previewPane.classList.add('pdf-mode');
   previewPane.innerHTML = `<div class="image-preview"><img src="${url}" alt="${name}"></div>`;
+  forceReadModeForPdf(filePath);
 };
 
 let debounceTimer = null;

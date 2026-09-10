@@ -12,6 +12,7 @@
   <div class="toolbar">
     <button id="btn-toggle-sidebar" class="toolbar-button" title="Ocultar/mostrar el panel de archivos (Ctrl+B)"><i data-lucide="panel-left-close"></i></button>
     <button id="btn-open-folder" class="toolbar-button" title="Abrir carpeta"><i data-lucide="folder-open"></i> Carpeta</button>
+    <button id="btn-refresh-tree" class="toolbar-button toolbar-optional" title="Refrescar archivos (ver si hay nuevos)"><i data-lucide="refresh-cw"></i></button>
 
     <div class="dropdown">
       <button id="btn-new" class="toolbar-button" title="Nuevo (Ctrl+N)"><i data-lucide="file-plus"></i> Nuevo ▾</button>
@@ -139,21 +140,6 @@
       <div class="editor-column">
         <div id="tabbar"></div>
         <div id="editor-pane"></div>
-        <div id="find-widget" class="find-widget" hidden>
-          <div class="find-row">
-            <input id="find-input" type="text" placeholder="Buscar..." autocomplete="off" spellcheck="false" />
-            <span id="find-count" class="find-count">0/0</span>
-            <button id="find-prev" class="toolbar-button find-widget-btn" title="Anterior (Shift+Enter)">↑</button>
-            <button id="find-next" class="toolbar-button find-widget-btn" title="Siguiente (Enter)">↓</button>
-            <button id="find-toggle-replace" class="toolbar-button find-widget-btn" title="Reemplazar">⇄</button>
-            <button id="find-close" class="toolbar-button find-widget-btn" title="Cerrar (Escape)">✕</button>
-          </div>
-          <div id="find-replace-row" class="find-row" hidden>
-            <input id="replace-input" type="text" placeholder="Reemplazar por..." autocomplete="off" spellcheck="false" />
-            <button id="replace-one" class="toolbar-button find-widget-btn" title="Reemplazar esta coincidencia">Reemplazar</button>
-            <button id="replace-all" class="toolbar-button find-widget-btn" title="Reemplazar todas las coincidencias">Todo</button>
-          </div>
-        </div>
       </div>
       <div class="resizer" id="resizer-editor"></div>
       <div class="preview-wrapper">
@@ -162,6 +148,21 @@
         </div>
         <div id="toc-panel" hidden></div>
         <div id="diff-panel" hidden></div>
+      </div>
+      <div id="find-widget" class="find-widget" hidden>
+        <div class="find-row">
+          <input id="find-input" type="text" placeholder="Buscar..." autocomplete="off" spellcheck="false" />
+          <span id="find-count" class="find-count">0/0</span>
+          <button id="find-prev" class="toolbar-button find-widget-btn" title="Anterior (Shift+Enter)">↑</button>
+          <button id="find-next" class="toolbar-button find-widget-btn" title="Siguiente (Enter)">↓</button>
+          <button id="find-toggle-replace" class="toolbar-button find-widget-btn" title="Reemplazar">⇄</button>
+          <button id="find-close" class="toolbar-button find-widget-btn" title="Cerrar (Escape)">✕</button>
+        </div>
+        <div id="find-replace-row" class="find-row" hidden>
+          <input id="replace-input" type="text" placeholder="Reemplazar por..." autocomplete="off" spellcheck="false" />
+          <button id="replace-one" class="toolbar-button find-widget-btn" title="Reemplazar esta coincidencia">Reemplazar</button>
+          <button id="replace-all" class="toolbar-button find-widget-btn" title="Reemplazar todas las coincidencias">Todo</button>
+        </div>
       </div>
     </div>
     <div class="resizer" id="resizer-secondary" hidden></div>

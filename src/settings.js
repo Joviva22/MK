@@ -43,42 +43,55 @@ autosaveSelect.addEventListener('change', async (e) => {
   await window.mdEditor.setConfig({ autosaveInterval: autosaveIntervalMs });
 });
 
-fontSizeSelect.addEventListener('change', async (e) => {
-  document.documentElement.style.setProperty('--editor-font-size', `${e.target.value}px`);
-  window.mdCodeMirror.refresh();
-  await window.mdEditor.setConfig({ editorFontSize: e.target.value });
-});
+fontSizeSelect.addEventListener('change', (e) => setFontSize(Number(e.target.value)));
 
 // Ajuste rápido de tamaño de fuente sin pasar por el dropdown de Ajustes:
-// Ctrl+scroll sobre el editor, o Ctrl+=/Ctrl+- en cualquier lado (Ctrl+0
-// vuelve al tamaño por defecto) — mismo mecanismo/config que el select de
-// arriba, así quedan siempre sincronizados.
+// Ctrl+scroll sobre el editor O el preview (el que esté visible — en modo
+// lectura el editor está oculto), o Ctrl+=/Ctrl+- en cualquier lado (Ctrl+0
+// vuelve al tamaño por defecto). Mueve los dos tamaños a la vez (editor y
+// preview, cada uno con el mismo desplazamiento desde su propio default)
+// para no tener que detectar en qué modo está el principal — así funciona
+// igual esté como esté.
 const MIN_FONT_SIZE = 10;
 const MAX_FONT_SIZE = 28;
 const DEFAULT_FONT_SIZE = 14;
+const DEFAULT_PREVIEW_FONT_SIZE = 15;
+const MIN_PREVIEW_FONT_SIZE = MIN_FONT_SIZE + (DEFAULT_PREVIEW_FONT_SIZE - DEFAULT_FONT_SIZE);
+const MAX_PREVIEW_FONT_SIZE = MAX_FONT_SIZE + (DEFAULT_PREVIEW_FONT_SIZE - DEFAULT_FONT_SIZE);
 
 function currentFontSize() {
   const raw = getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size');
   return parseInt(raw, 10) || DEFAULT_FONT_SIZE;
 }
 
+function applyPreviewFontSize(editorSize) {
+  const preview = Math.max(MIN_PREVIEW_FONT_SIZE, Math.min(MAX_PREVIEW_FONT_SIZE, editorSize + (DEFAULT_PREVIEW_FONT_SIZE - DEFAULT_FONT_SIZE)));
+  document.documentElement.style.setProperty('--preview-font-size', `${preview}px`);
+}
+
 async function setFontSize(px) {
   const clamped = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, px));
   document.documentElement.style.setProperty('--editor-font-size', `${clamped}px`);
+  applyPreviewFontSize(clamped);
   window.mdCodeMirror.refresh();
   fontSizeSelect.value = String(clamped);
   await window.mdEditor.setConfig({ editorFontSize: String(clamped) });
 }
 
-document.getElementById('editor-pane').addEventListener(
-  'wheel',
-  (e) => {
-    if (!(e.ctrlKey || e.metaKey)) return;
-    e.preventDefault();
-    setFontSize(currentFontSize() + (e.deltaY < 0 ? 1 : -1));
-  },
-  { passive: false }
-);
+function wireZoomWheel(el) {
+  el.addEventListener(
+    'wheel',
+    (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      setFontSize(currentFontSize() + (e.deltaY < 0 ? 1 : -1));
+    },
+    { passive: false }
+  );
+}
+
+wireZoomWheel(document.getElementById('editor-pane'));
+wireZoomWheel(document.getElementById('preview-scroll'));
 
 document.addEventListener('keydown', (e) => {
   if (!(e.ctrlKey || e.metaKey)) return;
@@ -142,6 +155,7 @@ pomodoroBreakSelect.addEventListener('change', async (e) => {
   const fontSize = config.editorFontSize || '14';
   fontSizeSelect.value = fontSize;
   document.documentElement.style.setProperty('--editor-font-size', `${fontSize}px`);
+  applyPreviewFontSize(Number(fontSize));
 
   const fontFamily = config.editorFontFamily || fontFamilySelect.options[0].value;
   fontFamilySelect.value = fontFamily;

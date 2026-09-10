@@ -342,6 +342,26 @@
     `abreOk=${findOpensOk} reemplazoOcultoPorDefectoOk=${replaceRowHiddenByDefaultOk} encuentraTresOk=${findsThreeMatchesOk} resaltaTodosOk=${highlightsAllMatchesOk} siguienteAvanzaOk=${nextAdvancesOk} filaReemplazoVisibleOk=${replaceRowVisibleOk} reemplazaTodoOk=${replaceAllOk} cierraOk=${closesOk}`
   );
 
+  // 12c. Regresión: el find-widget vivía dentro de .editor-column, así que
+  // .container.mode-read (que oculta .editor-column entero) lo dejaba
+  // invisible aunque open() corriera bien. Ahora es hijo directo de
+  // .primary-pane, fuera de esa subárbol oculta.
+  window.mdModes.setLayoutMode('read');
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', ctrlKey: true }));
+  const findVisibleInReadModeOk = !findWidget.hidden && getComputedStyle(findWidget).display !== 'none';
+  findInputEl.value = 'gallina';
+  findInputEl.dispatchEvent(new Event('input'));
+  await waitFor(() => findCountEl.textContent.endsWith('/3'));
+  const findWorksInReadModeOk = findCountEl.textContent.endsWith('/3');
+  window.mdFindReplace.close();
+  window.mdModes.setLayoutMode('normal');
+
+  check(
+    'Ctrl+F también funciona en modo lectura (find-widget visible y busca aunque el editor esté oculto)',
+    findVisibleInReadModeOk && findWorksInReadModeOk,
+    `visibleEnLecturaOk=${findVisibleInReadModeOk} buscaEnLecturaOk=${findWorksInReadModeOk}`
+  );
+
   // 13. Autocompletado: Ctrl-Space muestra sugerencias basadas en palabras del documento
   window.mdCodeMirror.setValue('palabraunica\n');
   window.mdCodeMirror.setCursor({ line: 1, ch: 0 });
@@ -585,6 +605,27 @@
     check('Subir a la carpeta superior y mover archivos entre carpetas (drag & drop)', false, 'sin fixturesDir');
   }
 
+  // 19c. Botón "Refrescar archivos": vuelve a leer la carpeta actual del
+  // disco — si se creó un archivo desde afuera de MK (terminal, otro
+  // programa) mientras la carpeta ya estaba abierta, aparece en el árbol
+  // sin tener que cerrar y reabrir la carpeta.
+  let refreshOk = false;
+  let refreshDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdSidebar.renderFolder(await window.mdEditor.readFolder(fixturesDir));
+    const rowExists = (name) => Array.from(document.querySelectorAll('.tree-row')).some((r) => r.textContent.trim() === name);
+    const notThereBeforeOk = !rowExists('creado-desde-afuera.md');
+
+    await window.mdEditor.saveFile('# afuera\n', window.mdEditor.joinPath(fixturesDir, 'creado-desde-afuera.md'), false);
+    document.getElementById('btn-refresh-tree').click();
+    await waitFor(() => rowExists('creado-desde-afuera.md'));
+    const appearsAfterRefreshOk = rowExists('creado-desde-afuera.md');
+
+    refreshOk = notThereBeforeOk && appearsAfterRefreshOk;
+    refreshDetail = `noEstabaAntesOk=${notThereBeforeOk} apareceTrasRefrescarOk=${appearsAfterRefreshOk}`;
+  }
+  check('Botón "Refrescar archivos" muestra archivos creados desde afuera de MK', refreshOk, refreshDetail);
+
   // 20b. Selección múltiple con Ctrl+clic en el sidebar: Ctrl+clic en dos
   // filas las suma a la selección (en vez de abrirlas), y "Eliminar N
   // elementos seleccionados" del menú contextual las borra a las dos.
@@ -690,6 +731,39 @@
     secondaryPaneDetail = `ocultoPorDefectoOk=${hiddenByDefaultOk} panelVisibleOk=${paneVisibleOk} muestraContenidoOk=${showsSecondaryContentOk} promovioOk=${promotedOk} viejoPrincipalAhoraSecundarioOk=${oldPrimaryNowSecondaryOk} cerroOk=${closedOk}`;
   }
   check('Panel secundario: abre de solo lectura y "promueve" al principal con un clic', secondaryPaneOk, secondaryPaneDetail);
+
+  // 20cc. Regresión real: PDF de principal + un .md de secundario -> clic
+  // para promover el .md. Antes, showPdfPreview nunca actualizaba
+  // mdState.currentFilePath (quedaba con lo último abierto de antes, o
+  // null), así que el panel secundario perdía de vista que el PDF era "lo
+  // que era principal" y lo tiraba en vez de mandarlo al secundario. Y el
+  // modo lectura que fuerza un PDF (ver preview.js) se quedaba pegado en
+  // el .md recién promovido, dejándolo con el editor oculto sin querer.
+  let pdfPromoteOk = false;
+  let pdfPromoteDetail = 'sin fixturesDir';
+  if (fixturesDir && fixturePdfPath && fixtureOtherPath) {
+    window.showPdfPreview(fixturePdfPath);
+    await waitFor(() => window.mdState.currentFilePath === fixturePdfPath);
+    const pdfTrackedAsCurrentOk = window.mdState.currentFilePath === fixturePdfPath;
+
+    await window.mdSecondaryPane.open(fixtureOtherPath);
+    await waitFor(() => !document.getElementById('secondary-pane').hidden);
+
+    document.getElementById('secondary-pane-title').click();
+    await waitFor(() => window.mdState.currentFilePath === fixtureOtherPath);
+    const mdPromotedOk = window.mdState.currentFilePath === fixtureOtherPath;
+    const mdInNormalModeOk = !document.querySelector('.container').classList.contains('mode-read') &&
+      getComputedStyle(document.querySelector('.editor-column')).display !== 'none';
+
+    await waitFor(() => document.querySelector('#secondary-pane-body embed'));
+    const pdfMovedToSecondaryOk = !!document.querySelector('#secondary-pane-body embed');
+
+    window.mdSecondaryPane.close();
+
+    pdfPromoteOk = pdfTrackedAsCurrentOk && mdPromotedOk && mdInNormalModeOk && pdfMovedToSecondaryOk;
+    pdfPromoteDetail = `pdfTrackeadoComoActualOk=${pdfTrackedAsCurrentOk} mdPromovidoOk=${mdPromotedOk} mdEnModoNormalOk=${mdInNormalModeOk} pdfPasoASecundarioOk=${pdfMovedToSecondaryOk}`;
+  }
+  check('PDF principal + .md secundario: promover no pierde el PDF ni deja el .md en modo lectura pegado', pdfPromoteOk, pdfPromoteDetail);
 
   // 20d. Panel secundario: botón "Código" muestra la fuente cruda (sin
   // renderizar) de un archivo de texto, "Vista" vuelve al renderizado.
@@ -917,6 +991,55 @@
     'Ctrl+=/Ctrl+-/Ctrl+scroll/Ctrl+0 ajustan el tamaño de fuente y persisten en config.json',
     zoomInOk && wheelZoomOk && zoomOutOk && zoomResetOk && zoomPersistedOk,
     `zoomInOk=${zoomInOk} zoomRuedaOk=${wheelZoomOk} zoomOutOk=${zoomOutOk} reseteoOk=${zoomResetOk} persistidoOk=${zoomPersistedOk}`
+  );
+
+  // 22bb. El mismo zoom mueve el preview a la par (--preview-font-size), y
+  // Ctrl+scroll también funciona sobre el preview (antes solo el editor
+  // tenía el listener — en modo lectura el editor está oculto, quedaba sin
+  // forma de hacer zoom ahí).
+  fontSizeSelect.value = '14';
+  fontSizeSelect.dispatchEvent(new Event('change'));
+  await waitFor(() => getComputedStyle(document.documentElement).getPropertyValue('--preview-font-size').trim() === '15px');
+  const previewFollowsSelectOk = getComputedStyle(document.documentElement).getPropertyValue('--preview-font-size').trim() === '15px';
+
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'R', ctrlKey: true, shiftKey: true })); // modo lectura
+  document.getElementById('preview-scroll').dispatchEvent(
+    new WheelEvent('wheel', { bubbles: true, cancelable: true, ctrlKey: true, deltaY: -100 })
+  );
+  await waitFor(() => getComputedStyle(document.documentElement).getPropertyValue('--preview-font-size').trim() === '16px');
+  const previewWheelInReadModeOk = getComputedStyle(document.documentElement).getPropertyValue('--preview-font-size').trim() === '16px' &&
+    getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size').trim() === '15px';
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'R', ctrlKey: true, shiftKey: true })); // vuelve a normal
+
+  check(
+    'El zoom también mueve el tamaño del preview, y Ctrl+scroll funciona ahí (incluido en modo lectura)',
+    previewFollowsSelectOk && previewWheelInReadModeOk,
+    `previewSigueSelectOk=${previewFollowsSelectOk} zoomPreviewEnLecturaOk=${previewWheelInReadModeOk}`
+  );
+
+  // 22c. Un PDF/imagen siempre se muestra en modo lectura (antes podía
+  // quedar oculto atrás de "modo enfoque", o compartir pantalla con un
+  // editor mostrando un archivo sin relación) — y si el tab activo era un
+  // archivo de código ("code-file" fuerza ocultar el preview), esa clase
+  // se saca para no taparlo.
+  window.mdCodeMirror.setValue('cualquier cosa');
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'E', ctrlKey: true, shiftKey: true })); // modo enfoque
+  await waitFor(() => document.querySelector('.container').classList.contains('mode-focus'));
+  document.querySelector('.container').classList.add('code-file'); // simula tab de código activo
+
+  window.showPdfPreview('/no/existe/prueba.pdf'); // no hace falta que el PDF exista, solo mirar el modo
+  await waitFor(() => document.querySelector('.container').classList.contains('mode-read'));
+  const containerCls = document.querySelector('.container').className;
+  const pdfForcesReadOk = containerCls.includes('mode-read') && !containerCls.includes('mode-focus') && !containerCls.includes('code-file');
+  const previewVisibleForPdfOk = getComputedStyle(document.querySelector('.preview-wrapper')).display !== 'none';
+
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'R', ctrlKey: true, shiftKey: true })); // limpiar, volver a normal
+  window.renderPreview();
+
+  check(
+    'Mostrar un PDF/imagen fuerza modo lectura (y saca "code-file" si estaba puesto)',
+    pdfForcesReadOk && previewVisibleForPdfOk,
+    `forzoLecturaOk=${pdfForcesReadOk} previewVisibleOk=${previewVisibleForPdfOk} clases="${containerCls}"`
   );
 
   // 22c. Resaltado de sintaxis por extensión (no solo Markdown/LaTeX): antes
