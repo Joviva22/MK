@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, net, shell } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, net, shell, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -345,6 +345,26 @@ ipcMain.handle('folder:read', (event, rootPath) => {
     return { rootPath, tree: readTree(rootPath) };
   } catch (e) {
     return null;
+  }
+});
+
+// Arrastrar un archivo del sidebar afuera de MK (a otra app: navegador,
+// explorador de archivos, Claude en el navegador para adjuntarlo, etc.) —
+// necesita el drag nativo del sistema operativo, no alcanza con el drag
+// HTML5 normal (ese solo funciona adentro de la misma ventana). Se dispara
+// desde el 'dragstart' de la fila en sidebar.js, junto con el drag interno
+// normal (mover entre carpetas) — no se pisan entre sí, cada uno maneja un
+// tipo de dato distinto (DataTransfer propio vs. archivo nativo del SO).
+let dragIcon = null;
+ipcMain.on('sidebar:startFileDrag', (event, filePath) => {
+  try {
+    if (!dragIcon) {
+      dragIcon = nativeImage.createFromPath(path.join(__dirname, '..', 'build', 'icon.png')).resize({ width: 24, height: 24 });
+    }
+    event.sender.startDrag({ file: filePath, icon: dragIcon });
+  } catch (e) {
+    // si falla (ej. el archivo ya no existe), no rompe nada más —
+    // el drag interno (mover entre carpetas del sidebar) sigue andando igual
   }
 });
 

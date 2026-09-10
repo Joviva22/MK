@@ -279,6 +279,12 @@ document.addEventListener('keydown', (e) => {
 
 const DRAG_MIME = 'application/x-mk-node';
 
+// Indirección propia (no llamar window.mdEditor.startFileDrag directo acá
+// abajo) solo para poder testear que se dispara: window.mdEditor viene de
+// contextBridge y sale congelado (Object.isFrozen), no se puede mockear
+// reasignando sus propiedades como sí se hace con window.alert/confirm.
+let startFileDrag = (filePath) => window.mdEditor.startFileDrag(filePath);
+
 // Arrastrar cualquier fila (archivo o carpeta) para soltarla sobre una
 // carpeta (o la raíz) y moverla ahí. Solo carpetas son destino válido. Si la
 // fila arrastrada es parte de una selección múltiple activa, se arrastran
@@ -293,6 +299,16 @@ function makeDraggable(row, node) {
       ? Array.from(selectedNodes.values())
       : [node];
     e.dataTransfer.setData(DRAG_MIME, JSON.stringify(nodes.map((n) => ({ ruta: n.ruta, esCarpeta: n.esCarpeta, nombre: n.nombre }))));
+
+    // Además del drag interno de arriba (mover entre carpetas, adentro de
+    // MK), un solo archivo (no carpeta, no selección múltiple) también se
+    // puede arrastrar AFUERA de la ventana — a otra app, el navegador,
+    // Claude para adjuntarlo, etc. Necesita el drag nativo del SO
+    // (webContents.startDrag en main.js), el drag HTML5 de arriba no sale
+    // de la ventana. No se pisan: cada uno lee un tipo de dato distinto.
+    if (nodes.length === 1 && !node.esCarpeta) {
+      startFileDrag(node.ruta);
+    }
   });
 }
 
@@ -459,7 +475,8 @@ window.mdSidebar = {
     const row = Array.from(sidebarPane.querySelectorAll('.tree-row')).find((r) => r.textContent.trim() === node.nombre);
     if (row) toggleSelection(row, node);
   },
-  getSelectedForTest: () => Array.from(selectedNodes.values())
+  getSelectedForTest: () => Array.from(selectedNodes.values()),
+  setStartFileDragForTest: (fn) => { startFileDrag = fn; }
 };
 
 })();

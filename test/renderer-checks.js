@@ -625,6 +625,38 @@
   }
   check('Sidebar: Ctrl+clic selecciona varios archivos y el menú contextual los elimina en bloque', multiSelectOk, multiSelectDetail);
 
+  // 20bb. Arrastrar un archivo del sidebar afuera de la ventana (a otra app,
+  // ver sidebar.js/main.js): el "dragstart" de un archivo suelto dispara el
+  // drag nativo del SO, ADEMÁS del drag interno de siempre (mover entre
+  // carpetas) — una carpeta no lo dispara (arrastrarla afuera no tiene
+  // sentido). window.mdEditor viene de contextBridge y sale congelado, no
+  // se puede mockear reasignando sus propiedades — por eso sidebar.js tiene
+  // su propia indirección testeable (setStartFileDragForTest).
+  let nativeDragOk = false;
+  let nativeDragDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdSidebar.renderFolder(await window.mdEditor.readFolder(fixturesDir));
+    let dragCalls = [];
+    window.mdSidebar.setStartFileDragForTest((p) => dragCalls.push(p));
+
+    const findRow = (name) => Array.from(document.querySelectorAll('.tree-row')).find((r) => r.textContent.trim() === name);
+    const noteRow = findRow('note.md');
+    const folderRow = findRow('nested');
+
+    noteRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() }));
+    const fileTriggersNativeDragOk = dragCalls.length === 1 && dragCalls[0] === window.mdEditor.joinPath(fixturesDir, 'note.md');
+
+    dragCalls = [];
+    folderRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() }));
+    const folderSkipsNativeDragOk = dragCalls.length === 0;
+
+    window.mdSidebar.setStartFileDragForTest((p) => window.mdEditor.startFileDrag(p));
+
+    nativeDragOk = fileTriggersNativeDragOk && folderSkipsNativeDragOk;
+    nativeDragDetail = `archivoDisparaOk=${fileTriggersNativeDragOk} carpetaNoDisparaOk=${folderSkipsNativeDragOk}`;
+  }
+  check('Arrastrar un archivo del sidebar dispara el drag nativo del SO (no una carpeta)', nativeDragOk, nativeDragDetail);
+
   // 20c. Panel secundario: "Abrir en panel secundario" (menú del sidebar)
   // muestra un archivo de referencia de solo lectura, y clic en el header
   // lo "promueve" a principal (pestaña editable) mientras el que era

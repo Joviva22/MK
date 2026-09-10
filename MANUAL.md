@@ -254,6 +254,8 @@ Con una carpeta abierta, el panel izquierdo muestra el árbol de archivos:
 
 **Mover un archivo o carpeta**: arrastralo y soltalo sobre otra carpeta (o sobre la raíz, o sobre "↑ .." para subirlo un nivel). No se puede mover una carpeta dentro de sí misma.
 
+**Arrastrar un archivo afuera de MK**: un archivo suelto (no una carpeta) también se puede arrastrar directo a otra ventana — el navegador, el explorador de archivos del sistema, para adjuntarlo en Claude o en cualquier otra app que acepte archivos arrastrados. Es el mismo gesto de arrastrar de siempre, solo que soltándolo fuera de la ventana de MK en vez de sobre una carpeta del sidebar.
+
 Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pestaña se actualiza sola para seguir apuntando al lugar correcto (así "Guardar" no crea un archivo viejo por error).
 
 **Seleccionar varios archivos a la vez** — `Ctrl` (o `Cmd` en Mac) + clic:
