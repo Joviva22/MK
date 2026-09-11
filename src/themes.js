@@ -50,6 +50,7 @@ THEME_LIST.forEach((theme) => {
   btn.addEventListener('click', async () => {
     themeMenu.hidden = true;
     applyTheme(theme.slug);
+    if (window.renderPreview) window.renderPreview();
     await window.mdEditor.setConfig({ theme: theme.slug });
   });
   themeMenu.appendChild(btn);

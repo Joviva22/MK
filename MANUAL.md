@@ -174,7 +174,7 @@ Proceso-->Fin;
 ```
 ````
 
-No hace falta instalar ni activar nada — basta con escribir el bloque, y en el preview aparece dibujado en vez de mostrarse como texto. Soporta lo que soporta [Mermaid](https://mermaid.js.org) — diagramas de flujo (`graph`), de secuencia (`sequenceDiagram`), Gantt (`gantt`), y más. **Límite:** el fondo del diagrama es blanco fijo, no se adapta a los 26 temas de color de MK — si usás un tema oscuro, igual vas a ver el diagrama sobre fondo blanco.
+No hace falta instalar ni activar nada — basta con escribir el bloque, y en el preview aparece dibujado en vez de mostrarse como texto. Soporta lo que soporta [Mermaid](https://mermaid.js.org) — diagramas de flujo (`graph`), de secuencia (`sequenceDiagram`), Gantt (`gantt`), y más. El diagrama se adapta automáticamente al tema activo: si estás en un tema oscuro se dibuja con fondo oscuro, y cambiar de tema lo vuelve a dibujar al toque.
 
 ## 4. Fórmulas matemáticas (LaTeX)
 
@@ -370,8 +370,9 @@ Desde ⚙ **Ajustes**:
   2. Destildá los que NO querés incluir en este commit.
   3. Escribí tu propio mensaje de commit.
   4. "Commitear seleccionados" — hace `git add` solo de los archivos tildados + `git commit -m "tu mensaje"`.
+  5. **Selección por hunk**: en un archivo modificado (no uno nuevo) aparece un botón "Ver cambios" al lado del checkbox — lo abre partido en los mismos "hunks" que mostraría `git diff`, cada uno con su propio checkbox (tildados por defecto). Destildar alguno lo deja afuera de este commit sin tocar el resto del archivo: al commitear, los hunks tildados se preparan con `git apply --cached` (igual que elegir hunks con `git add -p`, pero desde acá) y el resto queda pendiente para el próximo commit. Si nunca abrís "Ver cambios" para un archivo, se sigue tratando como "todo o nada" con el checkbox principal.
 
-**Límite** (de ambos): siempre es el archivo completo, no hunks/partes de un archivo (no hay algo como `git add -p`). Requiere que la carpeta ya sea un repo git.
+**Requisito** (de ambos): la carpeta ya tiene que ser un repo git (MK nunca corre `git init` por vos).
 
 - **Botones de la toolbar**: al final de Ajustes hay una lista con todos los botones "sueltos" de la toolbar (los que no son Nuevo/Abrir/Guardar). Destildar uno lo esconde de la toolbar — útil si tenés muchos y no usás todos, para no tener que buscar el que sí usás en medio de una fila larga de íconos. Cada fila tiene además un botón **▶** que ejecuta esa acción ahí mismo, esté tildado o no — así podés seguir usando algo puntualmente aunque lo tengas escondido, sin ir a destildarlo primero. Qué se esconde queda guardado entre sesiones.
 
@@ -385,7 +386,13 @@ Desde ⬇ **Exportar**:
 
 - **A HTML**: un archivo `.html` standalone (con el CSS embebido adentro), que se puede abrir en cualquier navegador sin depender de MK.
 - **A PDF**: renderizado directo a PDF.
-- **A EPUB**: genera un libro electrónico válido a partir del documento activo, para abrir en cualquier lector de EPUB (Calibre, tu e-reader, etc.). Elegís "A EPUB" en el menú Exportar, elegís dónde guardar el `.epub`, y listo. **Límite:** el documento entero se mete como un único capítulo — no arma un libro con varios archivos como capítulos separados, y no tiene portada.
+- **A EPUB**: genera un libro electrónico válido a partir del documento activo, para abrir en cualquier lector de EPUB (Calibre, tu e-reader, etc.). Elegís "A EPUB" en el menú Exportar, elegís dónde guardar el `.epub`, y listo — el documento entero entra como un único capítulo, con sus imágenes locales embebidas de verdad adentro del `.epub` (no dependen de que MK esté abierto para verse).
+- **Exportar carpeta a EPUB (libro)**: la versión multi-archivo de arriba — cada nota `.md`/`.markdown` de la carpeta abierta se vuelve un capítulo separado, en orden alfabético de ruta.
+  1. Necesitás una carpeta abierta (Ctrl+B o el árbol de la izquierda) — sin eso, esta opción avisa y no hace nada.
+  2. El título de cada capítulo es su primer `# Encabezado`; si una nota no tiene ninguno, se usa el nombre del archivo.
+  3. Te pregunta por una imagen de portada (opcional) — "Cancelar" en ese diálogo arma el libro sin portada, no es un error.
+  4. Elegís dónde guardar el `.epub` y listo — te avisa cuántos capítulos entraron.
+  - **Límite:** no arma una tabla de contenidos jerárquica por carpetas ni resuelve `[[wikilinks]]` entre capítulos como links internos del libro (quedan como texto/link inerte, igual que en el preview cuando no hay carpeta con ese archivo). Diagramas Mermaid y resaltado de sintaxis de código no se renderizan en este export (sí en "A EPUB" del documento activo, que parte del preview ya dibujado) — quedan como el bloque de código/texto sin resaltar.
 - **A tarjetas de memoria (Anki)**: pensado para convertir apuntes en tarjetas de estudio.
   1. Escribí el documento con un encabezado `## Pregunta` por cada tarjeta que querés crear; todo el texto hasta el próximo `##` es la respuesta (el "dorso") de esa tarjeta. Ejemplo:
      ```markdown
@@ -398,7 +405,7 @@ Desde ⬇ **Exportar**:
   2. Elegís "A tarjetas de memoria (Anki)" en el menú Exportar — genera un `.txt` de dos columnas separadas por tabulador (Frente/Dorso), una fila por cada `##`.
   3. En Anki: *Archivo → Importar*, elegís ese `.txt`, y en las opciones de importación poné el separador en "Tabulador". Cada fila se vuelve una tarjeta nueva.
 - **A Word (.docx)**: arma un `.docx` real (no una conversión externa — la librería [`docx`](https://docx.js.org) construye el archivo directamente) a partir del Markdown del documento activo. Es la vuelta del [importador de `.docx`](#1-primeros-pasos): abrís un `.docx`, se convierte a Markdown, lo editás como cualquier documento, y "A Word" arma un `.docx` nuevo con esos cambios — no es "guardar de vuelta" al archivo original, es un export nuevo, igual que a PDF/HTML/EPUB.
-  - Se convierten bien: encabezados, **negrita**/*cursiva*/~~tachado~~/`código`, listas (las numeradas se numeran a mano como texto, no como numeración automática de Word), citas, tablas, bloques de código (como texto con tipografía monoespaciada), imágenes (incrustadas o locales) y links.
+  - Se convierten bien: encabezados, **negrita**/*cursiva*/~~tachado~~/`código`, listas (las numeradas usan numeración automática real de Word — reordenar ítems en Word los renumera solo), citas, tablas, bloques de código (como texto con tipografía monoespaciada), imágenes (incrustadas o locales) y links.
   - **Límite:** `[[wikilinks]]`, `#tags`, `==resaltado==`, fórmulas LaTeX (`$...$`) y diagramas Mermaid no tienen una traducción razonable a un documento de Word — quedan como el texto literal de la sintaxis (ej. ves `[[nota]]` tal cual, no un link funcional). Imágenes remotas (`http://...`) no se descargan.
 
 Las fórmulas matemáticas y el resaltado de código se ven un poco distintos al exportar a HTML/PDF (una hoja de estilos simplificada, no la de la app) — es un compromiso consciente para no tener que arrastrar fuentes/librerías completas al archivo exportado.

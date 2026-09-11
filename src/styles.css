@@ -152,8 +152,21 @@ html, body {
   color: var(--text);
 }
 
+/* body = toolbar + .container + statusbar en columna. Con esto (en vez de
+   restarle a .container un alto fijo de "45px + 26px" a mano) el layout se
+   adapta solo si la toolbar crece por el flex-wrap de abajo, y ya no hace
+   falta el caso especial de F11 que le devolvía 100% a .container: al
+   ocultarse toolbar/statusbar (display:none) simplemente dejan de contar
+   para el flex y .container ocupa todo el espacio libre igual. */
+body {
+  display: flex;
+  flex-direction: column;
+}
+
 .toolbar {
   display: flex;
+  flex: none;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
@@ -356,7 +369,8 @@ label.dropdown-label {
   --gt-preview: 1fr;
   display: grid;
   grid-template-columns: var(--gt-sidebar) var(--gt-rs) var(--gt-primary) var(--gt-rsec) var(--gt-secondary);
-  height: calc(100% - 45px - 26px);
+  flex: 1;
+  min-height: 0;
 }
 
 .container.has-secondary {
@@ -407,10 +421,6 @@ label.dropdown-label {
 body.fullscreen-write .toolbar,
 body.fullscreen-write .statusbar {
   display: none;
-}
-
-body.fullscreen-write .container {
-  height: 100%;
 }
 
 .resizer {
@@ -1011,6 +1021,7 @@ ul.tree.collapsed {
 
 .statusbar {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 20px;
   height: 26px;
@@ -1548,11 +1559,78 @@ ul.tree.collapsed {
   padding: 6px 8px;
   border-radius: 6px;
   font-size: 13px;
+}
+
+.git-file-row-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
   cursor: pointer;
 }
 
-.git-file-row:hover {
+.git-file-row-label:hover {
   background: var(--surface-2);
+}
+
+.git-hunk-toggle {
+  flex: none;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.git-hunk-toggle:hover {
+  background: var(--surface-2);
+}
+
+.git-hunk-list {
+  padding: 4px 8px 10px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.git-hunk {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.git-hunk-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--surface-2);
+  font-size: 11px;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.git-hunk-diff {
+  margin: 0;
+  padding: 6px 8px;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.git-hunk-diff .diff-add {
+  color: #16a34a;
+}
+
+.git-hunk-diff .diff-remove {
+  color: #dc2626;
 }
 
 .git-file-status {

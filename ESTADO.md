@@ -124,6 +124,12 @@
 - ~~CI en GitHub Actions (`.github/workflows/ci.yml`): en cada push/PR corre `npm ci` + `npm run lint` + `npm test` (con Xvfb, porque Electron real necesita un display) sobre `ubuntu-latest`~~
 - ~~Corrector ortográfico con sugerencias por clic derecho: `webContents.on('context-menu', ...)` en main.js capta `misspelledWord`/`dictionarySuggestions` de Chromium y se los manda al renderer, que los agrega como botones arriba del menú propio (más "Agregar al diccionario")~~
 - ~~Grafo de notas interactivo: zoom con la rueda (centrado en el cursor) y pan arrastrando el fondo, más arrastrar un nodo individual a mano para reacomodarlo — un clic corto (sin arrastre) sigue abriendo el archivo~~
+- ~~Diagramas Mermaid adaptados al tema activo: el tema (`neutral`/`dark`) se decide por la luminancia real de `--bg` (no por una lista a mano de "temas oscuros conocidos", que habría que mantener a la par de los 26 temas de `styles.css`), y cambiar de tema re-renderiza el preview para que los diagramas ya dibujados también se actualicen~~
+- ~~Exportar a Word: numeración real de listas ordenadas vía el sistema de `numbering` de la librería `docx` (antes era texto literal "1. ", "2. " escrito a mano en cada párrafo — reordenar ítems en Word no los renumeraba)~~
+- ~~Exportar a PDF/HTML: CSS real de KaTeX (con sus fuentes `.woff2` embebidas como `data:` URIs) en vez de una hoja de estilos aproximada — las fórmulas se ven exactamente como en el preview, no solo "parecido"~~
+- ~~Toolbar con `flex-wrap`: layout general (`body`/`.toolbar`/`.container`/`.statusbar`) migrado a flexbox (antes `.container` tenía un alto fijo `calc(100% - 45px - 26px)` a mano) — si no entran todos los botones visibles, la toolbar pasa a una segunda fila en vez de cortarlos sin scroll~~
+- ~~Exportar carpeta a EPUB (libro): un capítulo por archivo Markdown de la carpeta abierta (título = su primer `# Encabezado`), portada opcional vía diálogo nativo, e imágenes locales embebidas como archivos reales dentro del `.epub` — antes (tanto acá como en el export de un solo capítulo) quedaban como `src="md-local://..."`, un protocolo interno de la app que no existe fuera de MK, así que no se veían en un lector de EPUB real~~
+- ~~Git con control fino por hunk: cada archivo modificado tiene un botón "Ver cambios" que parte su diff en hunks independientes con checkbox propio — destildar alguno stagea el resto vía `git add` normal y aplica el patch de los hunks elegidos con `git apply --cached` (misma idea que `git add -p`, pero desde la UI del panel)~~
 
 ## Por hacer
 

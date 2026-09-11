@@ -1550,12 +1550,47 @@
     window.mdCodeMirror.setValue('# Capitulo Uno\n\nTexto de prueba.\n');
     window.renderPreview();
     await waitFor(() => document.querySelector('#preview-pane h1'));
-    const savedPath = await window.mdEditor.exportEpub(document.getElementById('preview-pane').innerHTML, 'Mi Libro', 'test.epub');
+    const payload = { chapters: [{ title: 'Mi Libro', html: document.getElementById('preview-pane').innerHTML }], images: [], title: 'Mi Libro' };
+    const savedPath = await window.mdEditor.exportEpub(payload, 'test.epub');
     epubOk = !!savedPath && savedPath.endsWith('.epub');
     check('Exportar a EPUB genera un archivo .epub', epubOk, `ruta=${savedPath}`);
   } else {
     check('Exportar a EPUB genera un archivo .epub', false, 'sin fixturesDir');
   }
+
+  // 34b. Exportar carpeta a EPUB (libro): un capítulo por archivo Markdown
+  // de la carpeta (título = su primer "# Encabezado"), imágenes locales
+  // embebidas como archivos reales del .epub (no como md-local://, que no
+  // existe fuera de la app), portada salteada automáticamente en modo test.
+  let epubBookOk = false;
+  let epubBookDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    // Carpeta propia (no fixturesDir a secas): para esta altura de la suite
+    // ya hay varios .md de otros checks ahí (note.md, kanban-a.md, etc.), y
+    // el export de libro los tomaría a todos como capítulos.
+    await window.mdEditor.createFolder(fixturesDir, 'libro-epub');
+    const bookDir = window.mdEditor.joinPath(fixturesDir, 'libro-epub');
+    const bookImagePath = await window.mdEditor.copyAsset(window.mdEditor.joinPath(fixturesDir, 'photo.png'), bookDir);
+    const bookImageName = bookImagePath.split(/[\\/]/).pop();
+    const bookAPath = window.mdEditor.joinPath(bookDir, 'libro-a.md');
+    const bookBPath = window.mdEditor.joinPath(bookDir, 'libro-b.md');
+    await window.mdEditor.saveFile(`# Capitulo A\n\nTexto con imagen ![foto](${bookImageName}).\n`, bookAPath, false);
+    await window.mdEditor.saveFile('# Capitulo B\n\nSegundo capitulo, sin imagen.\n', bookBPath, false);
+    window.mdState.rootFolder = bookDir;
+
+    const originalAlert = window.alert;
+    let alertMsg = null;
+    window.alert = (msg) => { alertMsg = msg; };
+    document.getElementById('btn-export-epub-book').click();
+    await new Promise((r) => setTimeout(r, 500));
+    window.alert = originalAlert;
+
+    const twoChaptersOk = !!alertMsg && /2 capítulo/.test(alertMsg);
+    const savedPathOk = !!alertMsg && /\.epub$/.test(alertMsg.split(': ').pop().trim());
+    epubBookOk = twoChaptersOk && savedPathOk;
+    epubBookDetail = `alerta="${alertMsg}"`;
+  }
+  check('Exportar carpeta a EPUB (libro): un capítulo por archivo, imágenes embebidas', epubBookOk, epubBookDetail);
 
   // 35. Exportar a Anki: "## Pregunta" + texto -> tarjetas Frente/Dorso
   let ankiOk = false;
@@ -1627,6 +1662,64 @@
     gitPanelDetail = gitRepoDir ? 'git no disponible en este entorno, se saltea' : 'sin fixturesDir';
   }
   check('Git con control fino: elegir archivos + mensaje propio deja afuera lo destildado', gitPanelOk, gitPanelDetail);
+
+  // 36c. Git: "Ver cambios" en un archivo modificado parte el diff en hunks
+  // independientes; destildar uno solo (dejando el resto tildado) commitea
+  // los demás y deja ESE cambio puntual pendiente — no es "todo o nada" por
+  // archivo, es "git add -p" hecho desde el panel.
+  let gitHunkOk = false;
+  let gitHunkDetail = 'sin fixturesDir';
+  if (gitRepoDir && (await window.mdEditor.isGitRepo(gitRepoDir))) {
+    const hunkPath = window.mdEditor.joinPath(gitRepoDir, 'hunkfile.md');
+    const baseLines = Array.from({ length: 15 }, (_, i) => `linea${i + 1}`);
+    await window.mdEditor.saveFile(baseLines.join('\n') + '\n', hunkPath, false);
+    await window.mdEditor.gitAddFiles(gitRepoDir, ['hunkfile.md']);
+    await window.mdEditor.gitCommitStaged(gitRepoDir, 'MK test: base para hunks');
+
+    // Dos cambios lejos entre sí (>3 líneas de contexto) -> dos hunks separados.
+    const modifiedLines = [...baseLines];
+    modifiedLines[1] = 'linea2 MODIFICADA';
+    modifiedLines[13] = 'linea14 MODIFICADA';
+    await window.mdEditor.saveFile(modifiedLines.join('\n') + '\n', hunkPath, false);
+
+    window.mdState.rootFolder = gitRepoDir;
+    window.mdGitPanel.open();
+    const findHunkRow = () => Array.from(document.querySelectorAll('#git-file-list .git-file-row'))
+      .find((r) => r.querySelector('.git-file-name')?.textContent.includes('hunkfile.md'));
+    await waitFor(() => !!findHunkRow());
+
+    const hunkRow = findHunkRow();
+    const toggleBtn = hunkRow.querySelector('.git-hunk-toggle');
+    toggleBtn.click();
+    const hunkListEl = hunkRow.parentElement.querySelector('.git-hunk-list');
+    await waitFor(() => hunkListEl.querySelectorAll('.git-hunk').length >= 2);
+    const twoHunksShownOk = hunkListEl.querySelectorAll('.git-hunk').length === 2;
+
+    // Destildar el segundo hunk: solo el primero se commitea.
+    const secondHunkCheckbox = hunkListEl.querySelectorAll('.git-hunk')[1].querySelector('input[type="checkbox"]');
+    secondHunkCheckbox.checked = false;
+    secondHunkCheckbox.dispatchEvent(new Event('change'));
+
+    const originalAlert = window.alert;
+    let hunkCommitMsg = null;
+    window.alert = (m) => { hunkCommitMsg = m; };
+    document.getElementById('git-commit-message').value = 'MK test: solo un hunk';
+    document.getElementById('git-commit-btn').click();
+    await waitFor(() => hunkCommitMsg !== null);
+    window.alert = originalAlert;
+    window.mdGitPanel.close();
+
+    const diffAfter = await window.mdEditor.gitDiffFile(gitRepoDir, 'hunkfile.md');
+    const remainingHunks = (diffAfter.match(/^@@/gm) || []).length;
+    const secondChangeStillPendingOk = /linea14 MODIFICADA/.test(diffAfter || '');
+    const firstChangeAlreadyCommittedOk = !/linea2 MODIFICADA/.test(diffAfter || '');
+
+    gitHunkOk = twoHunksShownOk && !!hunkCommitMsg && remainingHunks === 1 && secondChangeStillPendingOk && firstChangeAlreadyCommittedOk;
+    gitHunkDetail = `dosHunksOk=${twoHunksShownOk} commiteo=${!!hunkCommitMsg} hunksRestantes=${remainingHunks} segundoCambioPendienteOk=${secondChangeStillPendingOk} primerCambioYaCommiteadoOk=${firstChangeAlreadyCommittedOk}`;
+  } else {
+    gitHunkDetail = gitRepoDir ? 'git no disponible en este entorno, se saltea' : 'sin fixturesDir';
+  }
+  check('Git: seleccionar hunks dentro de un archivo (no todo o nada) al commitear', gitHunkOk, gitHunkDetail);
 
   // 37. Tablero Kanban: "## Columna" + listas = columnas/tarjetas; clic
   // marca/desmarca, arrastrar mueve una tarjeta a otra columna

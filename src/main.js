@@ -729,6 +729,39 @@ ipcMain.handle('export:docx', async (event, { base64, defaultName }) => {
   return targetPath;
 });
 
+// KaTeX real (CSS + fuentes) inlineado para exports standalone (HTML/PDF):
+// sin esto el export usa una hoja de estilos aproximada y las fórmulas se ven
+// distintas a como se ven en el preview. Se cachea en memoria porque el CSS y
+// las fuentes de KaTeX no cambian en caliente. Solo se embeben las fuentes
+// .woff2 (soportadas por el Chromium que embebe Electron) descartando los
+// fallbacks .woff/.ttf del CSS original, para no triplicar el tamaño del
+// export con formatos que nunca se van a usar acá.
+let cachedKatexCss = null;
+function getKatexCssInlined() {
+  if (cachedKatexCss !== null) return cachedKatexCss;
+  try {
+    const katexDir = path.join(__dirname, '..', 'node_modules', 'katex', 'dist');
+    const css = fs.readFileSync(path.join(katexDir, 'katex.min.css'), 'utf-8');
+    // Cada @font-face trae 3 formatos (woff2, woff, ttf) como fallback; nos
+    // quedamos solo con woff2 (lo soporta de sobra el Chromium de Electron)
+    // para no triplicar el tamaño del export embebiendo formatos sin uso.
+    cachedKatexCss = css.replace(
+      /url\(fonts\/([^)]+)\.woff2\)\s*format\(["']woff2["']\)(?:,\s*url\(fonts\/[^)]+\)\s*format\(["'][^"']+["']\))*/g,
+      (match, fontName) => {
+        const fontPath = path.join(katexDir, 'fonts', `${fontName}.woff2`);
+        if (!fs.existsSync(fontPath)) return match;
+        const b64 = fs.readFileSync(fontPath).toString('base64');
+        return `url(data:font/woff2;base64,${b64}) format('woff2')`;
+      }
+    );
+  } catch (e) {
+    cachedKatexCss = '';
+  }
+  return cachedKatexCss;
+}
+
+ipcMain.handle('katex:getCss', () => getKatexCssInlined());
+
 ipcMain.handle('export:html', async (event, { html, defaultName }) => {
   const result = await dialog.showSaveDialog(mainWindow, {
     defaultPath: defaultName || 'documento.html',
@@ -778,69 +811,130 @@ async function resolveSavePath(defaultName, filters) {
   return result.filePath;
 }
 
-ipcMain.handle('export:epub', async (event, { html, title, defaultName }) => {
-  const targetPath = await resolveSavePath(defaultName || 'documento.epub', [{ name: 'EPUB', extensions: ['epub'] }]);
-  if (!targetPath) return null;
-
-  const safeTitle = (title || 'Documento').replace(/[<>&]/g, '');
-  const uid = 'urn:uuid:' + crypto.randomUUID();
-  const xhtmlBody = toXhtmlVoidElements(html);
-
-  const chapterXhtml = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head><meta charset="utf-8" /><title>${safeTitle}</title></head>
-<body>
-${xhtmlBody}
-</body>
-</html>`;
-
-  const containerXml = `<?xml version="1.0" encoding="UTF-8"?>
+const EPUB_CONTAINER_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles>
     <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
   </rootfiles>
 </container>`;
 
-  const contentOpf = `<?xml version="1.0" encoding="UTF-8"?>
+const IMAGE_MEDIA_TYPES = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml' };
+
+function imageMediaType(ext) {
+  return IMAGE_MEDIA_TYPES[(ext || '').toLowerCase()] || 'application/octet-stream';
+}
+
+// Arma un .epub a partir de una lista de capítulos ya renderizados a HTML
+// (uno solo para "Exportar a EPUB", varios para "Exportar carpeta a EPUB
+// (libro)", ver exportdoc.js). Portada e imágenes son opcionales: sin ellas
+// queda igual que el export de un capítulo de antes, solo que ahora también
+// soporta más de uno.
+ipcMain.handle('export:epub', async (event, { chapters, images, coverPath, title, defaultName }) => {
+  const targetPath = await resolveSavePath(defaultName || 'documento.epub', [{ name: 'EPUB', extensions: ['epub'] }]);
+  if (!targetPath) return null;
+
+  const safeTitle = (title || 'Documento').replace(/[<>&]/g, '');
+  const uid = 'urn:uuid:' + crypto.randomUUID();
+
+  const zip = new JSZip();
+  zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+  zip.folder('META-INF').file('container.xml', EPUB_CONTAINER_XML);
+  const oebps = zip.folder('OEBPS');
+  const imagesFolder = oebps.folder('images');
+
+  const manifestItems = [];
+  const spineItems = [];
+  const navPoints = [];
+  let playOrder = 1;
+  let coverId = null;
+
+  if (coverPath) {
+    try {
+      const ext = (coverPath.split('.').pop() || 'jpg').toLowerCase().replace('jpeg', 'jpg');
+      const coverFilename = `cover.${ext}`;
+      imagesFolder.file(coverFilename, fs.readFileSync(coverPath));
+      coverId = 'cover-image';
+      manifestItems.push(`<item id="${coverId}" href="images/${coverFilename}" media-type="${imageMediaType(ext)}"/>`);
+      oebps.file('cover.xhtml', `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta charset="utf-8"/><title>Portada</title></head>
+<body style="text-align:center;margin:0;padding:0;"><img src="images/${coverFilename}" style="max-width:100%;height:auto;"/></body></html>`);
+      manifestItems.push('<item id="cover-page" href="cover.xhtml" media-type="application/xhtml+xml"/>');
+      spineItems.push('<itemref idref="cover-page"/>');
+      navPoints.push(`<navPoint id="cover-page" playOrder="${playOrder++}"><navLabel><text>Portada</text></navLabel><content src="cover.xhtml"/></navPoint>`);
+    } catch (e) {
+      // Portada ilegible: seguimos sin ella en vez de abortar todo el export.
+    }
+  }
+
+  (images || []).forEach((img, i) => {
+    try {
+      imagesFolder.file(img.filename, fs.readFileSync(img.path));
+      const ext = (img.filename.split('.').pop() || 'png').toLowerCase();
+      manifestItems.push(`<item id="image-content-${i}" href="images/${img.filename}" media-type="${imageMediaType(ext)}"/>`);
+    } catch (e) {
+      // Imagen puntual no encontrada/ilegible: ese capítulo queda con una
+      // imagen rota, no aborta el resto del libro.
+    }
+  });
+
+  (chapters || []).forEach((ch, i) => {
+    const safeChTitle = (ch.title || `Capítulo ${i + 1}`).replace(/[<>&]/g, '');
+    const id = `chapter${i + 1}`;
+    const filename = `${id}.xhtml`;
+    oebps.file(filename, `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><meta charset="utf-8" /><title>${safeChTitle}</title></head>
+<body>
+${toXhtmlVoidElements(ch.html)}
+</body>
+</html>`);
+    manifestItems.push(`<item id="${id}" href="${filename}" media-type="application/xhtml+xml"/>`);
+    spineItems.push(`<itemref idref="${id}"/>`);
+    navPoints.push(`<navPoint id="${id}" playOrder="${playOrder++}"><navLabel><text>${safeChTitle}</text></navLabel><content src="${filename}"/></navPoint>`);
+  });
+
+  const metaCover = coverId ? `\n    <meta name="cover" content="${coverId}"/>` : '';
+  oebps.file('content.opf', `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="2.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title>${safeTitle}</dc:title>
     <dc:language>es</dc:language>
-    <dc:identifier id="BookId">${uid}</dc:identifier>
+    <dc:identifier id="BookId">${uid}</dc:identifier>${metaCover}
   </metadata>
   <manifest>
-    <item id="chapter1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
+    ${manifestItems.join('\n    ')}
     <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
   </manifest>
   <spine toc="ncx">
-    <itemref idref="chapter1"/>
+    ${spineItems.join('\n    ')}
   </spine>
-</package>`;
+</package>`);
 
-  const tocNcx = `<?xml version="1.0" encoding="UTF-8"?>
+  oebps.file('toc.ncx', `<?xml version="1.0" encoding="UTF-8"?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
   <head><meta name="dtb:uid" content="${uid}"/></head>
   <docTitle><text>${safeTitle}</text></docTitle>
   <navMap>
-    <navPoint id="chapter1" playOrder="1">
-      <navLabel><text>${safeTitle}</text></navLabel>
-      <content src="chapter1.xhtml"/>
-    </navPoint>
+    ${navPoints.join('\n    ')}
   </navMap>
-</ncx>`;
-
-  const zip = new JSZip();
-  zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
-  zip.folder('META-INF').file('container.xml', containerXml);
-  const oebps = zip.folder('OEBPS');
-  oebps.file('content.opf', contentOpf);
-  oebps.file('toc.ncx', tocNcx);
-  oebps.file('chapter1.xhtml', chapterXhtml);
+</ncx>`);
 
   const buffer = await zip.generateAsync({ type: 'nodebuffer' });
   fs.writeFileSync(targetPath, buffer);
   return targetPath;
+});
+
+ipcMain.handle('epub:pickCover', async () => {
+  if (isTestMode) return null;
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Elegir portada (opcional)',
+    filters: [{ name: 'Imágenes', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+    properties: ['openFile']
+  });
+  if (result.canceled || !result.filePaths.length) return null;
+  return result.filePaths[0];
 });
 
 ipcMain.handle('export:anki', async (event, { cards, defaultName }) => {
@@ -893,14 +987,38 @@ ipcMain.handle('git:status', async (event, root) => {
   }));
 });
 
-ipcMain.handle('git:commitSelected', async (event, { root, files, message }) => {
-  if (!files || !files.length) return { ok: false, reason: 'no-files' };
+// Staging granular (ver gitpanel.js): en vez de un solo "add -A + commit",
+// cada archivo elegido se stagea completo (git:addFiles) o por hunks
+// elegidos a mano (git:stageHunks, vía "git apply --cached" de un patch
+// armado solo con esos hunks — misma idea que "git add -p", solo que la UI
+// de selección vive en el panel en vez de un prompt de terminal), y
+// git:commitStaged simplemente commitea lo que haya quedado en el índice.
+ipcMain.handle('git:diffFile', async (event, { root, file }) => {
+  const result = await runGit(['diff', '--no-color', '--', file], root);
+  if (result.error) return null;
+  return result.stdout;
+});
+
+ipcMain.handle('git:addFiles', async (event, { root, files }) => {
+  if (!files || !files.length) return { ok: true };
+  const result = await runGit(['add', '--', ...files], root);
+  return result.error ? { ok: false, reason: 'add-failed' } : { ok: true };
+});
+
+ipcMain.handle('git:stageHunks', async (event, { root, patch }) => {
+  const tmpPatch = path.join(os.tmpdir(), `mk-hunks-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.patch`);
+  fs.writeFileSync(tmpPatch, patch, 'utf-8');
+  const result = await runGit(['apply', '--cached', '--whitespace=nowarn', tmpPatch], root);
+  try { fs.unlinkSync(tmpPatch); } catch (e) { /* best-effort, no bloquea el resultado */ }
+  return result.error ? { ok: false, reason: 'apply-failed', detail: result.stderr } : { ok: true };
+});
+
+ipcMain.handle('git:commitStaged', async (event, { root, message }) => {
   if (!message || !message.trim()) return { ok: false, reason: 'no-message' };
-  const add = await runGit(['add', '--', ...files], root);
-  if (add.error) return { ok: false, reason: 'add-failed' };
+  const staged = await runGit(['diff', '--cached', '--name-only'], root);
+  if (!staged.error && !staged.stdout.trim()) return { ok: false, reason: 'nothing-staged' };
   const commit = await runGit(['commit', '-m', message], root);
-  if (commit.error) return { ok: false, reason: 'commit-failed' };
-  return { ok: true };
+  return commit.error ? { ok: false, reason: 'commit-failed' } : { ok: true };
 });
 
 // Control del reproductor multimedia del sistema vía playerctl (D-Bus/MPRIS,

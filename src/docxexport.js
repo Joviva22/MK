@@ -17,7 +17,14 @@
 // quedan como texto literal, no hay forma razonable de "renderizarlos" en
 // un .docx).
 
-const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, Table, TableRow, TableCell, WidthType, ExternalHyperlink } = docx;
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, Table, TableRow, TableCell, WidthType, ExternalHyperlink, LevelFormat, AlignmentType } = docx;
+
+// Definiciones de numeración real para las listas ordenadas del documento
+// actual (se resetean en cada exportToDocx). Cada <ol> —top-level o
+// anidado— arma su propia referencia para que la numeración reinicie en 1,
+// igual que el comportamiento manual anterior (idx++ por lista).
+let numberingConfigs = [];
+let numberingCounter = 0;
 
 function base64ToBytes(base64) {
   const binary = atob(base64);
@@ -124,7 +131,20 @@ const HEADING_MAP = {
 
 async function listToParagraphs(el, level, ordered) {
   const out = [];
-  let idx = 1;
+  let numberingRef = null;
+  if (ordered) {
+    numberingRef = `ordered-${numberingCounter++}`;
+    numberingConfigs.push({
+      reference: numberingRef,
+      levels: [{
+        level: 0,
+        format: LevelFormat.DECIMAL,
+        text: '%1.',
+        alignment: AlignmentType.START,
+        style: { paragraph: { indent: { left: 360 * (level + 1), hanging: 260 } } }
+      }]
+    });
+  }
   for (const li of Array.from(el.children)) {
     if (li.tagName.toLowerCase() !== 'li') continue;
     const nestedLists = Array.from(li.children).filter((c) => ['ul', 'ol'].includes(c.tagName.toLowerCase()));
@@ -133,12 +153,10 @@ async function listToParagraphs(el, level, ordered) {
       if (['ul', 'ol'].includes(c.tagName.toLowerCase())) liClone.removeChild(c);
     });
     const runs = await inlineRunsFromNode(liClone);
-    const prefix = ordered ? `${idx++}. ` : '';
-    const finalRuns = prefix ? [new TextRun(prefix), ...runs] : runs;
     out.push(new Paragraph({
-      children: finalRuns.length ? finalRuns : [new TextRun('')],
+      children: runs.length ? runs : [new TextRun('')],
       bullet: ordered ? undefined : { level },
-      indent: ordered ? { left: 360 * (level + 1) } : undefined
+      numbering: ordered ? { reference: numberingRef, level: 0 } : undefined
     }));
     for (const nested of nestedLists) {
       out.push(...(await listToParagraphs(nested, level + 1, nested.tagName.toLowerCase() === 'ol')));
@@ -216,10 +234,15 @@ async function buildDocxParagraphs(html) {
 }
 
 async function exportToDocx() {
+  numberingConfigs = [];
+  numberingCounter = 0;
   const raw = window.mdCodeMirror.getValue();
   const html = marked.parse(raw);
   const children = await buildDocxParagraphs(html);
-  const doc = new Document({ sections: [{ children: children.length ? children : [new Paragraph('')] }] });
+  const doc = new Document({
+    numbering: { config: numberingConfigs },
+    sections: [{ children: children.length ? children : [new Paragraph('')] }]
+  });
   const base64 = await Packer.toBase64String(doc);
   const baseName = (window.mdState.currentFilePath || 'documento.md').split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
   return window.mdEditor.exportDocx(base64, `${baseName}.docx`);

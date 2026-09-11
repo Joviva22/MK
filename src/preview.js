@@ -42,9 +42,9 @@ function embedMediaSyntax(text) {
 // Sin carpeta abierta (archivo suelto) se restringe igual, pero al
 // directorio propio del archivo en vez de a un root explícito — antes ese
 // caso no tenía ninguna restricción.
-function resolveAssetPaths(html) {
-  const basePath = window.mdState.currentFilePath;
-  const root = window.mdState.rootFolder || (basePath ? window.mdEditor.dirName(basePath) : null);
+function resolveAssetPaths(html, overrideBasePath, overrideRoot) {
+  const basePath = overrideBasePath !== undefined ? overrideBasePath : window.mdState.currentFilePath;
+  const root = overrideRoot !== undefined ? overrideRoot : (window.mdState.rootFolder || (basePath ? window.mdEditor.dirName(basePath) : null));
   return html.replace(/\ssrc="(?!https?:\/\/|data:|md-local:\/\/)([^"]+)"/g, (match, relPath) => {
     const absolute = window.mdEditor.resolveLocalPath(basePath, decodeURIComponent(relPath));
     if (root && !window.mdEditor.isPathAllowed(root, absolute)) {
@@ -123,6 +123,26 @@ function transformCallouts(html) {
   );
 }
 
+// Convierte un Markdown crudo cualquiera (no necesariamente el del tab
+// activo) a HTML sanitizado, para usarlo en exports que arman varios
+// documentos a la vez (ver "Exportar carpeta a EPUB (libro)" en
+// exportdoc.js). Comparte el mismo pipeline de texto que render() de abajo,
+// pero sin los pasos que dependen del DOM del preview en vivo (Mermaid,
+// resaltado de sintaxis, checkboxes de tareas): son capítulos estáticos que
+// nunca se muestran en pantalla antes de empaquetarse.
+function renderMarkdownForExport(markdownText, filePath, root) {
+  const { text: codeProtected, store: codeStore } = extractCode(markdownText);
+  const tagged = embedTagSyntax(embedWikilinkSyntax(embedHighlightSyntax(embedMediaSyntax(codeProtected))));
+  const preprocessed = restoreCode(tagged, codeStore);
+  const { text, store } = extractMath(preprocessed);
+  let html = marked.parse(text);
+  html = transformCallouts(html);
+  html = resolveAssetPaths(html, filePath, root);
+  html = restoreMath(html, store);
+  return DOMPurify.sanitize(html, SANITIZE_CONFIG);
+}
+window.mdRenderMarkdownForExport = renderMarkdownForExport;
+
 // El protocolo custom md-local:// no está en la lista de esquemas seguros
 // de DOMPurify por defecto, hay que añadirlo o borra los src de assets.
 const SANITIZE_CONFIG = {
@@ -171,8 +191,23 @@ function markMissingAssets() {
 // texto y lo reemplaza por un <img> construido a mano con las APIs del DOM
 // (nunca con un string sin sanitizar), validando la ruta igual que cualquier
 // otra imagen del documento.
-if (window.mermaid) {
-  window.mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'strict' });
+// El tema de Mermaid se decide por luminancia de --bg (no por lista de temas
+// "conocidos como oscuros" a mano, que habría que mantener a la par de los 26
+// temas de styles.css). No todos los temas mapean limpiamente a claro/oscuro,
+// pero la luminancia real de --bg es la señal correcta para decidir contraste.
+function isDarkTheme() {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  const hex = bg.match(/^#([0-9a-f]{6})$/i);
+  if (!hex) return false;
+  const r = parseInt(hex[1].slice(0, 2), 16);
+  const g = parseInt(hex[1].slice(2, 4), 16);
+  const b = parseInt(hex[1].slice(4, 6), 16);
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luminance < 0.5;
+}
+
+function mermaidTheme() {
+  return isDarkTheme() ? 'dark' : 'neutral';
 }
 
 const MERMAID_IMAGE_MARKER_RE = /^!\[\[(.+)\]\]$/;
@@ -206,6 +241,7 @@ function embedMermaidNodeImages(container) {
 function renderMermaidBlocks() {
   const blocks = Array.from(previewPane.querySelectorAll('pre code.language-mermaid'));
   if (!blocks.length || !window.mermaid) return;
+  window.mermaid.initialize({ startOnLoad: false, theme: mermaidTheme(), securityLevel: 'strict' });
   const divs = blocks.map((code) => {
     const div = document.createElement('div');
     div.className = 'mermaid';
