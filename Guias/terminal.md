@@ -85,9 +85,8 @@ Con el cursor en la terminal, las teclas van **al shell**, no a MK: `Ctrl+W` bor
 
 ## Seguridad
 
-Es una terminal con **tus permisos**, igual que cualquier otra: lo que ejecutes ahí puede modificar o borrar archivos. Solo la ventana principal de MK puede abrir terminales (no el contenido que se muestra en el preview).
+Es una terminal con **tus permisos**, igual que cualquier otra: lo que ejecutes ahí puede modificar o borrar archivos. Solo la ventana principal de MK puede abrir terminales (no el contenido que se muestra en el preview), y solo con un shell de la lista de instalados (no un programa cualquiera). Más en [seguridad-y-errores.md](seguridad-y-errores.md).
 
 ## Límites
 
 - Las terminales no se restauran al reabrir MK (el historial del shell sí, porque lo guarda tu shell).
-- Sin pantalla dividida dentro del panel (una terminal visible a la vez).

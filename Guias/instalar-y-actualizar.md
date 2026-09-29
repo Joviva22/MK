@@ -55,3 +55,6 @@ systemctl --user restart plasma-plasmashell
 | Ícono genérico o "Electron" en la barra | `npm run install-desktop`, desanclar y volver a anclar |
 | No aparece el ícono en la bandeja (GNOME) | Instalar la extensión "AppIndicator" |
 | La terminal integrada no abre | `npm install` (recompila `node-pty`) y `npm run dist` de nuevo |
+| Aviso rojo "No se pudo guardar…" | Disco lleno o sin permiso en esa carpeta; tus cambios siguen en la pestaña. Detalle en `~/.config/md-editor-local/logs/mk.log` |
+| Una imagen de otra carpeta no se ve | Por seguridad solo se muestra lo que está dentro de la carpeta abierta: copiala adentro (arrastrarla al editor la copia a `assets/`). Ver [seguridad-y-errores.md](seguridad-y-errores.md) |
+| Algo raro que no sabés qué es | Mirá `tail -20 ~/.config/md-editor-local/logs/mk.log` |

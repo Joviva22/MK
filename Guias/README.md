@@ -45,6 +45,7 @@ Una guía especializada por cada función del sistema. Cada una empieza con **pa
 | [historial-y-git.md](historial-y-git.md) | Versiones anteriores, diff, git |
 | [exportar.md](exportar.md) | HTML, PDF, Word, EPUB, Anki; importar `.docx` |
 | **PDF** — escribir encima, formularios, subrayar, páginas | [pdf-como-usar.md](pdf-como-usar.md) · [pdf-para-que-sirve.md](pdf-para-que-sirve.md) · resumen: [herramientas-pdf.md](herramientas-pdf.md) |
+| [seguridad-y-errores.md](seguridad-y-errores.md) | Privacidad, qué te protege al abrir un `.md` ajeno, qué pasa si falla un guardado, registro de errores |
 | [instalar-y-actualizar.md](instalar-y-actualizar.md) | Instalar en el menú, actualizar, fijar en la barra de tareas, bandeja |
 | [personalizar.md](personalizar.md) | Ajustes, temas, tema personalizado, toolbar |
 | [atajos.md](atajos.md) | Todos los atajos de teclado |
@@ -68,4 +69,5 @@ Una guía especializada por cada función del sistema. Cada una empieza con **pa
 | Ver una base (tabla o gráfico) dentro de una nota | [Bloque `database`](bases-de-datos-como-usar.md#mostrar-una-base-dentro-de-una-nota) |
 | Un servidor y comandos a la vez en la terminal | [Pantalla dividida](terminal.md) |
 | Pedirle a una IA que trabaje sobre una nota | [IA en la terminal](ia-en-la-terminal.md) |
+| Saber si abrir un `.md` descargado es seguro, o por qué falló algo | [Seguridad y errores](seguridad-y-errores.md) |
 | Concentrarme | [Pomodoro](pomodoro-y-reproductor.md) + [modo enfoque](modos-de-vista.md) |

@@ -36,6 +36,9 @@ Clic en el archivo en el sidebar → se abre en el visor:
 ## Ver archivos sueltos
 Clic en una imagen o PDF del sidebar → se abre a pantalla completa en el preview (modo lectura). Para tenerlo **al lado** mientras escribís: clic derecho → *Abrir en panel secundario* ([modos-de-vista.md](modos-de-vista.md)).
 
+## Imágenes de otras carpetas
+Por seguridad, el preview solo muestra archivos **dentro de la carpeta abierta** (o del archivo que abriste). Si una imagen está en otro lado, arrastrala al editor: se copia sola a `assets/` y queda bien enlazada. Ver [seguridad-y-errores.md](seguridad-y-errores.md).
+
 ## Usos típicos
 - Apuntes con capturas de las diapositivas.
 - Documentación con diagramas y un PDF de especificación embebido.

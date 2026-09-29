@@ -33,6 +33,7 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 25. [Home: planificador semanal y mensual](#25-home-planificador-semanal-y-mensual)
 26. [Bases de datos relacionales](#26-bases-de-datos-relacionales)
 27. [Terminal integrada](#27-terminal-integrada)
+28. [Seguridad, privacidad y errores](#28-seguridad-privacidad-y-errores)
 
 > Guías especializadas por función (cómo usar / para qué sirve): carpeta [`Guias/`](./Guias/README.md).
 
@@ -593,3 +594,9 @@ Panel inferior con una terminal real, como la de VS Code: `` Ctrl+` `` (o `Ctrl+
 5. **F5** (o ▶ en la toolbar) guarda y ejecuta el archivo actual en la terminal según su extensión (`.py`, `.sh`, `.js`, `.c`, `.cpp`, `.java`, `.rb`, `.go`). Clic derecho en una carpeta del sidebar → "Abrir terminal aquí". **Abrir con IA**: clic derecho en un archivo o carpeta → "🤖 Abrir con Claude Code / Gemini CLI / Codex" (o el botón **IA ▾** de la toolbar, sobre el archivo abierto) abre esa IA de terminal en una pestaña nueva, en la carpeta del archivo y con el archivo como contexto. Los colores ANSI se adaptan a temas claros/oscuros. `Ctrl+F` dentro de la terminal busca en la salida; usa una Nerd Font si hay alguna instalada (prompts con íconos).
 
 Por debajo: [xterm.js](https://xtermjs.org) dibuja la terminal y [node-pty](https://github.com/microsoft/node-pty) corre el shell en el proceso principal. **Límite:** las terminales no se restauran al reabrir MK. Guía: [`Guias/terminal.md`](./Guias/terminal.md).
+
+## 28. Seguridad, privacidad y errores
+
+Todo es local: sin cuenta, sin nube, sin telemetría. Al abrir un `.md` ajeno, MK lo protege en capas: **DOMPurify** limpia el HTML del preview; una **Content Security Policy** impide ejecutar scripts que no sean los de MK o mandar datos a internet; la ventana corre con **sandbox**; y el proceso principal solo deja leer, escribir o borrar dentro de **lo que abriste** (la carpeta, archivos elegidos en "Abrir", arrastrados desde el explorador, pasados con "Abrir con MK" o de tu sesión). Por eso una imagen de **fuera** de la carpeta abierta no se muestra: arrastrala al editor y se copia a `assets/`. Límite: la terminal integrada ejecuta lo que escribas con tus permisos.
+
+**Si algo falla al guardar** (disco lleno, sin permiso), aparece un aviso rojo abajo a la izquierda y la pestaña conserva tus cambios (el autoguardado reintenta). Bases de datos, Home, configuración y sesión se guardan de forma **atómica** (temporal + reemplazo), y un JSON que ya estuviera dañado se aparta como `….corrupt-<fecha>` en vez de pisarse. Los errores quedan en `~/.config/md-editor-local/logs/mk.log` (rota a 1 MB). Guía: [`Guias/seguridad-y-errores.md`](./Guias/seguridad-y-errores.md).

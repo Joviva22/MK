@@ -17,12 +17,12 @@ También se pueden abrir y editar archivos de código (`.py`, `.c`/`.cpp`, `.jav
 `Ctrl+F` busca y reemplaza dentro del archivo actual; `Ctrl+Shift+F` busca en toda la carpeta abierta; `Ctrl+P` abre un archivo por nombre sin tocar el mouse. Paleta de comandos (`Ctrl+Shift+P`) para no memorizar dónde está cada botón. Ver [`COMANDOS.md`](./COMANDOS.md) para la lista completa de atajos.
 
 ### Planificar: Home, bases de datos y gráficos
-- **Home** (`Ctrl+Shift+H`): planificador semanal y mensual con calendario, tareas con hora y prioridad, recurrentes (hábitos), arrastrar tareas de día, tareas `📅` escritas en tus notas, estadísticas 📈 y **recordatorios** (a la hora o días antes, aunque MK esté en la bandeja).
+- **Home** (`Ctrl+Shift+H`): planificador semanal y mensual con calendario, tareas con hora y prioridad, recurrentes (hábitos), arrastrar tareas de día, tareas `📅` escritas en tus notas, estadísticas 📈 y **recordatorios** (a la hora, días antes y **1 semana antes automático** para todo lo que tenga fecha, aunque MK esté en la bandeja).
 - **Bases de datos** relacionales tipo Notion (tabla, tablero, calendario, galería y **Gráfico**), guardadas en `.mk/` dentro de tu carpeta, con importar/exportar CSV.
 - **Gráficos**: vista Gráfico de una base, bloque ```` ```chart ```` que dibuja una tabla Markdown, y bloque ```` ```database ```` que muestra una vista de una base **dentro de una nota**.
 
 ### Terminal e IA
-Terminal real integrada (`` Ctrl+` ``) con pestañas, **pantalla dividida** (`Ctrl+Shift+5`), búsqueda en la salida y **F5** para ejecutar el archivo actual (`.py`, `.c`, `.js`, `.sh`…). **Abrir con IA**: Claude Code, Gemini CLI o Codex arrancan en la terminal con el archivo como contexto.
+Terminal real integrada (`` Ctrl+` ``) con el shell que elijas (bash, zsh, fish…), pestañas, **pantalla dividida** (`Ctrl+Shift+5`), búsqueda en la salida y **F5** para ejecutar el archivo actual (`.py`, `.c`, `.js`, `.sh`…). **Abrir con IA**: Claude Code, Gemini CLI o Codex arrancan en la terminal con el archivo como contexto.
 
 ### Carpetas grandes
 La carpeta abierta **se vigila sola** (lo que cambie git, otra app o una IA aparece en el árbol y en las pestañas sin refrescar), el disco se lee sin congelar la ventana y un **índice en memoria** hace que búsqueda, etiquetas, backlinks, grafo y Kanban no relean todo cada vez: la primera consulta lee la carpeta y las siguientes son casi instantáneas.
