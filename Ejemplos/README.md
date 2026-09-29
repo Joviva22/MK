@@ -7,6 +7,13 @@ Cada archivo de esta carpeta muestra una función distinta con contenido real, l
 | [`diagramas-mermaid.md`](diagramas-mermaid.md) | Flowchart, secuencia y Gantt con Mermaid |
 | [`ejecutar-codigo.md`](ejecutar-codigo.md) | Botón ▶ Ejecutar sobre bloques `js` |
 | [`tablero-kanban.md`](tablero-kanban.md) | Columnas y tarjetas para el tablero Kanban |
+| [`home-y-recordatorios.md`](home-y-recordatorios.md) | Tareas con `📅 fecha` que aparecen solas en el calendario del Home, y cómo probar los avisos |
+| [`live-preview.md`](live-preview.md) | Nota completa para probar el modo Live Preview (`Ctrl+Shift+L`) |
+| [`formato-avanzado.md`](formato-avanzado.md) | Callouts, resaltado, etiquetas, wikilinks, tareas, fórmulas, tablas y código |
+| [`graficos.md`](graficos.md) | Base de datos **Gastos** con vistas Gráfico (torta, barras por mes), Calendario y "Sin pagar" |
+| [`pdf/escribir-en-pdf.md`](pdf/escribir-en-pdf.md) | Un **formulario PDF rellenable** y un **apunte** para subrayar y escribir encima |
+| [`multimedia/multimedia.md`](multimedia/multimedia.md) | Foto (SVG), audio (Opus) y video (WebM) abiertos y embebidos en una nota |
+| [`ia-y-terminal.md`](ia-y-terminal.md) | F5 para correr código, terminal integrada y "Abrir con IA" |
 | [`bases-de-datos.md`](bases-de-datos.md) | Bases de datos relacionales tipo Notion: columnas tipadas, relación entre bases, fórmula y vista tablero (con datos ya cargados) |
 | [`tarjetas-anki.md`](tarjetas-anki.md) | Preguntas/respuestas para exportar a Anki |
 | [`snippets-y-plantillas.md`](snippets-y-plantillas.md) | Cómo probar `/fecha`, `/hora` y tus propios snippets |
