@@ -26,7 +26,7 @@ document.getElementById('btn-open').addEventListener('click', () => window.mdTab
 document.getElementById('btn-save').addEventListener('click', () => window.mdTabs.saveActive(false));
 document.getElementById('btn-save-as').addEventListener('click', () => window.mdTabs.saveActive(true));
 
-// Sin menú nativo (ver F11.md): estos atajos antes dependían de los
+// Sin menú nativo (se sacó para el modo F11 sin distracciones): estos atajos antes dependían de los
 // accelerators del menú de Electron. Van a nivel de documento (no en el
 // keymap de CodeMirror) para que funcionen tenga el foco el editor u otra
 // parte de la app (sidebar, búsqueda, etc.).

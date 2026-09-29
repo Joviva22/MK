@@ -5,7 +5,7 @@
 // al lado mientras editás el principal, sin la complejidad de un segundo
 // editor de verdad (MK tiene una sola instancia de CodeMirror — dos
 // editores simultáneos habría que duplicar buena parte de tabs.js/
-// preview.js, un proyecto aparte, ver MEJORAS.md).
+// preview.js, un proyecto aparte, ver OBJETIVOS.md).
 //
 // En vez de eso: clic en el contenido del panel secundario "promueve" ese
 // archivo a principal (se abre normal — pestaña editable si es md/tex/txt,

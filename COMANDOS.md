@@ -35,6 +35,7 @@ Referencia rápida y resumida. Para la explicación completa de cada función, v
 | `Ctrl+Shift+O` | Índice del documento (encabezados) |
 | `Ctrl+Shift+E` | Modo enfoque (solo editor) |
 | `Ctrl+Shift+R` | Modo lectura (solo preview) |
+| `Ctrl+Shift+L` | Modo Live Preview (escribir viendo el Markdown renderizado; solo la línea del cursor muestra la sintaxis) |
 | `F11` | Pantalla completa / escritura sin distracciones |
 | `Ctrl+clic` en el sidebar | Selección múltiple de archivos (mover/eliminar en bloque) |
 

@@ -100,6 +100,11 @@ async function writePdfFixture() {
 function cleanup() {
   fs.rmSync(profileDir, { recursive: true, force: true });
   fs.rmSync(fixturesDir, { recursive: true, force: true });
+  // Los tests de exportar (EPUB, DOCX, PDF, Anki...) escriben en el tmp del
+  // sistema como mk-test-export-*: sin esto se acumulaban en cada corrida.
+  for (const name of fs.readdirSync(os.tmpdir())) {
+    if (name.startsWith('mk-test-export-')) fs.rmSync(path.join(os.tmpdir(), name), { recursive: true, force: true });
+  }
 }
 
 function runElectron() {

@@ -13,13 +13,31 @@ let currentLayoutMode = 'normal';
 // lectura elegido A MANO por el usuario (Ctrl+Shift+R) no se toca nunca.
 let pdfForcedReadMode = false;
 
+// Modos: 'normal' (editor + preview), 'focus' (solo editor), 'read' (solo
+// preview) y 'live' (Live Preview: solo editor, pero el Markdown se ve
+// renderizado salvo en la línea del cursor — ver livepreview.js).
 function setLayoutMode(mode, opts) {
-  containerEl.classList.remove('mode-focus', 'mode-read');
+  containerEl.classList.remove('mode-focus', 'mode-read', 'mode-live');
   currentLayoutMode = mode;
   if (mode === 'focus') containerEl.classList.add('mode-focus');
   if (mode === 'read') containerEl.classList.add('mode-read');
+  if (mode === 'live') containerEl.classList.add('mode-live');
+  if (window.mdLivePreview) {
+    if (mode === 'live') window.mdLivePreview.enable(); else window.mdLivePreview.disable();
+  }
+  updateFocusButtonTitle();
   pdfForcedReadMode = !!(opts && opts.forcedByPdf);
   if (window.mdCodeMirror) window.mdCodeMirror.refresh();
+}
+
+const MODE_LABELS = { normal: 'Normal', focus: 'Enfoque', read: 'Lectura', live: 'Live Preview' };
+const MODE_CYCLE = ['normal', 'focus', 'read', 'live'];
+
+function updateFocusButtonTitle() {
+  const btn = document.getElementById('btn-focus');
+  const next = MODE_CYCLE[(MODE_CYCLE.indexOf(currentLayoutMode) + 1) % MODE_CYCLE.length];
+  btn.title = `Modo: ${MODE_LABELS[currentLayoutMode]} → clic: ${MODE_LABELS[next]} (Enfoque Ctrl+Shift+E · Lectura Ctrl+Shift+R · Live Preview Ctrl+Shift+L)`;
+  btn.classList.toggle('mode-button-active', currentLayoutMode !== 'normal');
 }
 
 function toggleMode(mode) {
@@ -33,11 +51,10 @@ function releasePdfForcedReadMode() {
   if (pdfForcedReadMode) setLayoutMode('normal');
 }
 
-window.mdModes = { setLayoutMode, getLayoutMode: () => currentLayoutMode, releasePdfForcedReadMode };
+window.mdModes = { setLayoutMode, toggleMode, getLayoutMode: () => currentLayoutMode, releasePdfForcedReadMode };
 
 document.getElementById('btn-focus').addEventListener('click', () => {
-  const next = currentLayoutMode === 'normal' ? 'focus' : currentLayoutMode === 'focus' ? 'read' : 'normal';
-  setLayoutMode(next);
+  setLayoutMode(MODE_CYCLE[(MODE_CYCLE.indexOf(currentLayoutMode) + 1) % MODE_CYCLE.length]);
 });
 
 document.addEventListener('keydown', (e) => {
@@ -48,10 +65,13 @@ document.addEventListener('keydown', (e) => {
   } else if (e.key.toLowerCase() === 'r') {
     e.preventDefault();
     toggleMode('read');
+  } else if (e.key.toLowerCase() === 'l') {
+    e.preventDefault();
+    toggleMode('live');
   }
 });
 
-// F11 (ver F11.md): pantalla completa real de la ventana + oculta
+// F11: pantalla completa real de la ventana + oculta
 // toolbar/statusbar para un modo "escritura sin distracciones". No toca
 // sidebar/modo enfoque-lectura, así vuelven tal cual estaban al salir.
 document.addEventListener('keydown', async (e) => {

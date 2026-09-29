@@ -585,7 +585,7 @@
     check('Gestión de archivos: crear/renombrar/eliminar desde el sidebar', false, 'sin fixturesDir');
   }
 
-  // 19. F11 (ver F11.md): sin menú nativo, el atajo pasa por
+  // 19. F11: sin menú nativo, el atajo pasa por
   // window.mdEditor.toggleFullscreen() y alterna body.fullscreen-write
   document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F11' }));
   const enteredFullscreen = await waitFor(() => document.body.classList.contains('fullscreen-write'));
@@ -2431,6 +2431,57 @@
     short2Detail = `duplicar=${dupOk} ancho=${!!widthSaved} buscarTerminal=${searchOk} renombrar=${renameOk}`;
   }
   check('Corto plazo: duplicar fila, ancho de columna, buscar en la terminal y renombrar tarea con doble clic', short2Ok, short2Detail);
+
+  // Modo Live Preview: marcadores ocultos fuera de la línea del cursor,
+  // widgets (casilla clicable, tabla) y vuelta limpia a los otros modos.
+  {
+    window.mdTabs.newTab('# Título\n\nTexto **negrita**.\n\n- [ ] tarea\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\nfin');
+    const cm = window.mdCodeMirror;
+    window.mdModes.setLayoutMode('live');
+    cm.setCursor({ line: 10, ch: 0 });
+    window.mdLivePreview.rebuild();
+    const container = document.querySelector('.container');
+    const layoutOk = container.classList.contains('mode-live') && !cm.getOption('lineNumbers');
+    const lineText = (n) => (cm.display.view.find((v) => v.line === cm.getLineHandle(n)) || {}).text;
+    const headingEl = lineText(0);
+    const hashHidden = !!headingEl && !headingEl.textContent.includes('#') && headingEl.textContent.includes('Título');
+    const boldEl = lineText(2);
+    const boldHidden = !!boldEl && !boldEl.textContent.includes('**');
+    const tableWidget = !!document.querySelector('.cm-live .mk-live-table table');
+
+    // Casilla: clic la tilda en el texto real.
+    const box = document.querySelector('.cm-live .mk-live-task');
+    if (box) box.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }));
+    const taskToggled = cm.getLine(4) === '- [x] tarea';
+
+    // Cursor en el encabezado: esa línea vuelve a mostrar "#".
+    cm.setCursor({ line: 0, ch: 3 });
+    const rawOnActive = (lineText(0) || {}).textContent === '# Título';
+    // Cursor dentro de la tabla: se muestra cruda.
+    cm.setCursor({ line: 7, ch: 1 });
+    const tableRawWhenActive = !document.querySelector('.cm-live .mk-live-table');
+
+    // El botón 🎯 cicla normal → enfoque → lectura → live → normal.
+    window.mdModes.setLayoutMode('normal');
+    const btn = document.getElementById('btn-focus');
+    const cycle = [];
+    for (let i = 0; i < 4; i++) { btn.click(); cycle.push(window.mdModes.getLayoutMode()); }
+    const cycleOk = cycle.join(',') === 'focus,read,live,normal';
+    const restoredOk = cm.getOption('lineNumbers') === true && cm.getOption('mode') === 'markdown' && !document.querySelector('.mk-live-widget');
+
+    window.mdTabs.closeTab && (() => {
+      const active = document.querySelector('#tabbar .tab.active .tab-close');
+      const originalConfirm = window.confirm;
+      window.confirm = () => true;
+      active.click();
+      window.confirm = originalConfirm;
+    })();
+    check(
+      'Modo Live Preview: oculta marcadores, widgets (casilla, tabla), línea activa cruda, ciclo de modos y vuelta limpia',
+      layoutOk && hashHidden && boldHidden && tableWidget && taskToggled && rawOnActive && tableRawWhenActive && cycleOk && restoredOk,
+      `layout=${layoutOk} #oculto=${hashHidden} **oculto=${boldHidden} tabla=${tableWidget} casilla=${taskToggled} lineaActivaCruda=${rawOnActive} tablaCruda=${tableRawWhenActive} ciclo=${cycle.join(',')} restaurado=${restoredOk}`
+    );
+  }
 
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.

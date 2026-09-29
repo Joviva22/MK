@@ -42,6 +42,7 @@
 | `Ctrl+B` | Sidebar |
 | `Ctrl+Shift+E` | Modo enfoque |
 | `Ctrl+Shift+R` | Modo lectura |
+| `Ctrl+Shift+L` | Modo Live Preview (escribir viendo el resultado) |
 | `F11` | Pantalla completa |
 | `Ctrl+scroll`, `Ctrl+=`, `Ctrl+-`, `Ctrl+0` | Tamaño de fuente |
 

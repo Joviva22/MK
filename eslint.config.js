@@ -1,6 +1,6 @@
 'use strict';
 
-// Config plano de ESLint (ver MEJORAS.md): solo no-undef/no-unused-vars, la
+// Config plano de ESLint: solo no-undef/no-unused-vars, la
 // red de seguridad barata que hubiera atrapado varios bugs reales de este
 // proyecto (colisión de globals entre scripts del renderer, variables sin
 // declarar) sin requerir TypeScript ni pruebas manuales.

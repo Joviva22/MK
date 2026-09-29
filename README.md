@@ -45,9 +45,7 @@ Todo esto viene ya armado en la app, no son plugins de terceros:
 | [`MANUAL.md`](./MANUAL.md) | Guía completa: cómo usar cada función, paso a paso |
 | [`Guias/`](./Guias/README.md) | Una guía especializada por función: cómo usarla y para qué sirve (Home y Bases de datos con dos guías cada una) |
 | [`COMANDOS.md`](./COMANDOS.md) | Referencia rápida de todos los atajos de teclado |
-| [`ESTADO.md`](./ESTADO.md) | Qué está hecho, qué falta, y limitaciones conocidas |
-| [`OBJETIVOS.md`](./OBJETIVOS.md) | Hoja de ruta: objetivos de corto, mediano y largo plazo, tachados a medida que se cumplen |
-| [`MEJORAS.md`](./MEJORAS.md) | Ideas de qué mejorar a futuro |
+| [`OBJETIVOS.md`](./OBJETIVOS.md) | Hoja de ruta: qué está hecho y qué falta (corto, mediano y largo plazo), tachado a medida que se cumple |
 
 ## Cómo correrla
 
@@ -77,7 +75,7 @@ Genera `dist/MK-<version>.AppImage`, standalone (incluye Electron + dependencias
 
 ## Stack
 
-Electron 32 · CodeMirror 5 · marked · KaTeX · DOMPurify · highlight.js · lucide · mermaid · diff (Myers) · jszip.
+Electron 32 · CodeMirror 5 · marked · KaTeX · DOMPurify · highlight.js · lucide · mermaid · diff (Myers) · jszip · sql.js (bases de datos) · xterm.js + node-pty (terminal).
 
 Word/PDF: `mammoth` + `turndown` (leer `.docx`), `docx` (escribir `.docx`), `pdf-lib` (operaciones de página), `pdfjs-dist` (render de PDF para subrayar).
 
@@ -101,9 +99,7 @@ MK/
 ├── package.json
 ├── OBJETIVOS.md          # hoja de ruta (se tacha lo cumplido)
 ├── MANUAL.md             # guía de uso completa
-├── COMANDOS.md           # referencia rápida de atajos
-├── ESTADO.md             # estado real y detallado del proyecto
-└── MEJORAS.md             # qué mejoraría a futuro
+└── COMANDOS.md           # referencia rápida de atajos
 ```
 
 ## Seguridad

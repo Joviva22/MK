@@ -1,6 +1,6 @@
 # Manual de uso — MK
 
-Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](./README.md); para saber qué está hecho y qué no, [`ESTADO.md`](./ESTADO.md); para una referencia rápida de atajos sin tanto texto, [`COMANDOS.md`](./COMANDOS.md).
+Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](./README.md); para saber qué está hecho y qué falta, [`OBJETIVOS.md`](./OBJETIVOS.md); para una guía corta por función, [`Guias/`](./Guias/README.md); para una referencia rápida de atajos sin tanto texto, [`COMANDOS.md`](./COMANDOS.md).
 
 > Esta guía se actualiza cada vez que se agrega una función nueva a MK — si ves algo en la app que no está acá, avisá.
 
@@ -351,7 +351,9 @@ Para ver, comparar o recuperar una versión anterior: paleta de comandos → **"
 
 ## 13. Modos de vista
 
-- **🎯 Modo enfoque / lectura** (botón en la toolbar, o `Ctrl+Shift+E` / `Ctrl+Shift+R`): el mismo botón cicla entre tres estados — normal, enfoque (solo editor, sin preview) y lectura (solo preview). Solo afecta a esa mitad principal: el sidebar (`Ctrl+B`) y el [panel secundario](#22-panel-secundario-pantalla-dividida), si están abiertos, se quedan como estaban — se puede tener, por ejemplo, el principal en modo enfoque con el panel secundario todavía visible al lado.
+- **🎯 Modos** (botón en la toolbar, o `Ctrl+Shift+E` / `Ctrl+Shift+R` / `Ctrl+Shift+L`): el mismo botón cicla entre cuatro estados — normal, enfoque (solo editor, sin preview), lectura (solo preview) y **Live Preview**.
+- **Live Preview** (`Ctrl+Shift+L`, o paleta → "Modo Live Preview"): escribís en el editor, pero el Markdown se ve renderizado como en modo lectura — encabezados grandes, **negrita**, *cursiva*, enlaces, `#etiquetas`, `==resaltado==`, fórmulas `$...$` y `$$...$$`, imágenes, tablas, separadores y casillas de tareas (clicables). Solo la línea donde está el cursor muestra la sintaxis cruda para editarla; las tablas y los bloques `$$` se muestran crudos si el cursor está en cualquiera de sus líneas. Clic en un widget (imagen, tabla, fórmula) pone el cursor ahí para editarlo; clic en un `[[wikilink]]` abre la nota. Los otros tres modos siguen igual. **Límite:** los diagramas Mermaid y los callouts se ven como bloque de código / cita, no dibujados.
+- Cualquier modo afecta solo a la mitad principal: el sidebar (`Ctrl+B`) y el [panel secundario](#22-panel-secundario-pantalla-dividida), si están abiertos, se quedan como estaban — se puede tener, por ejemplo, el principal en modo enfoque con el panel secundario todavía visible al lado.
 - **`F11` — pantalla completa / escritura sin distracciones**: pone la ventana en pantalla completa real y oculta la toolbar y la barra de estado, dejando solo sidebar/editor/preview según el modo en que estés. Volvés a pulsar `F11` para salir.
 
 ## 14. Personalizar MK
@@ -494,7 +496,7 @@ Botón 🗂 en la toolbar (o "Operaciones de páginas PDF..." en la paleta de co
 8. **Separar (extraer páginas)**: escribí un rango (ej. `1-3,5`) y "Extraer y guardar como..." — arma un PDF nuevo solo con esas páginas, sin tocar el que tenés abierto en el panel.
 9. **Guardar como...**: escribe todos los cambios (rotación, orden, borrados, marca de agua, texto/firma, uniones) a un archivo PDF nuevo — nunca pisa el original solo.
 
-**Límite:** son operaciones de página, no edición de texto — no se puede cambiar una palabra que ya está impresa dentro del PDF (ver `MEJORAS.md` para por qué).
+**Límite:** son operaciones de página, no edición de texto — no se puede cambiar una palabra que ya está impresa dentro del PDF (un PDF guarda glifos posicionados, no texto editable; está anotado como objetivo de largo plazo en `OBJETIVOS.md`).
 
 ## 21. Subrayar texto en PDF
 
@@ -520,7 +522,7 @@ Un archivo de referencia al lado del que estás editando — md, PDF, `.docx` o 
 
 El sidebar, el modo enfoque/lectura del principal y este panel secundario son tres ejes independientes — se combinan libremente. Por ejemplo: sidebar oculto (`Ctrl+B`) + principal en modo enfoque (solo editor) + panel secundario en modo "Código" (fuente cruda del archivo de referencia), los tres a la vez.
 
-¿Por qué no directamente "un editor en cada lado"? MK tiene una sola instancia del editor (CodeMirror) que las pestañas comparten — dos editores de verdad, escribibles los dos al mismo tiempo, es un cambio de arquitectura más grande (ver `MEJORAS.md`). Esto da casi lo mismo para el uso real ("tengo esto de referencia mientras escribo") con mucho menos por detrás, y el título-clic hace que cambiar cuál es "el que edito" sea instantáneo.
+¿Por qué no directamente "un editor en cada lado"? MK tiene una sola instancia del editor (CodeMirror) que las pestañas comparten — dos editores de verdad, escribibles los dos al mismo tiempo, es un cambio de arquitectura más grande (anotado en `OBJETIVOS.md`, largo plazo). Esto da casi lo mismo para el uso real ("tengo esto de referencia mientras escribo") con mucho menos por detrás, y el título-clic hace que cambiar cuál es "el que edito" sea instantáneo.
 
 **Límite:** si el archivo principal era una pestaña nueva sin guardar todavía (sin ruta en disco), al promover el secundario esa pestaña sin guardar no tiene dónde mostrarse en modo lectura — el panel se cierra solo en vez de mostrarla.
 

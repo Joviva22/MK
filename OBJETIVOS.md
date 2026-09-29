@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 28 de 48 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 30 de 55 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -38,6 +38,8 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 - [x] ~~**Bases de datos: duplicar una fila** (clic derecho → Duplicar, copia valores y relaciones)~~ (2026-09-29)
 - [x] ~~**Terminal: buscar dentro de la salida** (`Ctrl+F`)~~ (2026-09-29)
 - [x] ~~Terminal: fuentes Nerd Font para prompts con íconos (Powerlevel10k, Starship)~~ (2026-09-29)
+- [x] ~~**Modo "Live Preview"** (escribir viendo el Markdown renderizado; cuarto modo además de normal/enfoque/lectura, `Ctrl+Shift+L` y en el ciclo 🎯). Pedido del usuario~~ (2026-09-29)
+- [x] ~~Limpieza: fuera `ESTADO.md`, `MEJORAS.md` y `RESUMEN.md` (desactualizados; lo pendiente pasó acá), restos de build y de tests~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
@@ -52,7 +54,6 @@ Mejoras chicas y de uso diario: se hacen en una sesión cada una.
 
 Funciones más grandes o que tocan varias partes de la app.
 
-- [ ] **Modo "Live Preview" (escribir en modo lectura)**: editar el `.md` viéndolo renderizado — solo la línea (o bloque) donde está el cursor muestra la sintaxis Markdown para escribir, todo lo demás se ve como en modo lectura (encabezados grandes, negrita, listas, imágenes, tablas), igual que Obsidian. Pedido del usuario.
 - [ ] **Bases de datos dentro de una nota**: bloque ```` ```database Proyectos ```` ```` que muestra la tabla en el preview
 - [ ] **Home dentro de la carpeta (opcional)**: guardar las tareas en `.mk/home.json` para que viajen con git y se sincronicen entre computadoras
 - [ ] **Home: estadísticas**: tareas hechas por semana, racha de hábitos recurrentes, gráfico del mes
@@ -61,18 +62,24 @@ Funciones más grandes o que tocan varias partes de la app.
 - [ ] **Búsqueda global también en bases de datos y tareas del Home**
 - [ ] **Separar `main.js`** (más de 1100 líneas) en módulos por área, como ya se hizo con `dbengine.js` y `ptyhost.js`
 - [ ] **Actualizar el aviso de vulnerabilidades de `npm audit`** (2 de severidad alta en dependencias)
+- [ ] **Live Preview: renderizar también diagramas Mermaid y callouts** (hoy se ven como bloque de código / cita)
+- [ ] **Sidebar: seleccionar un rango con `Shift`+clic** (hoy solo `Ctrl`+clic de a uno)
+- [ ] **Nota diaria configurable**: elegir carpeta y formato del nombre (hoy siempre `Diario/AAAA-MM-DD.md`)
+- [ ] **Lanzador del escritorio apuntando al AppImage** (`bin/mk-editor` hoy corre `node_modules/electron`, solo sirve en esta máquina)
 
 ## Largo plazo
 
-Proyectos pesados o que requieren decisiones de diseño/seguridad antes de empezar (ver `MEJORAS.md`).
+Proyectos pesados o que requieren decisiones de diseño/seguridad antes de empezar.
 
-- [ ] **Pizarra Excalidraw** embebida para dibujar diagramas a mano
-- [ ] **Sistema de plugins** seguro (scripts locales con API limitada, revisados antes de habilitarse)
-- [ ] **Ejecutar Python y otros lenguajes** dentro de los bloques de código del preview (hoy solo JS)
-- [ ] **Dos editores escribibles a la vez** en pantalla dividida (hoy el panel secundario es de solo lectura)
+- [ ] **Pizarra Excalidraw** embebida para dibujar diagramas a mano (viable con su build UMD, pero suma ~2 MB y React; decidir antes si se guarda como `.excalidraw` aparte o dentro del `.md`)
+- [ ] **Sistema de plugins** seguro: scripts locales en `plugins/` (nunca descargados), con una API limitada de hooks (`onRender`, `onSave`) sin acceso libre a `require`/`fs`, revisados antes de habilitarse
+- [ ] **Ejecutar Python y otros lenguajes** dentro de los bloques de código del preview (hoy solo JS aislado en un Worker; para otros lenguajes está F5 en la terminal, que es explícito)
+- [ ] **Dos editores escribibles a la vez** en pantalla dividida (hoy el panel secundario es de solo lectura; varios módulos asumen un único CodeMirror)
+- [ ] **Migrar los scripts sueltos (`window.mdX`) a módulos ES** (`import`/`export`): refactor de todo `src/`, mejor hacerlo solo y con tiempo
+- [ ] **Embeber vídeos de YouTube** (fácil técnicamente, pero rompe la premisa "sin internet": habría que marcar esas notas como no-offline)
 - [ ] **Sincronización entre dispositivos** sin depender de git (carpeta en la nube / servidor propio)
 - [ ] **Versión para Windows y macOS** (hoy el empaquetado y el reproductor multimedia son solo Linux)
-- [ ] **Editar el texto dentro de un PDF** (hoy solo operaciones de página y subrayado)
+- [ ] **Editar el texto dentro de un PDF** (hoy solo operaciones de página y subrayado: un PDF guarda glifos posicionados, no texto editable)
 
 ---
 
