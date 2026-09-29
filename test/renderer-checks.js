@@ -3149,6 +3149,22 @@
     check('Home: estadísticas (semana, racha, 4 números, gráfico) y Escape las cierra', statsOk && tiles === 4 && chartOk && closedOk, `stats=${statsOk} numeros=${tiles} grafico=${chartOk} cierra=${closedOk}`);
   }
 
+  // Preview: las fórmulas se insertan después de sanitizar (optimización),
+  // sin abrir huecos: HTML dentro de $…$ no se ejecuta y una fórmula dentro
+  // de un atributo (URL de un enlace) no puede inyectar atributos.
+  {
+    window.mdModes.setLayoutMode('normal');
+    window.mdTabs.newTab('Normal $x^2$ y $<img src=x onerror="window.__xss1=1">$ y [enlace]($" onmouseover="window.__xss2=1$) fin');
+    window.renderPreview();
+    const pane = document.getElementById('preview-pane');
+    const katexOk = !!pane.querySelector('.katex');
+    const noImg = !pane.querySelector('img[onerror]');
+    const noHandler = !Array.from(pane.querySelectorAll('a')).some((a) => a.hasAttribute('onmouseover'));
+    const noEvents = !pane.innerHTML.match(/on(error|mouseover)=/i) || !pane.querySelector('[onerror],[onmouseover]');
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    check('Preview: fórmulas rápidas y seguras (HTML en $…$ no se ejecuta, no inyectan atributos)', katexOk && noImg && noHandler && noEvents && !window.__xss1 && !window.__xss2, `katex=${katexOk} sinImgOnerror=${noImg} sinOnmouseover=${noHandler}`);
+  }
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {

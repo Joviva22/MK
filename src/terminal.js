@@ -95,7 +95,7 @@ function fitActive() {
   if (!s || panel.hidden) return;
   try {
     s.fit.fit();
-  } catch (e) {
+  } catch {
     return;
   }
   if (!s.exited) window.mdEditor.terminal.resize(s.id, s.term.cols, s.term.rows);
@@ -175,6 +175,11 @@ async function copySelection(term) {
 }
 
 async function createSession(cwd) {
+  try {
+    await window.mdLoadLib('xterm'); // se carga recién al abrir la primera terminal
+  } catch {
+    // abajo se avisa
+  }
   if (typeof Terminal === 'undefined') {
     alert('No se pudo cargar xterm.js (node_modules/@xterm/xterm). Probá "npm install".');
     return null;
@@ -200,7 +205,7 @@ async function createSession(cwd) {
   term.open(el);
   try {
     fit.fit();
-  } catch (e) {
+  } catch {
     // panel todavía sin tamaño: se ajusta en activate()
   }
 

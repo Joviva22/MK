@@ -74,7 +74,7 @@ try {
   execSync('git config user.name "MK Test"', { cwd: gitRepoDir });
   fs.writeFileSync(path.join(gitRepoDir, 'seed.md'), '# seed\n', 'utf-8');
   execSync('git add -A && git commit -q -m seed', { cwd: gitRepoDir });
-} catch (e) {
+} catch {
   // sin git en PATH u otro problema de entorno: el check de git sync avisa y se saltea
 }
 

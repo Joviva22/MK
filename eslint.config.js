@@ -62,6 +62,7 @@ const browserGlobals = {
   docx: 'readonly',
   Image: 'readonly',
   Node: 'readonly',
+  NodeFilter: 'readonly',
   crypto: 'readonly',
   ResizeObserver: 'readonly',
   MutationObserver: 'readonly',

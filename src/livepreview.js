@@ -87,7 +87,7 @@ function renderMarkdown(src) {
     html = window.mdRenderMarkdownForExport
       ? window.mdRenderMarkdownForExport(src, window.mdState.currentFilePath, window.mdState.rootFolder)
       : DOMPurify.sanitize(marked.parse(src));
-  } catch (e) {
+  } catch {
     html = '';
   }
   htmlCache.set(src, html);
@@ -101,7 +101,7 @@ function renderKatex(expr, display) {
   let html;
   try {
     html = katex.renderToString(expr, { throwOnError: false, displayMode: display });
-  } catch (e) {
+  } catch {
     html = null;
   }
   htmlCache.set(key, html);
@@ -144,7 +144,8 @@ function renderMermaid(code) {
     return div;
   }
   if (!window.mermaid) {
-    div.textContent = code;
+    div.textContent = 'Cargando diagramas…';
+    window.mdLoadLib('mermaid').then(() => rebuild()).catch(() => { div.textContent = code; });
     return div;
   }
   div.textContent = 'Dibujando diagrama…';

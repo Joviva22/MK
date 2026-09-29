@@ -72,7 +72,7 @@ if (!gotLock) {
 function loadConfig() {
   try {
     return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  } catch (e) {
+  } catch {
     return {};
   }
 }
@@ -263,7 +263,7 @@ function pruneGlobalBackups() {
       fs.unlinkSync(e.filePath);
       total -= e.size;
     }
-  } catch (e) {
+  } catch {
     // una poda fallida no debe impedir guardar el archivo real
   }
 }
@@ -280,7 +280,7 @@ function makeBackup(filePath) {
       fs.unlinkSync(path.join(dir, entries.shift()));
     }
     pruneGlobalBackups();
-  } catch (e) {
+  } catch {
     // un backup fallido no debe impedir guardar el archivo real
   }
 }
@@ -314,7 +314,7 @@ ipcMain.handle('backups:list', (event, filePath) => {
         const backupPath = path.join(dir, name);
         return { path: backupPath, mtime: fs.statSync(backupPath).mtimeMs };
       });
-  } catch (e) {
+  } catch {
     return [];
   }
 });
@@ -324,7 +324,7 @@ ipcMain.handle('backups:read', (event, backupPath) => {
   if (rel.startsWith('..') || path.isAbsolute(rel)) return null; // solo lee de backupsRoot
   try {
     return fs.readFileSync(backupPath, 'utf-8');
-  } catch (e) {
+  } catch {
     return null;
   }
 });
@@ -345,7 +345,7 @@ ipcMain.handle('file:read', (event, filePath) => {
     const buffer = fs.readFileSync(filePath);
     if (looksBinary(buffer)) return { content: null, binary: true };
     return { content: buffer.toString('utf-8'), binary: false };
-  } catch (e) {
+  } catch {
     return null;
   }
 });
@@ -354,7 +354,7 @@ ipcMain.handle('session:save', (event, data) => {
   try {
     fs.mkdirSync(path.dirname(sessionPath), { recursive: true });
     fs.writeFileSync(sessionPath, JSON.stringify(data), 'utf-8');
-  } catch (e) {
+  } catch {
     // no romper la app si falla el guardado de sesión
   }
 });
@@ -370,7 +370,7 @@ function homeFileFor(root) {
 ipcMain.handle('home:load', (event, root) => {
   try {
     return JSON.parse(fs.readFileSync(homeFileFor(root), 'utf-8'));
-  } catch (e) {
+  } catch {
     return null;
   }
 });
@@ -384,7 +384,7 @@ ipcMain.handle('home:save', (event, data, root) => {
     fs.writeFileSync(file + '.tmp', JSON.stringify(data), 'utf-8');
     fs.renameSync(file + '.tmp', file);
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 });
@@ -392,7 +392,7 @@ ipcMain.handle('home:save', (event, data, root) => {
 ipcMain.handle('session:load', () => {
   try {
     return JSON.parse(fs.readFileSync(sessionPath, 'utf-8'));
-  } catch (e) {
+  } catch {
     return null;
   }
 });
@@ -410,7 +410,7 @@ ipcMain.handle('folder:getLast', () => {
   if (!lastFolder) return null;
   try {
     return { rootPath: lastFolder, tree: readTree(lastFolder) };
-  } catch (e) {
+  } catch {
     return null;
   }
 });
@@ -418,7 +418,7 @@ ipcMain.handle('folder:getLast', () => {
 ipcMain.handle('folder:read', (event, rootPath) => {
   try {
     return { rootPath, tree: readTree(rootPath) };
-  } catch (e) {
+  } catch {
     return null;
   }
 });
@@ -437,7 +437,7 @@ ipcMain.on('sidebar:startFileDrag', (event, filePath) => {
       dragIcon = nativeImage.createFromPath(path.join(__dirname, '..', 'build', 'icon.png')).resize({ width: 24, height: 24 });
     }
     event.sender.startDrag({ file: filePath, icon: dragIcon });
-  } catch (e) {
+  } catch {
     // si falla (ej. el archivo ya no existe), no rompe nada más —
     // el drag interno (mover entre carpetas del sidebar) sigue andando igual
   }
@@ -516,7 +516,7 @@ ipcMain.handle('fs:delete', async (event, { targetPath, isFolder }) => {
   try {
     await shell.trashItem(targetPath);
     return { ok: true };
-  } catch (e) {
+  } catch {
     // La papelera del sistema puede fallar (sin gio/kioclient/trash-cli, o
     // moviendo entre distintos sistemas de archivos/puntos de montaje) —
     // en ese caso, borrar directo en vez de dejar la operación a medias.
@@ -549,7 +549,7 @@ ipcMain.handle('asset:copy', (event, { srcPath, targetDir }) => {
     }
     fs.copyFileSync(srcPath, destPath);
     return destPath;
-  } catch (e) {
+  } catch {
     return null;
   }
 });
@@ -566,7 +566,7 @@ function walkTextFiles(root, onFile) {
     let entries;
     try {
       entries = fs.readdirSync(dirPath, { withFileTypes: true });
-    } catch (e) {
+    } catch {
       return;
     }
     for (const entry of entries) {
@@ -578,7 +578,7 @@ function walkTextFiles(root, onFile) {
         let content;
         try {
           content = fs.readFileSync(fullPath, 'utf-8');
-        } catch (e) {
+        } catch {
           continue;
         }
         onFile(fullPath, content);
@@ -691,7 +691,7 @@ ipcMain.handle('wikilink:resolve', (event, { root, target }) => {
     let entries;
     try {
       entries = fs.readdirSync(dirPath, { withFileTypes: true });
-    } catch (e) {
+    } catch {
       return;
     }
     for (const entry of entries) {
@@ -790,7 +790,7 @@ ipcMain.handle('pdf:pickFiles', async (event, { multi }) => {
 ipcMain.handle('pdf:readBytes', (event, filePath) => {
   try {
     return fs.readFileSync(filePath).toString('base64');
-  } catch (e) {
+  } catch {
     return null;
   }
 });
@@ -807,7 +807,7 @@ ipcMain.handle('pdf:saveBytes', async (event, { base64, defaultName }) => {
 ipcMain.handle('docx:readBytes', (event, filePath) => {
   try {
     return fs.readFileSync(filePath).toString('base64');
-  } catch (e) {
+  } catch {
     return null;
   }
 });
@@ -819,7 +819,7 @@ ipcMain.handle('docx:readBytes', (event, filePath) => {
 ipcMain.handle('asset:readBytes', (event, filePath) => {
   try {
     return fs.readFileSync(filePath).toString('base64');
-  } catch (e) {
+  } catch {
     return null;
   }
 });
@@ -856,7 +856,7 @@ function getKatexCssInlined() {
         return `url(data:font/woff2;base64,${b64}) format('woff2')`;
       }
     );
-  } catch (e) {
+  } catch {
     cachedKatexCss = '';
   }
   return cachedKatexCss;
@@ -964,7 +964,7 @@ ipcMain.handle('export:epub', async (event, { chapters, images, coverPath, title
       manifestItems.push('<item id="cover-page" href="cover.xhtml" media-type="application/xhtml+xml"/>');
       spineItems.push('<itemref idref="cover-page"/>');
       navPoints.push(`<navPoint id="cover-page" playOrder="${playOrder++}"><navLabel><text>Portada</text></navLabel><content src="cover.xhtml"/></navPoint>`);
-    } catch (e) {
+    } catch {
       // Portada ilegible: seguimos sin ella en vez de abortar todo el export.
     }
   }
@@ -974,7 +974,7 @@ ipcMain.handle('export:epub', async (event, { chapters, images, coverPath, title
       imagesFolder.file(img.filename, fs.readFileSync(img.path));
       const ext = (img.filename.split('.').pop() || 'png').toLowerCase();
       manifestItems.push(`<item id="image-content-${i}" href="images/${img.filename}" media-type="${imageMediaType(ext)}"/>`);
-    } catch (e) {
+    } catch {
       // Imagen puntual no encontrada/ilegible: ese capítulo queda con una
       // imagen rota, no aborta el resto del libro.
     }
@@ -1111,7 +1111,7 @@ ipcMain.handle('git:stageHunks', async (event, { root, patch }) => {
   const tmpPatch = path.join(os.tmpdir(), `mk-hunks-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.patch`);
   fs.writeFileSync(tmpPatch, patch, 'utf-8');
   const result = await runGit(['apply', '--cached', '--whitespace=nowarn', tmpPatch], root);
-  try { fs.unlinkSync(tmpPatch); } catch (e) { /* best-effort, no bloquea el resultado */ }
+  try { fs.unlinkSync(tmpPatch); } catch { /* best-effort, no bloquea el resultado */ }
   return result.error ? { ok: false, reason: 'apply-failed', detail: result.stderr } : { ok: true };
 });
 

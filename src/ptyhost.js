@@ -70,7 +70,7 @@ function killTerm(id) {
   clearTimeout(t.flushTimer);
   try {
     t.proc.kill();
-  } catch (e) {
+  } catch {
     // ya había terminado
   }
 }
@@ -93,7 +93,7 @@ function registerTerminalIpc(ipcMain, getMainWindow) {
     let dir = os.homedir();
     try {
       if (cwd && fs.statSync(cwd).isDirectory()) dir = cwd;
-    } catch (e) {
+    } catch {
       // carpeta inexistente: se usa home
     }
     let proc;
@@ -136,7 +136,7 @@ function registerTerminalIpc(ipcMain, getMainWindow) {
     if (!t || !(cols > 1) || !(rows > 1)) return;
     try {
       t.proc.resize(cols | 0, rows | 0);
-    } catch (e) {
+    } catch {
       // el proceso pudo haber terminado entre medio
     }
   });

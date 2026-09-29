@@ -78,9 +78,10 @@ async function renderContent(filePath) {
       return;
     }
     try {
+      await window.mdLoadLib('mammoth');
       const result = await mammoth.convertToHtml({ arrayBuffer: base64ToArrayBuffer(base64) });
       bodyEl.innerHTML = DOMPurify.sanitize(result.value);
-    } catch (e) {
+    } catch {
       bodyEl.textContent = 'Ese archivo no parece ser un .docx válido.';
     }
     return;

@@ -65,7 +65,7 @@ function root() {
 function parseOptions(column) {
   try {
     return column && column.options ? JSON.parse(column.options) : {};
-  } catch (e) {
+  } catch {
     return {};
   }
 }
@@ -73,7 +73,7 @@ function parseOptions(column) {
 function parseView(view) {
   try {
     return view && view.config ? JSON.parse(view.config) : {};
-  } catch (e) {
+  } catch {
     return {};
   }
 }
@@ -83,7 +83,7 @@ function parseJsonArray(value) {
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
+  } catch {
     return [];
   }
 }
@@ -170,7 +170,7 @@ function evalFormula(column, row, columns, ctx) {
   try {
     const fn = new Function('prop', 'Math', '"use strict"; return (' + expr + ');');
     return fn(propFn, Math);
-  } catch (e) {
+  } catch {
     return '#ERROR';
   }
 }

@@ -53,9 +53,8 @@ function notifyPhaseEnd(endedPhase, nextMinutes) {
     const body = endedPhase === 'focus'
       ? `Arrancó un descanso de ${nextMinutes} min.`
       : `Arrancó un nuevo ciclo de foco de ${nextMinutes} min.`;
-    // eslint-disable-next-line no-new
     new Notification(title, { body });
-  } catch (e) {
+  } catch {
     // Notification puede no estar disponible/permitida en algunos entornos
     // (ej. la suite de tests) — no tiene que romper el temporizador.
   }

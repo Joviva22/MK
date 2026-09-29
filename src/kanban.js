@@ -213,7 +213,7 @@ async function render() {
       let ref;
       try {
         ref = JSON.parse(e.dataTransfer.getData(KANBAN_DRAG_MIME));
-      } catch (err) {
+      } catch {
         return;
       }
       if (typeof ref === 'number') ref = { line: ref }; // formato viejo: solo la línea

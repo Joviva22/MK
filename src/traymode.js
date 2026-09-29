@@ -98,7 +98,7 @@ function setupTray({ getWindow, iconPath, ipcMain, isTestMode }) {
       { label: 'Salir de MK', click: () => { quitting = true; app.quit(); } }
     ]));
     tray.on('click', () => showWindow(getWindow()));
-  } catch (e) {
+  } catch {
     tray = null; // escritorio sin bandeja: igual se puede volver abriendo MK de nuevo
   }
 }
@@ -119,7 +119,7 @@ function attachWindow(win, { loadConfig, saveConfig, isTestMode }) {
           title: 'MK sigue abierto en la bandeja',
           body: 'Así tus recordatorios siguen sonando. Para salir: menú de la bandeja → Salir, o Ctrl+Q. Se puede cambiar en Ajustes.'
         }).show();
-      } catch (e) {
+      } catch {
         // sin servidor de notificaciones: no pasa nada
       }
     }

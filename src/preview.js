@@ -97,16 +97,65 @@ function extractMath(text) {
   return { text: out, store };
 }
 
-function restoreMath(html, store) {
-  return html.replace(/@@MATHBLOCK(\d+)@@/g, (match, idx) => {
-    const item = store[Number(idx)];
-    if (!item) return match;
+// KaTeX es lo más caro del render (medido: ~180 ms para 400 fórmulas en
+// una nota): se cachea por expresión, así al escribir solo se recalculan
+// las fórmulas que cambiaron.
+const katexCache = new Map();
+
+function renderKatexCached(expr, display) {
+  const key = (display ? 'D' : 'I') + expr;
+  let html = katexCache.get(key);
+  if (html === undefined) {
     try {
-      return katex.renderToString(item.expr, { throwOnError: false, displayMode: item.display });
-    } catch (e) {
-      return item.expr;
+      html = katex.renderToString(expr, { throwOnError: false, displayMode: display });
+    } catch {
+      html = escapeHtml(expr); // nunca HTML crudo del usuario
     }
+    if (katexCache.size > 2000) katexCache.delete(katexCache.keys().next().value);
+    katexCache.set(key, html);
+  }
+  return html;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+const MATH_RE = /@@MATHBLOCK(\d+)@@/g;
+
+// Inserta las fórmulas en HTML YA sanitizado, recorriendo el DOM: en nodos
+// de texto va el HTML de KaTeX (seguro: trust:false escapa lo del usuario);
+// si un marcador quedó dentro de un atributo (ej. la URL de un enlace), va
+// solo el texto de la fórmula — nunca markup dentro de un atributo.
+// Así DOMPurify no tiene que revisar el HTML enorme de KaTeX (era ~la
+// mitad del tiempo de render) sin abrir un hueco de seguridad.
+function injectMath(sanitizedHtml, store) {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = sanitizedHtml;
+  if (!store.length || !sanitizedHtml.includes('@@MATHBLOCK')) return tpl.content;
+  const walker = document.createTreeWalker(tpl.content, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (n.nodeType === Node.TEXT_NODE) {
+      if (n.nodeValue.includes('@@MATHBLOCK')) textNodes.push(n);
+    } else {
+      Array.from(n.attributes).forEach((a) => {
+        if (a.value.includes('@@MATHBLOCK')) {
+          n.setAttribute(a.name, a.value.replace(MATH_RE, (m, i) => (store[Number(i)] ? store[Number(i)].expr : m)));
+        }
+      });
+    }
+  }
+  textNodes.forEach((node) => {
+    const html = escapeHtml(node.nodeValue).replace(MATH_RE, (m, i) => {
+      const item = store[Number(i)];
+      return item ? renderKatexCached(item.expr, item.display) : m;
+    });
+    const frag = document.createElement('template');
+    frag.innerHTML = html;
+    node.replaceWith(frag.content);
   });
+  return tpl.content;
 }
 
 const CALLOUT_ICONS = { NOTE: '💡', TIP: '💡', WARNING: '⚠️', IMPORTANT: '❗', CAUTION: '🔥' };
@@ -138,8 +187,10 @@ function renderMarkdownForExport(markdownText, filePath, root) {
   let html = marked.parse(text);
   html = transformCallouts(html);
   html = resolveAssetPaths(html, filePath, root);
-  html = restoreMath(html, store);
-  return DOMPurify.sanitize(html, SANITIZE_CONFIG);
+  // Fórmulas después de sanitizar (ver injectMath).
+  const wrap = document.createElement('div');
+  wrap.appendChild(injectMath(DOMPurify.sanitize(html, SANITIZE_CONFIG), store));
+  return wrap.innerHTML;
 }
 window.mdRenderMarkdownForExport = renderMarkdownForExport;
 
@@ -240,7 +291,13 @@ function embedMermaidNodeImages(container) {
 
 function renderMermaidBlocks() {
   const blocks = Array.from(previewPane.querySelectorAll('pre code.language-mermaid'));
-  if (!blocks.length || !window.mermaid) return;
+  if (!blocks.length) return;
+  if (!window.mermaid) {
+    // Mermaid (3,5 MB) se carga recién cuando una nota tiene un diagrama:
+    // al terminar se vuelve a dibujar el preview, ya con los diagramas.
+    window.mdLoadLib('mermaid').then(() => { if (window.renderPreview) window.renderPreview(); }).catch(() => {});
+    return;
+  }
   window.mermaid.initialize({ startOnLoad: false, theme: mermaidTheme(), securityLevel: 'strict' });
   const divs = blocks.map((code) => {
     const div = document.createElement('div');
@@ -253,7 +310,7 @@ function renderMermaidBlocks() {
     window.mermaid.run({ nodes: previewPane.querySelectorAll('.mermaid') }).then(() => {
       divs.forEach((div) => embedMermaidNodeImages(div));
     });
-  } catch (e) {
+  } catch {
     // sintaxis de diagrama inválida: mermaid ya deja su propio mensaje de error adentro del div
   }
 }
@@ -383,8 +440,8 @@ function render() {
   let html = marked.parse(text);
   html = transformCallouts(html);
   html = resolveAssetPaths(html);
-  html = restoreMath(html, store);
-  previewPane.innerHTML = DOMPurify.sanitize(html, SANITIZE_CONFIG);
+  // Fórmulas después de sanitizar (ver injectMath).
+  previewPane.replaceChildren(injectMath(DOMPurify.sanitize(html, SANITIZE_CONFIG), store));
   markMissingAssets();
   renderMermaidBlocks();
   highlightCode();
@@ -478,10 +535,33 @@ window.showImagePreview = function (filePath) {
 };
 
 let debounceTimer = null;
+// Con el preview oculto (modo enfoque, Live Preview, archivo de código)
+// no tiene sentido redibujarlo en cada pausa al escribir: se marca como
+// desactualizado y se dibuja cuando vuelve a hacer falta (ensureFresh:
+// cambiar de modo, exportar, abrir el índice).
+let stale = false;
+
+function previewVisible() {
+  return previewPane.offsetParent !== null;
+}
+
+function ensureFresh() {
+  if (!stale) return;
+  stale = false;
+  clearTimeout(debounceTimer);
+  render();
+}
+
 window.mdCodeMirror.on('change', () => {
   clearTimeout(debounceTimer);
+  if (!previewVisible()) {
+    stale = true;
+    return;
+  }
   debounceTimer = setTimeout(render, 150);
 });
+
+window.mdPreview = { ensureFresh, isStale: () => stale };
 
 render();
 

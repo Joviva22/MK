@@ -30,6 +30,7 @@ function getKatexCss() {
 }
 
 async function buildStandaloneHtml() {
+  if (window.mdPreview) window.mdPreview.ensureFresh();
   const bodyHtml = document.getElementById('preview-pane').innerHTML;
   const hasMath = /class="katex/.test(bodyHtml);
   const katexCss = hasMath ? await getKatexCss() : '';
@@ -60,6 +61,7 @@ function imageMapToList(imageMap) {
 }
 
 function isPreviewExportable() {
+  if (window.mdPreview) window.mdPreview.ensureFresh(); // el preview pudo quedar sin dibujar (modo enfoque)
   if (document.getElementById('preview-pane').classList.contains('pdf-mode')) {
     alert('No se puede exportar una vista de PDF, cambiá a un documento Markdown/LaTeX primero.');
     return false;

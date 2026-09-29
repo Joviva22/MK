@@ -56,6 +56,7 @@ function renderToc() {
 }
 
 function toggleToc() {
+  if (window.mdPreview) window.mdPreview.ensureFresh();
   tocPanel.hidden = !tocPanel.hidden;
   if (!tocPanel.hidden) renderToc();
 }

@@ -304,12 +304,12 @@ async function loadFormFields() {
           const sel = kind === 'radio' ? f.getSelected() : (f.getSelected() || [])[0];
           entry.value = sel || '';
         }
-      } catch (e) {
+      } catch {
         entry.value = '';
       }
       formFields.push(entry);
     });
-  } catch (e) {
+  } catch {
     formFields = [];
   }
   renderFormPanel();
@@ -377,7 +377,7 @@ async function loadFromPath(filePath) {
   texts = {};
   try {
     pdfDoc = await window.pdfjsLib.getDocument({ data: originalBytes.slice() }).promise;
-  } catch (e) {
+  } catch {
     alert('Ese archivo no parece ser un PDF válido.');
     return;
   }
@@ -397,7 +397,7 @@ function drawableText(font, text) {
     try {
       font.encodeText(ch);
       return ch;
-    } catch (e) {
+    } catch {
       return '?';
     }
   }).join('');
@@ -468,13 +468,13 @@ async function buildPdf() {
         } else if (kind === 'dropdown' || kind === 'list') {
           field.clear();
         }
-      } catch (e) {
+      } catch {
         // un campo raro no tiene que impedir guardar el resto
       }
     });
     try {
       form.updateFieldAppearances(font);
-    } catch (e) {
+    } catch {
       // se guardan los valores aunque no se pueda regenerar la apariencia
     }
   }

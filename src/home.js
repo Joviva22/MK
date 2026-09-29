@@ -502,7 +502,7 @@ function fireReminder(r) {
   try {
     const n = new Notification(`🔔 ${r.snoozed ? '(pospuesto) ' : ''}${r.title}`, { body: r.body });
     n.onclick = () => openSource(r.source);
-  } catch (e) {
+  } catch {
     // Notification puede no estar disponible en algunos entornos
   }
   showReminderToast(r);
@@ -550,7 +550,7 @@ async function loadDbReminders() {
         try {
           const o = JSON.parse(c.options || '{}');
           return Array.isArray(o.reminders) && o.reminders.length;
-        } catch (e) {
+        } catch {
           return false;
         }
       });
@@ -573,7 +573,7 @@ async function loadDbReminders() {
         });
       });
     }
-  } catch (e) {
+  } catch {
     return; // si falla la lectura, se mantienen los de la vuelta anterior
   }
   dbReminderItems = items;
@@ -613,7 +613,7 @@ async function loadDbItems() {
         });
       });
     }
-  } catch (e) {
+  } catch {
     dbItems = [];
   }
 }
@@ -663,7 +663,7 @@ async function loadNoteItems() {
   try {
     const files = await window.mdEditor.kanbanReadFolderFiles(root);
     files.forEach((f) => { noteItems.push(...parseNoteTasks(f.path, f.content)); });
-  } catch (e) {
+  } catch {
     noteItems = [];
   }
 }
@@ -745,7 +745,7 @@ async function noteNames() {
   });
   try {
     walk(await window.mdEditor.readFolder(root));
-  } catch (e) {
+  } catch {
     return [];
   }
   return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));

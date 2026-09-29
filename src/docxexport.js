@@ -17,7 +17,19 @@
 // quedan como texto literal, no hay forma razonable de "renderizarlos" en
 // un .docx).
 
-const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, Table, TableRow, TableCell, WidthType, ExternalHyperlink, LevelFormat, AlignmentType } = docx;
+// La librería docx (1,1 MB) se carga recién al exportar (lazyload.js):
+// estos nombres se completan en loadDocxLib().
+let Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, Table, TableRow, TableCell, WidthType, ExternalHyperlink, LevelFormat, AlignmentType;
+
+async function loadDocxLib() {
+  if (Document) return;
+  await window.mdLoadLib('docx');
+  ({ Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, Table, TableRow, TableCell, WidthType, ExternalHyperlink, LevelFormat, AlignmentType } = docx);
+  HEADING_MAP = {
+    h1: HeadingLevel.HEADING_1, h2: HeadingLevel.HEADING_2, h3: HeadingLevel.HEADING_3,
+    h4: HeadingLevel.HEADING_4, h5: HeadingLevel.HEADING_5, h6: HeadingLevel.HEADING_6
+  };
+}
 
 // Definiciones de numeración real para las listas ordenadas del documento
 // actual (se resetean en cada exportToDocx). Cada <ol> —top-level o
@@ -83,7 +95,7 @@ async function resolveImageRun(imgEl) {
   const height = Math.round(size.height * (width / size.width));
   try {
     return new ImageRun({ type, data: bytes, transformation: { width, height } });
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -124,10 +136,8 @@ async function inlineRunsFromNode(node, opts = {}) {
   return parts;
 }
 
-const HEADING_MAP = {
-  h1: HeadingLevel.HEADING_1, h2: HeadingLevel.HEADING_2, h3: HeadingLevel.HEADING_3,
-  h4: HeadingLevel.HEADING_4, h5: HeadingLevel.HEADING_5, h6: HeadingLevel.HEADING_6
-};
+// Se arma después de cargar la librería (loadDocxLib).
+let HEADING_MAP = {};
 
 async function listToParagraphs(el, level, ordered) {
   const out = [];
@@ -234,6 +244,7 @@ async function buildDocxParagraphs(html) {
 }
 
 async function exportToDocx() {
+  await loadDocxLib();
   numberingConfigs = [];
   numberingCounter = 0;
   const raw = window.mdCodeMirror.getValue();

@@ -125,7 +125,7 @@ contextBridge.exposeInMainWorld('mdEditor', {
     try {
       const result = language && hljs.getLanguage(language) ? hljs.highlight(code, { language }) : hljs.highlightAuto(code);
       return result.value;
-    } catch (e) {
+    } catch {
       return null;
     }
   }

@@ -26,6 +26,7 @@ function setLayoutMode(mode, opts) {
     if (mode === 'live') window.mdLivePreview.enable(); else window.mdLivePreview.disable();
   }
   updateFocusButtonTitle();
+  if (window.mdPreview) window.mdPreview.ensureFresh(); // si se escribió con el preview oculto
   pdfForcedReadMode = !!(opts && opts.forcedByPdf);
   if (window.mdCodeMirror) window.mdCodeMirror.refresh();
 }

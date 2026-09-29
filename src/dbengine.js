@@ -136,7 +136,7 @@ function uid() {
 function parseColumnOptions(column) {
   try {
     return column && column.options ? JSON.parse(column.options) : {};
-  } catch (e) {
+  } catch {
     return {};
   }
 }
