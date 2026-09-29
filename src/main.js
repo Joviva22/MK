@@ -1,12 +1,14 @@
 const { app, BrowserWindow, Menu, ipcMain, protocol, net, shell, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { Readable } = require('stream');
 const { registerDatabaseIpc } = require('./dbengine');
 const { registerTerminalIpc, killAllTerminals } = require('./ptyhost');
 const trayMode = require('./traymode');
 const ctx = require('./mainctx');
 const errlog = require('./errlog');
+const guard = require('./pathguard');
 
 const APP_ICON = path.join(__dirname, '..', 'build', 'icon.png');
 // Nombre visible "MK" (notificaciones, etc.). OJO: setName también cambia
@@ -66,6 +68,7 @@ function getFileArgFromArgv(argv) {
 let pendingFilePath = getFileArgFromArgv(process.argv);
 
 function sendOpenExternalFile(filePath) {
+  guard.grantFile(filePath); // lo pidió el usuario (argumento / "Abrir con")
   if (mainWindow) mainWindow.webContents.send('open-external-file', filePath);
 }
 
@@ -102,6 +105,12 @@ ctx.saveConfig = saveConfig;
 // dentro de la propia ventana vía executeJavaScript y sale con código 0/1.
 const isTestMode = ctx.isTestMode;
 const testFixturesDir = process.env.MK_TEST_FIXTURES || '';
+guard.setOnDenied((what, p) => errlog.logError('ruta-no-autorizada', `${what}: ${p}`));
+// Tests: los fixtures y los temporales cuentan como abiertos por el usuario.
+if (isTestMode) {
+  if (testFixturesDir) guard.grantDir(testFixturesDir);
+  guard.grantDir(os.tmpdir());
+}
 
 function createWindow() {
   mainWindow = ctx.mainWindow = new BrowserWindow({
@@ -214,7 +223,7 @@ ipcMain.handle('window:toggleFullscreen', () => {
 // "Abrir con la aplicación del sistema" (formatos que MK no muestra, o el
 // usuario lo prefiere): solo archivos existentes; nunca ejecutables.
 ipcMain.handle('shell:openPath', async (event, filePath) => {
-  if (typeof filePath !== 'string' || isTestMode) return;
+  if (typeof filePath !== 'string' || isTestMode || !guard.check(filePath, 'shell:openPath')) return;
   try {
     const st = fs.statSync(filePath);
     if (!st.isFile() || (st.mode & 0o111) !== 0) return; // no abrir binarios ejecutables
@@ -247,9 +256,13 @@ function homeFileFor(root) {
   return root ? path.join(root, '.mk', 'home.json') : homePath;
 }
 
-ipcMain.handle('home:load', (event, root) => errlog.readJsonSafe(homeFileFor(root), null));
+ipcMain.handle('home:load', (event, root) => {
+  if (root && !guard.check(root, 'home:load')) return null;
+  return errlog.readJsonSafe(homeFileFor(root), null);
+});
 
 ipcMain.handle('home:save', (event, data, root) => {
+  if (root && !guard.check(root, 'home:save')) return false;
   const file = homeFileFor(root);
   try {
     // Atómico: si se corta a mitad (apagón, cierre forzado) no queda un
@@ -262,7 +275,21 @@ ipcMain.handle('home:save', (event, data, root) => {
   }
 });
 
-ipcMain.handle('session:load', () => errlog.readJsonSafe(sessionPath, null));
+// Las pestañas de la sesión anterior se vuelven a abrir: sus archivos
+// cuentan como abiertos por el usuario.
+ipcMain.handle('session:load', () => {
+  const data = errlog.readJsonSafe(sessionPath, null);
+  if (data && Array.isArray(data.tabs)) data.tabs.forEach((t) => { if (t && t.filePath) guard.grantFile(t.filePath); });
+  return data;
+});
+
+// Archivo arrastrado desde el sistema (preload: getPathForFile solo da una
+// ruta para un File real de un drop/selector, no se puede inventar desde la
+// página). Síncrono para que la lectura que sigue ya esté autorizada.
+ipcMain.on('pathguard:dropped', (event, filePath) => {
+  if (typeof filePath === 'string' && filePath) guard.grantFile(filePath);
+  event.returnValue = true;
+});
 
 // Errores del renderer que valen la pena (ver window.mdLogError en preload).
 ipcMain.handle('log:error', (event, where, message) => errlog.logError(`renderer:${String(where).slice(0, 80)}`, String(message).slice(0, 4000)));
@@ -282,7 +309,7 @@ require('./ipc-files'); // abrir/guardar, historial, árbol, vigilancia e índic
 require('./ipc-notes'); // búsqueda, etiquetas, wikilinks, backlinks, grafo, Kanban de carpeta
 require('./ipc-export'); // CSV, PDF, docx, HTML, EPUB, Anki
 require('./ipc-system'); // git y reproductor del sistema (playerctl)
-registerDatabaseIpc(ipcMain, (channel, e) => ctx.reportError(channel, e, 'Error en la base de datos: el último cambio pudo no guardarse.'));
+registerDatabaseIpc(ipcMain, (root) => guard.check(root, 'db'), (channel, e) => ctx.reportError(channel, e, 'Error en la base de datos: el último cambio pudo no guardarse.'));
 registerTerminalIpc(ipcMain, () => mainWindow);
 
 const MEDIA_MIME = {
@@ -322,6 +349,9 @@ function serveRange(filePath, rangeHeader) {
 app.whenReady().then(() => {
   protocol.handle('md-local', (request) => {
     const filePath = decodeURIComponent(new URL(request.url).pathname);
+    // Solo archivos de lo que el usuario abrió (ver pathguard.js): antes un
+    // .md podía pedir cualquier archivo del disco con md-local://.
+    if (!guard.check(filePath, 'md-local')) return new Response('No autorizado', { status: 403 });
     // Video y audio piden el archivo "por rangos" (Range: bytes=…) para
     // poder adelantar/retroceder sin leerlo entero; net.fetch(file://) no
     // los respetaba, y en archivos largos no se podía saltar a otra parte.

@@ -142,7 +142,11 @@ contextBridge.exposeInMainWorld('mdEditor', {
   joinPath: (...parts) => path.join(...parts),
   relativePath: (fromFile, toPath) => path.relative(path.dirname(fromFile), toPath),
   relativeToRoot: (root, filePath) => path.relative(root, filePath),
-  getPathForFile: (file) => webUtils.getPathForFile(file),
+  getPathForFile: (file) => {
+    const p = webUtils.getPathForFile(file);
+    if (p) ipcRenderer.sendSync('pathguard:dropped', p); // arrastrado por el usuario: autorizar
+    return p;
+  },
   // El módulo clipboard ya no existe en el preload (Electron 40+): pasa por
   // el proceso principal. Leer devuelve una promesa.
   clipboardWriteText: (text) => ipcRenderer.invoke('clipboard:writeText', text),

@@ -13,6 +13,7 @@ const os = require('os');
 const crypto = require('crypto');
 const JSZip = require('jszip');
 const ctx = require('./mainctx');
+const guard = require('./pathguard');
 
 // CSV de las bases de datos (ver database.js): el renderer arma/parsea el
 // texto, acá solo los diálogos y el disco.
@@ -48,10 +49,12 @@ ipcMain.handle('pdf:pickFiles', async (event, { multi }) => {
     properties: multi ? ['openFile', 'multiSelections'] : ['openFile']
   });
   if (result.canceled || !result.filePaths.length) return null;
+  result.filePaths.forEach(guard.grantFile); // elegidos por el usuario
   return result.filePaths;
 });
 
 ipcMain.handle('pdf:readBytes', async (event, filePath) => {
+  if (!guard.check(filePath, 'pdf:readBytes')) return null;
   try {
     return (await fsp.readFile(filePath)).toString('base64');
   } catch {
@@ -69,6 +72,7 @@ ipcMain.handle('pdf:saveBytes', async (event, { base64, defaultName }) => {
 // Abrir .docx (ver docximport.js): mammoth+turndown corren en el renderer,
 // acá solo se leen los bytes crudos, igual separación que pdf:readBytes.
 ipcMain.handle('docx:readBytes', async (event, filePath) => {
+  if (!guard.check(filePath, 'docx:readBytes')) return null;
   try {
     return (await fsp.readFile(filePath)).toString('base64');
   } catch {
@@ -81,6 +85,7 @@ ipcMain.handle('docx:readBytes', async (event, filePath) => {
 // restricción de ruta (no salir de la carpeta abierta) la valida el
 // renderer antes de llamar esto, igual que con las imágenes normales.
 ipcMain.handle('asset:readBytes', async (event, filePath) => {
+  if (!guard.check(filePath, 'asset:readBytes')) return null;
   try {
     return (await fsp.readFile(filePath)).toString('base64');
   } catch {
@@ -214,7 +219,7 @@ ipcMain.handle('export:epub', async (event, { chapters, images, coverPath, title
   let playOrder = 1;
   let coverId = null;
 
-  if (coverPath) {
+  if (coverPath && guard.check(coverPath, 'export:epub')) {
     try {
       const ext = (coverPath.split('.').pop() || 'jpg').toLowerCase().replace('jpeg', 'jpg');
       const coverFilename = `cover.${ext}`;
@@ -234,6 +239,7 @@ ipcMain.handle('export:epub', async (event, { chapters, images, coverPath, title
   }
 
   (images || []).forEach((img, i) => {
+    if (!guard.check(img.path, 'export:epub')) return;
     try {
       imagesFolder.file(img.filename, fs.readFileSync(img.path));
       const ext = (img.filename.split('.').pop() || 'png').toLowerCase();
@@ -300,6 +306,7 @@ ipcMain.handle('epub:pickCover', async () => {
     properties: ['openFile']
   });
   if (result.canceled || !result.filePaths.length) return null;
+  guard.grantFile(result.filePaths[0]);
   return result.filePaths[0];
 });
 

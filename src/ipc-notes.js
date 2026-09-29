@@ -9,6 +9,7 @@
 const { ipcMain } = require('electron');
 const path = require('path');
 const { folderIndex } = require('./ipc-files');
+const guard = require('./pathguard');
 
 const SEARCH_MAX_RESULTS = 200;
 
@@ -27,7 +28,7 @@ function walkTextFiles(root, onFile) {
 // las columnas con el mismo parseColumns que ya usa en modo archivo activo
 // — la lógica de "## Columna" + lista queda en un solo lugar.
 ipcMain.handle('kanban:readFolderFiles', async (event, root) => {
-  if (!root) return [];
+  if (!root || !guard.check(root, 'kanban')) return [];
   const files = [];
   await walkTextFiles(root, (fullPath, content) => {
     files.push({ path: fullPath, content });
@@ -36,7 +37,7 @@ ipcMain.handle('kanban:readFolderFiles', async (event, root) => {
 });
 
 ipcMain.handle('search:inFolder', async (event, { root, query }) => {
-  if (!root || !query || query.trim().length < 2) return [];
+  if (!root || !query || query.trim().length < 2 || !guard.check(root, 'search')) return [];
   const q = query.toLowerCase();
   const results = [];
 
@@ -73,7 +74,7 @@ function stripCodeForScan(text) {
 const TAG_RE = /(^|[\s(])#([a-zA-Z][\w-]*)/g;
 
 ipcMain.handle('tags:list', async (event, root) => {
-  if (!root) return [];
+  if (!root || !guard.check(root, 'tags')) return [];
   const counts = new Map();
   await walkTextFiles(root, (fullPath, content) => {
     const scanText = stripCodeForScan(content);
@@ -90,7 +91,7 @@ ipcMain.handle('tags:list', async (event, root) => {
 });
 
 ipcMain.handle('wikilink:resolve', async (event, { root, target }) => {
-  if (!root || !target) return null;
+  if (!root || !target || !guard.check(root, 'wikilink')) return null;
   const wanted = target.trim().toLowerCase();
   const list = await folderIndex.files(root);
   return list.find((f) => path.basename(f, path.extname(f)).toLowerCase() === wanted) || null;
@@ -99,7 +100,7 @@ ipcMain.handle('wikilink:resolve', async (event, { root, target }) => {
 const WIKILINK_RE = /\[\[([^\]|#]+)(?:\|[^\]]+)?\]\]/g;
 
 ipcMain.handle('backlinks:list', async (event, { root, target }) => {
-  if (!root || !target) return [];
+  if (!root || !target || !guard.check(root, 'backlinks')) return [];
   const wanted = target.trim().toLowerCase();
   const results = [];
   await walkTextFiles(root, (fullPath, content) => {
@@ -126,7 +127,7 @@ ipcMain.handle('backlinks:list', async (event, { root, target }) => {
 // Nodos = archivos de texto de la carpeta; aristas = wikilinks resueltos
 // entre ellos (mismo criterio que wikilink:resolve, por nombre de archivo).
 ipcMain.handle('graph:build', async (event, root) => {
-  if (!root) return { nodes: [], edges: [] };
+  if (!root || !guard.check(root, 'graph')) return { nodes: [], edges: [] };
 
   const files = [];
   await walkTextFiles(root, (fullPath, content) => {

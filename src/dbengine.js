@@ -457,9 +457,12 @@ async function reorderViews(root, databaseId, orderedIds) {
 
 // onError(canal, error): cualquier fallo (disco lleno, base dañada) se
 // informa y registra; el error igual sigue hasta el renderer como antes.
-function registerDatabaseIpc(realIpcMain, onError) {
+// allowRoot(root): la carpeta de la base tiene que estar autorizada (ver
+// pathguard.js); si no, el IPC falla sin tocar el disco.
+function registerDatabaseIpc(realIpcMain, allowRoot, onError) {
   const ipcMain = {
     handle: (channel, fn) => realIpcMain.handle(channel, (e, args) => {
+      if (args && 'root' in args && allowRoot && !allowRoot(args.root)) throw new Error('Carpeta no autorizada');
       try {
         return fn(e, args);
       } catch (err) {

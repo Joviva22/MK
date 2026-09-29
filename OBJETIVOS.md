@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 68 de 114 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 69 de 114 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -114,7 +114,7 @@ La revisión concluye —y coincido— que ahora toca **consolidar más que aña
 
 **Prioridad alta**
 - [x] ~~**Bases de datos: guardado atómico**~~ (temporal + fsync + rename: un corte a mitad ya no deja el `.sqlite3` truncado) (2026-09-29)
-- [ ] **Validación de rutas central en el proceso principal**: hoy leer/guardar/crear/mover/borrar, bases de datos, git y `md-local://` aceptan cualquier ruta que mande la interfaz (`md-local://` sirve cualquier archivo del disco). Una sola función `assertAllowedPath` (carpeta abierta + archivos abiertos explícitamente por el usuario)
+- [x] ~~**Validación de rutas central en el proceso principal**~~ (`pathguard.js`: solo lo que el usuario abrió — carpeta, diálogos, arrastrar desde el sistema, argumentos, sesión; leer/guardar/crear/mover/borrar, `md-local://`, bases de datos, git, Home, búsqueda y exportar lo validan; intentos rechazados al log. Límite: la terminal integrada puede todo, la barrera contra una ventana comprometida es CSP + sandbox) (2026-09-29)
 - [x] ~~**Content Security Policy estricta** en `index.html`~~ (scripts solo archivos locales, nada inline; sin conexiones a internet; `'unsafe-eval'` solo por las fórmulas — pasarlas a un Worker lo quitaría. `cspwatch.js` + un test que falla ante cualquier violación) (2026-09-29)
 - [x] ~~**Activar `sandbox: true`**~~ (rutas con un helper POSIX propio en el preload, comparado con Node en un test; highlight.js en el proceso principal, asíncrono; exportar espera el resaltado) (2026-09-29)
 - [x] ~~**Registro local de errores**~~ (`userData/logs/mk.log` rotativo; guardar notas, Home y bases de datos avisan en pantalla si fallan; errores de JS no capturados al log; config/sesión/Home con escritura atómica y un JSON dañado se aparta en vez de pisarse) (2026-09-29)

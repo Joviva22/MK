@@ -12,6 +12,7 @@ const fs = require('fs');
 const fsp = fs.promises;
 const crypto = require('crypto');
 const ctx = require('./mainctx');
+const guard = require('./pathguard');
 const { createFolderWatcher } = require('./folderwatch');
 const { createFolderIndex } = require('./folderindex');
 
@@ -50,6 +51,7 @@ ipcMain.handle('file:open', async () => {
     properties: ['openFile']
   });
   if (result.canceled || result.filePaths.length === 0) return null;
+  guard.grantFile(result.filePaths[0]); // elegido por el usuario
   return result.filePaths[0];
 });
 
@@ -140,6 +142,9 @@ ipcMain.handle('file:save', async (event, { content, filePath, forceDialog }) =>
     });
     if (result.canceled || !result.filePath) return null;
     target = result.filePath;
+    guard.grantFile(target); // "Guardar como": elegido por el usuario
+  } else if (!guard.check(target, 'file:save')) {
+    return null;
   }
   const existed = await fsp.access(target).then(() => true, () => false);
   await makeBackup(target);
@@ -194,6 +199,7 @@ function looksBinary(buffer) {
 }
 
 ipcMain.handle('file:read', async (event, filePath) => {
+  if (!guard.check(filePath, 'file:read')) return null;
   try {
     const buffer = await fsp.readFile(filePath);
     if (looksBinary(buffer)) return { content: null, binary: true };
@@ -207,6 +213,7 @@ ipcMain.handle('folder:open', async () => {
   const result = await dialog.showOpenDialog(ctx.mainWindow, { properties: ['openDirectory'] });
   if (result.canceled || result.filePaths.length === 0) return null;
   const rootPath = result.filePaths[0];
+  guard.grantDir(rootPath);
   ctx.saveConfig({ ...ctx.loadConfig(), lastFolder: rootPath });
   return { rootPath, tree: await readTree(rootPath) };
 });
@@ -214,6 +221,7 @@ ipcMain.handle('folder:open', async () => {
 ipcMain.handle('folder:getLast', async () => {
   const { lastFolder } = ctx.loadConfig();
   if (!lastFolder) return null;
+  guard.grantDir(lastFolder);
   try {
     return { rootPath: lastFolder, tree: await readTree(lastFolder) };
   } catch {
@@ -221,7 +229,16 @@ ipcMain.handle('folder:getLast', async () => {
   }
 });
 
+// Abrir como raíz: una carpeta ya autorizada (o adentro), una que la
+// contiene (".." para subir) o la última usada. Cualquier otra, no.
 ipcMain.handle('folder:read', async (event, rootPath) => {
+  const { lastFolder } = ctx.loadConfig();
+  if (guard.isAllowed(rootPath) || guard.isAncestorOfGranted(rootPath) || (rootPath && rootPath === lastFolder)) {
+    guard.grantDir(rootPath);
+  } else {
+    guard.check(rootPath, 'folder:read'); // registra el intento
+    return null;
+  }
   try {
     return { rootPath, tree: await readTree(rootPath) };
   } catch {
@@ -247,6 +264,7 @@ ipcMain.handle('folder:watch', (event, rootPath) => {
     return { dirs: 0, limited: false };
   }
   if (folderWatcher.currentRoot() === rootPath) return { dirs: -1, limited: false }; // ya vigilada
+  if (!guard.check(rootPath, 'folder:watch')) return { error: 'Carpeta no autorizada.' };
   try {
     if (!fs.statSync(rootPath).isDirectory()) return { error: 'No es una carpeta.' };
   } catch {
@@ -275,6 +293,7 @@ ipcMain.handle('index:stats', () => folderIndex.stats());
 // tipo de dato distinto (DataTransfer propio vs. archivo nativo del SO).
 let dragIcon = null;
 ipcMain.on('sidebar:startFileDrag', (event, filePath) => {
+  if (!guard.check(filePath, 'sidebar:startFileDrag')) return;
   try {
     if (!dragIcon) {
       dragIcon = nativeImage.createFromPath(path.join(__dirname, '..', 'build', 'icon.png')).resize({ width: 24, height: 24 });
@@ -294,8 +313,11 @@ function isSafeEntryName(name) {
     !name.includes('/') && !name.includes('\\') && name !== '.' && name !== '..';
 }
 
+const DENIED = { error: 'Esa ubicación está fuera de la carpeta abierta.' };
+
 ipcMain.handle('fs:createFile', (event, { dirPath, name }) => {
   if (!isSafeEntryName(name)) return { error: 'Nombre inválido.' };
+  if (!guard.check(dirPath, 'fs:createFile')) return DENIED;
   const target = path.join(dirPath, name.trim());
   if (fs.existsSync(target)) return { error: 'Ya existe un archivo o carpeta con ese nombre.' };
   try {
@@ -309,6 +331,7 @@ ipcMain.handle('fs:createFile', (event, { dirPath, name }) => {
 
 ipcMain.handle('fs:createFolder', (event, { dirPath, name }) => {
   if (!isSafeEntryName(name)) return { error: 'Nombre inválido.' };
+  if (!guard.check(dirPath, 'fs:createFolder')) return DENIED;
   const target = path.join(dirPath, name.trim());
   if (fs.existsSync(target)) return { error: 'Ya existe un archivo o carpeta con ese nombre.' };
   try {
@@ -322,6 +345,7 @@ ipcMain.handle('fs:createFolder', (event, { dirPath, name }) => {
 
 ipcMain.handle('fs:rename', (event, { targetPath, newName }) => {
   if (!isSafeEntryName(newName)) return { error: 'Nombre inválido.' };
+  if (!guard.check(targetPath, 'fs:rename')) return DENIED;
   const dest = path.join(path.dirname(targetPath), newName.trim());
   if (fs.existsSync(dest)) return { error: 'Ya existe un archivo o carpeta con ese nombre.' };
   try {
@@ -342,6 +366,7 @@ function isInside(parent, child) {
 }
 
 ipcMain.handle('fs:move', (event, { sourcePath, destDir }) => {
+  if (!guard.check(sourcePath, 'fs:move') || !guard.check(destDir, 'fs:move')) return DENIED;
   if (isInside(sourcePath, destDir)) {
     return { error: 'No se puede mover una carpeta dentro de sí misma.' };
   }
@@ -360,6 +385,8 @@ ipcMain.handle('fs:move', (event, { sourcePath, destDir }) => {
 // Manda a la papelera del sistema (shell.trashItem) en vez de borrar directo
 // con fs.rmSync — así "Eliminar" desde el sidebar se puede deshacer.
 ipcMain.handle('fs:delete', async (event, { targetPath, isFolder }) => {
+  if (!guard.check(targetPath, 'fs:delete')) return DENIED;
+  if (guard._dirs.has(path.resolve(targetPath))) return { error: 'No se puede eliminar la carpeta abierta desde MK.' };
   try {
     await shell.trashItem(targetPath);
     return { ok: true };
@@ -378,6 +405,7 @@ ipcMain.handle('fs:delete', async (event, { targetPath, isFolder }) => {
 });
 
 ipcMain.handle('asset:copy', (event, { srcPath, targetDir }) => {
+  if (!guard.check(srcPath, 'asset:copy') || !guard.check(targetDir, 'asset:copy')) return null;
   try {
     fs.mkdirSync(targetDir, { recursive: true });
     const ext = path.extname(srcPath);

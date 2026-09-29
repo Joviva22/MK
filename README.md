@@ -137,4 +137,5 @@ MK/
 - `sandbox: true`: el preload solo usa módulos de Electron (rutas con un helper propio; highlight.js y el portapapeles van por el proceso principal).
 - Content Security Policy: solo scripts locales de MK, nada inline, sin conexiones a internet.
 - Assets locales se sirven vía protocolo custom `md-local://` (no `webSecurity: false`).
-- Con una carpeta abierta, las rutas de assets no pueden escapar de ella (bloquea `../../etc/passwd` y similares).
+- **Rutas validadas en el proceso principal** (`src/pathguard.js`): la ventana solo puede leer, escribir o borrar dentro de lo que el usuario abrió (la carpeta, archivos elegidos en diálogos, arrastrados o de la sesión). `md-local://` tampoco sirve archivos de afuera. Lo rechazado queda en `~/.config/md-editor-local/logs/mk.log`.
+- Límite conocido: la terminal integrada ejecuta lo que sea; la defensa contra una ventana comprometida es la CSP + sandbox + DOMPurify.

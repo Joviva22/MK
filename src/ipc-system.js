@@ -11,6 +11,7 @@ const fs = require('fs');
 const os = require('os');
 const crypto = require('crypto');
 const { execFile } = require('child_process');
+const guard = require('./pathguard');
 
 // Sincronización con git al guardar (opt-in, ver settings.js): solo actúa
 // si la carpeta ya es un repo git existente — nunca corre "git init" por
@@ -28,6 +29,8 @@ function runGitOnce(args, cwd) {
 // hace `git add`) chocan en .git/index.lock y el segundo falla con "Unable
 // to create ... index.lock: File exists". Es momentáneo: reintentar un poco.
 async function runGit(args, cwd) {
+  // Solo dentro de carpetas autorizadas (ver pathguard.js).
+  if (!guard.check(cwd, 'git')) return { error: new Error('Carpeta no autorizada'), stdout: '', stderr: 'Carpeta no autorizada' };
   let result;
   for (let attempt = 0; attempt < 6; attempt++) {
     result = await runGitOnce(args, cwd);

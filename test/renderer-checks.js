@@ -3598,6 +3598,47 @@
     check('Errores: guardar sin poder avisa (con el log) sin romper, y un JSON dañado se aparta en vez de pisarse', ok, detail);
   }
 
+  // Rutas: el proceso principal solo deja tocar lo que el usuario abrió
+  // (pathguard.js). Afuera: leer, crear, abrir como carpeta, md-local://,
+  // bases de datos y git se niegan; adentro (fixtures) todo sigue andando.
+  {
+    const outsideRead = await window.mdEditor.readFile('/etc/hostname');
+    const outsideCreate = await window.mdEditor.createFile('/etc', 'mk-no-deberia.md');
+    const outsideFolder = await window.mdEditor.readFolder('/usr/share');
+    // Una imagen de afuera no carga; una de adentro (fixtures) sí.
+    const loadImg = (p) => new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve('carga');
+      img.onerror = () => resolve('bloqueada');
+      img.src = window.mdEditor.toLocalUrl(p);
+    });
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4"/></svg>';
+    let insideImg = 'sin fixtures';
+    let outsideImg = 'sin fixtures';
+    if (fixturesDir) {
+      await window.mdEditor.saveFile(svg, window.mdEditor.joinPath(fixturesDir, 'guard-ok.svg'), false);
+      insideImg = await loadImg(window.mdEditor.joinPath(fixturesDir, 'guard-ok.svg'));
+      // El ícono de MK: una imagen real que existe en cualquier máquina y
+      // está fuera de lo autorizado (la carpeta del programa).
+      const appIcon = window.mdEditor.joinPath(window.mdEditor.dirName(decodeURIComponent(location.pathname)), '..', 'build', 'icon.png');
+      outsideImg = await loadImg(appIcon);
+    }
+    const mdLocalStatus = `${insideImg}/${outsideImg}`;
+    let dbDenied = false;
+    try {
+      await window.mdEditor.db.listDatabases('/usr/share');
+    } catch {
+      dbDenied = true;
+    }
+    const gitDenied = !(await window.mdEditor.isGitRepo('/usr/share'));
+    let insideOk = true;
+    if (fixturesDir) insideOk = !!(await window.mdEditor.readFolder(fixturesDir));
+    const ok = outsideRead === null && !!(outsideCreate && outsideCreate.error) && outsideFolder === null &&
+      mdLocalStatus === 'carga/bloqueada' && dbDenied && gitDenied && insideOk;
+    check('Rutas: afuera de lo abierto se niega (leer, crear, carpeta, md-local, base de datos, git); adentro funciona', ok,
+      `leer=${outsideRead === null} crear=${outsideCreate && outsideCreate.error} carpeta=${outsideFolder === null} md-local=${mdLocalStatus} db=${dbDenied} git=${gitDenied} adentro=${insideOk}`);
+  }
+
   // Sandbox: el preload usa su propio helper de rutas (sin require('path')).
   // Casos con el resultado de path de Node (generados con Node).
   {
