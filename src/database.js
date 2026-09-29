@@ -381,7 +381,7 @@ function renderViewTabs() {
 }
 
 function viewTypeIcon(type) {
-  return { table: '▤', board: '▥', gallery: '▦', calendar: '📅' }[type] || '▤';
+  return { table: '▤', board: '▥', gallery: '▦', calendar: '📅', chart: '📊' }[type] || '▤';
 }
 
 function openNewViewPopover(anchorEl) {
@@ -390,15 +390,17 @@ function openNewViewPopover(anchorEl) {
     title.className = 'database-popover-title';
     title.textContent = 'Nueva vista';
     pop.appendChild(title);
-    [['table', 'Tabla'], ['board', 'Tablero'], ['gallery', 'Galería'], ['calendar', 'Calendario']].forEach(([type, label]) => {
+    [['table', 'Tabla'], ['board', 'Tablero'], ['gallery', 'Galería'], ['calendar', 'Calendario'], ['chart', 'Gráfico']].forEach(([type, label]) => {
       const btn = document.createElement('button');
       btn.className = 'toolbar-button database-popover-row';
       btn.textContent = viewTypeIcon(type) + ' ' + label;
       btn.addEventListener('click', async () => {
         close();
         const firstDate = state.columns.find((c) => c.type === 'date');
+        const firstSelect = state.columns.find((c) => c.type === 'select');
         const config = type === 'board' ? { groupBy: defaultGroupableColumn() }
-          : type === 'calendar' ? { dateColumn: firstDate ? firstDate.id : null } : {};
+          : type === 'calendar' ? { dateColumn: firstDate ? firstDate.id : null }
+            : type === 'chart' ? { chartType: 'bar', groupBy: (firstSelect || firstDate || state.columns[0] || {}).id, measure: 'count', dateBucket: 'month' } : {};
         const view = await window.mdEditor.db.createView(root(), state.databaseId, { name: label, type, config });
         state.views = await window.mdEditor.db.listViews(root(), state.databaseId);
         state.viewId = view.id;
@@ -855,6 +857,7 @@ function renderView() {
   if (view.type === 'board') renderBoardView();
   else if (view.type === 'gallery') renderGalleryView();
   else if (view.type === 'calendar') renderCalendarView();
+  else if (view.type === 'chart') renderChartView();
   else renderTableView();
 }
 
@@ -1232,6 +1235,184 @@ function renderCalendarView() {
     grid.appendChild(cell);
   }
   viewBodyEl.appendChild(grid);
+}
+
+// ---- vista gráfico (agrupar por una columna, medir cantidad/suma/promedio) ----
+
+const DATE_BUCKETS = [['day', 'Día'], ['week', 'Semana'], ['month', 'Mes'], ['year', 'Año']];
+
+function bucketKey(iso, bucket) {
+  const [y, m, d] = iso.split('-').map(Number);
+  if (bucket === 'year') return String(y);
+  if (bucket === 'month') return `${y}-${String(m).padStart(2, '0')}`;
+  if (bucket === 'week') {
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() - ((date.getDay() + 6) % 7)); // lunes de esa semana
+    return isoDay(date);
+  }
+  return iso;
+}
+
+function bucketLabel(key, bucket) {
+  if (bucket === 'year') return key;
+  if (bucket === 'month') {
+    const [y, m] = key.split('-').map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+  }
+  const [y, m, d] = key.split('-').map(Number);
+  const label = new Date(y, m - 1, d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  return bucket === 'week' ? `sem. ${label}` : label;
+}
+
+// Todas las claves entre la primera y la última (los períodos sin datos
+// aparecen en 0 en vez de desaparecer: si no, el eje de tiempo miente).
+function fillBuckets(keys, bucket) {
+  if (!keys.length) return [];
+  const sorted = keys.slice().sort();
+  const out = [];
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  if (bucket === 'year') {
+    for (let y = Number(first); y <= Number(last); y++) out.push(String(y));
+  } else if (bucket === 'month') {
+    let [y, m] = first.split('-').map(Number);
+    const [ly, lm] = last.split('-').map(Number);
+    while (y < ly || (y === ly && m <= lm)) {
+      out.push(`${y}-${String(m).padStart(2, '0')}`);
+      m++;
+      if (m > 12) { m = 1; y++; }
+    }
+  } else {
+    const step = bucket === 'week' ? 7 : 1;
+    const [y, m, d] = first.split('-').map(Number);
+    const cur = new Date(y, m - 1, d);
+    while (isoDay(cur) <= last && out.length < 800) {
+      out.push(isoDay(cur));
+      cur.setDate(cur.getDate() + step);
+    }
+  }
+  return out;
+}
+
+// Claves de grupo de una fila para la columna elegida (multiselección puede
+// dar varias: la fila cuenta en cada una de sus etiquetas).
+function groupKeysFor(col, row, bucket) {
+  const kind = columnKind(col);
+  if (kind === 'date') {
+    const v = comparableValue(col, row);
+    return v ? [bucketKey(v, bucket)] : ['(sin fecha)'];
+  }
+  if (kind === 'checkbox') return [comparableValue(col, row) ? 'Sí' : 'No'];
+  const v = cellDisplayValue(col, row, state.columns);
+  if (Array.isArray(v)) return v.length ? v.map(String) : ['(vacío)'];
+  const text = displayText(v);
+  return [text || '(vacío)'];
+}
+
+function chartData(cfg) {
+  const col = findColumn(state.columns, cfg.groupBy);
+  if (!col) return { data: [], time: false };
+  const measureCol = findColumn(state.columns, cfg.valueCol);
+  const measure = measureCol && cfg.measure !== 'count' ? cfg.measure : 'count';
+  const bucket = cfg.dateBucket || 'month';
+  const groups = new Map(); // clave → { sum, n, count }
+  filteredRows().forEach((row) => {
+    let val = 1;
+    if (measure !== 'count') {
+      val = comparableValue(measureCol, row);
+      if (typeof val !== 'number' || Number.isNaN(val)) return;
+    }
+    groupKeysFor(col, row, bucket).forEach((key) => {
+      const g = groups.get(key) || { sum: 0, n: 0 };
+      g.sum += val;
+      g.n += 1;
+      groups.set(key, g);
+    });
+  });
+  const value = (g) => (!g ? 0 : measure === 'avg' ? g.sum / g.n : g.sum);
+  const isTime = columnKind(col) === 'date';
+  let keys;
+  if (isTime) {
+    const dated = Array.from(groups.keys()).filter((k) => k !== '(sin fecha)');
+    keys = fillBuckets(dated, bucket);
+    if (groups.has('(sin fecha)')) keys.push('(sin fecha)');
+  } else if (col.type === 'select') {
+    // Orden de las opciones de la columna (el que eligió el usuario).
+    const order = (parseOptions(col).choices || []).map((c) => c.label);
+    keys = Array.from(groups.keys()).sort((a, b) => (order.indexOf(a) + 1 || 999) - (order.indexOf(b) + 1 || 999));
+  } else {
+    keys = Array.from(groups.keys());
+  }
+  const data = keys.map((k) => ({
+    label: isTime && k !== '(sin fecha)' ? bucketLabel(k, bucket) : k,
+    value: value(groups.get(k))
+  }));
+  const valueLabel = measure === 'count' ? 'filas' : `${measure === 'avg' ? 'promedio de' : 'suma de'} ${measureCol.name}`;
+  return { data, time: isTime, valueLabel, groupName: col.name };
+}
+
+function renderChartView() {
+  const view = currentViewObj();
+  const cfg = parseView(view);
+  const wrap = document.createElement('div');
+  wrap.className = 'database-chart';
+  const controls = document.createElement('div');
+  controls.className = 'database-chart-controls';
+  const save = async (patch) => { await saveViewConfig(patch); renderView(); };
+  const select = (labelText, options, value, onChange) => {
+    const label = document.createElement('label');
+    label.className = 'database-chart-control';
+    label.appendChild(document.createTextNode(labelText));
+    const sel = document.createElement('select');
+    sel.className = 'database-filter-field';
+    options.forEach(([v, t]) => {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = t;
+      sel.appendChild(opt);
+    });
+    sel.value = value;
+    sel.addEventListener('change', () => onChange(sel.value));
+    label.appendChild(sel);
+    controls.appendChild(label);
+    return sel;
+  };
+  const groupCol = findColumn(state.columns, cfg.groupBy);
+  const numericCols = state.columns.filter((c) => columnKind(c) === 'number' || c.type === 'formula');
+  select('Tipo', [['bar', 'Barras'], ['line', 'Líneas'], ['pie', 'Torta']], cfg.chartType || 'bar', (v) => save({ chartType: v }));
+  select('Agrupar por', state.columns.filter((c) => c.type !== 'formula').map((c) => [c.id, c.name]), cfg.groupBy || '', (v) => save({ groupBy: v }));
+  if (groupCol && columnKind(groupCol) === 'date') {
+    select('Por', DATE_BUCKETS, cfg.dateBucket || 'month', (v) => save({ dateBucket: v }));
+  }
+  const measureOptions = [['count', 'Cantidad de filas']];
+  numericCols.forEach((c) => {
+    measureOptions.push([`sum:${c.id}`, `Suma de ${c.name}`], [`avg:${c.id}`, `Promedio de ${c.name}`]);
+  });
+  const measureValue = cfg.measure && cfg.measure !== 'count' && cfg.valueCol ? `${cfg.measure}:${cfg.valueCol}` : 'count';
+  select('Medir', measureOptions, measureValue, (v) => {
+    if (v === 'count') save({ measure: 'count', valueCol: null });
+    else {
+      const [measure, valueCol] = v.split(':');
+      save({ measure, valueCol });
+    }
+  });
+  wrap.appendChild(controls);
+
+  const host = document.createElement('div');
+  host.className = 'database-chart-host';
+  wrap.appendChild(host);
+  viewBodyEl.appendChild(wrap);
+
+  const { data, time, valueLabel, groupName } = chartData(cfg);
+  window.mdCharts.render(host, {
+    type: cfg.chartType || 'bar',
+    data,
+    time,
+    valueLabel,
+    labelTitle: groupName,
+    title: `${valueLabel} por ${groupName || ''}`,
+    emptyText: groupCol ? 'Sin filas para graficar (revisá los filtros de la vista).' : 'Elegí una columna en "Agrupar por".'
+  });
 }
 
 // ---- CSV: exportar la vista actual / importar como base nueva ----
@@ -1918,6 +2099,6 @@ function close() {
   overlay.hidden = true;
 }
 
-window.mdDatabase = { open, close, parseCsv, inferColumn, duplicateRow };
+window.mdDatabase = { open, close, parseCsv, inferColumn, duplicateRow, chartData };
 
 })();

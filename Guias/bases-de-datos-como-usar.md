@@ -138,6 +138,7 @@ Una base puede tener varias vistas de los mismos datos. **+ Vista** → Tabla, T
 | **▤ Tabla** | Filas y columnas, edición celda por celda | Cargar y revisar datos |
 | **▥ Tablero** | Columnas tipo Kanban agrupadas por una **Selección única** | Flujos de estado: arrastrá tarjetas entre columnas para cambiar el valor |
 | **▦ Galería** | Tarjetas | Colecciones: libros, recetas, contactos |
+| **📊 Gráfico** | Barras, líneas o torta | Ver de un vistazo: gastos por categoría, tareas por estado, montos por mes |
 | **📅 Calendario** | Mes con las filas en su fecha | Entregas, eventos, turnos: arrastrá una fila a otro día para cambiarle la fecha; doble clic en un día crea una fila con esa fecha |
 
 - En Calendario: clic derecho en la pestaña → **"Fecha según"** para elegir qué columna Fecha usa. Respeta los filtros de la vista.
@@ -154,6 +155,24 @@ Clic en el encabezado de una columna **Fecha** → **Editar columna** → **Avis
 - Si la base tiene una columna **Casilla** y la fila está marcada, no avisa.
 - Suena con MK abierto (aunque el panel esté cerrado); los cambios en las bases se toman en hasta 2 minutos.
 - Clic en la notificación abre la base de datos. En la tarjeta de aviso de MK: **✓ Hecho** marca la casilla de la fila, y se puede **posponer** (10 min, 1 hora, mañana 9:00).
+
+## Vista Gráfico
+
+**+ Vista → Gráfico**. Arriba del gráfico elegís:
+
+| Control | Opciones |
+|---|---|
+| **Tipo** | Barras · Líneas · Torta |
+| **Agrupar por** | Cualquier columna: selección (en el orden de sus opciones), texto, casilla (Sí/No), selección múltiple (cada etiqueta cuenta), o una **Fecha** |
+| **Por** (solo con Fecha) | Día · Semana · Mes · Año — los períodos sin datos aparecen en 0 |
+| **Medir** | Cantidad de filas · Suma de *columna numérica* · Promedio de *columna numérica* |
+
+- Respeta los **filtros** de la vista: una vista "Gastos de septiembre" con su filtro grafica solo eso.
+- Pasá el mouse por una barra, punto o porción para ver el valor exacto; **Ver tabla** muestra todos los números.
+- Barras con categorías → horizontales, de mayor a menor. Con fechas → columnas verticales en orden cronológico. La torta junta en "Otros" lo que pase de 8 porciones.
+- Se actualiza sola al cambiar las filas.
+
+**Ejemplos:** gastos → Torta, agrupar por Categoría, medir Suma de Monto · proyectos → Barras por Estado, Cantidad · ventas → Líneas por Fecha (Mes), Suma de Importe.
 
 ## CSV: importar y exportar
 

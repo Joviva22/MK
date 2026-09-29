@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 48 de 67 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 49 de 68 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -15,8 +15,9 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 **P1 — Seguridad y que nada se pierda** ✅ *hecho (2026-09-29): Electron 44 sin vulnerabilidades, instalación con `npm run install-desktop`, Home opcional en la carpeta.*
 
 **P2 — Lo que más se nota en el uso diario**
+1. **Escribir en PDF** *(prioridad alta, pedido del usuario)*: abrir un PDF, hacer clic en cualquier lugar de la página y escribir (tamaño y color de letra), mover/borrar lo agregado, **rellenar formularios PDF** (campos de texto y casillas) y guardar como PDF nuevo. Editar el texto que ya viene impreso sigue en largo plazo.
 3. ~~**Abrir con IA (Claude Code, Gemini CLI, Codex)**~~ ✅ hecho.
-4. **Gráficos en las bases de datos** (vista Gráfico): lo pediste, y reutiliza filtros y tipos de columna que ya existen.
+4. ~~**Gráficos en las bases de datos**~~ ✅ hecho.
 5. **Búsqueda global también en bases de datos y tareas del Home**: hoy `Ctrl+Shift+F` no las encuentra; con tantas cosas fuera de los `.md`, se vuelve un hueco.
 6. **Recordatorios y resumen diario por Gmail**: el sistema de avisos ya está completo; falta el canal de correo (necesita tu contraseña de aplicación de Google).
 7. **Home: estadísticas**: aprovecha los gráficos del punto 4 (tareas hechas por semana, rachas de hábitos).
@@ -86,6 +87,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Arreglo: `prompt()` no funciona en Electron**: rompía las plantillas de "Nuevo ▾" (salvo Markdown vacío), "Insertar tabla" y crear/renombrar en el sidebar. Diálogo propio (`askdialog.js`) y regla de ESLint que prohíbe `prompt()`~~ (2026-09-29)
 - [x] ~~**Pestañas: clic derecho** → cerrar / las otras / las de la derecha / las guardadas / todas, copiar ruta~~ (2026-09-29)
 - [x] ~~**Arreglo sidebar**: mover un archivo arrastrándolo volvía a fallar (el arrastre nativo pisaba al interno en Electron 44; ahora es `Alt`+arrastrar); el árbol ya no se pliega entero al crear/mover/renombrar (lo nuevo queda visible y resaltado); mover una carpeta actualiza las pestañas de sus archivos; "Mi nota" se crea como `Mi nota.md`~~ (2026-09-29)
+- [x] ~~**Gráficos en las bases de datos**: vista Gráfico (barras, líneas, torta) agrupando por cualquier columna o por día/semana/mes/año, midiendo cantidad/suma/promedio; tooltip y "Ver tabla"~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
@@ -96,7 +98,7 @@ Mejoras chicas y de uso diario: se hacen en una sesión cada una. *(Todas hechas
 
 Funciones más grandes o que tocan varias partes de la app.
 
-- [ ] **Gráficos en las bases de datos**: nueva vista **Gráfico** (barras, líneas, torta) que agrupa por una columna (ej. Estado, Categoría, mes de una Fecha) y muestra cantidad, suma o promedio de otra (ej. Monto) — respeta los filtros de la vista y se actualiza sola
+- [ ] **Escribir en PDF** (prioridad alta): clic en cualquier lugar de una página → cuadro de texto (tamaño, color), moverlo/borrarlo, rellenar formularios PDF (AcroForm: texto y casillas) y guardar como PDF nuevo con pdf-lib
 - [ ] **Gráficos desde tablas Markdown**: un bloque ```` ```chart ```` (o botón en una tabla del preview) que dibuja barras/líneas/torta a partir de una tabla `| … |` de la nota, también en Live Preview
 - [ ] **Bases de datos dentro de una nota**: bloque ```` ```database Proyectos ```` ```` que muestra la tabla en el preview
 - [ ] **Home: estadísticas**: tareas hechas por semana, racha de hábitos recurrentes, gráfico del mes

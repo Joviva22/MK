@@ -2990,6 +2990,40 @@
   }
   check('Sidebar: lo creado dentro de una subcarpeta queda visible; mover una carpeta actualiza sus pestañas abiertas', sidebarFixOk, sidebarFixDetail);
 
+  // Vista Gráfico: suma por categoría, cantidad por mes (con los meses vacíos
+  // en 0) y que se dibuje el SVG con su tabla.
+  let chartOk = false;
+  let chartDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    const gdb = await window.mdEditor.db.createDatabase(fixturesDir, 'GraficoTest');
+    const [gName] = await window.mdEditor.db.listColumns(fixturesDir, gdb.id);
+    const choices = [{ id: 'a', label: 'Comida', color: '#888' }, { id: 'b', label: 'Ocio', color: '#888' }];
+    const gCat = await window.mdEditor.db.createColumn(fixturesDir, gdb.id, { name: 'Cat', type: 'select', options: { choices } });
+    const gAmt = await window.mdEditor.db.createColumn(fixturesDir, gdb.id, { name: 'Monto', type: 'number' });
+    const gDate = await window.mdEditor.db.createColumn(fixturesDir, gdb.id, { name: 'Fecha', type: 'date' });
+    await window.mdEditor.db.createRows(fixturesDir, gdb.id, [
+      { [gName.id]: 'x', [gCat.id]: 'a', [gAmt.id]: 10, [gDate.id]: '2026-01-05' },
+      { [gName.id]: 'y', [gCat.id]: 'a', [gAmt.id]: 5, [gDate.id]: '2026-03-10' },
+      { [gName.id]: 'z', [gCat.id]: 'b', [gAmt.id]: 7, [gDate.id]: '2026-03-20' }
+    ]);
+    await window.mdEditor.db.createView(fixturesDir, gdb.id, { name: 'Gráfico', type: 'chart', config: { chartType: 'bar', groupBy: gCat.id, measure: 'sum', valueCol: gAmt.id } });
+    await window.mdDatabase.open(gdb.id);
+    await waitFor(() => document.querySelectorAll('.database-view-tab').length === 2);
+    document.querySelectorAll('.database-view-tab')[1].click();
+    const svgOk = !!(await waitFor(() => document.querySelector('.database-chart svg .chart-mark')));
+    const tableRows = document.querySelectorAll('.database-chart .chart-table tr').length; // encabezado + 2
+    const byCat = window.mdDatabase.chartData({ groupBy: gCat.id, measure: 'sum', valueCol: gAmt.id });
+    const catOk = byCat.data.map((d) => `${d.label}=${d.value}`).join(',') === 'Comida=15,Ocio=7';
+    const byMonth = window.mdDatabase.chartData({ groupBy: gDate.id, measure: 'count', dateBucket: 'month' });
+    const monthOk = byMonth.time && byMonth.data.map((d) => d.value).join(',') === '1,0,2';
+    window.mdDatabase.close();
+    await window.mdEditor.db.deleteDatabase(fixturesDir, gdb.id);
+    chartOk = svgOk && tableRows === 3 && catOk && monthOk;
+    chartDetail = `svg=${svgOk} tabla=${tableRows} porCategoria=${catOk} porMes=${monthOk}(${byMonth.data.map((d) => d.label + '=' + d.value).join(' ')})`;
+  }
+  check('Bases de datos: vista Gráfico (suma por categoría, cantidad por mes con meses vacíos en 0, SVG + tabla)', chartOk, chartDetail);
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {
