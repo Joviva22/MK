@@ -6,7 +6,7 @@
 - `Ctrl+B` oculta/muestra el sidebar (se recuerda).
 - Clic en carpeta: abrir/cerrar. Clic en archivo: abrirlo.
 - **↑ ..**: subir a la carpeta padre.
-- 🔄 **Refrescar**: releer el disco si cambiaste archivos desde fuera de MK.
+- El árbol **se actualiza solo** cuando algo cambia fuera de MK (terminal, git, otra app, una IA); los archivos abiertos se recargan solos. 🔄 **Refrescar** fuerza una relectura.
 
 ## Clic derecho
 Nuevo archivo · Nueva carpeta · Cambiar icono (~1500 íconos) · Renombrar · Eliminar (a la papelera) · Abrir en panel secundario · **Copiar ruta** / **Copiar ruta relativa** · Abrir terminal aquí.

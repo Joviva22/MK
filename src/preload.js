@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('mdEditor', {
   openFolder: () => ipcRenderer.invoke('folder:open'),
   getLastFolder: () => ipcRenderer.invoke('folder:getLast'),
   readFolder: (rootPath) => ipcRenderer.invoke('folder:read', rootPath),
+  watchFolder: (rootPath) => ipcRenderer.invoke('folder:watch', rootPath),
+  onFolderChanged: (callback) => ipcRenderer.on('folder:changed', (event, payload) => callback(payload)),
   startFileDrag: (filePath) => ipcRenderer.send('sidebar:startFileDrag', filePath),
   createFile: (dirPath, name) => ipcRenderer.invoke('fs:createFile', { dirPath, name }),
   createFolder: (dirPath, name) => ipcRenderer.invoke('fs:createFolder', { dirPath, name }),

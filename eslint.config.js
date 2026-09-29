@@ -42,6 +42,7 @@ const browserGlobals = {
   DragEvent: 'readonly',
   DataTransfer: 'readonly',
   KeyboardEvent: 'readonly',
+  CustomEvent: 'readonly',
   WheelEvent: 'readonly',
   URLSearchParams: 'readonly',
   // Librerías cargadas como <script> antes de los archivos de la app.
@@ -77,7 +78,7 @@ module.exports = [
     ignores: ['node_modules/**', 'dist/**', 'build/**']
   },
   {
-    files: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'scripts/*.js', 'test/run.js', 'eslint.config.js'],
+    files: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'src/folderwatch.js', 'scripts/*.js', 'test/run.js', 'eslint.config.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',
@@ -92,7 +93,7 @@ module.exports = [
     // src/*.js son <script> del renderer; test/renderer-checks.js corre
     // dentro de esa misma ventana vía executeJavaScript (no es Node).
     files: ['src/*.js', 'test/renderer-checks.js'],
-    ignores: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js'],
+    ignores: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'src/folderwatch.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',

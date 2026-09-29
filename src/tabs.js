@@ -475,7 +475,14 @@ function updateTabPathsUnder(oldDir, newDir) {
     .forEach((t) => updateTabPath(t.filePath, newDir + t.filePath.slice(oldDir.length)));
 }
 
-window.mdTabs = { newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
+// Archivos que cambiaron en disco (aviso de folderwatch.js): recargar las
+// pestañas que los tienen abiertos.
+function syncPaths(paths) {
+  const changed = new Set(paths);
+  tabs.filter((t) => t.filePath && changed.has(t.filePath)).forEach((t) => syncWithDisk(t));
+}
+
+window.mdTabs = { syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
 window.openFileAtPath = openTab;
 
 window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));

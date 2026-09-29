@@ -3328,6 +3328,43 @@
   }
   check('Base de datos dentro de una nota: vista con filtros, gráfico, límite de filas, error claro, Abrir y Live Preview', embedOk, embedDetail);
 
+  // Vigilar la carpeta: lo que cambia afuera de MK (acá, escrito por el
+  // proceso principal sin pasar por las pestañas) aparece solo — archivo
+  // nuevo en el árbol, pestaña abierta recargada, carpetas nuevas vigiladas.
+  let watchOk = false;
+  let watchDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const J = window.mdEditor.joinPath;
+    const wdir = J(fixturesDir, 'vigilada');
+    await window.mdEditor.createFolder(fixturesDir, 'vigilada');
+    const openPath = J(wdir, 'abierta.md');
+    await window.mdEditor.saveFile('# versión 1\n', openPath, false);
+    window.mdSidebar.renderFolder(await window.mdEditor.readFolder(wdir));
+    await window.openFileAtPath(openPath);
+    await new Promise((r) => setTimeout(r, 400));
+    const rowExists = (name) => Array.from(document.querySelectorAll('.tree-row')).some((r) => r.textContent.trim() === name);
+    const events = [];
+    const onEvt = (e) => events.push(...e.detail.changes.map((c) => c.path));
+    document.addEventListener('mk:folder-changed', onEvt);
+
+    await window.mdEditor.saveFile('# nuevo\n', J(wdir, 'aparece-solo.md'), false);
+    const newRow = !!(await waitFor(() => rowExists('aparece-solo.md'), 4000));
+    await window.mdEditor.saveFile('# versión 2 (desde afuera)\n', openPath, false);
+    const reloaded = !!(await waitFor(() => window.mdCodeMirror.getValue().includes('versión 2'), 4000));
+    await window.mdEditor.createFolder(wdir, 'sub');
+    await new Promise((r) => setTimeout(r, 400));
+    const nested = J(wdir, 'sub', 'interno.md');
+    await window.mdEditor.saveFile('x', nested, false);
+    const nestedSeen = !!(await waitFor(() => events.includes(nested), 4000));
+    await window.mdEditor.saveFile('ignorado', J(wdir, '.oculto.md'), false);
+    await new Promise((r) => setTimeout(r, 500));
+    const hiddenIgnored = !events.some((p) => p.endsWith('.oculto.md'));
+    document.removeEventListener('mk:folder-changed', onEvt);
+    watchOk = newRow && reloaded && nestedSeen && hiddenIgnored;
+    watchDetail = `árbol=${newRow} pestañaRecargada=${reloaded} subcarpetaNueva=${nestedSeen} ocultosIgnorados=${hiddenIgnored}`;
+  }
+  check('Vigilar la carpeta: archivos nuevos, pestañas abiertas y subcarpetas nuevas se actualizan solos', watchOk, watchDetail);
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {

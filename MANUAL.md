@@ -249,7 +249,7 @@ Los `#tag`/`[[wikilink]]` dentro de bloques de código (\`\`\`) o código inline
 
 **Ocultar/mostrar el sidebar**: botón a la izquierda del todo en la toolbar (ícono de panel), o `Ctrl+B`. Es un eje independiente del modo enfoque/lectura y del [panel secundario](#22-panel-secundario-pantalla-dividida) — se combinan libremente (ej: sidebar oculto + panel secundario abierto + principal en modo enfoque, los tres a la vez). Se acuerda entre sesiones (no vuelve a aparecer solo si lo dejaste oculto).
 
-**Refrescar archivos** (🔄 en la toolbar, junto a "Carpeta", o desde la paleta de comandos): el sidebar no se entera solo si agregás, borrás o renombrás algo desde afuera de MK (terminal, otro programa, sincronización en la nube) mientras la carpeta ya estaba abierta. Este botón vuelve a leer la carpeta actual del disco y redibuja el árbol.
+**La carpeta se vigila sola**: si agregás, borrás o renombrás algo desde afuera de MK (terminal, git, otro programa, una IA, sincronización en la nube), el árbol se actualiza en menos de un segundo; y si cambia un archivo que tenés abierto, la pestaña se recarga (si tenías cambios sin guardar, queda marcada ⚠ en vez de pisarlos). Se ignoran las carpetas ocultas (`.git`, `.mk`) y `node_modules`; en árboles enormes vigila hasta 3000 carpetas. **Refrescar archivos** (🔄 en la toolbar, o la paleta) sigue estando para forzar una relectura.
 
 Con una carpeta abierta, el panel izquierdo muestra el árbol de archivos:
 

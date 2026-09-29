@@ -143,6 +143,37 @@ async function refreshTree() {
   if (fresh) renderFolder(fresh);
 }
 
+// ---- cambios hechos afuera de MK (ver folderwatch.js) ----
+// git, otra app o una IA en la terminal crean/borran/mueven archivos: el
+// árbol se rehace solo; si cambió el contenido de un archivo abierto, la
+// pestaña se recarga (o queda ⚠ si tenía cambios sin guardar).
+let watchedRoot = null;
+let refreshRetry = null;
+
+function watchRoot(root) {
+  if (root === watchedRoot) return;
+  watchedRoot = root;
+  window.mdEditor.watchFolder(root);
+}
+
+async function refreshFromDisk() {
+  // Renombrando/creando en el árbol (hay un <input>): esperar, si no se
+  // pierde lo que se está escribiendo.
+  if (sidebarPane.querySelector('input')) {
+    clearTimeout(refreshRetry);
+    refreshRetry = setTimeout(refreshFromDisk, 1000);
+    return;
+  }
+  await refreshTree();
+}
+
+window.mdEditor.onFolderChanged((payload) => {
+  if (!currentTreeResult || payload.root !== currentTreeResult.rootPath) return;
+  if (payload.structural) refreshFromDisk();
+  if (window.mdTabs) window.mdTabs.syncPaths(payload.changes.map((c) => c.path));
+  document.dispatchEvent(new CustomEvent('mk:folder-changed', { detail: payload }));
+});
+
 // Sube un nivel: abre la carpeta padre de la que está abierta ahora como
 // nueva raíz (igual que "Abrir carpeta" pero sin diálogo, y persiste el
 // cambio para la próxima sesión).
@@ -538,6 +569,7 @@ function buildTree(nodes) {
 function renderFolder(result) {
   currentTreeResult = result;
   window.mdState.rootFolder = result.rootPath;
+  watchRoot(result.rootPath);
   if (window.mdHome) window.mdHome.rootChanged(); // el Home puede vivir en la carpeta
   sidebarPane.innerHTML = '';
 

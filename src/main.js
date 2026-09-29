@@ -9,6 +9,7 @@ const { Readable } = require('stream');
 const { registerDatabaseIpc } = require('./dbengine');
 const { registerTerminalIpc, killAllTerminals } = require('./ptyhost');
 const trayMode = require('./traymode');
+const { createFolderWatcher } = require('./folderwatch');
 
 const APP_ICON = path.join(__dirname, '..', 'build', 'icon.png');
 // Nombre visible "MK" (notificaciones, etc.). OJO: setName también cambia
@@ -435,6 +436,26 @@ ipcMain.handle('folder:read', (event, rootPath) => {
   } catch {
     return null;
   }
+});
+
+// Vigilar la carpeta abierta (ver folderwatch.js): el renderer pide vigilar
+// la raíz cada vez que la cambia y recibe 'folder:changed'.
+const folderWatcher = createFolderWatcher((payload) => {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('folder:changed', payload);
+});
+
+ipcMain.handle('folder:watch', (event, rootPath) => {
+  if (!rootPath) {
+    folderWatcher.stop();
+    return { dirs: 0, limited: false };
+  }
+  if (folderWatcher.currentRoot() === rootPath) return { dirs: -1, limited: false }; // ya vigilada
+  try {
+    if (!fs.statSync(rootPath).isDirectory()) return { error: 'No es una carpeta.' };
+  } catch {
+    return { error: 'La carpeta no existe.' };
+  }
+  return folderWatcher.start(rootPath);
 });
 
 // Arrastrar un archivo del sidebar afuera de MK (a otra app: navegador,
