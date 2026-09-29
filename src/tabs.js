@@ -129,6 +129,10 @@ function renderTabbar() {
     el.appendChild(closeBtn);
 
     el.addEventListener('click', () => activateTab(tab.id));
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showTabMenu(e.clientX, e.clientY, tab);
+    });
     tabbarEl.appendChild(el);
   }
 }
@@ -260,6 +264,66 @@ function closeTab(id) {
     renderTabbar();
     persistSession();
   }
+}
+
+// Cerrar varias de una (menú contextual de la pestaña): una sola pregunta si
+// alguna tiene cambios sin guardar, en vez de una por pestaña.
+function closeTabs(ids) {
+  const targets = tabs.filter((t) => ids.includes(t.id));
+  if (!targets.length) return;
+  const unsaved = targets.filter((t) => t.modified);
+  if (unsaved.length) {
+    const names = unsaved.slice(0, 5).map((t) => `• ${labelFor(t)}`).join('\n') + (unsaved.length > 5 ? '\n…' : '');
+    if (!confirm(`${unsaved.length} pestaña(s) tienen cambios sin guardar:\n${names}\n\n¿Cerrarlas igual (se pierden esos cambios)?`)) return;
+  }
+  targets.forEach((t) => clearTimeout(t.autosaveTimer));
+  const activeClosing = ids.includes(activeId);
+  const activeIdx = tabs.findIndex((t) => t.id === activeId);
+  tabs = tabs.filter((t) => !ids.includes(t.id));
+  if (!tabs.length) createTab(null, '');
+  if (activeClosing) {
+    // La más cercana a la que estaba activa entre las que quedan.
+    activateTab((tabs[Math.min(activeIdx, tabs.length - 1)] || tabs[0]).id);
+  } else {
+    renderTabbar();
+    persistSession();
+  }
+}
+
+let tabMenuEl = null;
+
+function hideTabMenu() {
+  if (tabMenuEl) tabMenuEl.hidden = true;
+}
+
+function showTabMenu(x, y, tab) {
+  if (!tabMenuEl) {
+    tabMenuEl = document.createElement('div');
+    tabMenuEl.className = 'context-menu tab-menu';
+    tabMenuEl.hidden = true;
+    document.body.appendChild(tabMenuEl);
+    document.addEventListener('mousedown', (e) => { if (tabMenuEl && !tabMenuEl.contains(e.target)) hideTabMenu(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTabMenu(); });
+  }
+  tabMenuEl.innerHTML = '';
+  const idx = tabs.findIndex((t) => t.id === tab.id);
+  const add = (label, fn, disabled) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.disabled = !!disabled;
+    b.addEventListener('click', () => { hideTabMenu(); fn(); });
+    tabMenuEl.appendChild(b);
+  };
+  add('Cerrar', () => closeTab(tab.id));
+  add('Cerrar las otras', () => closeTabs(tabs.filter((t) => t.id !== tab.id).map((t) => t.id)), tabs.length < 2);
+  add('Cerrar las de la derecha', () => closeTabs(tabs.slice(idx + 1).map((t) => t.id)), idx === tabs.length - 1);
+  add('Cerrar las guardadas', () => closeTabs(tabs.filter((t) => !t.modified).map((t) => t.id)), !tabs.some((t) => !t.modified));
+  add('Cerrar todas', () => closeTabs(tabs.map((t) => t.id)));
+  if (tab.filePath) add('Copiar ruta', () => window.mdEditor.clipboardWriteText(tab.filePath));
+  tabMenuEl.hidden = false;
+  const rect = tabMenuEl.getBoundingClientRect();
+  tabMenuEl.style.left = `${Math.max(4, Math.min(x, window.innerWidth - rect.width - 4))}px`;
+  tabMenuEl.style.top = `${Math.max(4, Math.min(y, window.innerHeight - rect.height - 4))}px`;
 }
 
 // Igual que closeTab pero sin confirmar ni bloquear: usada al "descartar" en
@@ -404,7 +468,14 @@ function updateTabPath(oldPath, newPath) {
 // hacer git pull): revisar si el archivo activo cambió afuera.
 window.addEventListener('focus', () => syncWithDisk(tabs.find((t) => t.id === activeId)));
 
-window.mdTabs = { newTab, openTab, openViaDialog, saveActive, closeTab, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
+// Carpeta movida/renombrada desde el sidebar: todas las pestañas de archivos
+// que estaban adentro pasan a la ruta nueva.
+function updateTabPathsUnder(oldDir, newDir) {
+  tabs.filter((t) => t.filePath && t.filePath.startsWith(oldDir + '/'))
+    .forEach((t) => updateTabPath(t.filePath, newDir + t.filePath.slice(oldDir.length)));
+}
+
+window.mdTabs = { newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
 window.openFileAtPath = openTab;
 
 window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));

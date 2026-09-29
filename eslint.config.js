@@ -29,7 +29,6 @@ const browserGlobals = {
   console: 'readonly',
   alert: 'readonly',
   confirm: 'readonly',
-  prompt: 'readonly',
   setTimeout: 'readonly',
   clearTimeout: 'readonly',
   setInterval: 'readonly',
@@ -99,7 +98,11 @@ module.exports = [
     },
     rules: {
       'no-undef': 'error',
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }]
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      // Electron no soporta prompt(): rompía plantillas, "Insertar tabla" y el
+      // sidebar sin que se notara. Usar window.mdAsk (askdialog.js).
+      'no-restricted-properties': ['error', { object: 'window', property: 'prompt', message: 'Electron no soporta prompt(): usá window.mdAsk().' }],
+      'no-restricted-globals': ['error', { name: 'prompt', message: 'Electron no soporta prompt(): usá window.mdAsk().' }]
     }
   }
 ];

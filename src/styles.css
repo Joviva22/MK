@@ -3616,3 +3616,49 @@ li.CodeMirror-hint-active {
 .tab.tab-conflict .tab-label {
   color: #e8590c;
 }
+
+/* ---- Diálogo de texto propio (reemplaza prompt(), ver askdialog.js) ---- */
+.ask-overlay {
+  z-index: 3000;
+}
+
+.ask-dialog {
+  width: 420px;
+  padding: 14px 16px;
+  gap: 10px;
+}
+
+.ask-message {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.command-palette input.ask-input {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.command-palette input.ask-input:focus {
+  border-color: var(--accent);
+}
+
+.ask-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.ask-ok {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Archivo recién creado/movido en el sidebar: resaltado breve (sidebar.js). */
+.tree-row-new {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  transition: background 1.5s;
+}

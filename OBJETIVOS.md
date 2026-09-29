@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 45 de 64 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 48 de 67 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -83,6 +83,9 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**P1 · Home en la carpeta abierta (opcional)**: `<carpeta>/.mk/home.json`, viaja con git; guardado atómico (sin archivos a medio escribir)~~ (2026-09-29)
 - [x] ~~**Abrir con IA**: Claude Code, Gemini CLI y Codex desde el sidebar, el botón "IA ▾" y la paleta, en una pestaña de la terminal con el archivo como contexto~~ (2026-09-29)
 - [x] ~~**Arreglo (pérdida de datos)**: una pestaña con contenido viejo ya no pisa un archivo que cambió fuera de MK — recarga si no hay cambios propios, ⚠ + autoguardado en pausa si los hay, y Ctrl+S pregunta~~ (2026-09-29)
+- [x] ~~**Arreglo: `prompt()` no funciona en Electron**: rompía las plantillas de "Nuevo ▾" (salvo Markdown vacío), "Insertar tabla" y crear/renombrar en el sidebar. Diálogo propio (`askdialog.js`) y regla de ESLint que prohíbe `prompt()`~~ (2026-09-29)
+- [x] ~~**Pestañas: clic derecho** → cerrar / las otras / las de la derecha / las guardadas / todas, copiar ruta~~ (2026-09-29)
+- [x] ~~**Arreglo sidebar**: mover un archivo arrastrándolo volvía a fallar (el arrastre nativo pisaba al interno en Electron 44; ahora es `Alt`+arrastrar); el árbol ya no se pliega entero al crear/mover/renombrar (lo nuevo queda visible y resaltado); mover una carpeta actualiza las pestañas de sus archivos; "Mi nota" se crea como `Mi nota.md`~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 

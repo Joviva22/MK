@@ -117,6 +117,26 @@ async function setFileIcon(node, iconName) {
   if (currentTreeResult) renderFolder(currentTreeResult);
 }
 
+// Carpetas desplegadas: sobreviven a refreshTree() (crear/mover/renombrar
+// redibuja el árbol entero, y antes quedaba todo plegado: un archivo nuevo
+// dentro de una subcarpeta "desaparecía").
+const expandedDirs = new Set();
+let highlightPath = null; // recién creado/movido: se resalta un momento
+
+// Despliega todas las carpetas desde la raíz hasta filePath (incluida la suya).
+function revealPath(filePath) {
+  const root = currentTreeResult && currentTreeResult.rootPath;
+  if (!root || !filePath) return;
+  let dir = window.mdEditor.dirName(filePath);
+  while (dir && dir !== root && dir.startsWith(root)) {
+    expandedDirs.add(dir);
+    const parent = window.mdEditor.dirName(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  highlightPath = filePath;
+}
+
 async function refreshTree() {
   if (!currentTreeResult) return;
   const fresh = await window.mdEditor.readFolder(currentTreeResult.rootPath);
@@ -137,8 +157,10 @@ async function goToParent() {
 }
 
 async function createEntry(dirPath, isFolder) {
-  const name = prompt(isFolder ? 'Nombre de la nueva carpeta:' : 'Nombre del nuevo archivo:');
+  let name = await window.mdAsk(isFolder ? 'Nombre de la nueva carpeta:' : 'Nombre del nuevo archivo:', isFolder ? '' : 'nota.md');
   if (!name || !name.trim()) return;
+  // "Mi nota" → "Mi nota.md": sin extensión el archivo no se abría como Markdown.
+  if (!isFolder && !/\.[a-z0-9]{1,8}$/i.test(name.trim())) name = name.trim() + '.md';
   const result = isFolder
     ? await window.mdEditor.createFolder(dirPath, name.trim())
     : await window.mdEditor.createFile(dirPath, name.trim());
@@ -146,7 +168,10 @@ async function createEntry(dirPath, isFolder) {
     alert(result.error);
     return;
   }
+  revealPath(result.path);
+  if (isFolder) expandedDirs.add(result.path);
   await refreshTree();
+  highlightPath = null;
   if (!isFolder) window.openFileAtPath(result.path);
 }
 
@@ -157,7 +182,18 @@ async function createEntry(dirPath, isFolder) {
 // Separado de refreshTree() para poder mover/eliminar varios de una y
 // refrescar el árbol una sola vez al final, no una vez por elemento.
 async function relocateEntryQuiet(node, newPath) {
-  if (!node.esCarpeta) {
+  if (node.esCarpeta) {
+    // Pestañas de archivos que estaban DENTRO de la carpeta movida/renombrada:
+    // si no, al guardar recreaban el archivo en la ruta vieja.
+    if (window.mdTabs && window.mdTabs.updateTabPathsUnder) window.mdTabs.updateTabPathsUnder(node.ruta, newPath);
+    // La carpeta (y sus subcarpetas) siguen desplegadas con la ruta nueva.
+    Array.from(expandedDirs).forEach((d) => {
+      if (d === node.ruta || d.startsWith(node.ruta + '/')) {
+        expandedDirs.delete(d);
+        expandedDirs.add(newPath + d.slice(node.ruta.length));
+      }
+    });
+  } else {
     const oldKey = relKeyFor(node);
     if (fileIcons[oldKey]) {
       const newKey = relKeyFor({ ruta: newPath });
@@ -170,7 +206,7 @@ async function relocateEntryQuiet(node, newPath) {
 }
 
 async function renameEntry(node) {
-  const newName = prompt('Nuevo nombre:', node.nombre);
+  const newName = await window.mdAsk('Nuevo nombre:', node.nombre);
   if (!newName || !newName.trim() || newName.trim() === node.nombre) return;
   const result = await window.mdEditor.renamePath(node.ruta, newName.trim());
   if (result.error) {
@@ -178,7 +214,9 @@ async function renameEntry(node) {
     return;
   }
   await relocateEntryQuiet(node, result.path);
+  revealPath(result.path);
   await refreshTree();
+  highlightPath = null;
 }
 
 async function moveEntry(node, destDir) {
@@ -189,7 +227,9 @@ async function moveEntry(node, destDir) {
     return;
   }
   await relocateEntryQuiet(node, result.path);
+  revealPath(result.path);
   await refreshTree();
+  highlightPath = null;
 }
 
 // Arrastre de una selección múltiple: mismo movePath uno por uno, un solo
@@ -203,8 +243,10 @@ async function moveEntries(nodes, destDir) {
       continue;
     }
     await relocateEntryQuiet(node, result.path);
+    revealPath(result.path); // queda resaltado el último movido, con su carpeta abierta
   }
   await refreshTree();
+  highlightPath = null;
   clearSelection();
 }
 
@@ -363,14 +405,17 @@ function makeDraggable(row, node) {
       ? Array.from(selectedNodes.values())
       : [node];
     e.dataTransfer.setData(DRAG_MIME, JSON.stringify(nodes.map((n) => ({ ruta: n.ruta, esCarpeta: n.esCarpeta, nombre: n.nombre }))));
+    // Soltarlo AFUERA de MK (explorador de archivos, navegador, otra app):
+    // text/uri-list es el formato estándar de "archivo arrastrado".
+    e.dataTransfer.setData('text/uri-list', nodes.map((n) => 'file://' + encodeURI(n.ruta)).join('\r\n'));
+    e.dataTransfer.setData('text/plain', nodes.map((n) => n.ruta).join('\n'));
 
-    // Además del drag interno de arriba (mover entre carpetas, adentro de
-    // MK), un solo archivo (no carpeta, no selección múltiple) también se
-    // puede arrastrar AFUERA de la ventana — a otra app, el navegador,
-    // Claude para adjuntarlo, etc. Necesita el drag nativo del SO
-    // (webContents.startDrag en main.js), el drag HTML5 de arriba no sale
-    // de la ventana. No se pisan: cada uno lee un tipo de dato distinto.
-    if (nodes.length === 1 && !node.esCarpeta) {
+    // Alt+arrastrar un archivo: drag NATIVO del sistema (webContents.startDrag),
+    // para apps que no aceptan text/uri-list. Solo con Alt: antes se lanzaba
+    // siempre, y en Electron 44 el drag nativo reemplaza al interno — mover
+    // un archivo a otra carpeta del sidebar dejaba de funcionar.
+    if (e.altKey && nodes.length === 1 && !node.esCarpeta) {
+      e.preventDefault();
       startFileDrag(node.ruta);
     }
   });
@@ -405,6 +450,11 @@ function buildTree(nodes) {
     const row = document.createElement('div');
     row.className = 'tree-row';
     row._node = node;
+    if (highlightPath && node.ruta === highlightPath) {
+      row.classList.add('tree-row-new');
+      setTimeout(() => row.classList.remove('tree-row-new'), 1800);
+      requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }));
+    }
     if (selectedNodes.has(node.ruta)) row.classList.add('tree-row-selected'); // sobrevive a un refreshTree() de otra acción
     makeDraggable(row, node);
 
@@ -424,12 +474,15 @@ function buildTree(nodes) {
     // fila clicada, en vez de abrirla/plegarla — ver handleSelectionClick.
     if (node.esCarpeta) {
       const childrenUl = buildTree(node.hijos || []);
-      childrenUl.classList.add('collapsed');
+      const startsOpen = expandedDirs.has(node.ruta);
+      if (!startsOpen) childrenUl.classList.add('collapsed');
+      else iconEl.innerHTML = '<i data-lucide="folder-open"></i>';
       li.appendChild(childrenUl);
       row.addEventListener('click', (e) => {
         if (handleSelectionClick(e, row, node)) return;
         clearSelection();
         const collapsed = childrenUl.classList.toggle('collapsed');
+        if (collapsed) expandedDirs.delete(node.ruta); else expandedDirs.add(node.ruta);
         iconEl.innerHTML = `<i data-lucide="${collapsed ? 'folder' : 'folder-open'}"></i>`;
         if (window.lucide) window.lucide.createIcons({ attrs: { width: 14, height: 14, 'stroke-width': 2 }, root: iconEl });
       });

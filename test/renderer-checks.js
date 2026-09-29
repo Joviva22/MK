@@ -23,6 +23,17 @@
     return null;
   }
 
+  // Responder el diálogo propio (window.mdAsk) como lo haría una persona:
+  // esperar a que aparezca, escribir y Enter.
+  async function answerAsk(value) {
+    const input = await waitFor(() => document.querySelector('.ask-dialog .ask-input'));
+    if (!input) return false;
+    input.value = value;
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    await waitFor(() => !document.querySelector('.ask-dialog'));
+    return true;
+  }
+
   const params = new URLSearchParams(window.location.search);
   const fixturesDir = params.get('mkTestFixtures') || '';
   const fixtureMdPath = fixturesDir ? window.mdEditor.joinPath(fixturesDir, 'note.md') : null;
@@ -124,13 +135,14 @@
   // insertaba siempre una tabla fija de 2 columnas x 1 fila) y arma la
   // tabla completa de una sola vez, encabezados incluidos.
   window.mdCodeMirror.setValue('');
-  const tableAnswers = ['3', '2']; // columnas, filas
-  const originalPromptTable = window.prompt;
-  window.prompt = () => tableAnswers.shift();
   document.getElementById('editor-pane').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 10 }));
   const insertTableBtn = Array.from(document.querySelectorAll('#context-menu button')).find((b) => b.textContent === 'Insertar tabla');
-  if (insertTableBtn) insertTableBtn.click();
-  window.prompt = originalPromptTable;
+  if (insertTableBtn) {
+    insertTableBtn.click();
+    await answerAsk('3'); // columnas
+    await answerAsk('2'); // filas
+    await waitFor(() => window.mdCodeMirror.getValue().includes('Columna 3'));
+  }
   const tableLines = window.mdCodeMirror.getValue().split('\n');
   const threeColsOk = tableLines[0] === '| Columna 1 | Columna 2 | Columna 3 |';
   const sepRowOk = tableLines[1] === '| --- | --- | --- |';
@@ -542,15 +554,15 @@
   let fileMgmtOk = false;
   if (fixturesDir) {
     window.mdSidebar.renderFolder({ rootPath: fixturesDir, tree: [] });
-    const originalPrompt = window.prompt;
     const originalConfirm = window.confirm;
     const originalAlert = window.alert;
     let alerted = false;
     window.alert = () => { alerted = true; };
     try {
       const newName = `mgmt-test-${Date.now()}.md`;
-      window.prompt = () => newName;
-      await window.mdSidebar.createEntry(fixturesDir, false);
+      const creating = window.mdSidebar.createEntry(fixturesDir, false);
+      await answerAsk(newName);
+      await creating;
       const createdPath = window.mdEditor.joinPath(fixturesDir, newName);
       const createdOnDisk = await window.mdEditor.readFile(createdPath);
       const createdInTree = await waitFor(() =>
@@ -558,8 +570,9 @@
       );
 
       const renamedName = `mgmt-renamed-${Date.now()}.md`;
-      window.prompt = () => renamedName;
-      await window.mdSidebar.renameEntry({ nombre: newName, ruta: createdPath, esCarpeta: false });
+      const renaming = window.mdSidebar.renameEntry({ nombre: newName, ruta: createdPath, esCarpeta: false });
+      await answerAsk(renamedName);
+      await renaming;
       const renamedPath = window.mdEditor.joinPath(fixturesDir, renamedName);
       const renamedOnDisk = await window.mdEditor.readFile(renamedPath);
       const oldGone = await window.mdEditor.readFile(createdPath);
@@ -577,7 +590,6 @@
         `creado=${createdOnDisk !== null} enArbol=${!!createdInTree} renombrado=${renamedOnDisk !== null} viejoBorrado=${oldGone === null} eliminado=${deletedGone === null} sinErrores=${!alerted}`
       );
     } finally {
-      window.prompt = originalPrompt;
       window.confirm = originalConfirm;
       window.alert = originalAlert;
     }
@@ -705,37 +717,42 @@
   }
   check('Sidebar: Ctrl+clic selecciona varios archivos y el menú contextual los elimina en bloque', multiSelectOk, multiSelectDetail);
 
-  // 20bb. Arrastrar un archivo del sidebar afuera de la ventana (a otra app,
-  // ver sidebar.js/main.js): el "dragstart" de un archivo suelto dispara el
-  // drag nativo del SO, ADEMÁS del drag interno de siempre (mover entre
-  // carpetas) — una carpeta no lo dispara (arrastrarla afuera no tiene
-  // sentido). window.mdEditor viene de contextBridge y sale congelado, no
-  // se puede mockear reasignando sus propiedades — por eso sidebar.js tiene
-  // su propia indirección testeable (setStartFileDragForTest).
+  // 20bb. Arrastrar un archivo del sidebar: el arrastre normal NO lanza el
+  // drag nativo del SO (en Electron 44 reemplazaba al interno y mover un
+  // archivo a otra carpeta dejaba de funcionar); lleva text/uri-list para
+  // soltarlo afuera. Alt+arrastrar sí lanza el nativo. Y soltarlo sobre una
+  // carpeta del árbol lo mueve de verdad.
   let nativeDragOk = false;
   let nativeDragDetail = 'sin fixturesDir';
   if (fixturesDir) {
+    const moveSrc = window.mdEditor.joinPath(fixturesDir, 'mover-yo.md');
+    await window.mdEditor.saveFile('# muevanme\n', moveSrc, false);
     window.mdSidebar.renderFolder(await window.mdEditor.readFolder(fixturesDir));
     let dragCalls = [];
     window.mdSidebar.setStartFileDragForTest((p) => dragCalls.push(p));
 
     const findRow = (name) => Array.from(document.querySelectorAll('.tree-row')).find((r) => r.textContent.trim() === name);
-    const noteRow = findRow('note.md');
-    const folderRow = findRow('nested');
+    const fileRow = findRow('mover-yo.md');
+    const folderRow = findRow('moveB');
 
-    noteRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() }));
-    const fileTriggersNativeDragOk = dragCalls.length === 1 && dragCalls[0] === window.mdEditor.joinPath(fixturesDir, 'note.md');
+    const dt = new DataTransfer();
+    fileRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    const plainNoNative = dragCalls.length === 0;
+    const uriOk = dt.getData('text/uri-list') === 'file://' + encodeURI(moveSrc);
+    folderRow.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    folderRow.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    const movedPath = window.mdEditor.joinPath(fixturesDir, 'moveB', 'mover-yo.md');
+    const moved = await waitFor(async () => (await window.mdEditor.readFile(movedPath)) !== null && (await window.mdEditor.readFile(moveSrc)) === null);
 
-    dragCalls = [];
-    folderRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() }));
-    const folderSkipsNativeDragOk = dragCalls.length === 0;
+    const noteRow = findRow('note.md') || (await waitFor(() => findRow('note.md')));
+    noteRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, altKey: true, dataTransfer: new DataTransfer() }));
+    const altNative = dragCalls.length === 1 && dragCalls[0] === window.mdEditor.joinPath(fixturesDir, 'note.md');
 
     window.mdSidebar.setStartFileDragForTest((p) => window.mdEditor.startFileDrag(p));
-
-    nativeDragOk = fileTriggersNativeDragOk && folderSkipsNativeDragOk;
-    nativeDragDetail = `archivoDisparaOk=${fileTriggersNativeDragOk} carpetaNoDisparaOk=${folderSkipsNativeDragOk}`;
+    nativeDragOk = plainNoNative && uriOk && !!moved && altNative;
+    nativeDragDetail = `normalSinNativo=${plainNoNative} uriList=${uriOk} moverACarpeta=${!!moved} altNativo=${altNative}`;
   }
-  check('Arrastrar un archivo del sidebar dispara el drag nativo del SO (no una carpeta)', nativeDragOk, nativeDragDetail);
+  check('Sidebar: arrastrar un archivo a una carpeta lo mueve; text/uri-list para soltarlo afuera; Alt+arrastrar usa el drag nativo', nativeDragOk, nativeDragDetail);
 
   // 20c. Panel secundario: "Abrir en panel secundario" (menú del sidebar)
   // muestra un archivo de referencia de solo lectura, y clic en el header
@@ -1500,12 +1517,11 @@
 
   // 30. Plantillas con variables: {{titulo}} pide el título (prompt) y
   // {{fecha}} se completa solo, ambas al crear desde "Nuevo ▾"
-  const originalPrompt = window.prompt;
-  window.prompt = () => 'Mi Título De Prueba';
   let templateOk = false;
   try {
     const apuntesBtn = document.querySelector('#new-menu button[data-template="apuntes"]');
     apuntesBtn.click();
+    await answerAsk('Mi Título De Prueba');
     await waitFor(() => window.mdCodeMirror.getValue().includes('Mi Título De Prueba'));
     const content = window.mdCodeMirror.getValue();
     const hoy = new Date().toLocaleDateString();
@@ -1516,7 +1532,7 @@
       `contieneTitulo=${content.includes('Mi Título De Prueba')} contieneFecha=${content.includes(hoy)} sinLlaves=${!content.includes('{{')}`
     );
   } finally {
-    window.prompt = originalPrompt;
+    // (nada que restaurar: el diálogo es propio, no se reemplaza nada)
   }
 
   // 31. Snippets de texto: "/fecha" seguido de espacio se expande sola
@@ -2920,6 +2936,59 @@
     externalDetail = `recarga=${reloaded} noPisa=${notOverwritten} avisa=${warned} guardarPregunta=${savedMine}`;
   }
   check('Archivo cambiado fuera de MK: recarga si no hay cambios, el autoguardado no lo pisa (⚠), guardar a mano pregunta', externalOk, externalDetail);
+
+  // Menú contextual de pestañas: cerrar las de la derecha / las otras /
+  // todas, con una sola confirmación si hay cambios sin guardar.
+  {
+    const originalConfirm = window.confirm;
+    let asked = 0;
+    window.confirm = () => { asked++; return true; };
+    const count = () => document.querySelectorAll('#tabbar .tab').length;
+    const menuClick = async (tabIdx, label) => {
+      document.querySelectorAll('#tabbar .tab')[tabIdx].dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 50 }));
+      const btn = await waitFor(() => Array.from(document.querySelectorAll('.tab-menu button')).find((b) => b.textContent === label));
+      if (btn) btn.click();
+    };
+    ['A', 'B', 'C', 'D'].forEach((t) => window.mdTabs.newTab(`# ${t}\n`));
+    const n0 = count();
+    await menuClick(n0 - 3, 'Cerrar las de la derecha'); // deja hasta "B"
+    const rightOk = count() === n0 - 2;
+    window.mdCodeMirror.replaceRange('x', { line: 0, ch: 0 }); // la activa queda con cambios
+    await menuClick(0, 'Cerrar las otras');
+    const othersOk = count() === 1 && asked === 1;
+    window.mdTabs.newTab('# E\n');
+    await menuClick(0, 'Cerrar todas');
+    const allOk = count() === 1 && window.mdCodeMirror.getValue() === '';
+    window.confirm = originalConfirm;
+    check('Pestañas: clic derecho → cerrar las de la derecha / las otras / todas (una sola confirmación)', rightOk && othersOk && allOk, `derecha=${rightOk} otras=${othersOk}(preguntó ${asked}) todas=${allOk}`);
+  }
+
+  // Sidebar: crear un archivo dentro de una subcarpeta lo deja VISIBLE (antes
+  // el árbol se redibujaba todo plegado) y mover una carpeta actualiza las
+  // pestañas abiertas de sus archivos (antes seguían con la ruta vieja).
+  let sidebarFixOk = false;
+  let sidebarFixDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const sub = window.mdEditor.joinPath(fixturesDir, 'carpeta-sub');
+    await window.mdEditor.createFolder(fixturesDir, 'carpeta-sub');
+    window.mdSidebar.renderFolder(await window.mdEditor.readFolder(fixturesDir));
+    const creating = window.mdSidebar.createEntry(sub, false);
+    await answerAsk('adentro'); // sin extensión → adentro.md
+    await creating;
+    const newPath = window.mdEditor.joinPath(sub, 'adentro.md');
+    const row = await waitFor(() => Array.from(document.querySelectorAll('#sidebar-pane .tree-row')).find((r) => r._node && r._node.ruta === newPath));
+    const visible = !!row && !row.closest('ul.collapsed');
+    const addedMd = (await window.mdEditor.readFile(newPath)) !== null;
+
+    // La pestaña de adentro.md quedó abierta (createEntry la abre). Mover la carpeta a moveA.
+    await window.mdSidebar.moveEntries([{ ruta: sub, esCarpeta: true, nombre: 'carpeta-sub' }], window.mdEditor.joinPath(fixturesDir, 'moveA'));
+    const expected = window.mdEditor.joinPath(fixturesDir, 'moveA', 'carpeta-sub', 'adentro.md');
+    const tabUpdated = window.mdTabs.getActiveTabInfo().filePath === expected;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    sidebarFixOk = visible && addedMd && tabUpdated;
+    sidebarFixDetail = `archivoVisible=${visible} agregaMd=${addedMd} pestañaSigueCarpeta=${tabUpdated}`;
+  }
+  check('Sidebar: lo creado dentro de una subcarpeta queda visible; mover una carpeta actualiza sus pestañas abiertas', sidebarFixOk, sidebarFixDetail);
 
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.

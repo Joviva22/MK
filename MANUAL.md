@@ -65,7 +65,7 @@ Ese base64 de las imágenes, y las tablas sin fila de encabezado (quedan como HT
 El editor (columna del medio) es donde escribís. A la derecha se ve el **preview**: el resultado renderizado, actualizado en vivo mientras escribís.
 
 - Podés tener **varias pestañas abiertas** a la vez (fila arriba del editor). Un punto (`●`) junto al nombre indica cambios sin guardar.
-- `Ctrl+W` cierra la pestaña activa (pide confirmación si tiene cambios sin guardar). `Ctrl+Tab` / `Ctrl+Shift+Tab` cicla entre pestañas.
+- `Ctrl+W` cierra la pestaña activa (pide confirmación si tiene cambios sin guardar). `Ctrl+Tab` / `Ctrl+Shift+Tab` cicla entre pestañas. **Clic derecho en una pestaña**: cerrar, cerrar las otras, las de la derecha, las guardadas o todas (una sola confirmación si hay cambios sin guardar), y copiar la ruta.
 - **Autoguardado**: por defecto guarda cada 1 segundo, pero solo si la pestaña ya tiene una ruta en disco (una pestaña "Sin título" no se autoguarda hasta que la guardes vos una vez). Podés cambiar el intervalo o desactivarlo del todo desde ⚙ **Ajustes** → *Autoguardado*.
 - Si cerrás MK con cambios sin guardar, al volver a abrirla te pregunta si querés **restaurar** esos cambios o **descartarlos** y volver a la versión guardada en disco.
 - **Archivos cambiados fuera de MK** (otro programa, `git pull`, una IA en la terminal): si la pestaña no tenía cambios tuyos, se recarga sola al volver a ella o a la ventana. Si tenías cambios sin guardar, la pestaña se marca con **⚠**, el autoguardado se pausa (nunca pisa la otra versión) y al guardar con `Ctrl+S` te pregunta cuál queda.
@@ -262,7 +262,7 @@ Con una carpeta abierta, el panel izquierdo muestra el árbol de archivos:
 
 **Mover un archivo o carpeta**: arrastralo y soltalo sobre otra carpeta (o sobre la raíz, o sobre "↑ .." para subirlo un nivel). No se puede mover una carpeta dentro de sí misma.
 
-**Arrastrar un archivo afuera de MK**: un archivo suelto (no una carpeta) también se puede arrastrar directo a otra ventana — el navegador, el explorador de archivos del sistema, para adjuntarlo en Claude o en cualquier otra app que acepte archivos arrastrados. Es el mismo gesto de arrastrar de siempre, solo que soltándolo fuera de la ventana de MK en vez de sobre una carpeta del sidebar.
+**Arrastrar un archivo afuera de MK** (si una app no lo acepta, probá con `Alt`+arrastrar, que usa el arrastre nativo del sistema): un archivo también se puede arrastrar directo a otra ventana — el navegador, el explorador de archivos del sistema, para adjuntarlo en Claude o en cualquier otra app que acepte archivos arrastrados. Es el mismo gesto de arrastrar de siempre, solo que soltándolo fuera de la ventana de MK en vez de sobre una carpeta del sidebar.
 
 Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pestaña se actualiza sola para seguir apuntando al lugar correcto (así "Guardar" no crea un archivo viejo por error).
 

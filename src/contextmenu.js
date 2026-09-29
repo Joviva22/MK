@@ -28,10 +28,10 @@ function insertHeading(cm) {
 // Antes insertaba siempre una tabla fija de 2x1 y había que agregar filas/
 // columnas a mano tecleando pipes — ahora se pregunta el tamaño y arma la
 // tabla completa de una, encabezados incluidos.
-function insertTable(cm) {
-  const colsInput = prompt('¿Cuántas columnas?', '2');
+async function insertTable(cm) {
+  const colsInput = await window.mdAsk('¿Cuántas columnas?', '2');
   if (colsInput === null) return;
-  const rowsInput = prompt('¿Cuántas filas de datos? (sin contar el encabezado)', '2');
+  const rowsInput = await window.mdAsk('¿Cuántas filas de datos? (sin contar el encabezado)', '2');
   if (rowsInput === null) return;
   const cols = Math.min(20, Math.max(1, parseInt(colsInput, 10) || 2));
   const rows = Math.min(50, Math.max(1, parseInt(rowsInput, 10) || 2));

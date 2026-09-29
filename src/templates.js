@@ -13,11 +13,12 @@ const TEMPLATES = {
   formulas: '# Fórmulas — {{fecha}}\n\nInline: $E = mc^2$\n\nBloque:\n\n$$\n\\sum_{i=1}^{n} x_i^2\n$$\n'
 };
 
-function fillTemplate(text) {
+async function fillTemplate(text) {
   let filled = text;
   if (filled.includes('{{titulo}}')) {
-    const titulo = prompt('Título del documento:', '') || 'Sin título';
-    filled = filled.split('{{titulo}}').join(titulo);
+    const titulo = await window.mdAsk('Título del documento:', '');
+    if (titulo === null) return null; // canceló: no se crea nada
+    filled = filled.split('{{titulo}}').join(titulo.trim() || 'Sin título');
   }
   const fecha = new Date().toLocaleDateString();
   filled = filled.split('{{fecha}}').join(fecha);
@@ -27,9 +28,10 @@ function fillTemplate(text) {
 window.initDropdown('btn-new', 'new-menu');
 
 document.querySelectorAll('#new-menu button[data-template]').forEach((btn) => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     document.getElementById('new-menu').hidden = true;
-    window.mdTabs.newTab(fillTemplate(TEMPLATES[btn.dataset.template]));
+    const text = await fillTemplate(TEMPLATES[btn.dataset.template]);
+    if (text !== null) window.mdTabs.newTab(text);
   });
 });
 

@@ -5,6 +5,7 @@
 ## Pestañas
 - Varias abiertas a la vez; `●` junto al nombre = cambios sin guardar.
 - `Ctrl+Tab` / `Ctrl+Shift+Tab`: siguiente / anterior. `Ctrl+W`: cerrar (pide confirmar si hay cambios).
+- **Clic derecho en una pestaña**: Cerrar · Cerrar las otras · Cerrar las de la derecha · Cerrar las guardadas · Cerrar todas · Copiar ruta. Si alguna tiene cambios sin guardar, pregunta una sola vez.
 - Si MK se cierra con cambios sin guardar, al reabrir te ofrece **restaurar** o **descartar**.
 
 ## Guardado
