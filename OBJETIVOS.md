@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 51 de 68 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 52 de 68 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -20,7 +20,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 4. ~~**Gráficos en las bases de datos**~~ ✅ hecho.
 5. ~~**Búsqueda global también en bases de datos y tareas del Home**~~ ✅ hecho.
 6. **Recordatorios y resumen diario por Gmail**: el sistema de avisos ya está completo; falta el canal de correo (necesita tu contraseña de aplicación de Google).
-7. **Home: estadísticas**: aprovecha los gráficos del punto 4 (tareas hechas por semana, rachas de hábitos).
+7. ~~**Home: estadísticas**~~ ✅ hecho.
 
 **P3 — Comodidad**
 8. **Gráficos desde tablas Markdown** (`chart`).
@@ -90,6 +90,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Gráficos en las bases de datos**: vista Gráfico (barras, líneas, torta) agrupando por cualquier columna o por día/semana/mes/año, midiendo cantidad/suma/promedio; tooltip y "Ver tabla"~~ (2026-09-29)
 - [x] ~~**Escribir en PDF**: texto libre en cualquier lugar de la página (tamaño, color, mover, borrar) y formularios PDF (texto, casillas, listas), guardado en un PDF nuevo~~ (2026-09-29)
 - [x] ~~**Búsqueda global en tareas del Home y bases de datos** (secciones Archivos / Tareas / Bases de datos; clic abre la tarea o la base filtrada)~~ (2026-09-29)
+- [x] ~~**Home: estadísticas** (📈): semana/mes, racha, atrasadas, hechas por semana, pendientes por prioridad y rachas de hábitos~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
@@ -102,7 +103,6 @@ Funciones más grandes o que tocan varias partes de la app.
 
 - [ ] **Gráficos desde tablas Markdown**: un bloque ```` ```chart ```` (o botón en una tabla del preview) que dibuja barras/líneas/torta a partir de una tabla `| … |` de la nota, también en Live Preview
 - [ ] **Bases de datos dentro de una nota**: bloque ```` ```database Proyectos ```` ```` que muestra la tabla en el preview
-- [ ] **Home: estadísticas**: tareas hechas por semana, racha de hábitos recurrentes, gráfico del mes
 - [ ] **Recordatorios por Gmail**: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: es la única función que necesita internet
 - [ ] **Resumen diario por Gmail**: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas
 - [ ] **Terminal: pantalla dividida** (dos terminales visibles lado a lado)

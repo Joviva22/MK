@@ -1451,6 +1451,7 @@ document.getElementById('home-prev').addEventListener('click', () => shift(-1));
 document.getElementById('home-next').addEventListener('click', () => shift(1));
 document.getElementById('home-today').addEventListener('click', () => { cursor = new Date(); render(); });
 document.getElementById('home-close').addEventListener('click', close);
+document.getElementById('home-stats-btn').addEventListener('click', openStats);
 document.getElementById('btn-home').addEventListener('click', open);
 showNotesToggle.addEventListener('change', async () => {
   data.showNotes = showNotesToggle.checked;
@@ -1470,6 +1471,7 @@ overlay.addEventListener('mousedown', (e) => {
 });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    if (statsEl) { closeStats(); return; }
     if (editorEl) { closeTaskEditor(); return; }
     if (!overlay.hidden && !e.defaultPrevented) close();
     return;
@@ -1519,6 +1521,156 @@ startupToggle.addEventListener('change', () => {
   window.mdEditor.setConfig({ homeOnStartup: startupToggle.checked });
 });
 
+// ---- estadísticas (📈 en la cabecera del Home) ----
+
+// Días seguidos, hacia atrás desde hoy, en los que la tarea recurrente se
+// cumplió cada vez que tocaba. Si hoy le toca y todavía no está hecha, se
+// empieza a contar desde ayer (el día no terminó).
+function habitStreak(task) {
+  let streak = 0;
+  let d = new Date();
+  const today = todayIso();
+  if (occursOn(task, today) && !(task.doneDates || []).includes(today)) d = addDays(d, -1);
+  for (let i = 0; i < 400; i++, d = addDays(d, -1)) {
+    const di = iso(d);
+    if (task.date && di < task.date) break;
+    if (!occursOn(task, di)) continue;
+    if ((task.doneDates || []).includes(di)) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function computeStats() {
+  const today = todayIso();
+  const monday = mondayOf(new Date());
+  const weekItems = itemsInRange(iso(monday), iso(addDays(monday, 6)));
+  const first = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+  const monthItems = itemsInRange(iso(first), iso(last));
+
+  // Últimas 8 semanas (lunes a domingo): tareas hechas vs. planificadas.
+  const weeks = [];
+  for (let w = 7; w >= 0; w--) {
+    const from = addDays(monday, -7 * w);
+    const items = itemsInRange(iso(from), iso(addDays(from, 6)));
+    weeks.push({ label: from.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }), done: items.filter((i) => i.done).length, total: items.length });
+  }
+
+  // Racha: días seguidos (hasta hoy, o ayer si hoy todavía no hiciste nada) con ≥1 tarea hecha.
+  let streak = 0;
+  let d = new Date();
+  if (!occurrencesOn(today).some((i) => i.done)) d = addDays(d, -1);
+  for (let i = 0; i < 400; i++, d = addDays(d, -1)) {
+    if (occurrencesOn(iso(d)).some((it) => it.done)) streak++;
+    else break;
+  }
+
+  const pendingByPriority = PRIORITIES.map((p) => ({
+    label: p.label,
+    color: p.color, // mismo color que el borde de las tarjetas
+    value: data.tasks.filter((t) => !(t.repeat && t.repeat.freq) && !t.done && (t.priority || 'media') === p.value).length
+  }));
+
+  const from30 = iso(addDays(new Date(), -29));
+  const habits = data.tasks.filter((t) => t.repeat && t.repeat.freq).map((t) => {
+    const occ = itemsInRange(from30, today).filter((it) => it.task.id === t.id);
+    return {
+      title: t.title,
+      streak: habitStreak(t),
+      done30: occ.filter((it) => it.done).length,
+      total30: occ.length
+    };
+  });
+
+  return {
+    week: { done: weekItems.filter((i) => i.done).length, total: weekItems.length },
+    month: { done: monthItems.filter((i) => i.done).length, total: monthItems.length },
+    overdue: overdueTasks().length,
+    streak,
+    weeks,
+    pendingByPriority,
+    habits
+  };
+}
+
+let statsEl = null;
+
+function closeStats() {
+  if (statsEl) { statsEl.remove(); statsEl = null; }
+}
+
+function openStats() {
+  closeStats();
+  const s = computeStats();
+  const modal = el('div', 'modal-overlay palette-overlay');
+  const box = el('div', 'command-palette home-stats');
+  modal.appendChild(box);
+  const head = el('div', 'home-stats-head');
+  head.appendChild(el('div', 'home-stats-title', '📈 Estadísticas'));
+  const x = el('button', 'toolbar-button', '×');
+  x.addEventListener('click', closeStats);
+  head.appendChild(x);
+  box.appendChild(head);
+
+  // Números grandes: lo que se lee de un vistazo.
+  const tiles = el('div', 'home-stats-tiles');
+  const pct = (o) => (o.total ? Math.round((o.done / o.total) * 100) : 0);
+  [
+    ['Esta semana', `${s.week.done}/${s.week.total}`, s.week.total ? `${pct(s.week)}% hechas` : 'sin tareas'],
+    ['Este mes', `${s.month.done}/${s.month.total}`, s.month.total ? `${pct(s.month)}% hechas` : 'sin tareas'],
+    ['Racha', `${s.streak}`, s.streak === 1 ? 'día seguido con algo hecho' : 'días seguidos con algo hecho'],
+    ['Atrasadas', `${s.overdue}`, s.overdue ? 'para reprogramar' : '¡al día!']
+  ].forEach(([label, value, sub]) => {
+    const t = el('div', 'home-stat-tile');
+    t.append(el('div', 'home-stat-label', label), el('div', 'home-stat-value', value), el('div', 'home-stat-sub', sub));
+    tiles.appendChild(t);
+  });
+  box.appendChild(tiles);
+
+  const charts = el('div', 'home-stats-charts');
+  const weekBlock = el('div', 'home-stats-block');
+  weekBlock.appendChild(el('div', 'home-stats-subtitle', 'Tareas hechas por semana (últimas 8)'));
+  const weekHost = el('div');
+  weekBlock.appendChild(weekHost);
+  const prioBlock = el('div', 'home-stats-block');
+  prioBlock.appendChild(el('div', 'home-stats-subtitle', 'Pendientes por prioridad'));
+  const prioHost = el('div');
+  prioBlock.appendChild(prioHost);
+  charts.append(weekBlock, prioBlock);
+  box.appendChild(charts);
+
+  if (s.habits.length) {
+    const habitsBlock = el('div', 'home-stats-block');
+    habitsBlock.appendChild(el('div', 'home-stats-subtitle', 'Hábitos (tareas recurrentes)'));
+    const table = el('table', 'home-stats-habits');
+    const hr = el('tr');
+    ['Hábito', 'Racha', 'Últimos 30 días'].forEach((h) => hr.appendChild(el('th', null, h)));
+    table.appendChild(hr);
+    s.habits.forEach((h) => {
+      const tr = el('tr');
+      const rate = h.total30 ? Math.round((h.done30 / h.total30) * 100) : 0;
+      const bar = el('div', 'home-progress-bar');
+      const fill = el('div', 'home-progress-fill');
+      fill.style.width = rate + '%';
+      bar.appendChild(fill);
+      const rateCell = el('td');
+      rateCell.append(bar, el('span', 'home-stat-sub', `${h.done30} de ${h.total30} (${rate}%)`));
+      tr.append(el('td', null, h.title), el('td', null, h.streak ? `🔥 ${h.streak}` : '—'), rateCell);
+      table.appendChild(tr);
+    });
+    habitsBlock.appendChild(table);
+    box.appendChild(habitsBlock);
+  }
+
+  modal.addEventListener('mousedown', (e) => { if (e.target === modal) closeStats(); });
+  document.body.appendChild(modal);
+  statsEl = modal;
+  // Recién ahora (con el ancho real) se dibujan los gráficos.
+  window.mdCharts.render(weekHost, { type: 'bar', time: true, data: s.weeks.map((w) => ({ label: w.label, value: w.done })), valueLabel: 'hechas', labelTitle: 'Semana del', emptyText: 'Todavía no hay tareas.' });
+  window.mdCharts.render(prioHost, { type: 'pie', data: s.pendingByPriority.filter((p) => p.value > 0), valueLabel: 'pendientes', labelTitle: 'Prioridad', emptyText: 'No hay tareas pendientes.' });
+}
+
 // Búsqueda global (search.js): tareas del Home por título y notas.
 async function searchTasks(query) {
   const q = (query || '').trim().toLowerCase();
@@ -1540,6 +1692,6 @@ async function revealTask(id) {
   openTaskEditor(task.date ? findItem(task.id, task.date) : itemFor(task));
 }
 
-window.mdHome = { open, close, setMode, checkReminders, searchTasks, revealTask, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
+window.mdHome = { open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
 
 })();

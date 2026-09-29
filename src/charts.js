@@ -7,6 +7,8 @@
 //   window.mdCharts.render(host, { type, data, valueLabel, time, format })
 //     type: 'bar' | 'line' | 'pie'
 //     data: [{ label, value }]  (en el orden en que se dibujan)
+//     data[i].color (opcional): color propio de esa entidad (ej. prioridad
+//           Alta = rojo en todo el Home); si no, la paleta en orden fijo
 //     time: true si las etiquetas son una secuencia temporal (barras
 //           verticales; si no, barras horizontales ordenadas por valor)
 //
@@ -233,7 +235,7 @@ function renderPie(svg, width, data, opts, host) {
       ? `M${cx - r},${cy} A${r},${r} 0 1,1 ${cx + r},${cy} A${r},${r} 0 1,1 ${cx - r},${cy} M${cx - inner},${cy} A${inner},${inner} 0 1,0 ${cx + inner},${cy} A${inner},${inner} 0 1,0 ${cx - inner},${cy} Z`
       : `M${x0},${y0} A${r},${r} 0 ${large},1 ${x1},${y1} L${x2},${y2} A${inner},${inner} 0 ${large},0 ${x3},${y3} Z`;
     // Borde del color de la superficie = 2px de separación entre porciones.
-    const seg = svgEl('path', { d: path, fill: colors[i % colors.length], class: 'chart-slice', 'fill-rule': 'evenodd' }, svg);
+    const seg = svgEl('path', { d: path, fill: d.color || colors[i % colors.length], class: 'chart-slice', 'fill-rule': 'evenodd' }, svg);
     bindTip(seg, d.label, `${fmt(d.value)} ${opts.valueLabel || ''} · ${Math.round(frac * 100)}%`.replace(/\s+·/, ' ·'));
     a0 = a1;
   });
@@ -247,7 +249,7 @@ function renderPie(svg, width, data, opts, host) {
     item.className = 'chart-legend-item';
     const sw = document.createElement('span');
     sw.className = 'chart-swatch';
-    sw.style.background = colors[i % colors.length];
+    sw.style.background = d.color || colors[i % colors.length];
     const txt = document.createElement('span');
     txt.textContent = `${d.label} — ${fmt(d.value)} (${total ? Math.round((d.value / total) * 100) : 0}%)`;
     item.append(sw, txt);

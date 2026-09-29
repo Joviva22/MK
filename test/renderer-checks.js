@@ -3120,6 +3120,35 @@
   }
   check('Búsqueda global: también tareas del Home y filas de bases de datos (clic abre la base filtrada)', searchAllOk, searchAllDetail);
 
+  // Estadísticas del Home: una tarea de hoy hecha suma a la semana y a la
+  // racha; el panel muestra los 4 números y los gráficos.
+  {
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const before = window.mdHome.computeStats();
+    const title = 'Stats ' + Date.now();
+    const qa = document.querySelector('#home-main .home-day.home-today .home-quick-add');
+    qa.value = title;
+    qa.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const findCard = () => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
+    findCard().querySelector('input[type="checkbox"]').click();
+    const after = window.mdHome.computeStats();
+    const statsOk = after.week.done === before.week.done + 1 && after.week.total === before.week.total + 1 && after.streak >= 1;
+    window.mdHome.openStats();
+    const tiles = document.querySelectorAll('.home-stats .home-stat-tile').length;
+    const chartOk = !!document.querySelector('.home-stats svg .chart-mark');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    const closedOk = !document.querySelector('.home-stats');
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    findCard().click();
+    await waitFor(() => document.querySelector('.home-editor'));
+    Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
+    window.confirm = originalConfirm;
+    window.mdHome.close();
+    check('Home: estadísticas (semana, racha, 4 números, gráfico) y Escape las cierra', statsOk && tiles === 4 && chartOk && closedOk, `stats=${statsOk} numeros=${tiles} grafico=${chartOk} cierra=${closedOk}`);
+  }
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {

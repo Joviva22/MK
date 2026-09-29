@@ -186,6 +186,18 @@ Con una carpeta abierta y **"Fechas de bases de datos"** tildado, cada fila de u
 | Clic en número del día (Mes) | Ir a esa semana |
 | `Escape` | Cierra el editor de tarea, o el Home |
 
+## Estadísticas 📈
+
+Botón **📈** en la cabecera del Home:
+
+- **Esta semana** y **Este mes**: tareas hechas de las planificadas (con %).
+- **Racha**: días seguidos (hasta hoy) con al menos una tarea hecha.
+- **Atrasadas**: cuántas quedaron sin hacer.
+- **Tareas hechas por semana** (últimas 8) y **Pendientes por prioridad** (con los mismos colores que las tarjetas).
+- **Hábitos**: cada tarea recurrente con su racha 🔥 (veces seguidas que la cumpliste) y el cumplimiento de los últimos 30 días.
+
+`Escape` o × lo cierra.
+
 ## Dónde se guarda
 
 Por defecto en `home.json`, dentro de la carpeta de configuración de MK: `~/.config/md-editor-local/home.json` (la misma para la versión de desarrollo y el AppImage). Es un JSON simple: podés respaldarlo copiándolo.

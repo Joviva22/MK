@@ -4026,3 +4026,114 @@ li.CodeMirror-hint-active {
   color: var(--text-muted);
   padding: 8px 12px 2px;
 }
+
+/* ---- Home: estadísticas ---- */
+.home-stats {
+  width: 860px;
+  max-width: 94vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 14px 18px 18px;
+  gap: 14px;
+}
+
+.home-stats-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-stats-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.home-stats-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.home-stat-tile {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--bg);
+}
+
+.home-stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.home-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.home-stat-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.home-stats-charts {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+}
+
+.home-stats-block {
+  min-width: 0;
+}
+
+.home-stats-subtitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.home-stats-habits {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.home-stats-habits th {
+  text-align: left;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 4px 8px 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.home-stats-habits td {
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.home-stats-habits .home-progress-bar {
+  width: 140px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@media (max-width: 700px) {
+  .home-stats-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-stats-charts { grid-template-columns: 1fr; }
+}
+
+/* Atrasadas: título + dos botones no entran en una línea del panel lateral. */
+.home-side-title-row {
+  flex-wrap: wrap;
+  gap: 4px;
+}
