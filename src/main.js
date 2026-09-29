@@ -99,7 +99,9 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      // Sandbox de Chromium: el preload solo puede usar módulos de Electron
+      // (las rutas y el resaltado de código se resolvieron sin Node).
+      sandbox: true,
       // Oculta en la bandeja, Chromium frena los timers de la página: los
       // recordatorios (setInterval de home.js) sonarían tarde.
       backgroundThrottling: false

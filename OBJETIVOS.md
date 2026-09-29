@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 66 de 113 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 67 de 113 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -116,7 +116,7 @@ La revisión concluye —y coincido— que ahora toca **consolidar más que aña
 - [x] ~~**Bases de datos: guardado atómico**~~ (temporal + fsync + rename: un corte a mitad ya no deja el `.sqlite3` truncado) (2026-09-29)
 - [ ] **Validación de rutas central en el proceso principal**: hoy leer/guardar/crear/mover/borrar, bases de datos, git y `md-local://` aceptan cualquier ruta que mande la interfaz (`md-local://` sirve cualquier archivo del disco). Una sola función `assertAllowedPath` (carpeta abierta + archivos abiertos explícitamente por el usuario)
 - [x] ~~**Content Security Policy estricta** en `index.html`~~ (scripts solo archivos locales, nada inline; sin conexiones a internet; `'unsafe-eval'` solo por las fórmulas — pasarlas a un Worker lo quitaría. `cspwatch.js` + un test que falla ante cualquier violación) (2026-09-29)
-- [ ] **Activar `sandbox: true`** (mover a main lo que hoy el preload hace con `require`: `path`, highlight.js, portapapeles)
+- [x] ~~**Activar `sandbox: true`**~~ (rutas con un helper POSIX propio en el preload, comparado con Node en un test; highlight.js en el proceso principal, asíncrono; exportar espera el resaltado) (2026-09-29)
 - [ ] **Registro local de errores**: los `catch` silenciosos de operaciones importantes (guardar, bases de datos, importar) escriben en `userData/logs/mk.log` y muestran un mensaje claro
 - [ ] **Bases de datos: agrupar escrituras** (hoy cada cambio reescribe el archivo entero; guardar agrupado cada ~300 ms y al salir) o motor nativo con WAL
 

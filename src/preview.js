@@ -337,15 +337,29 @@ function renderMermaidBlocks() {
   }
 }
 
+// Asíncrono (highlight.js corre en el proceso principal, ver preload.js):
+// se aplica solo si el bloque sigue en pantalla con el mismo texto.
+// highlightDone: exportar lo espera, así el HTML/PDF sale con colores.
+let highlightDone = Promise.resolve();
+
 function highlightCode() {
-  previewPane.querySelectorAll('pre code').forEach((el) => {
+  const blocks = Array.from(previewPane.querySelectorAll('pre code'));
+  if (!blocks.length) {
+    highlightDone = Promise.resolve();
+    return;
+  }
+  const request = blocks.map((el) => {
     const langMatch = el.className.match(/language-(\S+)/);
-    const highlighted = window.mdEditor.highlightCode(el.textContent, langMatch ? langMatch[1] : null);
-    if (highlighted !== null) {
-      el.innerHTML = highlighted;
-      el.classList.add('hljs');
-    }
+    return { code: el.textContent, lang: langMatch ? langMatch[1] : null };
   });
+  highlightDone = window.mdEditor.highlightCodeBatch(request).then((results) => {
+    (results || []).forEach((html, i) => {
+      const el = blocks[i];
+      if (html == null || !el.isConnected || el.textContent !== request[i].code) return;
+      el.innerHTML = html;
+      el.classList.add('hljs');
+    });
+  }).catch(() => {});
 }
 
 // Ejecuta JS en un Web Worker nuevo por corrida (sin window/document/require
@@ -584,7 +598,7 @@ window.mdCodeMirror.on('change', () => {
   debounceTimer = setTimeout(render, 150);
 });
 
-window.mdPreview = { ensureFresh, isStale: () => stale };
+window.mdPreview = { whenHighlighted: () => highlightDone, ensureFresh, isStale: () => stale };
 
 render();
 

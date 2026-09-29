@@ -314,3 +314,26 @@ ipcMain.handle('export:anki', async (event, { cards, defaultName }) => {
   fs.writeFileSync(targetPath, lines.join('\n'), 'utf-8');
   return targetPath;
 });
+
+// Resaltado de bloques de código del preview (ver preview.js): antes lo hacía
+// el preload, que con sandbox no puede cargar highlight.js. Se carga recién
+// en el primer uso. Tope por lote para que un documento enorme no trabe.
+let hljs = null;
+const HIGHLIGHT_MAX_CHARS = 2 * 1024 * 1024;
+
+ipcMain.handle('highlight:batch', (event, blocks) => {
+  if (!Array.isArray(blocks)) return [];
+  if (!hljs) hljs = require('highlight.js/lib/common');
+  let budget = HIGHLIGHT_MAX_CHARS;
+  return blocks.map((b) => {
+    const code = b && typeof b.code === 'string' ? b.code : '';
+    budget -= code.length;
+    if (budget < 0) return null;
+    try {
+      const lang = b.lang && hljs.getLanguage(b.lang) ? b.lang : null;
+      return (lang ? hljs.highlight(code, { language: lang }) : hljs.highlightAuto(code)).value;
+    } catch {
+      return null;
+    }
+  });
+});

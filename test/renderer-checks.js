@@ -3574,6 +3574,17 @@
     );
   }
 
+  // Sandbox: el preload usa su propio helper de rutas (sin require('path')).
+  // Casos con el resultado de path de Node (generados con Node).
+  {
+    const cases = [["join",["/a/b","c"],"/a/b/c"],["join",["/a/b","../c","d.md"],"/a/c/d.md"],["join",["/a",""],"/a"],["join",["a","./b"],"a/b"],["dirname",["/a/b/c.md"],"/a/b"],["dirname",["/a"],"/"],["dirname",["c.md"],"."],["dirname",["/a/b/"],"/a"],["resolve",["/a/b/c.md","..","img.png"],"/a/b/img.png"],["resolve",["/a/b","/x/y"],"/x/y"],["relative",["/a/b","/a/b/c/d.md"],"c/d.md"],["relative",["/a/b/c","/a/x"],"../../x"],["relative",["/a","/a"],""],["normalize",["/a//b/./c/.."],"/a/b"],["isAbsolute",["/a"],true],["isAbsolute",["a/b"],false]];
+    const got = window.mdEditor.pathSelfTest(cases.map(([fn, args]) => [fn, args]));
+    const bad = cases.map((c, i) => (got[i] === c[2] ? null : `${c[0]}(${c[1].join(',')})=${got[i]}≠${c[2]}`)).filter(Boolean);
+    check('Sandbox: rutas del preload iguales a las de Node y resaltado de código vía proceso principal',
+      bad.length === 0 && (await window.mdEditor.highlightCodeBatch([{ code: 'def f(): return 1', lang: 'python' }]))[0].includes('hljs-keyword'),
+      bad.join(' | ') || 'ok');
+  }
+
   // Ninguna función chocó con la Content Security Policy (cspwatch.js).
   {
     const v = window.__mkCspViolations || [];

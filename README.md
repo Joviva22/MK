@@ -134,6 +134,7 @@ MK/
 ## Seguridad
 
 - `contextIsolation: true`, `nodeIntegration: false`.
-- `sandbox: false` en el `BrowserWindow` — necesario para que `preload.js` use `require('path')`/`highlight.js`/`clipboard`.
+- `sandbox: true`: el preload solo usa módulos de Electron (rutas con un helper propio; highlight.js y el portapapeles van por el proceso principal).
+- Content Security Policy: solo scripts locales de MK, nada inline, sin conexiones a internet.
 - Assets locales se sirven vía protocolo custom `md-local://` (no `webSecurity: false`).
 - Con una carpeta abierta, las rutas de assets no pueden escapar de ella (bloquea `../../etc/passwd` y similares).

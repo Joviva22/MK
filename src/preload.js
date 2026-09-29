@@ -1,10 +1,58 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
-const path = require('path');
-// El paquete npm de highlight.js no trae un build listo para <script>: su
-// carpeta "es/" reexporta la build CommonJS, que un <script type="module">
-// no puede resolver (rompe con "require is not defined"). Como preload.js
-// sí corre en contexto Node, lo cargamos acá y lo exponemos ya resuelto.
-const hljs = require('highlight.js/lib/common');
+
+// La ventana corre con sandbox: este preload solo puede usar módulos de
+// Electron (nada de require('path')). Rutas POSIX (MK es para Linux) con un
+// helper propio que se comporta como path de Node en lo que usa la app —
+// un test de la suite lo compara con resultados de Node.
+const posix = (() => {
+  function parts(p) {
+    const abs = p.startsWith('/');
+    const out = [];
+    for (const seg of p.split('/')) {
+      if (!seg || seg === '.') continue;
+      if (seg === '..') {
+        if (out.length && out[out.length - 1] !== '..') out.pop();
+        else if (!abs) out.push('..');
+      } else {
+        out.push(seg);
+      }
+    }
+    return { abs, out };
+  }
+  function normalize(p) {
+    const { abs, out } = parts(p);
+    const s = out.join('/');
+    return abs ? '/' + s : (s || '.');
+  }
+  const isAbsolute = (p) => p.startsWith('/');
+  function join(...segs) {
+    const joined = segs.filter((x) => x !== '').join('/');
+    return joined ? normalize(joined) : '.';
+  }
+  function resolve(...segs) {
+    let r = '';
+    for (let i = segs.length - 1; i >= 0 && !isAbsolute(r); i--) {
+      if (segs[i]) r = segs[i] + (r ? '/' + r : '');
+    }
+    return normalize(isAbsolute(r) ? r : '/' + r);
+  }
+  function dirname(p) {
+    if (!p) return '.';
+    const n = p.length > 1 ? p.replace(/\/+$/, '') : p;
+    const i = n.lastIndexOf('/');
+    if (i < 0) return '.';
+    return i === 0 ? '/' : n.slice(0, i);
+  }
+  function relative(from, to) {
+    const a = parts(resolve(from)).out;
+    const b = parts(resolve(to)).out;
+    let i = 0;
+    while (i < a.length && i < b.length && a[i] === b[i]) i++;
+    return [...Array(a.length - i).fill('..'), ...b.slice(i)].join('/');
+  }
+  return { normalize, isAbsolute, join, resolve, dirname, relative };
+})();
+const path = posix;
 
 contextBridge.exposeInMainWorld('mdEditor', {
   openFile: () => ipcRenderer.invoke('file:open'),
@@ -126,12 +174,9 @@ contextBridge.exposeInMainWorld('mdEditor', {
     deleteView: (root, viewId) => ipcRenderer.invoke('db:deleteView', { root, viewId }),
     reorderViews: (root, databaseId, orderedIds) => ipcRenderer.invoke('db:reorderViews', { root, databaseId, orderedIds })
   },
-  highlightCode: (code, language) => {
-    try {
-      const result = language && hljs.getLanguage(language) ? hljs.highlight(code, { language }) : hljs.highlightAuto(code);
-      return result.value;
-    } catch {
-      return null;
-    }
-  }
+  // Resaltado de bloques de código: highlight.js corre en el proceso
+  // principal (el preload con sandbox no puede cargarlo). Lote de
+  // [{ code, lang }] -> [html | null].
+  highlightCodeBatch: (blocks) => ipcRenderer.invoke('highlight:batch', blocks),
+  pathSelfTest: (cases) => cases.map(([fn, args]) => path[fn](...args))
 });

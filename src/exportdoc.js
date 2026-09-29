@@ -30,7 +30,10 @@ function getKatexCss() {
 }
 
 async function buildStandaloneHtml() {
-  if (window.mdPreview) window.mdPreview.ensureFresh();
+  if (window.mdPreview) {
+    window.mdPreview.ensureFresh();
+    await window.mdPreview.whenHighlighted(); // colores del código (asíncrono)
+  }
   const bodyHtml = document.getElementById('preview-pane').innerHTML;
   const hasMath = /class="katex/.test(bodyHtml);
   const katexCss = hasMath ? await getKatexCss() : '';
@@ -86,6 +89,7 @@ document.getElementById('btn-export-pdf').addEventListener('click', async () => 
 document.getElementById('btn-export-epub').addEventListener('click', async () => {
   document.getElementById('export-menu').hidden = true;
   if (!isPreviewExportable()) return;
+  if (window.mdPreview) await window.mdPreview.whenHighlighted();
   const imageMap = new Map();
   const html = embedLocalImages(document.getElementById('preview-pane').innerHTML, imageMap);
   const payload = { chapters: [{ title: exportBaseName(), html }], images: imageMapToList(imageMap), title: exportBaseName() };
