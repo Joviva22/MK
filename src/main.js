@@ -10,6 +10,22 @@ const { registerTerminalIpc, killAllTerminals } = require('./ptyhost');
 const trayMode = require('./traymode');
 
 const APP_ICON = path.join(__dirname, '..', 'build', 'icon.png');
+// Nombre visible "MK" (notificaciones, etc.). OJO: setName también cambia
+// la carpeta de datos por defecto (~/.config/MK); los datos de siempre
+// (tareas del Home, ajustes, sesión, backups) están en md-editor-local, así
+// que se fija explícitamente — salvo que se pase --user-data-dir (tests).
+app.setName('MK');
+if (!app.commandLine.hasSwitch('user-data-dir')) {
+  app.setPath('userData', path.join(app.getPath('appData'), 'md-editor-local'));
+}
+// Identidad de la ventana para el escritorio (Linux): tiene que coincidir con
+// mk-editor.desktop (StartupWMClass=mk-editor) para que la barra de tareas
+// agrupe y fije MK, y no lo tome por "Electron". desktopName de package.json
+// ya lo hace; esto lo deja explícito también para X11 (WM_CLASS).
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('class', 'mk-editor');
+  app.setDesktopName('mk-editor.desktop');
+}
 // --hidden (lo usa "Iniciar con el sistema"): arrancar directo en la bandeja.
 const startHidden = trayMode.isStartHidden(process.argv);
 
