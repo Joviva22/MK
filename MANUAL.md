@@ -273,7 +273,7 @@ Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pesta
    - **Clic derecho** en uno de los seleccionados → "Eliminar N elementos seleccionados" — un solo diálogo de confirmación para todos.
 3. La selección se limpia sola con `Escape`, o al hacer clic en cualquier lado sin `Ctrl` (incluida una carpeta o archivo — ese clic abre/pliega normal, no queda mezclado con la selección vieja).
 
-**Límite:** no hay selección por rango (`Shift`+clic para seleccionar "desde acá hasta allá") — hay que ir sumando de a uno con `Ctrl`.
+**`Shift`+clic** selecciona todo el rango desde la última fila clicada. Clic derecho en cualquier archivo o carpeta también ofrece **Copiar ruta** y **Copiar ruta relativa**.
 
 ## 8. Buscar cosas
 
@@ -352,7 +352,7 @@ Para ver, comparar o recuperar una versión anterior: paleta de comandos → **"
 ## 13. Modos de vista
 
 - **🎯 Modos** (botón en la toolbar, o `Ctrl+Shift+E` / `Ctrl+Shift+R` / `Ctrl+Shift+L`): el mismo botón cicla entre cuatro estados — normal, enfoque (solo editor, sin preview), lectura (solo preview) y **Live Preview**.
-- **Live Preview** (`Ctrl+Shift+L`, o paleta → "Modo Live Preview"): escribís en el editor, pero el Markdown se ve renderizado como en modo lectura — encabezados grandes, **negrita**, *cursiva*, enlaces, `#etiquetas`, `==resaltado==`, fórmulas `$...$` y `$$...$$`, imágenes, tablas, separadores y casillas de tareas (clicables). Solo la línea donde está el cursor muestra la sintaxis cruda para editarla; las tablas y los bloques `$$` se muestran crudos si el cursor está en cualquiera de sus líneas. Clic en un widget (imagen, tabla, fórmula) pone el cursor ahí para editarlo; clic en un `[[wikilink]]` abre la nota. Los otros tres modos siguen igual. **Límite:** los diagramas Mermaid y los callouts se ven como bloque de código / cita, no dibujados.
+- **Live Preview** (`Ctrl+Shift+L`, o paleta → "Modo Live Preview"): escribís en el editor, pero el Markdown se ve renderizado como en modo lectura — encabezados grandes, **negrita**, *cursiva*, enlaces, `#etiquetas`, `==resaltado==`, fórmulas `$...$` y `$$...$$`, imágenes, tablas, separadores y casillas de tareas (clicables). Solo la línea donde está el cursor muestra la sintaxis cruda para editarla; las tablas y los bloques `$$` se muestran crudos si el cursor está en cualquiera de sus líneas. Clic en un widget (imagen, tabla, fórmula) pone el cursor ahí para editarlo; clic en un `[[wikilink]]` abre la nota. Los otros tres modos siguen igual. También dibuja callouts (`> [!NOTE]`…) y diagramas Mermaid, que se ven crudos mientras el cursor está adentro.
 - Cualquier modo afecta solo a la mitad principal: el sidebar (`Ctrl+B`) y el [panel secundario](#22-panel-secundario-pantalla-dividida), si están abiertos, se quedan como estaban — se puede tener, por ejemplo, el principal en modo enfoque con el panel secundario todavía visible al lado.
 - **`F11` — pantalla completa / escritura sin distracciones**: pone la ventana en pantalla completa real y oculta la toolbar y la barra de estado, dejando solo sidebar/editor/preview según el modo en que estés. Volvés a pulsar `F11` para salir.
 

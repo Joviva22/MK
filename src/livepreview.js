@@ -9,8 +9,9 @@
 //     markdown (highlightFormatting) — encabezados, negrita, etc. ya los
 //     estiliza CSS (.cm-live .cm-header-1, .cm-strong...);
 //   - imágenes, casillas de tareas, wikilinks, ==resaltado==, $fórmulas$,
-//     separadores (---), tablas y bloques $$ se reemplazan por un widget
-//     renderizado. Tablas y $$ son "bloques": se muestran crudos si el
+//     separadores (---), tablas, callouts, diagramas Mermaid y bloques $$
+//     se reemplazan por un widget renderizado. Tablas, callouts, Mermaid y $$
+//     son "bloques": se muestran crudos si el
 //     cursor está en cualquiera de sus líneas.
 //
 // Cada cambio de texto reconstruye todo (con un pequeño debounce); mover el
@@ -117,6 +118,46 @@ function resolveImageSrc(src) {
   const root = window.mdState.rootFolder || window.mdEditor.dirName(base);
   if (root && !window.mdEditor.isPathAllowed(root, absolute)) return null;
   return window.mdEditor.toLocalUrl(absolute);
+}
+
+// ---- diagramas Mermaid ----
+// mermaid.render es async: el widget se crea con un "dibujando..." y se
+// completa cuando termina. El SVG se cachea por código + tema.
+
+let mermaidSeq = 0;
+const mermaidCache = new Map();
+
+function isDarkBg() {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  const m = bg.match(/^#([0-9a-f]{6})$/i);
+  if (!m) return false;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16));
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+}
+
+function renderMermaid(code) {
+  const div = el('div', 'mk-live-mermaid');
+  const theme = isDarkBg() ? 'dark' : 'neutral';
+  const key = theme + '\n' + code;
+  if (mermaidCache.has(key)) {
+    div.innerHTML = mermaidCache.get(key);
+    return div;
+  }
+  if (!window.mermaid) {
+    div.textContent = code;
+    return div;
+  }
+  div.textContent = 'Dibujando diagrama…';
+  window.mermaid.initialize({ startOnLoad: false, theme, securityLevel: 'strict' });
+  window.mermaid.render(`mk-live-mermaid-${++mermaidSeq}`, code).then(({ svg }) => {
+    mermaidCache.set(key, svg);
+    if (mermaidCache.size > 50) mermaidCache.delete(mermaidCache.keys().next().value);
+    div.innerHTML = svg;
+  }).catch((err) => {
+    div.classList.add('mk-live-mermaid-error');
+    div.textContent = 'Diagrama con errores: ' + ((err && err.message) || err);
+  });
+  return div;
 }
 
 // ---- widgets de una línea ----
@@ -304,13 +345,21 @@ function scanUnits() {
   let i = 0;
   while (i < n) {
     const text = cm.getLine(i);
-    const fence = text.match(/^\s{0,3}(`{3,}|~{3,})/);
+    const fence = text.match(/^\s{0,3}(`{3,}|~{3,})\s*([\w-]+)?/);
     if (fence) {
       let j = i + 1;
       while (j < n && !cm.getLine(j).trim().startsWith(fence[1])) j++;
       const end = Math.min(j, n - 1);
-      push(i, end, 'fence');
+      push(i, end, 'fence', { lang: (fence[2] || '').toLowerCase(), closed: j < n });
       i = end + 1;
+      continue;
+    }
+    // Callout: "> [!NOTE]" y las líneas ">" que le siguen.
+    if (/^\s{0,3}>\s*\[!(NOTE|TIP|WARNING|IMPORTANT|CAUTION)\]/i.test(text)) {
+      let j = i;
+      while (j + 1 < n && /^\s{0,3}>/.test(cm.getLine(j + 1))) j++;
+      push(i, j, 'callout');
+      i = j + 1;
       continue;
     }
     if (/^\s*\$\$/.test(text)) {
@@ -359,8 +408,22 @@ function decorateUnit(u, active) {
   // marks/lineClasses: se apuntan a los de esta unidad.
   marks = u.marks;
   lineClasses = u.classes;
-  if (u.kind === 'fence') {
+  if (u.kind === 'fence' && u.data.lang === 'mermaid' && u.data.closed && u.to > u.from + 1 && !unitActive(u, active)) {
+    const code = cm.getRange({ line: u.from + 1, ch: 0 }, { line: u.to - 1, ch: cm.getLine(u.to - 1).length });
+    replaceWith({ line: u.from, ch: 0 }, blockEnd(u), renderMermaid(code), true);
+  } else if (u.kind === 'fence') {
     for (let k = u.from; k <= u.to; k++) addLineClass(k, 'wrap', k === u.from || k === u.to ? 'mk-live-fence mk-live-fence-edge' : 'mk-live-fence');
+  } else if (u.kind === 'callout') {
+    if (!unitActive(u, active)) {
+      const div = el('div', 'mk-live-callout');
+      div.innerHTML = renderMarkdown(cm.getRange({ line: u.from, ch: 0 }, blockEnd(u)));
+      replaceWith({ line: u.from, ch: 0 }, blockEnd(u), div, true);
+    } else {
+      // Editando el callout: cada línea (menos la del cursor) como cita.
+      for (let l = u.from; l <= u.to; l++) {
+        if (!active.has(l)) decorateLine(l, cm.getLine(l), l > 0 ? cm.getLine(l - 1) : null);
+      }
+    }
   } else if (u.kind === 'math') {
     if (!unitActive(u, active)) {
       const src = cm.getRange({ line: u.from, ch: 0 }, blockEnd(u));

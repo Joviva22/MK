@@ -9,11 +9,11 @@
 - 🔄 **Refrescar**: releer el disco si cambiaste archivos desde fuera de MK.
 
 ## Clic derecho
-Nuevo archivo · Nueva carpeta · Cambiar icono (~1500 íconos) · Renombrar · Eliminar (a la papelera) · Abrir en panel secundario.
+Nuevo archivo · Nueva carpeta · Cambiar icono (~1500 íconos) · Renombrar · Eliminar (a la papelera) · Abrir en panel secundario · **Copiar ruta** / **Copiar ruta relativa** · Abrir terminal aquí.
 
 ## Mover
 - Arrastrá un archivo/carpeta sobre otra carpeta (o la raíz, o `↑ ..`).
-- **Varios a la vez**: `Ctrl`+clic para seleccionar, luego arrastrá o clic derecho → eliminar todos. `Escape` limpia la selección.
+- **Varios a la vez**: `Ctrl`+clic suma de a uno; **`Shift`+clic selecciona todo el rango** desde la última fila clicada. Luego arrastrá o clic derecho → eliminar todos. `Escape` limpia la selección.
 - **Fuera de MK**: arrastrá un archivo a otra ventana (navegador, explorador, adjuntar en un chat).
 
 Las pestañas abiertas siguen al archivo si lo renombrás o movés.
@@ -31,5 +31,3 @@ Notas/
 ```
 Íconos personalizados por carpeta ayudan a encontrar rápido cada área.
 
-## Límites
-No hay selección por rango con `Shift`+clic.

@@ -2170,7 +2170,7 @@
     await waitFor(() => names() === 'BCA');
     const sortOk = names() === 'BCA';
     const views = await window.mdEditor.db.listViews(fixturesDir, sfDb.id);
-    const sortSaved = JSON.parse(views[0].config || '{}').sort?.dir === 'desc';
+    const sortSaved = (JSON.parse(views[0].config || '{}').sorts || [])[0]?.dir === 'desc';
 
     document.getElementById('database-filters-btn').click();
     await waitFor(() => document.querySelector('.database-filters-popover'));
@@ -2627,6 +2627,120 @@
       `pospuesto=${snoozeOk} vuelveASonar=${againOk} hecho=${doneOk}`
     );
   }
+
+  // Mejoras varias: Shift+clic en el sidebar, "Copiar ruta", renombrar
+  // pestaña de la terminal, orden por varias columnas, "→ Mañana" en el
+  // Home, y callout + Mermaid en Live Preview.
+  let variosOk = false;
+  let variosDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const pad = (n) => String(n).padStart(2, '0');
+    const isoOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    // Sidebar: Ctrl+clic en una fila y Shift+clic dos filas más abajo → 3 seleccionadas.
+    const tree = await window.mdEditor.readFolder(fixturesDir);
+    window.mdSidebar.renderFolder(tree);
+    const rows = Array.from(document.querySelectorAll('#sidebar-pane .tree-row')).filter((r) => !r.closest('ul.collapsed') && r._node);
+    rows[1].dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }));
+    rows[3].dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }));
+    const rangeOk = window.mdSidebar.getSelectedForTest().length === 3;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    const fileRow = document.querySelector('#sidebar-pane .tree-file');
+    fileRow.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+    const copyBtn = await waitFor(() => Array.from(document.querySelectorAll('.context-menu button')).find((b) => b.textContent === 'Copiar ruta'));
+    if (copyBtn) copyBtn.click();
+    const copied = await window.mdEditor.clipboardReadText();
+    const copyOk = !!copyBtn && copied === fileRow._node.ruta;
+
+    // Terminal: doble clic en el nombre de la pestaña → renombrar.
+    await window.mdTerminal.show();
+    await waitFor(() => document.querySelector('.terminal-tab-label'));
+    document.querySelector('.terminal-tab-label').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const tabInput = document.querySelector('.terminal-tab-rename');
+    let renameTabOk = false;
+    if (tabInput) {
+      tabInput.value = 'servidor';
+      tabInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      renameTabOk = document.querySelector('.terminal-tab-label').textContent === '1: servidor';
+    }
+    for (let i = 0; i < 10 && document.querySelector('.terminal-tab-close'); i++) document.querySelector('.terminal-tab-close').click();
+
+    // Bases de datos: Grupo ↑ y después Precio ↓.
+    window.mdState.rootFolder = fixturesDir;
+    const msDb = await window.mdEditor.db.createDatabase(fixturesDir, 'MultiOrden');
+    const [msName] = await window.mdEditor.db.listColumns(fixturesDir, msDb.id);
+    const msGroup = await window.mdEditor.db.createColumn(fixturesDir, msDb.id, { name: 'Grupo', type: 'text' });
+    const msPrice = await window.mdEditor.db.createColumn(fixturesDir, msDb.id, { name: 'Precio', type: 'number' });
+    for (const [n, g, p] of [['A', 'x', 1], ['B', 'y', 5], ['C', 'x', 9], ['D', 'y', 2]]) {
+      await window.mdEditor.db.createRow(fixturesDir, msDb.id, { [msName.id]: n, [msGroup.id]: g, [msPrice.id]: p });
+    }
+    await window.mdDatabase.open(msDb.id);
+    const names = () => Array.from(document.querySelectorAll('.database-table tbody tr td:first-child input')).map((i) => i.value).join('');
+    await waitFor(() => names() === 'ABCD');
+    const clickMenu = async (colName, label) => {
+      const th = Array.from(document.querySelectorAll('.database-th')).find((t) => t.firstChild && t.firstChild.textContent === colName);
+      th.click();
+      await waitFor(() => document.querySelector('.database-view-popover'));
+      Array.from(document.querySelectorAll('.database-view-popover button')).find((b) => b.textContent === label).click();
+    };
+    await clickMenu('Grupo', '↑ Ordenar ascendente');
+    await waitFor(() => names() === 'ACBD');
+    await clickMenu('Precio', '+ Después por esta ↓');
+    await waitFor(() => names() === 'CABD');
+    const arrows = Array.from(document.querySelectorAll('.database-sort-arrow')).map((a) => a.textContent.trim()).join(',');
+    const multiSortOk = names() === 'CABD' && arrows === '↑1,↓2';
+    window.mdDatabase.close();
+    await window.mdEditor.db.deleteDatabase(fixturesDir, msDb.id);
+
+    // Home: "→ Mañana" en el editor mueve la tarea de hoy a mañana.
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const title = 'Manana ' + Date.now();
+    const qa = document.querySelector('#home-main .home-day.home-today .home-quick-add');
+    qa.value = title;
+    qa.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const findCard = () => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
+    findCard().click();
+    await waitFor(() => document.querySelector('.home-editor'));
+    Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === '→ Mañana').click();
+    const now = new Date();
+    const tomorrowIso = isoOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+    const inToday = !!Array.from(document.querySelectorAll('#home-main .home-today .home-task')).find((c) => c.textContent.includes(title));
+    window.mdHome.setMode('month');
+    if (!findCard()) document.getElementById('home-next').click();
+    const tomorrowCell = Array.from(document.querySelectorAll('#home-main .home-calendar-cell')).find((c) => c.querySelector('.home-calendar-number') &&
+      c.querySelector('.home-calendar-number').title.includes(new Date(tomorrowIso + 'T12:00').toLocaleDateString(undefined, { day: 'numeric', month: 'long' })));
+    const tomorrowOk = !inToday && !!tomorrowCell && !!Array.from(tomorrowCell.querySelectorAll('.home-task')).find((c) => c.textContent.includes(title));
+    const card = findCard();
+    if (card) {
+      const originalConfirm = window.confirm;
+      window.confirm = () => true;
+      card.click();
+      await waitFor(() => document.querySelector('.home-editor'));
+      Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
+      window.confirm = originalConfirm;
+    }
+    window.mdHome.setMode('week');
+    window.mdHome.close();
+
+    // Live Preview: callout y Mermaid renderizados fuera del cursor.
+    window.mdTabs.newTab('# T\n\n> [!TIP]\n> Consejo.\n\n```mermaid\ngraph LR; A-->B\n```\n\nfin');
+    window.mdModes.setLayoutMode('live');
+    window.mdCodeMirror.setCursor({ line: 9, ch: 0 });
+    window.mdLivePreview.rebuild();
+    const calloutOk = !!document.querySelector('.cm-live .mk-live-callout .callout');
+    const mermaidOk = !!(await waitFor(() => document.querySelector('.cm-live .mk-live-mermaid svg'), 5000));
+    window.mdModes.setLayoutMode('normal');
+    const originalConfirm2 = window.confirm;
+    window.confirm = () => true;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    window.confirm = originalConfirm2;
+
+    variosOk = rangeOk && copyOk && renameTabOk && multiSortOk && tomorrowOk && calloutOk && mermaidOk;
+    variosDetail = `shiftRango=${rangeOk} copiarRuta=${copyOk} renombrarTerminal=${renameTabOk} ordenMultiple=${multiSortOk}(${names()} ${arrows}) manana=${tomorrowOk} callout=${calloutOk} mermaid=${mermaidOk}`;
+  }
+  check('Mejoras: Shift+clic, copiar ruta, renombrar terminal, orden múltiple, "→ Mañana", callout y Mermaid en Live Preview', variosOk, variosDetail);
 
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.

@@ -44,6 +44,44 @@ function clearSelection() {
   document.querySelectorAll('.tree-row-selected').forEach((el) => el.classList.remove('tree-row-selected'));
 }
 
+// Ancla para Shift+clic: la última fila clicada (con o sin Ctrl).
+let selectionAnchor = null;
+
+// Filas visibles del árbol en orden (las de carpetas plegadas no cuentan).
+function visibleRows() {
+  return Array.from(document.querySelectorAll('#sidebar-pane .tree-row'))
+    .filter((r) => r._node && !r.closest('ul.collapsed'));
+}
+
+// Shift+clic: selecciona todo el rango entre el ancla y esta fila.
+function selectRange(row) {
+  const rows = visibleRows();
+  const to = rows.indexOf(row);
+  let from = selectionAnchor ? rows.findIndex((r) => r._node.ruta === selectionAnchor) : -1;
+  if (from === -1) from = to;
+  clearSelection();
+  const [a, b] = from <= to ? [from, to] : [to, from];
+  for (let i = a; i <= b; i++) {
+    selectedNodes.set(rows[i]._node.ruta, rows[i]._node);
+    rows[i].classList.add('tree-row-selected');
+  }
+}
+
+// Clic con modificador: true si ya se manejó como selección.
+function handleSelectionClick(e, row, node) {
+  if (e.shiftKey) {
+    selectRange(row);
+    return true;
+  }
+  if (e.ctrlKey || e.metaKey) {
+    toggleSelection(row, node);
+    selectionAnchor = node.ruta;
+    return true;
+  }
+  selectionAnchor = node.ruta;
+  return false;
+}
+
 function toggleSelection(row, node) {
   if (selectedNodes.has(node.ruta)) {
     selectedNodes.delete(node.ruta);
@@ -258,6 +296,12 @@ function showSidebarMenu(x, y, node, multiNodes) {
     }
   }
 
+  const target = node ? node.ruta : window.mdState.rootFolder;
+  if (target) {
+    addMenuItem('Copiar ruta', () => window.mdEditor.clipboardWriteText(target));
+    if (node) addMenuItem('Copiar ruta relativa', () => window.mdEditor.clipboardWriteText(window.mdEditor.relativeToRoot(window.mdState.rootFolder, node.ruta)));
+  }
+
   // Terminal integrada: en una carpeta (o la raíz) abre ahí; en un archivo,
   // en la carpeta que lo contiene.
   if (window.mdTerminal) {
@@ -353,6 +397,7 @@ function buildTree(nodes) {
     const li = document.createElement('li');
     const row = document.createElement('div');
     row.className = 'tree-row';
+    row._node = node;
     if (selectedNodes.has(node.ruta)) row.classList.add('tree-row-selected'); // sobrevive a un refreshTree() de otra acción
     makeDraggable(row, node);
 
@@ -368,17 +413,14 @@ function buildTree(nodes) {
     li.appendChild(row);
 
     // Ctrl/Cmd+clic en cualquier fila (archivo o carpeta) la suma/saca de la
-    // selección múltiple, en vez de abrirla/plegarla — mismo criterio en
-    // ambas ramas de abajo.
+    // selección múltiple, y Shift+clic selecciona el rango desde la última
+    // fila clicada, en vez de abrirla/plegarla — ver handleSelectionClick.
     if (node.esCarpeta) {
       const childrenUl = buildTree(node.hijos || []);
       childrenUl.classList.add('collapsed');
       li.appendChild(childrenUl);
       row.addEventListener('click', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-          toggleSelection(row, node);
-          return;
-        }
+        if (handleSelectionClick(e, row, node)) return;
         clearSelection();
         const collapsed = childrenUl.classList.toggle('collapsed');
         iconEl.innerHTML = `<i data-lucide="${collapsed ? 'folder' : 'folder-open'}"></i>`;
@@ -398,10 +440,7 @@ function buildTree(nodes) {
     } else {
       row.classList.add('tree-file');
       row.addEventListener('click', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-          toggleSelection(row, node);
-          return;
-        }
+        if (handleSelectionClick(e, row, node)) return;
         clearSelection();
         if (extOf(node) === 'pdf') {
           window.showPdfPreview(node.ruta);

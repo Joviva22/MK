@@ -988,7 +988,17 @@ function renderSide(periodTasks) {
       save();
       render();
     });
-    titleRow.appendChild(moveAll);
+    const moveTomorrow = el('button', 'toolbar-button home-small-button', 'A mañana');
+    moveTomorrow.title = 'Mover todas las tareas atrasadas a mañana';
+    moveTomorrow.addEventListener('click', () => {
+      const tomorrow = iso(addDays(new Date(), 1));
+      overdue.forEach((t) => { t.date = tomorrow; });
+      save();
+      render();
+    });
+    const btns = el('span', 'home-side-buttons');
+    btns.append(moveAll, moveTomorrow);
+    titleRow.appendChild(btns);
     sideEl.appendChild(titleRow);
     const list = el('div', 'home-task-list');
     overdue.sort((a, b) => a.date.localeCompare(b.date)).forEach((t) => {
@@ -1268,13 +1278,20 @@ function openTaskEditor(item) {
   };
   ok.addEventListener('click', commit);
   titleInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+  // Reprogramar rápido: esta tarea (o esta repetición) pasa a mañana.
+  const tomorrowBtn = el('button', 'toolbar-button', '→ Mañana');
+  tomorrowBtn.title = 'Mover esta tarea a mañana (en una recurrente, solo este día)';
+  tomorrowBtn.addEventListener('click', () => {
+    closeTaskEditor();
+    moveItem(item, iso(addDays(new Date(), 1)));
+  });
   const pomo = el('button', 'toolbar-button', '⏱ Pomodoro');
   pomo.title = 'Arrancar un Pomodoro sobre esta tarea (al terminar el foco te pregunta si la terminaste)';
   pomo.addEventListener('click', () => {
     closeTaskEditor();
     startPomodoroFor(item);
   });
-  actions.append(el('span', 'toolbar-spacer'), pomo, cancel, ok);
+  actions.append(el('span', 'toolbar-spacer'), tomorrowBtn, pomo, cancel, ok);
   box.appendChild(actions);
 
   modal.addEventListener('mousedown', (e) => { if (e.target === modal) closeTaskEditor(); });

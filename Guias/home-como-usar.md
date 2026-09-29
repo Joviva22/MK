@@ -68,7 +68,7 @@ Clic en cualquier tarea abre un cuadro con:
 | **Prioridad** | Alta / Media / Baja — define el color y el orden dentro del día |
 | **Notas** | Detalle libre; se ve al pasar el mouse sobre la tarea |
 
-Botones: **Guardar**, **Cancelar** (o `Escape`) y **Eliminar** (pide confirmación).
+Botones: **Guardar**, **Cancelar** (o `Escape`), **Eliminar** (pide confirmación) y **→ Mañana** (la pasa a mañana; en una recurrente, solo ese día). En **Atrasadas** también está **A mañana**, para mover todas juntas.
 
 ## Tareas recurrentes 🔁
 

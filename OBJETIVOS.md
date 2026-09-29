@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 34 de 60 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 39 de 61 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -44,20 +44,23 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 - [x] ~~**Recordatorios anticipados ("faltan N días")**: varios avisos por tarea, "N días antes a las HH:MM"; la notificación dice qué, qué día y a qué hora (*"Faltan 3 días para Entregar TP — Viernes, 2 de octubre a las 18:30"*)~~ (2026-09-29)
 - [x] ~~**Posponer avisos** (10 min, 1 hora, mañana 9:00) y **✓ Hecho** desde una tarjeta de aviso en MK (Linux no permite botones en la notificación del sistema); lo pospuesto se guarda entre sesiones~~ (2026-09-29)
 - [x] ~~**Recordatorios con la ventana cerrada**: cerrar deja MK en la bandeja del sistema (avisos activos; salir con `Ctrl+Q` o el menú de la bandeja) y opción "Iniciar MK con el sistema" (arranca oculto)~~ (2026-09-29)
+- [x] ~~**Home: "→ Mañana"** en el editor de tarea y **"A mañana"** para todas las atrasadas~~ (2026-09-29)
+- [x] ~~**Bases de datos: ordenar por varias columnas** ("+ Después por esta", niveles ↑1 ↓2)~~ (2026-09-29)
+- [x] ~~**Terminal: renombrar una pestaña** con doble clic~~ (2026-09-29)
+- [x] ~~**Sidebar: "Copiar ruta" / "Copiar ruta relativa"** y **selección de rango con `Shift`+clic**~~ (2026-09-29)
+- [x] ~~**Live Preview: callouts y diagramas Mermaid** dibujados~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
 Mejoras chicas y de uso diario: se hacen en una sesión cada una.
 
-- [ ] **Home: mover una tarea a "mañana"** con un clic (botón en el editor de tarea y en las atrasadas)
-- [ ] **Bases de datos: ordenar por varias columnas** (ej. Estado y después Fecha)
-- [ ] **Terminal: renombrar una pestaña** con doble clic (ej. "servidor", "git")
-- [ ] **Sidebar: "Copiar ruta"** en el menú contextual de un archivo
 
 ## Mediano plazo
 
 Funciones más grandes o que tocan varias partes de la app.
 
+- [ ] **Gráficos en las bases de datos**: nueva vista **Gráfico** (barras, líneas, torta) que agrupa por una columna (ej. Estado, Categoría, mes de una Fecha) y muestra cantidad, suma o promedio de otra (ej. Monto) — respeta los filtros de la vista y se actualiza sola
+- [ ] **Gráficos desde tablas Markdown**: un bloque ```` ```chart ```` (o botón en una tabla del preview) que dibuja barras/líneas/torta a partir de una tabla `| … |` de la nota, también en Live Preview
 - [ ] **Bases de datos dentro de una nota**: bloque ```` ```database Proyectos ```` ```` que muestra la tabla en el preview
 - [ ] **Home dentro de la carpeta (opcional)**: guardar las tareas en `.mk/home.json` para que viajen con git y se sincronicen entre computadoras
 - [ ] **Home: estadísticas**: tareas hechas por semana, racha de hábitos recurrentes, gráfico del mes
@@ -67,8 +70,6 @@ Funciones más grandes o que tocan varias partes de la app.
 - [ ] **Búsqueda global también en bases de datos y tareas del Home**
 - [ ] **Separar `main.js`** (más de 1100 líneas) en módulos por área, como ya se hizo con `dbengine.js` y `ptyhost.js`
 - [ ] **Actualizar el aviso de vulnerabilidades de `npm audit`** (2 de severidad alta en dependencias)
-- [ ] **Live Preview: renderizar también diagramas Mermaid y callouts** (hoy se ven como bloque de código / cita)
-- [ ] **Sidebar: seleccionar un rango con `Shift`+clic** (hoy solo `Ctrl`+clic de a uno)
 - [ ] **Nota diaria configurable**: elegir carpeta y formato del nombre (hoy siempre `Diario/AAAA-MM-DD.md`)
 - [ ] **Lanzador del escritorio apuntando al AppImage** (`bin/mk-editor` hoy corre `node_modules/electron`, solo sirve en esta máquina)
 

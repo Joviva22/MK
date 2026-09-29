@@ -593,17 +593,34 @@ function compareRows(col, a, b) {
   return String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' });
 }
 
-function sortRows(rows, sort) {
-  const col = sort && findColumn(state.columns, sort.columnId);
-  if (!col) return rows;
-  const dir = sort.dir === 'desc' ? -1 : 1;
-  const kind = columnKind(col);
-  const empty = (row) => kind !== 'checkbox' && isEmptyValue(comparableValue(col, row));
+// Orden por una o varias columnas: [{ columnId, dir }], el primero manda y
+// los siguientes desempatan (ej. Estado ↑ y después Fecha ↑). Las vistas
+// viejas guardaban un solo { sort }: se sigue leyendo.
+function viewSorts(cfg) {
+  const list = Array.isArray(cfg.sorts) ? cfg.sorts : (cfg.sort ? [cfg.sort] : []);
+  return list.filter((s) => findColumn(state.columns, s.columnId));
+}
+
+function sortRows(rows, sorts) {
+  const keys = sorts.map((s) => {
+    const col = findColumn(state.columns, s.columnId);
+    const kind = columnKind(col);
+    return { col, dir: s.dir === 'desc' ? -1 : 1, empty: (row) => kind !== 'checkbox' && isEmptyValue(comparableValue(col, row)) };
+  });
+  if (!keys.length) return rows;
   return rows.slice().sort((a, b) => {
-    const ea = empty(a);
-    const eb = empty(b);
-    if (ea || eb) return Number(ea) - Number(eb);
-    return dir * compareRows(col, a, b);
+    for (const k of keys) {
+      const ea = k.empty(a);
+      const eb = k.empty(b);
+      // Vacíos siempre al final de su nivel, sin importar la dirección.
+      if (ea || eb) {
+        if (ea !== eb) return Number(ea) - Number(eb);
+        continue;
+      }
+      const c = k.dir * compareRows(k.col, a, b);
+      if (c) return c;
+    }
+    return 0;
   });
 }
 
@@ -631,7 +648,7 @@ function filteredRows() {
     }));
   }
   if (filters.length) rows = rows.filter((row) => filters.every((f) => matchesFilter(f, row)));
-  return sortRows(rows, cfg.sort);
+  return sortRows(rows, viewSorts(cfg));
 }
 
 function updateFiltersButton() {
@@ -804,7 +821,8 @@ function openRowMenu(anchorEl, row) {
 
 // Clic en un encabezado de la tabla: ordenar o editar la columna.
 function openColumnMenu(th, col) {
-  const sort = currentViewConfig().sort;
+  const sorts = viewSorts(currentViewConfig());
+  const mine = sorts.find((s) => s.columnId === col.id);
   openPopover(th, 'database-view-popover', (pop, close) => {
     const item = (label, fn, extraClass) => {
       const btn = document.createElement('button');
@@ -813,11 +831,18 @@ function openColumnMenu(th, col) {
       btn.addEventListener('click', async () => { close(); await fn(); });
       pop.appendChild(btn);
     };
-    const setSort = async (value) => { await saveViewConfig({ sort: value }); renderView(); };
-    const active = sort && sort.columnId === col.id;
-    item('↑ Ordenar ascendente', () => setSort({ columnId: col.id, dir: 'asc' }), active && sort.dir === 'asc' ? 'database-popover-row-active' : '');
-    item('↓ Ordenar descendente', () => setSort({ columnId: col.id, dir: 'desc' }), active && sort.dir === 'desc' ? 'database-popover-row-active' : '');
-    if (sort) item('Quitar orden', () => setSort(null));
+    const setSorts = async (list) => { await saveViewConfig({ sorts: list, sort: null }); renderView(); };
+    const onlyMine = sorts.length === 1 && mine;
+    item('↑ Ordenar ascendente', () => setSorts([{ columnId: col.id, dir: 'asc' }]), onlyMine && mine.dir === 'asc' ? 'database-popover-row-active' : '');
+    item('↓ Ordenar descendente', () => setSorts([{ columnId: col.id, dir: 'desc' }]), onlyMine && mine.dir === 'desc' ? 'database-popover-row-active' : '');
+    // Con otro orden ya puesto: sumar esta columna como desempate.
+    const others = sorts.filter((s) => s.columnId !== col.id);
+    if (others.length) {
+      item('+ Después por esta ↑', () => setSorts([...others, { columnId: col.id, dir: 'asc' }]));
+      item('+ Después por esta ↓', () => setSorts([...others, { columnId: col.id, dir: 'desc' }]));
+    }
+    if (mine && sorts.length > 1) item('Quitar esta columna del orden', () => setSorts(others));
+    if (sorts.length) item('Quitar orden', () => setSorts([]));
     item('✎ Editar columna...', () => openColumnEditor(th, col));
   });
 }
@@ -838,7 +863,7 @@ function renderView() {
 function renderTableView() {
   const rows = filteredRows();
   const viewCfg = currentViewConfig();
-  const sort = viewCfg.sort;
+  const sorts = viewSorts(viewCfg);
   const colWidths = viewCfg.colWidths || {};
   const table = document.createElement('table');
   table.className = 'database-table';
@@ -872,10 +897,12 @@ function renderTableView() {
     const th = document.createElement('th');
     th.className = 'database-th';
     th.textContent = col.name;
-    if (sort && sort.columnId === col.id) {
+    const sortIdx = sorts.findIndex((s) => s.columnId === col.id);
+    if (sortIdx !== -1) {
       const arrow = document.createElement('span');
       arrow.className = 'database-sort-arrow';
-      arrow.textContent = sort.dir === 'desc' ? ' ↓' : ' ↑';
+      // Con varios niveles se numeran: ↑1, ↓2...
+      arrow.textContent = (sorts[sortIdx].dir === 'desc' ? ' ↓' : ' ↑') + (sorts.length > 1 ? sortIdx + 1 : '');
       th.appendChild(arrow);
     }
     th.title = 'Clic: ordenar o editar columna';
@@ -932,7 +959,7 @@ function renderTableView() {
     const tr = document.createElement('tr');
     // Con un orden activo, arrastrar para reordenar a mano no tendría efecto
     // visible (el orden lo decide la columna), así que se desactiva.
-    tr.draggable = !sort;
+    tr.draggable = !sorts.length;
     tr.addEventListener('contextmenu', (e) => {
       if (e.target.closest('input, textarea')) return; // menú normal de texto
       e.preventDefault();

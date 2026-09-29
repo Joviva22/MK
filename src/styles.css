@@ -3556,3 +3556,58 @@ li.CodeMirror-hint-active {
   color: var(--accent);
   font-weight: 600;
 }
+
+/* ---- Terminal: renombrar pestaña ---- */
+.terminal-tab-rename {
+  width: 110px;
+  padding: 0 4px;
+  font-size: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.home-side-buttons {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.home-editor-actions {
+  flex-wrap: wrap;
+}
+
+/* ---- Live Preview: callouts y Mermaid ---- */
+.mk-live-callout {
+  display: block;
+  cursor: text;
+  font-size: 0.95em;
+}
+
+.mk-live-callout .callout {
+  margin: 4px 0;
+}
+
+.mk-live-mermaid {
+  display: block;
+  text-align: center;
+  padding: 8px 0;
+  cursor: text;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.mk-live-mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mk-live-mermaid-error {
+  color: #ef476f;
+  text-align: left;
+  white-space: pre-wrap;
+}
+
+.mk-live-callout .callout p {
+  margin: 2px 0;
+}

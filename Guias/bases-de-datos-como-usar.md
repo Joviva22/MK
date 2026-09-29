@@ -67,7 +67,8 @@ Los dos se guardan **en la vista**: una vista "Pendientes" puede tener su filtro
 **Ordenar** — clic en el encabezado de una columna:
 
 - **↑ Ordenar ascendente** / **↓ Ordenar descendente**. El encabezado muestra la flecha.
-- **Quitar orden** vuelve al orden manual.
+- **Varias columnas**: con un orden puesto, clic en otra columna → **+ Después por esta ↑/↓** para desempatar (ej. Estado ↑ y después Fecha ↑). Los encabezados muestran el nivel: `↑1`, `↑2`.
+- **Quitar orden** vuelve al orden manual (o **Quitar esta columna del orden**, si hay varias).
 - **✎ Editar columna...** abre la configuración de siempre.
 - Números se ordenan como números, fechas por fecha, selección única según el orden de sus opciones. Las celdas vacías van siempre al final.
 - Con un orden activo no se puede arrastrar filas (el orden lo decide la columna).

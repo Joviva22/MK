@@ -23,8 +23,7 @@ Un cuarto modo, **además** de los otros tres (que siguen igual). `Ctrl+Shift+L`
 - **Clic en una imagen, tabla o fórmula**: pone el cursor ahí para editarla. **Clic en un `[[wikilink]]`**: abre la nota (`Alt`+clic para editarlo).
 - Sin números de línea y con ancho de lectura, como el preview.
 - En archivos de código (`.py`, `.c`...) funciona como el modo enfoque.
-
-**Límite:** los diagramas Mermaid y los callouts `> [!NOTE]` se ven como bloque de código / cita, no dibujados (para eso, modo normal o lectura).
+- Los **callouts** `> [!NOTE]` y los **diagramas Mermaid** también se dibujan; con el cursor adentro se ven crudos para editarlos.
 
 ## Panel secundario
 - Muestra md, PDF, `.docx` o imagen **de solo lectura** a la derecha.

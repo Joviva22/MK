@@ -104,10 +104,17 @@ function fitActive() {
 function renderTabs() {
   tabsEl.innerHTML = '';
   sessions.forEach((s, idx) => {
-    const tab = document.createElement('button');
+    const tab = document.createElement('div');
     tab.className = 'terminal-tab' + (s.id === activeId ? ' terminal-tab-active' : '');
-    tab.textContent = `${idx + 1}: ${s.title}${s.exited ? ' (terminada)' : ''}`;
-    tab.title = s.cwd;
+    tab.title = `${s.cwd}\nDoble clic en el nombre: renombrar`;
+    const label = document.createElement('span');
+    label.className = 'terminal-tab-label';
+    label.textContent = `${idx + 1}: ${s.title}${s.exited ? ' (terminada)' : ''}`;
+    label.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      renameTab(s, label);
+    });
+    tab.appendChild(label);
     tab.addEventListener('click', () => activate(s.id));
     const close = document.createElement('span');
     close.className = 'terminal-tab-close';
@@ -120,6 +127,33 @@ function renderTabs() {
     tab.appendChild(close);
     tabsEl.appendChild(tab);
   });
+}
+
+// Renombrar una pestaña ("servidor", "git"...): el nombre queda para esa
+// terminal mientras esté abierta. Vacío vuelve al nombre del shell.
+function renameTab(session, label) {
+  const input = document.createElement('input');
+  input.className = 'terminal-tab-rename';
+  input.value = session.title;
+  label.replaceWith(input);
+  input.focus();
+  input.select();
+  let done = false;
+  const finish = (commit) => {
+    if (done) return;
+    done = true;
+    if (commit) session.title = input.value.trim() || session.shellName;
+    renderTabs();
+    const s = activeSession();
+    if (s) s.term.focus();
+  };
+  input.addEventListener('click', (e) => e.stopPropagation());
+  input.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Enter') finish(true);
+    else if (e.key === 'Escape') finish(false);
+  });
+  input.addEventListener('blur', () => finish(true));
 }
 
 function activate(id) {
@@ -183,7 +217,7 @@ async function createSession(cwd) {
     return failed;
   }
 
-  const session = { id: result.id, term, fit, search, el, title: result.shell, cwd: result.cwd, exited: false };
+  const session = { id: result.id, term, fit, search, el, title: result.shell, shellName: result.shell, cwd: result.cwd, exited: false };
   term.onData((data) => {
     if (!session.exited) window.mdEditor.terminal.write(session.id, data);
   });
@@ -439,6 +473,6 @@ new MutationObserver(() => {
   if (config.terminalHeight) panel.style.height = `${config.terminalHeight}px`;
 })();
 
-window.mdTerminal = { show, hide, toggle, newTerminal, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
+window.mdTerminal = { show, hide, toggle, newTerminal, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
 
 })();

@@ -17,7 +17,7 @@
 - Es una terminal **real** (pseudo-terminal): usa tu shell (`$SHELL`: bash, zsh, fish…) con tu configuración, colores y alias.
 - Arranca en la **carpeta abierta** en MK (si no hay ninguna, en tu carpeta personal).
 - Programas interactivos funcionan: `vim`, `nano`, `htop`, `less`, `git log`, `python` interactivo, `ssh`.
-- **Varias terminales**: botón **+**, cada una en su pestaña (`1: zsh`, `2: zsh`…).
+- **Varias terminales**: botón **+**, cada una en su pestaña (`1: zsh`, `2: zsh`…). **Doble clic en el nombre** de una pestaña para renombrarla ("servidor", "git"…).
 - **Alto del panel**: arrastrá el borde de arriba. Se recuerda.
 - Usa una fuente **Nerd Font** si tenés alguna instalada (JetBrainsMono / FiraCode / MesloLGS Nerd Font), así los prompts con íconos (Powerlevel10k, Starship) se ven bien.
 - Sigue los colores del **tema** de MK (fondo, texto, cursor), con una paleta de colores ANSI distinta para temas claros y oscuros, para que todo se lea bien.
