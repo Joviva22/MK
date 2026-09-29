@@ -160,6 +160,14 @@ ipcMain.handle('spellcheck:addWord', (event, word) => {
   if (typeof word === 'string' && word) mainWindow.webContents.session.addWordToSpellCheckerDictionary(word);
 });
 
+// Traer la ventana al frente (clic en la notificación de un recordatorio).
+ipcMain.handle('window:focus', () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+});
+
 ipcMain.handle('window:toggleFullscreen', () => {
   const next = !mainWindow.isFullScreen();
   mainWindow.setFullScreen(next);

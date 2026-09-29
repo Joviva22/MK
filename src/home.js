@@ -51,7 +51,7 @@ const REMIND_OPTIONS = [
 const CLICK_DELAY_MS = 250; // para distinguir clic (abrir editor) de doble clic (renombrar)
 const REMINDER_GRACE_MS = 10 * 60 * 1000; // avisos atrasados más que esto (app cerrada) se descartan
 
-let data = { tasks: [], goals: {}, notes: {}, showDatabases: true, showNotes: true, notified: {} };
+let data = { tasks: [], goals: {}, notes: {}, showDatabases: true, showNotes: true, notified: {}, snoozes: [] };
 let noteItems = []; // tareas "- [ ] ... 📅 AAAA-MM-DD" encontradas en las notas de la carpeta
 let saveTimer = null;
 let mode = 'week'; // 'week' | 'month'
@@ -122,7 +122,8 @@ async function readStored() {
       notes: stored.notes && typeof stored.notes === 'object' ? stored.notes : {},
       showDatabases: stored.showDatabases !== false,
       showNotes: stored.showNotes !== false,
-      notified: stored.notified && typeof stored.notified === 'object' ? stored.notified : {}
+      notified: stored.notified && typeof stored.notified === 'object' ? stored.notified : {},
+      snoozes: Array.isArray(stored.snoozes) ? stored.snoozes : []
     };
   }
   showDbToggle.checked = data.showDatabases;
@@ -327,7 +328,7 @@ function remindersFiringToday() {
           at: atTime(date, t.time, Number(t.remind)),
           title: Number(t.remind) ? `En ${t.remind} min: ${t.title}` : reminderTitle(0, t.title, t.time),
           body: formatWhen(date, t.time) + (t.notes ? `\n${t.notes}` : ''),
-          onclick: () => open()
+          source: { kind: 'home', taskId: t.id, date }
         });
       }
       (t.advance || []).forEach((r) => {
@@ -337,7 +338,7 @@ function remindersFiringToday() {
           at: atTime(today, r.time),
           title: reminderTitle(r.days, t.title, t.time),
           body: formatWhen(date, t.time) + (t.notes ? `\n${t.notes}` : ''),
-          onclick: () => open()
+          source: { kind: 'home', taskId: t.id, date }
         });
       });
     });
@@ -350,12 +351,113 @@ function remindersFiringToday() {
           at: atTime(today, r.time),
           title: reminderTitle(r.days, it.title, null),
           body: `${formatWhen(date, null)}\nBase de datos: ${it.databaseName} · ${it.columnName}`,
-          onclick: () => { if (window.mdDatabase) window.mdDatabase.open(it.databaseId); }
+          source: { kind: 'db', databaseId: it.databaseId, rowId: it.rowId, doneColumnId: it.doneColumnId }
         });
       });
     });
   }
   return out;
+}
+
+// ---- aviso en pantalla + acciones (hecho / posponer) ----
+// Las notificaciones del sistema en Linux no pueden llevar botones (Electron
+// solo los soporta en macOS), así que cada aviso también aparece como una
+// tarjeta dentro de MK, abajo a la derecha, con las acciones.
+
+const SNOOZE_OPTIONS = [
+  { label: '10 min', ms: 10 * 60 * 1000 },
+  { label: '1 hora', ms: 60 * 60 * 1000 },
+  { label: 'Mañana 9:00', tomorrowAt: '09:00' }
+];
+
+let toastHost = null;
+
+function openSource(source) {
+  if (window.mdEditor.focusWindow) window.mdEditor.focusWindow();
+  if (source && source.kind === 'db') {
+    if (window.mdDatabase) window.mdDatabase.open(source.databaseId);
+  } else {
+    open();
+  }
+}
+
+async function markSourceDone(source) {
+  if (!source) return;
+  if (source.kind === 'home') {
+    const item = findItem(source.taskId, source.date);
+    if (item && !item.done) setItemDone(item, true);
+  } else if (source.kind === 'db' && source.doneColumnId && window.mdState.rootFolder) {
+    await window.mdEditor.db.setCell(window.mdState.rootFolder, source.rowId, source.doneColumnId, '1');
+    await loadDbReminders();
+  }
+}
+
+function snoozeReminder(r, option) {
+  let at;
+  if (option.tomorrowAt) {
+    at = atTime(iso(addDays(new Date(), 1)), option.tomorrowAt);
+  } else {
+    at = Date.now() + option.ms;
+  }
+  data.snoozes.push({
+    id: newId(), at,
+    title: r.title.replace(/^\(pospuesto\) /, ''),
+    body: r.body,
+    source: r.source || null
+  });
+  save();
+}
+
+function showReminderToast(r) {
+  if (!toastHost) {
+    toastHost = el('div', 'reminder-toasts');
+    document.body.appendChild(toastHost);
+  }
+  const toast = el('div', 'reminder-toast');
+  const head = el('div', 'reminder-toast-title', `🔔 ${r.snoozed ? '(pospuesto) ' : ''}${r.title}`);
+  head.title = 'Abrir';
+  head.addEventListener('click', () => openSource(r.source));
+  const close = el('button', 'reminder-toast-close', '×');
+  close.title = 'Descartar';
+  close.addEventListener('click', () => toast.remove());
+  const top = el('div', 'reminder-toast-top');
+  top.append(head, close);
+  toast.appendChild(top);
+  if (r.body) toast.appendChild(el('div', 'reminder-toast-body', r.body));
+
+  const actions = el('div', 'reminder-toast-actions');
+  const canComplete = r.source && (r.source.kind === 'home' || r.source.doneColumnId);
+  if (canComplete) {
+    const done = el('button', 'reminder-toast-btn reminder-toast-done', '✓ Hecho');
+    done.addEventListener('click', async () => {
+      toast.remove();
+      await markSourceDone(r.source);
+    });
+    actions.appendChild(done);
+  }
+  const later = el('span', 'reminder-toast-later', 'Posponer:');
+  actions.appendChild(later);
+  SNOOZE_OPTIONS.forEach((opt) => {
+    const b = el('button', 'reminder-toast-btn', opt.label);
+    b.addEventListener('click', () => {
+      toast.remove();
+      snoozeReminder(r, opt);
+    });
+    actions.appendChild(b);
+  });
+  toast.appendChild(actions);
+  toastHost.appendChild(toast);
+  return toast;
+}
+
+function fireReminder(r) {
+  try {
+    const n = new Notification(`🔔 ${r.snoozed ? '(pospuesto) ' : ''}${r.title}`, { body: r.body });
+    n.onclick = () => openSource(r.source);
+  } catch (e) {
+    // Notification puede no estar disponible en algunos entornos
+  }
+  showReminderToast(r);
 }
 
 function checkReminders() {
@@ -367,13 +469,16 @@ function checkReminders() {
     data.notified[r.key] = true;
     changed = true;
     if (now - r.at > REMINDER_GRACE_MS) return; // sonaba con la app cerrada: se descarta
-    try {
-      const n = new Notification(`🔔 ${r.title}`, { body: r.body });
-      n.onclick = r.onclick;
-    } catch (e) {
-      // Notification puede no estar disponible en algunos entornos
-    }
+    fireReminder(r);
   });
+  // Avisos pospuestos: suenan cuando les toca aunque la app haya estado
+  // cerrada un rato (los pediste vos a propósito).
+  const due = data.snoozes.filter((s) => s.at <= now);
+  if (due.length) {
+    data.snoozes = data.snoozes.filter((s) => s.at > now);
+    due.forEach((s) => fireReminder({ ...s, snoozed: true }));
+    changed = true;
+  }
   // Claves de días anteriores ya no pueden volver a sonar.
   Object.keys(data.notified).forEach((key) => {
     if (key.split('|')[0] !== today) { delete data.notified[key]; changed = true; }
@@ -414,6 +519,7 @@ async function loadDbReminders() {
             rowId: row.id, columnId: col.id, columnName: col.name, date, reminders,
             title: (titleCol && row.cells[titleCol.id]) || '(sin nombre)',
             done: doneCol ? row.cells[doneCol.id] === '1' : false,
+            doneColumnId: doneCol ? doneCol.id : null,
             databaseId: db.id, databaseName: (db.icon ? db.icon + ' ' : '') + db.name
           });
         });
@@ -1263,6 +1369,6 @@ startupToggle.addEventListener('change', () => {
   window.mdEditor.setConfig({ homeOnStartup: startupToggle.checked });
 });
 
-window.mdHome = { open, close, setMode, checkReminders, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
+window.mdHome = { open, close, setMode, checkReminders, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
 
 })();

@@ -111,6 +111,18 @@ La notificación dice qué y cuándo:
 - Funcionan con MK abierto, **aunque el Home esté cerrado** (MK revisa cada 30 segundos).
 - Si MK estaba cerrado a la hora del aviso, al abrirlo te avisa solo si pasaron menos de 10 minutos; los más viejos se descartan para no llenarte de notificaciones.
 - Una tarea ya tildada no avisa. En una recurrente, avisa antes de cada repetición.
+
+**Cuando suena un aviso**, además de la notificación del sistema aparece una tarjeta abajo a la derecha de MK:
+
+> 🔔 **Hoy a las 18:30: Entregar TP de Historia**
+> Martes, 29 de septiembre a las 18:30
+> **✓ Hecho** · Posponer: **10 min** · **1 hora** · **Mañana 9:00** · ✕
+
+- **✓ Hecho**: tilda la tarea (o marca la casilla de la fila, si viene de una base de datos).
+- **Posponer**: vuelve a avisar en 10 minutos, 1 hora o mañana a las 9:00, marcado *"(pospuesto)"*. Se guarda: si cerrás MK y lo abrís después de esa hora, te avisa al abrir.
+- **✕**: descarta la tarjeta. Clic en el título (o en la notificación del sistema) trae MK al frente y abre el Home o la base de datos.
+
+Las notificaciones del sistema en Linux no permiten botones, por eso las acciones están en la tarjeta de MK.
 - Mismos avisos para filas de [bases de datos](bases-de-datos-como-usar.md#avisos-en-columnas-fecha) con fecha.
 
 ## El panel lateral

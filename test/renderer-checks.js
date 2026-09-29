@@ -2540,6 +2540,7 @@
       await window.mdHome.loadDbReminders();
     }
     window.Notification = OriginalNotification;
+    document.querySelectorAll('.reminder-toast').forEach((t) => t.remove());
 
     // Limpieza: la tarea puede haber quedado en la semana siguiente.
     if (!findCard()) document.getElementById('home-next').click();
@@ -2557,6 +2558,73 @@
       'Avisos anticipados: "Faltan 3 días" con día y hora (Home), "Mañana" (base de datos), sin repetir',
       homeOk && dbOk && !!card,
       `home=${homeOk} (${homeNotif.map((n) => n.title + ' / ' + n.body).join(' ; ')}) baseDatos=${dbOk} limpieza=${!!card}`
+    );
+  }
+
+  // Posponer un aviso: suena (notificación + tarjeta en pantalla), "10 min"
+  // lo guarda como pospuesto, cuando le toca vuelve a sonar "(pospuesto)", y
+  // "✓ Hecho" en la tarjeta tilda la tarea.
+  {
+    const pad = (n) => String(n).padStart(2, '0');
+    const now = new Date();
+    const hhmm = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const title = 'Posponer ' + Date.now();
+    const qa = document.querySelector('#home-main .home-day.home-today .home-quick-add');
+    qa.value = title;
+    qa.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const findCard = () => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
+    findCard().click();
+    await waitFor(() => document.querySelector('.home-editor'));
+    const editor = document.querySelector('.home-editor');
+    editor.querySelector('.reminder-add').click();
+    const row = editor.querySelector('.reminder-row');
+    row.querySelector('select').value = '0';
+    row.querySelector('input[type="time"]').value = hhmm;
+    Array.from(editor.querySelectorAll('button')).find((b) => b.textContent === 'Guardar').click();
+    window.mdHome.close();
+
+    const OriginalNotification = window.Notification;
+    const shown = [];
+    window.Notification = function (t) { shown.push(t); };
+    const toastOf = () => Array.from(document.querySelectorAll('.reminder-toast')).find((t) => t.textContent.includes(title));
+    window.mdHome.checkReminders();
+    const firstToast = toastOf();
+    const snoozesBefore = window.mdHome.getSnoozes().length;
+    if (firstToast) Array.from(firstToast.querySelectorAll('button')).find((b) => b.textContent === '10 min').click();
+    const snoozed = window.mdHome.getSnoozes().find((s) => s.title.includes(title));
+    const snoozeOk = !!firstToast && !toastOf() && window.mdHome.getSnoozes().length === snoozesBefore + 1 && !!snoozed &&
+      Math.abs(snoozed.at - (Date.now() + 10 * 60 * 1000)) < 5000;
+
+    // Adelantar el reloj del pospuesto: vuelve a sonar marcado "(pospuesto)".
+    if (snoozed) snoozed.at = Date.now() - 1000;
+    window.mdHome.checkReminders();
+    const againToast = toastOf();
+    const againOk = !!againToast && againToast.textContent.includes('(pospuesto)') &&
+      shown.some((t) => t.includes('(pospuesto)') && t.includes(title)) && !window.mdHome.getSnoozes().some((s) => s.title.includes(title));
+    if (againToast) Array.from(againToast.querySelectorAll('button')).find((b) => b.textContent === '✓ Hecho').click();
+    window.Notification = OriginalNotification;
+    document.querySelectorAll('.reminder-toast').forEach((t) => t.remove());
+
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const card = findCard();
+    const doneOk = !!card && card.classList.contains('home-task-done');
+    if (card) {
+      const originalConfirm = window.confirm;
+      window.confirm = () => true;
+      card.click();
+      await waitFor(() => document.querySelector('.home-editor'));
+      Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
+      window.confirm = originalConfirm;
+    }
+    window.mdHome.close();
+    document.querySelectorAll('.reminder-toast').forEach((t) => t.remove());
+    check(
+      'Posponer aviso: tarjeta en pantalla, "10 min" lo pospone, vuelve a sonar "(pospuesto)" y "✓ Hecho" tilda la tarea',
+      snoozeOk && againOk && doneOk,
+      `pospuesto=${snoozeOk} vuelveASonar=${againOk} hecho=${doneOk}`
     );
   }
 
@@ -2596,6 +2664,7 @@
     window.Notification = function (t) { notifiedTitle = t; };
     window.mdHome.checkReminders();
     window.Notification = OriginalNotification;
+    document.querySelectorAll('.reminder-toast').forEach((t) => t.remove());
 
     const originalConfirm = window.confirm;
     window.confirm = () => true;

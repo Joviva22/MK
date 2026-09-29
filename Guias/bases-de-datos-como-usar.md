@@ -152,7 +152,7 @@ Clic en el encabezado de una columna **Fecha** → **Editar columna** → **Avis
 
 - Si la base tiene una columna **Casilla** y la fila está marcada, no avisa.
 - Suena con MK abierto (aunque el panel esté cerrado); los cambios en las bases se toman en hasta 2 minutos.
-- Clic en la notificación abre la base de datos.
+- Clic en la notificación abre la base de datos. En la tarjeta de aviso de MK: **✓ Hecho** marca la casilla de la fila, y se puede **posponer** (10 min, 1 hora, mañana 9:00).
 
 ## CSV: importar y exportar
 

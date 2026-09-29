@@ -3466,3 +3466,93 @@ li.CodeMirror-hint-active {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* ---- Avisos en pantalla con posponer (ver home.js showReminderToast) ---- */
+.reminder-toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 40px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 380px;
+}
+
+.reminder-toast {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.reminder-toast-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.reminder-toast-title {
+  flex: 1;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reminder-toast-title:hover {
+  color: var(--accent);
+}
+
+.reminder-toast-close {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.reminder-toast-body {
+  margin-top: 4px;
+  color: var(--text-muted);
+  white-space: pre-line;
+  font-size: 12px;
+}
+
+.reminder-toast-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.reminder-toast-later {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.reminder-toast-btn {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.reminder-toast-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.reminder-toast-done {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
