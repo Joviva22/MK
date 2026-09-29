@@ -143,6 +143,17 @@ Una base puede tener varias vistas de los mismos datos. **+ Vista** → Tabla, T
 - En Tablero: clic derecho en la pestaña → **"Agrupar por"** para elegir qué columna de selección define las columnas.
 - En Tablero y Galería, clic en una tarjeta abre el **editor de fila completa** con todos los campos.
 
+## Avisos en columnas Fecha
+
+Clic en el encabezado de una columna **Fecha** → **Editar columna** → **Avisos → + Agregar aviso**: cuántos días antes (el mismo día, 1, 2, 3, 5, 7, 14, 30) y a qué hora. Vale para **todas las filas** de esa columna:
+
+> 🔔 **Mañana: Informe final**
+> Jueves, 1 de octubre · Base de datos: Proyectos · Entrega
+
+- Si la base tiene una columna **Casilla** y la fila está marcada, no avisa.
+- Suena con MK abierto (aunque el panel esté cerrado); los cambios en las bases se toman en hasta 2 minutos.
+- Clic en la notificación abre la base de datos.
+
 ## CSV: importar y exportar
 
 **Exportar** — botón **⇩ CSV** (arriba a la derecha): guarda la **vista actual** (con sus filtros y orden) como `.csv`, listo para abrir en Excel, LibreOffice o Google Sheets (con tildes bien).

@@ -2483,6 +2483,83 @@
     );
   }
 
+  // Avisos anticipados: tarea del Home con aviso "3 días antes" y fila de
+  // base de datos con aviso "1 día antes" en su columna Fecha. La
+  // notificación dice cuántos días faltan y el día/hora; no se repite.
+  {
+    const pad = (n) => String(n).padStart(2, '0');
+    const isoOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const now = new Date();
+    const hhmm = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const in3 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3);
+    const in1 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const title = 'Entregar TP ' + Date.now();
+    const qa = document.querySelector('#home-main .home-day.home-today .home-quick-add');
+    qa.value = title;
+    qa.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const findCard = () => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
+    findCard().click();
+    await waitFor(() => document.querySelector('.home-editor'));
+    const editor = document.querySelector('.home-editor');
+    const dateIn = editor.querySelector('input[type="date"]');
+    dateIn.value = isoOf(in3);
+    const timeIn = editor.querySelector('input[type="time"]');
+    timeIn.value = '18:30';
+    timeIn.dispatchEvent(new Event('input'));
+    editor.querySelector('.reminder-add').click();
+    const row = editor.querySelector('.reminder-row');
+    row.querySelector('select').value = '3';
+    row.querySelector('input[type="time"]').value = hhmm;
+    Array.from(editor.querySelectorAll('button')).find((b) => b.textContent === 'Guardar').click();
+
+    const OriginalNotification = window.Notification;
+    const shown = [];
+    window.Notification = function (t, o) { shown.push({ title: t, body: o && o.body }); };
+    window.mdHome.checkReminders();
+    window.mdHome.checkReminders(); // segunda vuelta: no repite
+    const homeNotif = shown.filter((n) => n.title.includes(title));
+    const weekday = in3.toLocaleDateString(undefined, { weekday: 'long' }).toLowerCase();
+    const homeOk = homeNotif.length === 1 && homeNotif[0].title.includes(`Faltan 3 días para ${title}`) &&
+      homeNotif[0].body.toLowerCase().includes(weekday) && homeNotif[0].body.includes('18:30');
+
+    let dbOk = false;
+    if (fixturesDir) {
+      window.mdState.rootFolder = fixturesDir;
+      const rdb = await window.mdEditor.db.createDatabase(fixturesDir, 'AvisosTest');
+      const [rName] = await window.mdEditor.db.listColumns(fixturesDir, rdb.id);
+      const rDate = await window.mdEditor.db.createColumn(fixturesDir, rdb.id, { name: 'Entrega', type: 'date', options: { reminders: [{ days: 1, time: hhmm }] } });
+      await window.mdEditor.db.createRow(fixturesDir, rdb.id, { [rName.id]: 'Informe final', [rDate.id]: isoOf(in1) });
+      await window.mdHome.loadDbReminders();
+      window.mdHome.checkReminders();
+      const dbNotif = shown.filter((n) => n.title.includes('Informe final'));
+      dbOk = dbNotif.length === 1 && dbNotif[0].title.includes('Mañana: Informe final') && dbNotif[0].body.includes('AvisosTest');
+      await window.mdEditor.db.deleteDatabase(fixturesDir, rdb.id);
+      await window.mdHome.loadDbReminders();
+    }
+    window.Notification = OriginalNotification;
+
+    // Limpieza: la tarea puede haber quedado en la semana siguiente.
+    if (!findCard()) document.getElementById('home-next').click();
+    const card = findCard();
+    if (card) {
+      const originalConfirm = window.confirm;
+      window.confirm = () => true;
+      card.click();
+      await waitFor(() => document.querySelector('.home-editor'));
+      Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
+      window.confirm = originalConfirm;
+    }
+    window.mdHome.close();
+    check(
+      'Avisos anticipados: "Faltan 3 días" con día y hora (Home), "Mañana" (base de datos), sin repetir',
+      homeOk && dbOk && !!card,
+      `home=${homeOk} (${homeNotif.map((n) => n.title + ' / ' + n.body).join(' ; ')}) baseDatos=${dbOk} limpieza=${!!card}`
+    );
+  }
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {

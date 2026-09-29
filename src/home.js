@@ -256,7 +256,8 @@ function moveItem(item, newDate) {
   const t = item.task;
   data.tasks.push({
     id: newId(), title: t.title, date: newDate, done: item.done, priority: t.priority,
-    notes: t.notes || '', time: t.time || null, remind: t.remind != null ? t.remind : null
+    notes: t.notes || '', time: t.time || null, remind: t.remind != null ? t.remind : null,
+    advance: t.advance || []
   });
   skipOccurrence(item);
 }
@@ -283,39 +284,145 @@ function itemsInRange(fromIso, toIso) {
 
 // ---- recordatorios ----
 
-function reminderKey(item) {
-  return `${item.task.id}|${item.date}|${item.task.time}|${item.task.remind}`;
+const MAX_ADVANCE_DAYS = 30; // hasta cuántos días hacia adelante se buscan avisos anticipados
+let dbReminderItems = []; // filas de bases de datos cuya columna Fecha tiene avisos configurados
+
+function formatWhen(dateIso, time) {
+  const text = parseIso(dateIso).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+  const cap = text.charAt(0).toUpperCase() + text.slice(1);
+  return time ? `${cap} a las ${time}` : cap;
+}
+
+// Título de la notificación según cuántos días faltan.
+function reminderTitle(days, title, time) {
+  if (days === 0) return time ? `Hoy a las ${time}: ${title}` : `Hoy: ${title}`;
+  if (days === 1) return `Mañana: ${title}`;
+  return `Faltan ${days} días para ${title}`;
+}
+
+function atTime(dateIso, hhmm, minusMinutes) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = parseIso(dateIso);
+  d.setHours(h, m - (minusMinutes || 0), 0, 0);
+  return d.getTime();
+}
+
+// Todos los avisos que suenan HOY (a cualquier hora): los del mismo día
+// ("15 min antes" de la hora de la tarea) y los anticipados de tareas y
+// filas de bases de datos con fecha dentro de los próximos 30 días.
+// La clave empieza con el día en que suena: así se puede olvidar sin
+// riesgo al día siguiente.
+function remindersFiringToday() {
+  const today = todayIso();
+  const out = [];
+  for (let offset = 0; offset <= MAX_ADVANCE_DAYS; offset++) {
+    const date = iso(addDays(parseIso(today), offset));
+    occurrencesOn(date).forEach((item) => {
+      if (item.done) return;
+      const t = item.task;
+      const src = `home:${t.id}|${date}`;
+      if (offset === 0 && t.time && t.remind != null) {
+        out.push({
+          key: `${today}|${src}|rel${t.remind}|${t.time}`,
+          at: atTime(date, t.time, Number(t.remind)),
+          title: Number(t.remind) ? `En ${t.remind} min: ${t.title}` : reminderTitle(0, t.title, t.time),
+          body: formatWhen(date, t.time) + (t.notes ? `\n${t.notes}` : ''),
+          onclick: () => open()
+        });
+      }
+      (t.advance || []).forEach((r) => {
+        if (r.days !== offset || !r.time) return;
+        out.push({
+          key: `${today}|${src}|adv${r.days}@${r.time}`,
+          at: atTime(today, r.time),
+          title: reminderTitle(r.days, t.title, t.time),
+          body: formatWhen(date, t.time) + (t.notes ? `\n${t.notes}` : ''),
+          onclick: () => open()
+        });
+      });
+    });
+    dbReminderItems.forEach((it) => {
+      if (it.done || it.date !== date) return;
+      it.reminders.forEach((r) => {
+        if (r.days !== offset || !r.time) return;
+        out.push({
+          key: `${today}|db:${it.rowId}:${it.columnId}|${date}|adv${r.days}@${r.time}`,
+          at: atTime(today, r.time),
+          title: reminderTitle(r.days, it.title, null),
+          body: `${formatWhen(date, null)}\nBase de datos: ${it.databaseName} · ${it.columnName}`,
+          onclick: () => { if (window.mdDatabase) window.mdDatabase.open(it.databaseId); }
+        });
+      });
+    });
+  }
+  return out;
 }
 
 function checkReminders() {
   const now = Date.now();
   const today = todayIso();
   let changed = false;
-  occurrencesOn(today).forEach((item) => {
-    const t = item.task;
-    if (item.done || !t.time || t.remind == null) return;
-    const [h, m] = t.time.split(':').map(Number);
-    const d = parseIso(today);
-    d.setHours(h, m - Number(t.remind), 0, 0);
-    const at = d.getTime();
-    const key = reminderKey(item);
-    if (now < at || data.notified[key]) return;
-    data.notified[key] = true;
+  remindersFiringToday().forEach((r) => {
+    if (now < r.at || data.notified[r.key]) return;
+    data.notified[r.key] = true;
     changed = true;
-    if (now - at > REMINDER_GRACE_MS) return;
+    if (now - r.at > REMINDER_GRACE_MS) return; // sonaba con la app cerrada: se descarta
     try {
-      const body = (Number(t.remind) ? `En ${t.remind} min · ` : '') + `${t.time}` + (t.notes ? `\n${t.notes}` : '');
-      const n = new Notification(`🗓 ${t.title}`, { body });
-      n.onclick = () => open();
+      const n = new Notification(`🔔 ${r.title}`, { body: r.body });
+      n.onclick = r.onclick;
     } catch (e) {
       // Notification puede no estar disponible en algunos entornos
     }
   });
-  // Solo se guardan los avisos de hoy: los viejos ya no pueden volver a sonar.
+  // Claves de días anteriores ya no pueden volver a sonar.
   Object.keys(data.notified).forEach((key) => {
-    if (key.split('|')[1] !== today) { delete data.notified[key]; changed = true; }
+    if (key.split('|')[0] !== today) { delete data.notified[key]; changed = true; }
   });
   if (changed) save();
+}
+
+// Filas de bases de datos con avisos (columna Fecha con "Avisos" configurados).
+// Independiente del toggle "Fechas de bases de datos" del Home: ese solo
+// decide si se ven en el calendario.
+async function loadDbReminders() {
+  const root = window.mdState.rootFolder;
+  if (!root || !window.mdEditor.db) { dbReminderItems = []; return; }
+  const items = [];
+  try {
+    const databases = await window.mdEditor.db.listDatabases(root);
+    for (const db of databases) {
+      const columns = await window.mdEditor.db.listColumns(root, db.id);
+      const withReminders = columns.filter((c) => {
+        if (c.type !== 'date') return false;
+        try {
+          const o = JSON.parse(c.options || '{}');
+          return Array.isArray(o.reminders) && o.reminders.length;
+        } catch (e) {
+          return false;
+        }
+      });
+      if (!withReminders.length) continue;
+      const rows = await window.mdEditor.db.listRows(root, db.id);
+      const titleCol = columns.find((c) => c.type === 'text') || columns[0];
+      const doneCol = columns.find((c) => c.type === 'checkbox');
+      withReminders.forEach((col) => {
+        const reminders = JSON.parse(col.options).reminders;
+        rows.forEach((row) => {
+          const date = row.cells[col.id];
+          if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+          items.push({
+            rowId: row.id, columnId: col.id, columnName: col.name, date, reminders,
+            title: (titleCol && row.cells[titleCol.id]) || '(sin nombre)',
+            done: doneCol ? row.cells[doneCol.id] === '1' : false,
+            databaseId: db.id, databaseName: (db.icon ? db.icon + ' ' : '') + db.name
+          });
+        });
+      });
+    }
+  } catch (e) {
+    return; // si falla la lectura, se mantienen los de la vuelta anterior
+  }
+  dbReminderItems = items;
 }
 
 // ---- filas de bases de datos con fecha (solo lectura) ----
@@ -607,7 +714,7 @@ function taskCard(item, compact) {
     startInlineRename(card, titleEl, task);
   });
   card.appendChild(titleEl);
-  const badges = (item.recurring ? '🔁' : '') + (task.remind != null && task.time ? '🔔' : '') + (task.pomodoros ? `🍅${task.pomodoros}` : '');
+  const badges = (item.recurring ? '🔁' : '') + ((task.remind != null && task.time) || (task.advance && task.advance.length) ? '🔔' : '') + (task.pomodoros ? `🍅${task.pomodoros}` : '');
   if (badges) card.appendChild(el('span', 'home-task-badges', badges));
   if (task.note) {
     const link = el('button', 'home-task-note', '📄');
@@ -949,7 +1056,7 @@ function openTaskEditor(item) {
   const timeInput = field('Hora', el('input', 'home-editor-input'), row1);
   timeInput.type = 'time';
   timeInput.value = task.time || '';
-  const remindSelect = field('Aviso', selectOf(REMIND_OPTIONS, task.remind != null ? String(task.remind) : ''), row1);
+  const remindSelect = field('Aviso (según la hora)', selectOf(REMIND_OPTIONS, task.remind != null ? String(task.remind) : ''), row1);
 
   // Repetición
   const rep = task.repeat || {};
@@ -984,6 +1091,12 @@ function openTaskEditor(item) {
   repeatSelect.addEventListener('change', syncRepeatUi);
   timeInput.addEventListener('input', syncRepeatUi);
   syncRepeatUi();
+
+  // Avisos anticipados: "N días antes, a las HH:MM" (ver reminderui.js).
+  const advWrap = el('div', 'home-editor-field');
+  advWrap.appendChild(el('span', null, 'Avisos anticipados (notificación "Faltan N días para…")'));
+  box.appendChild(advWrap);
+  const getAdvance = window.mdReminderUI.build(advWrap, task.advance || []);
 
   const prioSelect = field('Prioridad', selectOf(PRIORITIES, task.priority || 'media'));
 
@@ -1040,6 +1153,7 @@ function openTaskEditor(item) {
       date,
       time: timeInput.value || null,
       remind: timeInput.value && remindSelect.value !== '' ? Number(remindSelect.value) : null,
+      advance: getAdvance(),
       repeat: freq ? { freq, until: untilInput.value || null, days: freq === 'weekly' ? days : undefined } : null,
       priority: prioSelect.value,
       notes: notesInput.value,
@@ -1087,7 +1201,7 @@ function shift(delta) {
 async function open() {
   overlay.hidden = false;
   await load();
-  await Promise.all([loadDbItems(), loadNoteItems()]);
+  await Promise.all([loadDbItems(), loadNoteItems(), loadDbReminders()]);
   render();
 }
 
@@ -1139,13 +1253,16 @@ document.addEventListener('keydown', (e) => {
   // Recordatorios: cargar las tareas ya al arrancar (aunque el Home no se
   // abra) y revisar cada 30 s.
   await load();
+  await loadDbReminders();
   checkReminders();
   setInterval(checkReminders, 30000);
+  // Las bases de datos pueden cambiar desde su panel: releer cada 2 min.
+  setInterval(loadDbReminders, 120000);
 })();
 startupToggle.addEventListener('change', () => {
   window.mdEditor.setConfig({ homeOnStartup: startupToggle.checked });
 });
 
-window.mdHome = { open, close, setMode, checkReminders, sendPlanToDailyNote, parseNoteTasks };
+window.mdHome = { open, close, setMode, checkReminders, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
 
 })();

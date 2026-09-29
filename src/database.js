@@ -1708,6 +1708,17 @@ async function reloadColumnsAndRows() {
 function buildColumnConfigEditor(host, type, column) {
   const opts = column ? parseOptions(column) : {};
 
+  // Columna Fecha: avisos para todas sus filas ("Faltan 3 días para …"),
+  // los hace sonar el motor de recordatorios del Home (home.js).
+  if (type === 'date') {
+    const hint = document.createElement('div');
+    hint.className = 'database-popover-hint';
+    hint.textContent = 'Avisos (para cada fila con fecha; no avisa si la fila tiene una casilla marcada):';
+    host.appendChild(hint);
+    const getReminders = window.mdReminderUI.build(host, opts.reminders || []);
+    return () => ({ reminders: getReminders() });
+  }
+
   if (type === 'select' || type === 'multiselect') {
     const hint = document.createElement('div');
     hint.className = 'database-popover-hint';

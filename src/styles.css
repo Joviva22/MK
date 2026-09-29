@@ -3410,3 +3410,59 @@ li.CodeMirror-hint-active {
 .mk-live-table tbody tr:nth-child(even) {
   background: var(--surface);
 }
+
+/* ---- Avisos anticipados (ver reminderui.js) ---- */
+.reminder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reminder-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.command-palette .reminder-field {
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.reminder-at {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.reminder-del {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.reminder-del:hover {
+  color: #ef476f;
+}
+
+.reminder-add {
+  align-self: flex-start;
+  margin-top: 4px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.reminder-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

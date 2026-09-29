@@ -89,13 +89,29 @@ Cómo se comporta:
 
 ## Recordatorios 🔔
 
+**Aviso del mismo día (según la hora de la tarea):**
+
 1. Poné una **Hora** en la tarea.
-2. Elegí **Aviso**: a la hora, o unos minutos antes.
+2. Elegí **Aviso (según la hora)**: a la hora, o unos minutos antes.
 3. A esa hora aparece una notificación del sistema con el título (clic → abre el Home).
+
+**Avisos anticipados ("faltan N días"):**
+
+1. En el editor de la tarea, **Avisos anticipados → + Agregar aviso**.
+2. Elegí cuántos días antes (el mismo día, 1, 2, 3, 5, 7, 14 o 30) y **a qué hora** te avisa ese día.
+3. Podés poner varios: por ejemplo *7 días antes a las 09:00*, *3 días antes a las 09:00* y *1 día antes a las 20:00*.
+
+La notificación dice qué y cuándo:
+
+> 🔔 **Faltan 3 días para Entregar TP**
+> Viernes, 2 de octubre a las 18:30
+
+(1 día antes dice *"Mañana: …"* y el mismo día *"Hoy a las 18:30: …"*). No hace falta que la tarea tenga hora: sin hora, el aviso muestra solo el día. La tarjeta muestra 🔔 si tiene algún aviso.
 
 - Funcionan con MK abierto, **aunque el Home esté cerrado** (MK revisa cada 30 segundos).
 - Si MK estaba cerrado a la hora del aviso, al abrirlo te avisa solo si pasaron menos de 10 minutos; los más viejos se descartan para no llenarte de notificaciones.
-- Una tarea ya tildada no avisa. En una recurrente, avisa cada día que ocurre.
+- Una tarea ya tildada no avisa. En una recurrente, avisa antes de cada repetición.
+- Mismos avisos para filas de [bases de datos](bases-de-datos-como-usar.md#avisos-en-columnas-fecha) con fecha.
 
 ## El panel lateral
 

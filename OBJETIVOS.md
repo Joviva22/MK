@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 30 de 60 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 32 de 60 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -40,6 +40,8 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 - [x] ~~Terminal: fuentes Nerd Font para prompts con íconos (Powerlevel10k, Starship)~~ (2026-09-29)
 - [x] ~~**Modo "Live Preview"** (escribir viendo el Markdown renderizado; cuarto modo además de normal/enfoque/lectura, `Ctrl+Shift+L` y en el ciclo 🎯). Pedido del usuario~~ (2026-09-29)
 - [x] ~~Limpieza: fuera `ESTADO.md`, `MEJORAS.md` y `RESUMEN.md` (desactualizados; lo pendiente pasó acá), restos de build y de tests~~ (2026-09-29)
+- [x] ~~**Recordatorios para filas de bases de datos**: avisos configurables en cada columna Fecha, para todas sus filas~~ (2026-09-29)
+- [x] ~~**Recordatorios anticipados ("faltan N días")**: varios avisos por tarea, "N días antes a las HH:MM"; la notificación dice qué, qué día y a qué hora (*"Faltan 3 días para Entregar TP — Viernes, 2 de octubre a las 18:30"*)~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
@@ -50,8 +52,6 @@ Mejoras chicas y de uso diario: se hacen en una sesión cada una.
 - [ ] **Terminal: renombrar una pestaña** con doble clic (ej. "servidor", "git")
 - [ ] **Sidebar: "Copiar ruta"** en el menú contextual de un archivo
 - [ ] **Recordatorios locales: posponer** ("recordar en 10 min / 1 h / mañana") desde la notificación o el Home
-- [ ] **Recordatorios locales para filas de bases de datos** con columna Fecha (+ hora opcional), no solo para tareas del Home
-- [ ] **Recordatorios locales anticipados ("faltan N días")**: además del aviso del mismo día, elegir avisos con días de anticipación (ej. 1, 3 y 7 días antes), **a un día y una hora concretos** (ej. "3 días antes, a las 09:00"). La notificación dice qué y cuándo: *"Faltan 3 días para Entregar TP — viernes 3 de octubre a las 18:30"* (o *"Mañana: …"* / *"Hoy a las 18:30: …"*). Vale para tareas del Home y filas de bases de datos con fecha
 
 ## Mediano plazo
 
