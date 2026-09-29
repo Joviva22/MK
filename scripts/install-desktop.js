@@ -100,7 +100,7 @@ for (const [cmd, args] of [
 ]) {
   try {
     execFileSync(cmd, args, { stdio: 'ignore' });
-  } catch (e) {
+  } catch {
     // opcional: sin estas herramientas el escritorio igual lo encuentra al rato
   }
 }
