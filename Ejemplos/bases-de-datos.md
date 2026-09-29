@@ -16,6 +16,17 @@ Abrí la paleta de comandos (`Ctrl+Shift+P`) → **"Bases de datos"**.
    - `Resumen` — **fórmula**: `prop("Nombre") + " — " + prop("Prioridad") + (prop("Hecha") ? " (lista)" : "")`. Se recalcula sola; cambiá la prioridad o marcá "Hecha" y mirá cómo cambia el texto.
 3. Arriba de la tabla, junto a "Tabla", hay una segunda pestaña **"Tablero"**: agrupa las tareas por `Prioridad` en columnas, arrastrables.
 
+## La base, dentro de esta nota
+
+Un bloque `database` muestra la base acá mismo (en el preview o en Live Preview). Es de solo lectura: marcá una tarea como "Hecha" en la base y esta tabla se actualiza.
+
+```database
+base: Tareas
+filas: 10
+```
+
+Probá cambiar `base:` por `Proyectos`. Las vistas Tablero, Calendario y Galería se muestran como tabla (con sus filtros); las vistas Gráfico, como gráfico — ver `graficos.md`.
+
 ## Para armar una base desde cero
 
 - **"+ Vista"** para agregar tabla/tablero/galería.

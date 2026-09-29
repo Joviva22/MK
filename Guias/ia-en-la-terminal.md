@@ -42,8 +42,10 @@ Si la IA **modifica el archivo** mientras lo tenés abierto en MK, la pestaña s
 ## Consejos
 
 - Cada IA abre en **su propia pestaña**: podés tener Claude y Gemini a la vez sobre la misma nota y comparar.
+- **Pantalla dividida** (`Ctrl+Shift+5` o ◫): la IA en un panel y una terminal normal al lado para correr los tests o `git diff` mientras trabaja.
 - **Doble clic en el nombre** de la pestaña para renombrarla (ej. "Claude – resumen").
 - Para trabajar con **varios archivos**, abrí la IA sobre la **carpeta** (clic derecho en la carpeta).
+- Los archivos que crea o cambia la IA aparecen **solos** en el árbol y en las pestañas abiertas (la carpeta se vigila).
 - Revisá los cambios con **🔀 Ver cambios** o el [historial de versiones](historial-y-git.md) antes de darlos por buenos.
 
 ## Límites

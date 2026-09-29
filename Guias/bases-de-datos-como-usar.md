@@ -187,7 +187,7 @@ filas: 10
 ````
 
 - `base:` nombre de la base (también sirve escribir solo el nombre en la primera línea).
-- `vista:` qué vista mostrar (por defecto, la primera). Respeta sus **filtros y orden**; si es una vista **Gráfico**, dibuja el gráfico.
+- `vista:` qué vista mostrar (por defecto, la primera). Respeta sus **filtros y orden**; si es una vista **Gráfico**, dibuja el gráfico. Las vistas Tablero, Calendario y Galería se muestran como tabla.
 - `filas:` cuántas filas como máximo (por defecto 20).
 - Es de solo lectura y se actualiza sola; el botón **Abrir** abre la base para editarla.
 - Se ve en el preview y en Live Preview. Si el nombre no existe, te dice cuáles hay.

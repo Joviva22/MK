@@ -16,11 +16,22 @@ También se pueden abrir y editar archivos de código (`.py`, `.c`/`.cpp`, `.jav
 ### Buscar y moverte rápido
 `Ctrl+F` busca y reemplaza dentro del archivo actual; `Ctrl+Shift+F` busca en toda la carpeta abierta; `Ctrl+P` abre un archivo por nombre sin tocar el mouse. Paleta de comandos (`Ctrl+Shift+P`) para no memorizar dónde está cada botón. Ver [`COMANDOS.md`](./COMANDOS.md) para la lista completa de atajos.
 
+### Planificar: Home, bases de datos y gráficos
+- **Home** (`Ctrl+Shift+H`): planificador semanal y mensual con calendario, tareas con hora y prioridad, recurrentes (hábitos), arrastrar tareas de día, tareas `📅` escritas en tus notas, estadísticas 📈 y **recordatorios** (a la hora o días antes, aunque MK esté en la bandeja).
+- **Bases de datos** relacionales tipo Notion (tabla, tablero, calendario, galería y **Gráfico**), guardadas en `.mk/` dentro de tu carpeta, con importar/exportar CSV.
+- **Gráficos**: vista Gráfico de una base, bloque ```` ```chart ```` que dibuja una tabla Markdown, y bloque ```` ```database ```` que muestra una vista de una base **dentro de una nota**.
+
+### Terminal e IA
+Terminal real integrada (`` Ctrl+` ``) con pestañas, **pantalla dividida** (`Ctrl+Shift+5`), búsqueda en la salida y **F5** para ejecutar el archivo actual (`.py`, `.c`, `.js`, `.sh`…). **Abrir con IA**: Claude Code, Gemini CLI o Codex arrancan en la terminal con el archivo como contexto.
+
+### Carpetas grandes
+La carpeta abierta **se vigila sola** (lo que cambie git, otra app o una IA aparece en el árbol y en las pestañas sin refrescar), el disco se lee sin congelar la ventana y un **índice en memoria** hace que búsqueda, etiquetas, backlinks, grafo y Kanban no relean todo cada vez (3000 notas: 159 ms la primera consulta, 7 ms las siguientes).
+
 ### Un segundo archivo al lado (split view)
 El **panel secundario** muestra un segundo archivo (Markdown, PDF, `.docx` o imagen) de solo lectura junto al principal, del mismo ancho y con su propio divisor para repartir el espacio. Un clic en el título lo "promueve" a principal — sin necesidad de una segunda instancia del editor.
 
 ### Word y PDF
-Abrir un `.docx` lo convierte a Markdown editable al vuelo (con tablas), y se puede exportar de vuelta a un `.docx` real. Del lado de PDF: unir, separar, rotar, reordenar páginas, agregar marca de agua o firma, y subrayar texto arrastrando el mouse. Exportar notas a PDF, HTML, EPUB o tarjetas de Anki.
+Abrir un `.docx` lo convierte a Markdown editable al vuelo (con tablas), y se puede exportar de vuelta a un `.docx` real. Del lado de PDF: **escribir encima y rellenar formularios**, unir, separar, rotar, reordenar páginas, agregar marca de agua o firma, y subrayar texto arrastrando el mouse. Fotos, video y audio de cualquier formato común se abren con su visor (y los que Chromium no reproduce ofrecen la app del sistema). Exportar notas a PDF, HTML, EPUB o tarjetas de Anki.
 
 ### Herramientas integradas
 Todo esto viene ya armado en la app, no son plugins de terceros:
@@ -28,7 +39,7 @@ Todo esto viene ya armado en la app, no son plugins de terceros:
 - Diagramas **Mermaid**, incluso con imágenes propias adentro de los nodos.
 - Ejecutar bloques de código JavaScript en un Web Worker aislado (sin acceso a tus archivos).
 - Sincronización con **git** al guardar, automática o eligiendo a mano qué archivos entran en cada commit.
-- Nota diaria, snippets de texto (`/fecha`, `/hora` y los tuyos propios) y plantillas con variables.
+- Nota diaria (`Ctrl+Shift+D`) con carpeta, formato del nombre y plantilla configurables; snippets de texto (`/fecha`, `/hora` y los tuyos propios) y plantillas con variables.
 - Historial de versiones local con diff y vista de cambios sin guardar.
 - Corrector ortográfico nativo, con sugerencias por clic derecho.
 - Temporizador **Pomodoro** con notificación de fin de fase, minutos configurables.
@@ -36,7 +47,7 @@ Todo esto viene ya armado en la app, no son plugins de terceros:
 - Editar tablas Markdown ya escritas: agregar fila/columna o alinear, desde el menú contextual.
 
 ### Personalización
-26 temas de color, tipografía y tamaño de fuente del editor (con zoom rápido por `Ctrl+scroll`), ancho de tabulación, autoguardado configurable, y modo enfoque/lectura para escribir sin distracciones. Los botones de la toolbar que no uses se pueden ocultar desde ⚙ Ajustes (y ejecutar desde ahí igual, sin tener que mostrarlos primero).
+26 temas de color, tipografía y tamaño de fuente del editor (con zoom rápido por `Ctrl+scroll`), ancho de tabulación, autoguardado configurable, y cuatro modos de vista: normal, enfoque, lectura y **Live Preview** (el Markdown se ve renderizado mientras escribís, salvo en la línea del cursor). Al cerrar la ventana MK puede quedar en la bandeja (para que suenen los recordatorios) y arrancar con el sistema. Los botones de la toolbar que no uses se pueden ocultar desde ⚙ Ajustes (y ejecutar desde ahí igual, sin tener que mostrarlos primero).
 
 ## Documentación
 
@@ -83,11 +94,11 @@ Copia el AppImage a `~/.local/share/mk/MK.AppImage`, instala el ícono y el lanz
 
 ## Stack
 
-Electron 32 · CodeMirror 5 · marked · KaTeX · DOMPurify · highlight.js · lucide · mermaid · diff (Myers) · jszip · sql.js (bases de datos) · xterm.js + node-pty (terminal).
+Electron 44 · CodeMirror 5 · marked · KaTeX · DOMPurify · highlight.js · lucide · mermaid · diff (Myers) · jszip · sql.js (bases de datos) · xterm.js + node-pty (terminal).
 
 Word/PDF: `mammoth` + `turndown` (leer `.docx`), `docx` (escribir `.docx`), `pdf-lib` (operaciones de página), `pdfjs-dist` (render de PDF para subrayar).
 
-Todo se carga como `<script>` suelto desde `node_modules` (sin bundler, sin webpack/vite) — cada librería expone su propio global (`marked`, `mammoth`, `docx`, etc.).
+Todo se carga como `<script>` suelto desde `node_modules` (sin bundler, sin webpack/vite) — cada librería expone su propio global (`marked`, `mammoth`, `docx`, etc.). Las pesadas (Mermaid, docx, mammoth, xterm) se cargan recién cuando se usan (`src/lazyload.js`).
 
 ## Estructura
 
@@ -95,6 +106,11 @@ Todo se carga como `<script>` suelto desde `node_modules` (sin bundler, sin webp
 MK/
 ├── src/
 │   ├── main.js         # proceso principal: ventana, IPC, protocolo md-local://, búsqueda/tags/backlinks, git, PDF/docx
+│   ├── folderwatch.js   # (main) vigila la carpeta abierta con fs.watch
+│   ├── folderindex.js   # (main) índice en memoria de las notas: solo se relee lo que cambió
+│   ├── dbengine.js      # (main) bases de datos con sql.js en <carpeta>/.mk/
+│   ├── ptyhost.js       # (main) pseudo-terminales (node-pty) de la terminal integrada
+│   ├── traymode.js      # (main) bandeja del sistema y arranque con el sistema
 │   ├── preload.js       # bridge seguro (contextIsolation) → window.mdEditor
 │   ├── index.html       # carga las libs + todos los scripts del renderer
 │   └── *.js              # un archivo por feature (kanban, graph, docximport, pdfpages, secondarypane, ...), cada uno en su propia IIFE

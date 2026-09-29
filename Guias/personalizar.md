@@ -11,6 +11,7 @@
 | Tabulación | 2 · 4 · 8 espacios |
 | Ajuste de línea | Sí / No |
 | Snippets | `/abrev = texto`, uno por línea |
+| Nota diaria | Carpeta, formato del nombre (`AAAA-MM-DD`, `AAAA/MM/DD`…) y plantilla. Ver [nota-diaria.md](nota-diaria.md) |
 | Git al guardar | Ver [historial-y-git.md](historial-y-git.md) |
 | Abrir Home al iniciar | Ver [Home](home-como-usar.md) |
 | Guardar el Home en la carpeta abierta | Tareas en `<carpeta>/.mk/home.json` (viajan con git; cada carpeta con su Home) |

@@ -21,7 +21,7 @@ Debajo se ve cómo quedaría la nota de hoy. Las notas que ya existen no se toca
 - **Diario de trabajo**: qué hiciste, bloqueos, decisiones.
 - **Registro de estudio**: qué temas viste hoy y dudas para la clase.
 - **Bitácora personal**: gratitud, ánimo, lo que aprendiste.
-- Plantilla sugerida (guardala como `Plantillas/diaria.md` y ponela en Ajustes):
+- Plantilla sugerida (guardala como `Plantillas/diaria.md` y ponela en Ajustes; hay una lista en [`../Ejemplos/Plantillas/diaria.md`](../Ejemplos/Plantillas/diaria.md)):
   ```markdown
   # {{fecha}}
   ## Plan

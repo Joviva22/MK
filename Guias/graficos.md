@@ -2,13 +2,14 @@
 
 **Para qué sirve:** ver de un vistazo lo que hay en tus datos — cuánto gastaste por categoría, cuántas tareas hay en cada estado, cómo evoluciona algo mes a mes — sin exportar a Excel.
 
-MK tiene gráficos en tres lugares:
+MK tiene gráficos en cuatro lugares:
 
 | Dónde | Qué muestra |
 |---|---|
 | **Vista Gráfico** de una [base de datos](bases-de-datos-como-usar.md) | Lo que elijas de esa base |
 | **📈 Estadísticas** del [Home](home-como-usar.md) | Tu avance: semana, mes, racha, hábitos |
 | **Bloque `chart`** en cualquier nota | Una tabla Markdown dibujada como gráfico |
+| **Bloque `database`** en cualquier nota | La vista Gráfico (o tabla) de una base, [dentro de la nota](bases-de-datos-como-usar.md#mostrar-una-base-dentro-de-una-nota) |
 
 ## Vista Gráfico (bases de datos)
 
@@ -68,6 +69,19 @@ título: Gastos de septiembre
 - Los números pueden venir como `1.234,5`, `1,234.5`, `12 €` o `45%`.
 - Se ve en el **preview**, en **Live Preview** (con el cursor fuera del bloque) y al **exportar** a HTML/PDF.
 - Si falta la tabla o la columna, el bloque muestra qué corregir.
+
+## Una base dentro de una nota (bloque `database`)
+
+Si ya tenés una vista Gráfico en una base, podés mostrarla en cualquier nota (se actualiza sola cuando cambian los datos):
+
+````markdown
+```database
+base: Gastos
+vista: Por categoría
+```
+````
+
+Detalles (`filas:`, vistas de tabla, botón Abrir) en [bases-de-datos-como-usar.md](bases-de-datos-como-usar.md#mostrar-una-base-dentro-de-una-nota).
 
 ## 📈 Estadísticas del Home
 

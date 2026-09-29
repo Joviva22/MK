@@ -24,5 +24,7 @@ Si la IA cambia el archivo mientras lo tenés abierto, MK lo recarga solo (o lo 
 - Clic derecho en una carpeta → **Abrir terminal aquí**.
 - `Ctrl+F` con el foco en la terminal: buscar en la salida.
 - Doble clic en el nombre de una pestaña: renombrarla.
+- **Pantalla dividida**: `Ctrl+Shift+5` (o ◫) abre otra terminal al lado. Probá: a la izquierda `python3 -m http.server`, a la derecha `curl localhost:8000`.
+- Lo que crees o borres desde la terminal (`touch nueva.md`, `rm`, `git checkout`) aparece en el árbol de archivos **solo**, sin 🔄.
 
 Guías: [`../Guias/terminal.md`](../Guias/terminal.md) · [`../Guias/ia-en-la-terminal.md`](../Guias/ia-en-la-terminal.md).
