@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, net, shell, nativeImage, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const fsp = fs.promises;
 const os = require('os');
 const crypto = require('crypto');
 const JSZip = require('jszip');
@@ -84,19 +85,29 @@ function saveConfig(config) {
   fs.writeFileSync(configPath, JSON.stringify(config), 'utf-8');
 }
 
-function readTree(dirPath) {
-  return fs.readdirSync(dirPath, { withFileTypes: true })
+// Asíncrono (fs.promises) y con las subcarpetas en paralelo: con miles de
+// archivos, la versión ...Sync congelaba toda la ventana mientras leía.
+// Una subcarpeta ilegible (permisos) queda vacía en vez de romper el árbol.
+async function readTree(dirPath, isRoot = true) {
+  let entries;
+  try {
+    entries = await fsp.readdir(dirPath, { withFileTypes: true });
+  } catch (e) {
+    if (isRoot) throw e;
+    return [];
+  }
+  const visible = entries
     .filter((entry) => !entry.name.startsWith('.'))
-    .sort((a, b) => Number(b.isDirectory()) - Number(a.isDirectory()) || a.name.localeCompare(b.name))
-    .map((entry) => {
-      const fullPath = path.join(dirPath, entry.name);
-      return {
-        nombre: entry.name,
-        esCarpeta: entry.isDirectory(),
-        ruta: fullPath,
-        hijos: entry.isDirectory() ? readTree(fullPath) : null
-      };
-    });
+    .sort((a, b) => Number(b.isDirectory()) - Number(a.isDirectory()) || a.name.localeCompare(b.name));
+  return Promise.all(visible.map(async (entry) => {
+    const fullPath = path.join(dirPath, entry.name);
+    return {
+      nombre: entry.name,
+      esCarpeta: entry.isDirectory(),
+      ruta: fullPath,
+      hijos: entry.isDirectory() ? await readTree(fullPath, false) : null
+    };
+  }));
 }
 
 // Modo test (npm test / test/run.js): corre la suite en test/renderer-checks.js
@@ -258,15 +269,24 @@ function backupDirFor(filePath) {
   return path.join(backupsRoot, crypto.createHash('md5').update(filePath).digest('hex'));
 }
 
-function pruneGlobalBackups() {
+// Recorre TODOS los backups (un stat por archivo): se hace en segundo plano
+// y como mucho una vez por minuto, no en cada autoguardado.
+const PRUNE_EVERY_MS = 60 * 1000;
+let lastPrune = 0;
+let pruning = false;
+
+async function pruneGlobalBackups() {
+  if (pruning || Date.now() - lastPrune < PRUNE_EVERY_MS) return;
+  pruning = true;
+  lastPrune = Date.now();
   try {
     const entries = [];
-    for (const dirName of fs.readdirSync(backupsRoot)) {
+    for (const dirName of await fsp.readdir(backupsRoot)) {
       const dirPath = path.join(backupsRoot, dirName);
-      if (!fs.statSync(dirPath).isDirectory()) continue;
-      for (const fileName of fs.readdirSync(dirPath)) {
+      if (!(await fsp.stat(dirPath)).isDirectory()) continue;
+      for (const fileName of await fsp.readdir(dirPath)) {
         const filePath = path.join(dirPath, fileName);
-        const stat = fs.statSync(filePath);
+        const stat = await fsp.stat(filePath);
         entries.push({ filePath, size: stat.size, mtime: stat.mtimeMs });
       }
     }
@@ -275,26 +295,32 @@ function pruneGlobalBackups() {
     entries.sort((a, b) => a.mtime - b.mtime); // más viejo primero, sin importar de qué archivo es
     for (const e of entries) {
       if (total <= MAX_TOTAL_BACKUPS_BYTES) break;
-      fs.unlinkSync(e.filePath);
+      await fsp.unlink(e.filePath);
       total -= e.size;
     }
   } catch {
     // una poda fallida no debe impedir guardar el archivo real
+  } finally {
+    pruning = false;
   }
 }
 
-function makeBackup(filePath) {
+async function makeBackup(filePath) {
   try {
-    if (!fs.existsSync(filePath)) return;
-    const dir = backupDirFor(filePath);
-    fs.mkdirSync(dir, { recursive: true });
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    fs.copyFileSync(filePath, path.join(dir, `${stamp}__${path.basename(filePath)}`));
-    const entries = fs.readdirSync(dir).sort();
-    while (entries.length > MAX_BACKUPS_PER_FILE) {
-      fs.unlinkSync(path.join(dir, entries.shift()));
+    try {
+      await fsp.access(filePath);
+    } catch {
+      return; // archivo nuevo: no hay versión anterior
     }
-    pruneGlobalBackups();
+    const dir = backupDirFor(filePath);
+    await fsp.mkdir(dir, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    await fsp.copyFile(filePath, path.join(dir, `${stamp}__${path.basename(filePath)}`));
+    const entries = (await fsp.readdir(dir)).sort();
+    while (entries.length > MAX_BACKUPS_PER_FILE) {
+      await fsp.unlink(path.join(dir, entries.shift()));
+    }
+    pruneGlobalBackups(); // en segundo plano
   } catch {
     // un backup fallido no debe impedir guardar el archivo real
   }
@@ -313,8 +339,8 @@ ipcMain.handle('file:save', async (event, { content, filePath, forceDialog }) =>
     if (result.canceled || !result.filePath) return null;
     target = result.filePath;
   }
-  makeBackup(target);
-  fs.writeFileSync(target, content, 'utf-8');
+  await makeBackup(target);
+  await fsp.writeFile(target, content, 'utf-8');
   return target;
 });
 
@@ -355,9 +381,9 @@ function looksBinary(buffer) {
   return sample.includes(0);
 }
 
-ipcMain.handle('file:read', (event, filePath) => {
+ipcMain.handle('file:read', async (event, filePath) => {
   try {
-    const buffer = fs.readFileSync(filePath);
+    const buffer = await fsp.readFile(filePath);
     if (looksBinary(buffer)) return { content: null, binary: true };
     return { content: buffer.toString('utf-8'), binary: false };
   } catch {
@@ -417,22 +443,22 @@ ipcMain.handle('folder:open', async () => {
   if (result.canceled || result.filePaths.length === 0) return null;
   const rootPath = result.filePaths[0];
   saveConfig({ ...loadConfig(), lastFolder: rootPath });
-  return { rootPath, tree: readTree(rootPath) };
+  return { rootPath, tree: await readTree(rootPath) };
 });
 
-ipcMain.handle('folder:getLast', () => {
+ipcMain.handle('folder:getLast', async () => {
   const { lastFolder } = loadConfig();
   if (!lastFolder) return null;
   try {
-    return { rootPath: lastFolder, tree: readTree(lastFolder) };
+    return { rootPath: lastFolder, tree: await readTree(lastFolder) };
   } catch {
     return null;
   }
 });
 
-ipcMain.handle('folder:read', (event, rootPath) => {
+ipcMain.handle('folder:read', async (event, rootPath) => {
   try {
-    return { rootPath, tree: readTree(rootPath) };
+    return { rootPath, tree: await readTree(rootPath) };
   } catch {
     return null;
   }
@@ -596,31 +622,42 @@ const SEARCH_MAX_RESULTS = 200;
 // saltando ocultos, y llama onFile(fullPath, content) para cada uno.
 // Compartido por búsqueda global, etiquetas y backlinks para no repetir el
 // recorrido del árbol tres veces.
-function walkTextFiles(root, onFile) {
-  function walk(dirPath) {
+//
+// Asíncrono: primero junta las rutas (en el mismo orden de siempre, en
+// profundidad) y después las lee de a READ_BATCH en paralelo, llamando
+// onFile en orden. Si onFile devuelve false, corta (búsqueda llena).
+const READ_BATCH = 16;
+
+async function listTextFiles(root) {
+  const out = [];
+  async function walk(dirPath) {
     let entries;
     try {
-      entries = fs.readdirSync(dirPath, { withFileTypes: true });
+      entries = await fsp.readdir(dirPath, { withFileTypes: true });
     } catch {
       return;
     }
     for (const entry of entries) {
       if (entry.name.startsWith('.')) continue;
       const fullPath = path.join(dirPath, entry.name);
-      if (entry.isDirectory()) {
-        walk(fullPath);
-      } else if (SEARCH_TEXT_EXT.test(entry.name)) {
-        let content;
-        try {
-          content = fs.readFileSync(fullPath, 'utf-8');
-        } catch {
-          continue;
-        }
-        onFile(fullPath, content);
-      }
+      if (entry.isDirectory()) await walk(fullPath);
+      else if (SEARCH_TEXT_EXT.test(entry.name)) out.push(fullPath);
     }
   }
-  walk(root);
+  await walk(root);
+  return out;
+}
+
+async function walkTextFiles(root, onFile) {
+  const files = await listTextFiles(root);
+  for (let i = 0; i < files.length; i += READ_BATCH) {
+    const batch = files.slice(i, i + READ_BATCH);
+    const contents = await Promise.all(batch.map((f) => fsp.readFile(f, 'utf-8').catch(() => null)));
+    for (let j = 0; j < batch.length; j++) {
+      if (contents[j] === null) continue;
+      if (onFile(batch[j], contents[j]) === false) return;
+    }
+  }
 }
 
 // Tablero Kanban en modo "carpeta completa" (ver kanban.js): junta el
@@ -654,22 +691,22 @@ ipcMain.handle('csv:open', async () => {
   return { name: path.basename(filePath, path.extname(filePath)), content };
 });
 
-ipcMain.handle('kanban:readFolderFiles', (event, root) => {
+ipcMain.handle('kanban:readFolderFiles', async (event, root) => {
   if (!root) return [];
   const files = [];
-  walkTextFiles(root, (fullPath, content) => {
+  await walkTextFiles(root, (fullPath, content) => {
     files.push({ path: fullPath, content });
   });
   return files;
 });
 
-ipcMain.handle('search:inFolder', (event, { root, query }) => {
+ipcMain.handle('search:inFolder', async (event, { root, query }) => {
   if (!root || !query || query.trim().length < 2) return [];
   const q = query.toLowerCase();
   const results = [];
 
-  walkTextFiles(root, (fullPath, content) => {
-    if (results.length >= SEARCH_MAX_RESULTS) return;
+  await walkTextFiles(root, (fullPath, content) => {
+    if (results.length >= SEARCH_MAX_RESULTS) return false;
     const lines = content.split('\n');
     for (let i = 0; i < lines.length; i++) {
       if (results.length >= SEARCH_MAX_RESULTS) break;
@@ -700,10 +737,10 @@ function stripCodeForScan(text) {
 // precedido por otro "#" (para no confundir con encabezados "## Título").
 const TAG_RE = /(^|[\s(])#([a-zA-Z][\w-]*)/g;
 
-ipcMain.handle('tags:list', (event, root) => {
+ipcMain.handle('tags:list', async (event, root) => {
   if (!root) return [];
   const counts = new Map();
-  walkTextFiles(root, (fullPath, content) => {
+  await walkTextFiles(root, (fullPath, content) => {
     const scanText = stripCodeForScan(content);
     TAG_RE.lastIndex = 0;
     let m;
@@ -717,15 +754,15 @@ ipcMain.handle('tags:list', (event, root) => {
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 });
 
-ipcMain.handle('wikilink:resolve', (event, { root, target }) => {
+ipcMain.handle('wikilink:resolve', async (event, { root, target }) => {
   if (!root || !target) return null;
   const wanted = target.trim().toLowerCase();
   let found = null;
-  function walk(dirPath) {
+  async function walk(dirPath) {
     if (found) return;
     let entries;
     try {
-      entries = fs.readdirSync(dirPath, { withFileTypes: true });
+      entries = await fsp.readdir(dirPath, { withFileTypes: true });
     } catch {
       return;
     }
@@ -734,7 +771,7 @@ ipcMain.handle('wikilink:resolve', (event, { root, target }) => {
       if (entry.name.startsWith('.')) continue;
       const fullPath = path.join(dirPath, entry.name);
       if (entry.isDirectory()) {
-        walk(fullPath);
+        await walk(fullPath);
       } else if (SEARCH_TEXT_EXT.test(entry.name)) {
         const base = path.basename(entry.name, path.extname(entry.name)).toLowerCase();
         if (base === wanted) {
@@ -744,17 +781,17 @@ ipcMain.handle('wikilink:resolve', (event, { root, target }) => {
       }
     }
   }
-  walk(root);
+  await walk(root);
   return found;
 });
 
 const WIKILINK_RE = /\[\[([^\]|#]+)(?:\|[^\]]+)?\]\]/g;
 
-ipcMain.handle('backlinks:list', (event, { root, target }) => {
+ipcMain.handle('backlinks:list', async (event, { root, target }) => {
   if (!root || !target) return [];
   const wanted = target.trim().toLowerCase();
   const results = [];
-  walkTextFiles(root, (fullPath, content) => {
+  await walkTextFiles(root, (fullPath, content) => {
     const originalLines = content.split('\n');
     const scanLines = stripCodeForScan(content).split('\n');
     scanLines.forEach((line, i) => {
@@ -777,11 +814,11 @@ ipcMain.handle('backlinks:list', (event, { root, target }) => {
 
 // Nodos = archivos de texto de la carpeta; aristas = wikilinks resueltos
 // entre ellos (mismo criterio que wikilink:resolve, por nombre de archivo).
-ipcMain.handle('graph:build', (event, root) => {
+ipcMain.handle('graph:build', async (event, root) => {
   if (!root) return { nodes: [], edges: [] };
 
   const files = [];
-  walkTextFiles(root, (fullPath, content) => {
+  await walkTextFiles(root, (fullPath, content) => {
     files.push({ path: fullPath, name: path.basename(fullPath, path.extname(fullPath)), content });
   });
 
@@ -822,9 +859,9 @@ ipcMain.handle('pdf:pickFiles', async (event, { multi }) => {
   return result.filePaths;
 });
 
-ipcMain.handle('pdf:readBytes', (event, filePath) => {
+ipcMain.handle('pdf:readBytes', async (event, filePath) => {
   try {
-    return fs.readFileSync(filePath).toString('base64');
+    return (await fsp.readFile(filePath)).toString('base64');
   } catch {
     return null;
   }
@@ -839,9 +876,9 @@ ipcMain.handle('pdf:saveBytes', async (event, { base64, defaultName }) => {
 
 // Abrir .docx (ver docximport.js): mammoth+turndown corren en el renderer,
 // acá solo se leen los bytes crudos, igual separación que pdf:readBytes.
-ipcMain.handle('docx:readBytes', (event, filePath) => {
+ipcMain.handle('docx:readBytes', async (event, filePath) => {
   try {
-    return fs.readFileSync(filePath).toString('base64');
+    return (await fsp.readFile(filePath)).toString('base64');
   } catch {
     return null;
   }
@@ -851,9 +888,9 @@ ipcMain.handle('docx:readBytes', (event, filePath) => {
 // docxexport.js para embeber imágenes locales al exportar a .docx) — la
 // restricción de ruta (no salir de la carpeta abierta) la valida el
 // renderer antes de llamar esto, igual que con las imágenes normales.
-ipcMain.handle('asset:readBytes', (event, filePath) => {
+ipcMain.handle('asset:readBytes', async (event, filePath) => {
   try {
-    return fs.readFileSync(filePath).toString('base64');
+    return (await fsp.readFile(filePath)).toString('base64');
   } catch {
     return null;
   }

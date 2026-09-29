@@ -707,7 +707,7 @@
     const sidebarMenuVisible = Array.from(document.querySelectorAll('.context-menu')).find((el) => el.id !== 'context-menu' && !el.hidden);
     const bulkDeleteBtn = sidebarMenuVisible && Array.from(sidebarMenuVisible.querySelectorAll('button')).find((b) => b.textContent === 'Eliminar 2 elementos seleccionados');
     if (bulkDeleteBtn) bulkDeleteBtn.click();
-    await waitFor(async () => (await window.mdEditor.readFile(multiAPath)) === null);
+    await waitFor(async () => (await window.mdEditor.readFile(multiAPath)) === null && (await window.mdEditor.readFile(multiBPath)) === null);
     window.confirm = originalConfirmMulti;
 
     const aGoneOk = (await window.mdEditor.readFile(multiAPath)) === null;
