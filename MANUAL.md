@@ -30,6 +30,10 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 22. [Panel secundario (pantalla dividida)](#22-panel-secundario-pantalla-dividida)
 23. [Temporizador Pomodoro](#23-temporizador-pomodoro)
 24. [Controlar el reproductor multimedia](#24-controlar-el-reproductor-multimedia)
+25. [Home: planificador semanal y mensual](#25-home-planificador-semanal-y-mensual)
+26. [Bases de datos relacionales](#26-bases-de-datos-relacionales)
+
+> Guías especializadas por función (cómo usar / para qué sirve): carpeta [`Guias/`](./Guias/README.md).
 
 ---
 
@@ -459,6 +463,7 @@ Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene 
 | `Ctrl+Shift+T` | Etiquetas de la carpeta |
 | `Ctrl+Shift+B` | Backlinks del archivo activo |
 | `Ctrl+Shift+D` | Nota diaria de hoy |
+| `Ctrl+Shift+H` | Home: planificador semanal y mensual |
 | `Ctrl+Shift+O` | Índice del documento |
 | `Ctrl+Shift+E` | Modo enfoque |
 | `Ctrl+Shift+R` | Modo lectura |
@@ -538,3 +543,18 @@ Usa [`playerctl`](https://github.com/altdesktop/playerctl) por debajo, así que:
 - **Solo funciona en Linux** (MPRIS es un estándar de D-Bus, no existe en Windows/Mac).
 - **`playerctl` no viene instalado con MK** — hay que instalarlo aparte con el gestor de paquetes del sistema (ej. `sudo apt install playerctl`, `sudo pacman -S playerctl`).
 - Si falta el binario, o no hay ningún reproductor con soporte MPRIS corriendo en ese momento, el botón avisa con un mensaje claro en vez de no hacer nada.
+
+## 25. Home: planificador semanal y mensual
+
+Botón **Home** en la toolbar, `Ctrl+Shift+H` o paleta de comandos → "Home: planificador semanal y mensual". Para que se abra solo al iniciar MK: ⚙ **Ajustes** → "Abrir Home al iniciar".
+
+1. **Semana**: 7 columnas (lunes a domingo). Escribí en "+ Agregar tarea" al pie de un día y `Enter`. Tildá para marcar hecha, arrastrá para cambiarla de día, clic para editar título, fecha, prioridad (alta/media/baja, color del borde) y notas.
+2. **Mes**: calendario con hasta 3 tareas por día ("+N más" lleva a esa semana). Doble clic en un hueco del día agrega una tarea; arrastrar la mueve; clic en el número del día abre esa semana.
+3. **Panel lateral** (depende de la semana/mes visible): barra de progreso, objetivos del período, notas del período, tareas **atrasadas** ("Pasar a hoy" las mueve todas) y bandeja **sin fecha** (arrastrá desde/hacia los días).
+4. **Fechas de bases de datos** (con una carpeta abierta): las filas de tus [bases de datos](#26-bases-de-datos-relacionales) con una columna Fecha aparecen en ese día como chips de solo lectura; clic abre esa base.
+
+No necesita carpeta abierta: las tareas son personales y se guardan en `home.json` en la carpeta de configuración de la app. **Límite:** no hay tareas recurrentes ni recordatorios. Guías: [`Guias/home-como-usar.md`](./Guias/home-como-usar.md) y [`Guias/home-para-que-sirve.md`](./Guias/home-para-que-sirve.md).
+
+## 26. Bases de datos relacionales
+
+Paleta de comandos → "Bases de datos". Tipo Notion: columnas tipadas (texto, número, fecha, casilla, selección única/múltiple, relación, fórmula, rollup, fecha de creación), relaciones de dos vías entre bases, fórmulas JS con `prop("Columna")`, rollups (cantidad, suma, promedio, mínimo, máximo, únicos) y vistas tabla / tablero / galería. Necesita carpeta abierta: se guardan en `.mk/databases.sqlite3` dentro de ella. Ejemplo con datos en [`Ejemplos/bases-de-datos.md`](./Ejemplos/bases-de-datos.md); guías: [`Guias/bases-de-datos-como-usar.md`](./Guias/bases-de-datos-como-usar.md) y [`Guias/bases-de-datos-para-que-sirve.md`](./Guias/bases-de-datos-para-que-sirve.md).

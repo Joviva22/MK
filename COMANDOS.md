@@ -28,6 +28,7 @@ Referencia rápida y resumida. Para la explicación completa de cada función, v
 
 | Atajo | Acción |
 |---|---|
+| `Ctrl+Shift+H` | Home: planificador semanal/mensual con calendario (abrir/cerrar) |
 | `Ctrl+B` | Ocultar/mostrar el sidebar de archivos |
 | `Ctrl+Shift+O` | Índice del documento (encabezados) |
 | `Ctrl+Shift+E` | Modo enfoque (solo editor) |

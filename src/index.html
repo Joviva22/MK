@@ -12,6 +12,7 @@
   <div class="toolbar">
     <button id="btn-toggle-sidebar" class="toolbar-button" title="Ocultar/mostrar el panel de archivos (Ctrl+B)"><i data-lucide="panel-left-close"></i></button>
     <button id="btn-open-folder" class="toolbar-button" title="Abrir carpeta"><i data-lucide="folder-open"></i> Carpeta</button>
+    <button id="btn-home" class="toolbar-button" title="Home: planificador semanal y mensual (Ctrl+Shift+H)"><i data-lucide="house"></i> Home</button>
     <button id="btn-refresh-tree" class="toolbar-button toolbar-optional" title="Refrescar archivos (ver si hay nuevos)"><i data-lucide="refresh-cw"></i></button>
 
     <div class="dropdown">
@@ -104,6 +105,10 @@
 
         <label class="dropdown-label" for="gitsync-toggle">
           <input type="checkbox" id="gitsync-toggle" /> Sincronizar con git al guardar
+        </label>
+
+        <label class="dropdown-label" for="home-startup-toggle">
+          <input type="checkbox" id="home-startup-toggle" /> Abrir Home al iniciar
         </label>
 
         <label class="dropdown-label" for="pomodoro-focus-select">Pomodoro: minutos de foco</label>
@@ -224,6 +229,18 @@
     </div>
   </div>
 
+  <div id="custom-theme-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette custom-theme-modal">
+      <div class="backlinks-title">Tema personalizado — se aplica en vivo, "Guardar" para dejarlo</div>
+      <div id="custom-theme-fields" class="custom-theme-fields"></div>
+      <div id="custom-theme-warning" class="custom-theme-warning" hidden></div>
+      <div class="custom-theme-actions">
+        <button id="custom-theme-cancel" class="toolbar-button">Cancelar</button>
+        <button id="custom-theme-apply" class="toolbar-button">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="tags-panel" class="modal-overlay palette-overlay" hidden>
     <div class="command-palette">
       <input id="tags-input" type="text" placeholder="Filtrar etiquetas..." autocomplete="off" spellcheck="false" />
@@ -258,6 +275,8 @@
           <li><strong>Nota diaria</strong> — <code>Ctrl+Shift+D</code> o paleta de comandos.</li>
           <li><strong>Diagramas Mermaid</strong> — bloque <code>```mermaid```</code> en el preview.</li>
           <li><strong>Vista de grafo</strong> y <strong>tablero Kanban</strong> — paleta de comandos.</li>
+          <li><strong>Home</strong> (planificador semanal/mensual con calendario) — botón Home o <code>Ctrl+Shift+H</code>.</li>
+          <li><strong>Bases de datos relacionales</strong> (tipo Notion: columnas tipadas, relaciones, fórmulas, rollups, vistas tabla/tablero/galería) — paleta de comandos, "Bases de datos".</li>
           <li><strong>Exportar a EPUB</strong> y <strong>a tarjetas Anki</strong> — menú ⬇ Exportar.</li>
           <li><strong>Sincronizar con git al guardar</strong> — ⚙ Ajustes (necesita que la carpeta ya sea un repo git).</li>
           <li><strong>Ejecutar código JavaScript</strong> — botón "▶ Ejecutar" en bloques <code>```js```</code> del preview (aislado en un Web Worker, sin acceso a tus archivos).</li>
@@ -279,6 +298,63 @@
         </div>
       </div>
       <div id="kanban-board" class="kanban-board"></div>
+    </div>
+  </div>
+
+  <div id="home-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette home-modal">
+      <div class="home-header">
+        <div class="home-title">Home</div>
+        <div class="home-mode-toggle">
+          <button id="home-mode-week" class="toolbar-button home-mode-active">Semana</button>
+          <button id="home-mode-month" class="toolbar-button">Mes</button>
+        </div>
+        <div class="home-nav">
+          <button id="home-prev" class="toolbar-button" title="Anterior">‹</button>
+          <button id="home-today" class="toolbar-button">Hoy</button>
+          <button id="home-next" class="toolbar-button" title="Siguiente">›</button>
+        </div>
+        <span id="home-range-label" class="home-range-label"></span>
+        <span class="toolbar-spacer"></span>
+        <label class="home-db-toggle" title="Mostrar en el calendario las filas de tus bases de datos que tengan una columna Fecha">
+          <input type="checkbox" id="home-show-db" /> Fechas de bases de datos
+        </label>
+        <button id="home-close" class="toolbar-button" title="Cerrar (Esc)">×</button>
+      </div>
+      <div class="home-layout">
+        <aside id="home-side" class="home-side"></aside>
+        <div id="home-main" class="home-main"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="database-panel" class="modal-overlay palette-overlay" hidden>
+    <div class="command-palette database-modal">
+      <div class="database-layout">
+        <div class="database-sidebar">
+          <div class="database-sidebar-header">
+            <span>Bases de datos</span>
+            <button id="database-new-btn" class="toolbar-button" title="Nueva base de datos">+</button>
+          </div>
+          <div id="database-list" class="database-list"></div>
+        </div>
+        <div class="database-main">
+          <div id="database-empty" class="command-palette-empty">Elegí una base de datos de la izquierda, o creá una nueva. (Hace falta una carpeta abierta: se guardan en <code>.mk/databases.sqlite3</code> dentro de ella.)</div>
+          <div id="database-content" class="database-content" hidden>
+            <div class="database-content-header">
+              <input id="database-name-input" class="database-name-input" />
+              <button id="database-delete-btn" class="toolbar-button" title="Eliminar esta base de datos">🗑</button>
+            </div>
+            <div id="database-view-tabs" class="database-view-tabs"></div>
+            <div class="database-toolbar">
+              <input id="database-filter-input" class="database-filter-input" placeholder="Filtrar filas..." />
+              <button id="database-add-column-btn" class="toolbar-button">+ Columna</button>
+              <button id="database-add-row-btn" class="toolbar-button">+ Fila</button>
+            </div>
+            <div id="database-view-body" class="database-view-body"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -390,6 +466,7 @@
   <script src="pomodoro.js"></script>
   <script src="mediaplayer.js"></script>
   <script src="toolbarcustomize.js"></script>
+  <script src="customtheme.js"></script>
   <script src="themes.js"></script>
   <script src="preview.js"></script>
   <script src="toc.js"></script>
@@ -409,6 +486,8 @@
   <script src="history.js"></script>
   <script src="plugins.js"></script>
   <script src="kanban.js"></script>
+  <script src="database.js"></script>
+  <script src="home.js"></script>
   <script src="graph.js"></script>
   <script src="pdfpages.js"></script>
   <script src="pdfhighlight.js"></script>

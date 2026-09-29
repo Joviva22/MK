@@ -35,7 +35,18 @@ const THEME_LIST = [
 
 const themeMenu = document.getElementById('theme-menu');
 
-function applyTheme(slug) {
+// customColors solo importa cuando slug === 'custom' (ver customtheme.js):
+// los 26 temas de acá arriba viven en bloques [data-theme="..."] de
+// styles.css, el custom pisa esas mismas variables con estilos inline —
+// por eso hay que limpiar el inline al volver a un preset, si no la
+// especificidad del inline gana y el preset nuevo no se ve.
+function applyTheme(slug, customColors) {
+  if (window.mdCustomTheme) window.mdCustomTheme.clearInline();
+  if (slug === 'custom') {
+    document.documentElement.setAttribute('data-theme', 'custom');
+    if (window.mdCustomTheme) window.mdCustomTheme.applyStored(customColors);
+    return;
+  }
   if (slug === 'light') {
     document.documentElement.removeAttribute('data-theme');
   } else {
@@ -56,11 +67,26 @@ THEME_LIST.forEach((theme) => {
   themeMenu.appendChild(btn);
 });
 
+const divider = document.createElement('div');
+divider.className = 'dropdown-divider';
+themeMenu.appendChild(divider);
+
+const customBtn = document.createElement('button');
+customBtn.textContent = 'Personalizado...';
+customBtn.id = 'btn-custom-theme';
+customBtn.addEventListener('click', () => {
+  themeMenu.hidden = true;
+  if (window.mdCustomTheme) window.mdCustomTheme.open();
+});
+themeMenu.appendChild(customBtn);
+
 window.initDropdown('btn-theme', 'theme-menu');
+
+window.mdThemes = { applyTheme };
 
 (async () => {
   const config = await window.mdEditor.getConfig();
-  applyTheme(config.theme || 'light');
+  applyTheme(config.theme || 'light', config.customTheme);
 })();
 
 })();

@@ -212,6 +212,45 @@
   const lightBtn = document.querySelector('#theme-menu button[data-theme="light"]');
   if (lightBtn) lightBtn.click();
 
+  // 9b. Tema personalizado: color pickers aplican en vivo (--accent inline),
+  // avisa si el contraste texto/fondo queda bajo, y "Guardar" persiste en
+  // config.json bajo customTheme.
+  window.mdCustomTheme.open();
+  await waitFor(() => !document.getElementById('custom-theme-panel').hidden);
+  const customPanelOpenOk = !document.getElementById('custom-theme-panel').hidden;
+
+  const ctColorInputs = Array.from(document.querySelectorAll('#custom-theme-fields input[type="color"]'));
+  const [ctBgInput, , , ctTextInput, , , ctAccentInput] = ctColorInputs; // orden: bg,surface,surface2,text,textMuted,border,accent
+
+  ctAccentInput.value = '#ff00ff';
+  ctAccentInput.dispatchEvent(new Event('input', { bubbles: true }));
+  await waitFor(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() === '#ff00ff');
+  const liveApplyOk = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() === '#ff00ff';
+  const dataThemeCustomOk = document.documentElement.getAttribute('data-theme') === 'custom';
+
+  ctTextInput.value = '#ffffff';
+  ctTextInput.dispatchEvent(new Event('input', { bubbles: true }));
+  ctBgInput.value = '#fefefe';
+  ctBgInput.dispatchEvent(new Event('input', { bubbles: true }));
+  await waitFor(() => !document.getElementById('custom-theme-warning').hidden);
+  const lowContrastWarnsOk = !document.getElementById('custom-theme-warning').hidden;
+
+  document.getElementById('custom-theme-apply').click();
+  await waitFor(() => document.getElementById('custom-theme-panel').hidden);
+  const ctSavedConfig = await window.mdEditor.getConfig();
+  const customThemePersistedOk = ctSavedConfig.theme === 'custom' && !!ctSavedConfig.customTheme && ctSavedConfig.customTheme.accent === '#ff00ff';
+
+  check(
+    'Tema personalizado: aplica en vivo, avisa contraste bajo y persiste',
+    customPanelOpenOk && liveApplyOk && dataThemeCustomOk && lowContrastWarnsOk && customThemePersistedOk,
+    `panel=${customPanelOpenOk} liveOk=${liveApplyOk} dataTheme=${dataThemeCustomOk} avisoOk=${lowContrastWarnsOk} persistido=${customThemePersistedOk}`
+  );
+
+  // Volver a "light" para no afectar el resto de la suite (varios checks de
+  // abajo asumen los colores por defecto).
+  await window.mdEditor.setConfig({ theme: 'light' });
+  window.mdThemes.applyTheme('light');
+
   // 10. Menú contextual respeta [hidden] (misma familia del bug del punto 2,
   //     pero es el archivo donde el usuario lo reportó en vivo)
   const menu = document.getElementById('context-menu');
@@ -1790,6 +1829,159 @@
   }
   check('Tablero Kanban en modo "carpeta completa": junta columnas de varios archivos y togglea el archivo correcto', kanbanFolderOk, kanbanFolderDetail);
 
+  // 37c. Bases de datos relacionales (tipo Notion): crear dos bases, columna
+  // numérica, fórmula que referencia otra columna, relación entre bases
+  // (elegir una fila de la otra base desde el picker) y borrar fila/base.
+  let dbSuiteOk = false;
+  let dbSuiteDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    await window.mdDatabase.open();
+    await waitFor(() => !document.getElementById('database-panel').hidden);
+    const dbPanelOpenOk = !document.getElementById('database-panel').hidden;
+
+    // Base 1: "Tareas Test"
+    document.getElementById('database-new-btn').click();
+    await waitFor(() => !document.getElementById('database-content').hidden);
+    const dbNameInput = document.getElementById('database-name-input');
+    dbNameInput.value = 'Tareas Test';
+    dbNameInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await waitFor(() => Array.from(document.querySelectorAll('.database-list-item')).some((el) => el.textContent === 'Tareas Test'));
+
+    // Base 2: "Etiquetas Test", con una fila "Urgente"
+    document.getElementById('database-new-btn').click();
+    await waitFor(() => document.querySelectorAll('.database-list-item').length === 2);
+    dbNameInput.value = 'Etiquetas Test';
+    dbNameInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await waitFor(() => Array.from(document.querySelectorAll('.database-list-item')).some((el) => el.textContent === 'Etiquetas Test'));
+    document.getElementById('database-add-row-btn').click();
+    await waitFor(() => document.querySelectorAll('.database-table tbody tr').length === 1);
+    const etiquetaNombreInput = document.querySelector('.database-table tbody tr td input');
+    etiquetaNombreInput.value = 'Urgente';
+    etiquetaNombreInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await waitFor(() => document.querySelector('.database-table tbody tr td .database-cell-input').value === 'Urgente');
+
+    // Volver a "Tareas Test"
+    const tareasItem = Array.from(document.querySelectorAll('.database-list-item')).find((el) => el.textContent === 'Tareas Test');
+    tareasItem.click();
+    await waitFor(() => dbNameInput.value === 'Tareas Test');
+
+    async function addColumn(name, type, configure) {
+      document.getElementById('database-add-column-btn').click();
+      await waitFor(() => document.querySelector('.database-column-popover'));
+      const pop = document.querySelector('.database-column-popover');
+      pop.querySelector('input.database-cell-input').value = name;
+      const typeSelect = pop.querySelector('select.database-cell-input');
+      typeSelect.value = type;
+      typeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      if (configure) configure(pop);
+      Array.from(pop.querySelectorAll('button')).find((b) => b.textContent === 'Guardar').click();
+      await waitFor(() => !document.querySelector('.database-column-popover'));
+    }
+
+    await addColumn('Cant', 'number');
+    await waitFor(() => document.querySelectorAll('.database-th').length === 3); // Nombre + Cant + "+"
+    const columnAddedOk = Array.from(document.querySelectorAll('.database-th')).some((th) => th.textContent === 'Cant');
+
+    // Fila con valores, para poder calcular la fórmula sobre "Cant"
+    document.getElementById('database-add-row-btn').click();
+    await waitFor(() => document.querySelectorAll('.database-table tbody tr').length === 1);
+    let cells = document.querySelectorAll('.database-table tbody tr td');
+    cells[0].querySelector('input').value = 'Fila uno';
+    cells[0].querySelector('input').dispatchEvent(new Event('change', { bubbles: true }));
+    cells[1].querySelector('input').value = '4';
+    cells[1].querySelector('input').dispatchEvent(new Event('change', { bubbles: true }));
+    await waitFor(async () => {
+      const dbs = await window.mdEditor.db.listDatabases(fixturesDir);
+      const tareas = dbs.find((d) => d.name === 'Tareas Test');
+      const rows = tareas ? await window.mdEditor.db.listRows(fixturesDir, tareas.id) : [];
+      return rows[0] && Object.values(rows[0].cells).includes('4');
+    });
+
+    await addColumn('Total', 'formula', (pop) => { pop.querySelector('textarea').value = 'prop("Cant") * 2'; });
+    await waitFor(() => Array.from(document.querySelectorAll('.database-th')).some((th) => th.textContent === 'Total'));
+    await waitFor(() => document.querySelector('.database-cell-readonly') && document.querySelector('.database-cell-readonly').textContent === '8');
+    const formulaOk = document.querySelector('.database-cell-readonly').textContent === '8';
+
+    await addColumn('Tags', 'relation', (pop) => {
+      const selects = pop.querySelectorAll('select.database-cell-input');
+      const targetSelect = selects[selects.length - 1];
+      const opt = Array.from(targetSelect.options).find((o) => o.textContent === 'Etiquetas Test');
+      targetSelect.value = opt.value;
+    });
+    await waitFor(() => Array.from(document.querySelectorAll('.database-th')).some((th) => th.textContent === 'Tags'));
+
+    cells = document.querySelectorAll('.database-table tbody tr td');
+    const relationCellBtn = cells[3].querySelector('.database-select-chip-btn');
+    relationCellBtn.click();
+    await waitFor(() => document.querySelector('.database-relation-popover'));
+    await waitFor(() => Array.from(document.querySelectorAll('.database-relation-popover .database-popover-row')).some((b) => b.textContent === 'Urgente'));
+    const urgenteBtn = Array.from(document.querySelectorAll('.database-relation-popover .database-popover-row')).find((b) => b.textContent === 'Urgente');
+    urgenteBtn.click();
+    await waitFor(() => document.querySelector('.database-chip-relation') && document.querySelector('.database-chip-relation').textContent === 'Urgente');
+    const relationOk = !!document.querySelector('.database-chip-relation') && document.querySelector('.database-chip-relation').textContent === 'Urgente';
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    document.querySelector('.database-row-del').click();
+    await waitFor(() => document.querySelectorAll('.database-table tbody tr').length === 0);
+    const rowDeleteOk = document.querySelectorAll('.database-table tbody tr').length === 0;
+
+    const originalConfirmDb = window.confirm;
+    window.confirm = () => true;
+    document.getElementById('database-delete-btn').click();
+    await waitFor(async () => (await window.mdEditor.db.listDatabases(fixturesDir)).length === 1);
+    window.confirm = originalConfirmDb;
+    const dbDeleteOk = (await window.mdEditor.db.listDatabases(fixturesDir)).length === 1;
+
+    window.mdDatabase.close();
+
+    dbSuiteOk = dbPanelOpenOk && columnAddedOk && formulaOk && relationOk && rowDeleteOk && dbDeleteOk;
+    dbSuiteDetail = `panel=${dbPanelOpenOk} columna=${columnAddedOk} formula=${formulaOk} relacion=${relationOk} borrarFila=${rowDeleteOk} borrarBase=${dbDeleteOk}`;
+  }
+  check('Bases de datos: crear, columnas tipadas, fórmula, relación entre bases y borrar', dbSuiteOk, dbSuiteDetail);
+
+  // 37d. Relaciones de dos vías: crear una columna de relación de A a B crea
+  // sola la columna espejo en B; setRelations desde A también actualiza el
+  // lado B (y viceversa al sacar); borrar la columna de un lado borra el
+  // espejo del otro, para no dejar un pairedColumnId colgando.
+  let mirrorOk = false;
+  let mirrorDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const dbA = await window.mdEditor.db.createDatabase(fixturesDir, 'MirrorA');
+    const dbB = await window.mdEditor.db.createDatabase(fixturesDir, 'MirrorB');
+    const colsA = await window.mdEditor.db.listColumns(fixturesDir, dbA.id);
+    const relCol = await window.mdEditor.db.createColumn(fixturesDir, dbA.id, { name: 'Vinculo', type: 'relation', options: { targetDatabaseId: dbB.id } });
+
+    const colsB = await window.mdEditor.db.listColumns(fixturesDir, dbB.id);
+    const mirrorCol = colsB.find((c) => c.type === 'relation');
+    const mirrorPointsBack = !!mirrorCol && JSON.parse(mirrorCol.options || '{}').targetDatabaseId === dbA.id;
+    const relColUpdated = await window.mdEditor.db.listColumns(fixturesDir, dbA.id).then((cs) => cs.find((c) => c.id === relCol.id));
+    const pairedOnBothSides = mirrorCol && JSON.parse(relColUpdated.options || '{}').pairedColumnId === mirrorCol.id
+      && JSON.parse(mirrorCol.options || '{}').pairedColumnId === relCol.id;
+
+    const rowA = await window.mdEditor.db.createRow(fixturesDir, dbA.id, { [colsA[0].id]: 'fila A' });
+    const rowB = await window.mdEditor.db.createRow(fixturesDir, dbB.id, { [colsB[0].id]: 'fila B' });
+    await window.mdEditor.db.setRelations(fixturesDir, relCol.id, rowA, [rowB]);
+
+    const rowsBAfterLink = await window.mdEditor.db.listRows(fixturesDir, dbB.id);
+    const mirrorShowsLinkOk = (rowsBAfterLink.find((r) => r.id === rowB).relations[mirrorCol.id] || []).includes(rowA);
+
+    await window.mdEditor.db.setRelations(fixturesDir, relCol.id, rowA, []);
+    const rowsBAfterUnlink = await window.mdEditor.db.listRows(fixturesDir, dbB.id);
+    const mirrorClearedOk = !(rowsBAfterUnlink.find((r) => r.id === rowB).relations[mirrorCol.id] || []).includes(rowA);
+
+    await window.mdEditor.db.deleteColumn(fixturesDir, relCol.id);
+    const colsBAfterDelete = await window.mdEditor.db.listColumns(fixturesDir, dbB.id);
+    const mirrorDeletedTooOk = !colsBAfterDelete.some((c) => c.id === mirrorCol.id);
+
+    await window.mdEditor.db.deleteDatabase(fixturesDir, dbA.id);
+    await window.mdEditor.db.deleteDatabase(fixturesDir, dbB.id);
+
+    mirrorOk = mirrorPointsBack && pairedOnBothSides && mirrorShowsLinkOk && mirrorClearedOk && mirrorDeletedTooOk;
+    mirrorDetail = `espejoCreado=${mirrorPointsBack} parejaEnAmbosLados=${pairedOnBothSides} espejoMuestraVinculo=${mirrorShowsLinkOk} espejoLimpiaAlSacar=${mirrorClearedOk} borrarColBorraEspejo=${mirrorDeletedTooOk}`;
+  }
+  check('Bases de datos: relación de dos vías crea/sincroniza/borra el espejo automático', mirrorOk, mirrorDetail);
+
   // 38. Grafo de notas: nodos = archivos de la carpeta, aristas = wikilinks
   let graphOk = false;
   if (fixturesDir) {
@@ -1954,6 +2146,43 @@
     pdfHighlightDetail = `antes=${stateBefore.highlightCount} despues=${stateAfter.highlightCount} guardadoOk=${reopenedOk}`;
   }
   check('Subrayar texto en PDF: agrega un rectángulo y lo hornea al guardar', pdfHighlightOk, pdfHighlightDetail);
+
+  // Home: agregar una tarea desde la columna de hoy (vista semana), verla
+  // en el calendario (vista mes) y borrarla — deja home.json como estaba.
+  {
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const todayCol = document.querySelector('#home-main .home-day.home-today');
+    const input = todayCol && todayCol.querySelector('.home-quick-add');
+    const title = 'Tarea de prueba ' + Date.now();
+    if (input) {
+      input.value = title;
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    }
+    const findCard = () => Array.from(document.querySelectorAll('#home-main .home-task'))
+      .find((c) => c.textContent.includes(title));
+    const inWeek = !!findCard();
+    window.mdHome.setMode('month');
+    const cells = document.querySelectorAll('#home-main .home-calendar-cell').length;
+    const inMonth = !!document.querySelector('#home-main .home-calendar-cell.home-today .home-task');
+    const card = findCard();
+    let deleted = false;
+    if (card) {
+      const originalConfirm = window.confirm;
+      window.confirm = () => true;
+      card.click();
+      Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
+      window.confirm = originalConfirm;
+      deleted = !findCard();
+    }
+    window.mdHome.setMode('week');
+    window.mdHome.close();
+    check(
+      'Home: agrega tarea en la semana, aparece en el calendario del mes y se borra',
+      inWeek && inMonth && cells % 7 === 0 && cells >= 28 && deleted,
+      `inWeek=${inWeek} inMonth=${inMonth} cells=${cells} deleted=${deleted}`
+    );
+  }
 
   return results;
 })();

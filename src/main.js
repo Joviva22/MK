@@ -5,6 +5,7 @@ const os = require('os');
 const crypto = require('crypto');
 const JSZip = require('jszip');
 const { execFile } = require('child_process');
+const { registerDatabaseIpc } = require('./dbengine');
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -17,6 +18,7 @@ let mainWindow;
 
 const configPath = path.join(app.getPath('userData'), 'config.json');
 const sessionPath = path.join(app.getPath('userData'), 'session.json');
+const homePath = path.join(app.getPath('userData'), 'home.json');
 
 // Filtrar por contenido (extensión + que exista) en vez de por posición del
 // argumento: la posición cambia entre dev ("electron . archivo.md") y
@@ -82,6 +84,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -314,6 +317,26 @@ ipcMain.handle('session:save', (event, data) => {
   }
 });
 
+// Home (ver home.js): tareas/objetivos personales, independientes de la
+// carpeta abierta — por eso van en userData y no en <root>/.mk.
+ipcMain.handle('home:load', () => {
+  try {
+    return JSON.parse(fs.readFileSync(homePath, 'utf-8'));
+  } catch (e) {
+    return null;
+  }
+});
+
+ipcMain.handle('home:save', (event, data) => {
+  try {
+    fs.mkdirSync(path.dirname(homePath), { recursive: true });
+    fs.writeFileSync(homePath, JSON.stringify(data), 'utf-8');
+    return true;
+  } catch (e) {
+    return false;
+  }
+});
+
 ipcMain.handle('session:load', () => {
   try {
     return JSON.parse(fs.readFileSync(sessionPath, 'utf-8'));
@@ -517,6 +540,8 @@ function walkTextFiles(root, onFile) {
 // contenido crudo de todos los archivos de texto para que el renderer arme
 // las columnas con el mismo parseColumns que ya usa en modo archivo activo
 // — la lógica de "## Columna" + lista queda en un solo lugar.
+registerDatabaseIpc(ipcMain);
+
 ipcMain.handle('kanban:readFolderFiles', (event, root) => {
   if (!root) return [];
   const files = [];

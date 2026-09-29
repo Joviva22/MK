@@ -43,6 +43,7 @@ Todo esto viene ya armado en la app, no son plugins de terceros:
 | Archivo | Para qué sirve |
 |---|---|
 | [`MANUAL.md`](./MANUAL.md) | Guía completa: cómo usar cada función, paso a paso |
+| [`Guias/`](./Guias/README.md) | Una guía especializada por función: cómo usarla y para qué sirve (Home y Bases de datos con dos guías cada una) |
 | [`COMANDOS.md`](./COMANDOS.md) | Referencia rápida de todos los atajos de teclado |
 | [`ESTADO.md`](./ESTADO.md) | Qué está hecho, qué falta, y limitaciones conocidas |
 | [`MEJORAS.md`](./MEJORAS.md) | Ideas de qué mejorar a futuro |
@@ -94,6 +95,7 @@ MK/
 │   ├── run.js             # arranca Electron con MK_TEST=1 y perfil aislado, arma los fixtures (incluye .docx reales)
 │   └── renderer-checks.js  # los checks en sí, corren dentro de la ventana
 ├── Ejemplos/               # archivos de muestra para probar cada función en vivo
+├── Guias/                  # guías especializadas por función (cómo usar / para qué sirve)
 ├── .github/workflows/ci.yml # lint + test en cada push/PR
 ├── package.json
 ├── MANUAL.md             # guía de uso completa
