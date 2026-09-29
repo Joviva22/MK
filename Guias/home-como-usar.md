@@ -148,6 +148,7 @@ Cualquier tarea de una nota `.md` de la carpeta abierta con una fecha así:
 aparece ese día en el Home (chip con 📄), con el header **"Tareas de notas"** tildado.
 
 - **Tildarla** desde el Home escribe `[x]` en la línea real del archivo (si está abierto en el editor, cambia el editor y lo guarda el autoguardado).
+- **Arrastrarla a otro día** cambia su `📅 fecha` en el archivo. Soltarla en **Sin fecha** le saca la fecha (deja de aparecer en el Home).
 - **Clic en el texto** abre la nota.
 - Vale en cualquier nivel de lista (`-` o `*`, con sangría). El emoji 📅 se escribe con el selector de emojis del sistema (en Linux suele ser `Ctrl+.` o `Super+.`), o copiándolo de acá.
 
@@ -167,7 +168,7 @@ Botón **"Plan de hoy → nota diaria"** en el panel lateral: abre (o crea) la [
 
 Con una carpeta abierta y **"Fechas de bases de datos"** tildado, cada fila de una base de datos que tenga una columna de tipo **Fecha** aparece en ese día como un chip con borde punteado (`▤ Nombre de la fila`).
 
-- Es **solo lectura** en el Home: no se arrastra ni se edita desde acá.
+- **Arrastrala a otro día** para cambiar su fecha en la base (soltarla en **Sin fecha** la vacía). Para editar el resto de sus campos, clic en ella.
 - Si la base tiene una columna **Casilla**, la fila aparece tachada cuando está marcada.
 - **Clic en el chip** cierra el Home y abre esa base de datos para editarla.
 - Si la base tiene varias columnas de fecha (ej. "Inicio" y "Entrega"), la fila aparece en cada fecha con el nombre de la columna al lado.

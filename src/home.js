@@ -25,6 +25,8 @@ const showDbToggle = document.getElementById('home-show-db');
 const showNotesToggle = document.getElementById('home-show-notes');
 const startupToggle = document.getElementById('home-startup-toggle');
 const DRAG_MIME = 'application/x-mk-home-task';
+const NOTE_DRAG_MIME = 'application/x-mk-home-note'; // tarea "📅" de una nota
+const DB_DRAG_MIME = 'application/x-mk-home-dbrow'; // fila de base de datos con fecha
 
 const PRIORITIES = [
   { value: 'alta', label: 'Alta', color: '#ef476f' },
@@ -558,7 +560,9 @@ async function loadDbItems() {
             title: dateCols.length > 1 ? `${title} · ${col.name}` : title,
             done: doneCol ? row.cells[doneCol.id] === '1' : false,
             databaseId: db.id,
-            databaseName: (db.icon ? db.icon + ' ' : '') + db.name
+            databaseName: (db.icon ? db.icon + ' ' : '') + db.name,
+            rowId: row.id,
+            columnId: col.id
           });
         });
       });
@@ -606,26 +610,29 @@ function noteItemsOn(dateIso) {
   return noteItems.filter((it) => it.date === dateIso);
 }
 
-function toggleLine(text, item) {
+// Reescribe la línea de una tarea de nota con fn(match) → línea nueva (o
+// null si la línea ya no está). Busca por contenido si el archivo cambió.
+function rewriteLine(text, item, fn) {
   const lines = text.split('\n');
-  // La línea pudo moverse si el archivo cambió: se busca por contenido.
-  let idx = lines[item.line] === item.raw ? item.line : lines.indexOf(item.raw);
+  const idx = lines[item.line] === item.raw ? item.line : lines.indexOf(item.raw);
   if (idx === -1) return null;
-  lines[idx] = lines[idx].replace(NOTE_TASK_RE, (all, pre, mark, post, rest1, date, rest2) =>
-    `${pre}${mark.trim() ? ' ' : 'x'}${post}${rest1} 📅 ${date}${rest2}`);
+  const m = lines[idx].match(NOTE_TASK_RE);
+  if (!m) return null;
+  lines[idx] = fn(m);
   return lines.join('\n');
 }
 
-async function toggleNoteItem(item) {
+// Aplica rewriteLine al archivo de la tarea: si está abierto en el editor,
+// al buffer (lo guarda el autoguardado); si no, directo al disco.
+async function editNoteItem(item, fn) {
   const active = window.mdTabs && window.mdTabs.getActiveTabInfo();
   if (active && active.filePath === item.filePath) {
-    // Archivo abierto en el editor: se cambia el buffer (autoguardado lo escribe).
-    const updated = toggleLine(window.mdCodeMirror.getValue(), item);
+    const updated = rewriteLine(window.mdCodeMirror.getValue(), item, fn);
     if (updated !== null) window.mdCodeMirror.setValue(updated);
   } else {
     const result = await window.mdEditor.readFile(item.filePath);
     if (!result || result.binary) return;
-    const updated = toggleLine(result.content, item);
+    const updated = rewriteLine(result.content, item, fn);
     if (updated === null) {
       alert('Esa tarea cambió en el archivo desde que se cargó el Home. Volvé a abrirlo.');
     } else {
@@ -634,6 +641,18 @@ async function toggleNoteItem(item) {
   }
   await loadNoteItems();
   render();
+}
+
+function toggleNoteItem(item) {
+  return editNoteItem(item, ([, pre, mark, post, rest1, date, rest2]) =>
+    `${pre}${mark.trim() ? ' ' : 'x'}${post}${rest1} 📅 ${date}${rest2}`);
+}
+
+// Arrastrar una tarea de nota a otro día cambia su "📅 fecha" en el archivo;
+// soltarla en "Sin fecha" le saca la fecha (deja de aparecer en el Home).
+function moveNoteItem(item, newDate) {
+  return editNoteItem(item, ([, pre, mark, post, rest1, , rest2]) =>
+    `${pre}${mark}${post}${rest1}${newDate ? ` 📅 ${newDate}` : ''}${rest2}`);
 }
 
 // ---- nota enlazada a una tarea ----
@@ -743,23 +762,42 @@ function el(tag, className, text) {
   return node;
 }
 
+// Días (semana), celdas (mes) y "Sin fecha" aceptan tres cosas arrastradas:
+// tareas del Home, tareas "📅" de notas (se reescribe la fecha en el
+// archivo) y filas de bases de datos (se cambia su columna Fecha).
+const DROP_MIMES = [DRAG_MIME, NOTE_DRAG_MIME, DB_DRAG_MIME];
+
 function makeDropTarget(node, getDate) {
+  const accepts = (e) => DROP_MIMES.some((m) => e.dataTransfer.types.includes(m));
   node.addEventListener('dragover', (e) => {
-    if (!e.dataTransfer.types.includes(DRAG_MIME)) return;
+    if (!accepts(e)) return;
     e.preventDefault();
     node.classList.add('drag-over');
   });
   node.addEventListener('dragleave', (e) => {
     if (!node.contains(e.relatedTarget)) node.classList.remove('drag-over');
   });
-  node.addEventListener('drop', (e) => {
-    if (!e.dataTransfer.types.includes(DRAG_MIME)) return;
+  node.addEventListener('drop', async (e) => {
+    if (!accepts(e)) return;
     e.preventDefault();
     e.stopPropagation();
     node.classList.remove('drag-over');
-    const [taskId, fromDate] = e.dataTransfer.getData(DRAG_MIME).split('|');
-    const item = findItem(taskId, fromDate || null);
-    if (item) moveItem(item, getDate());
+    const date = getDate();
+    if (e.dataTransfer.types.includes(DRAG_MIME)) {
+      const [taskId, fromDate] = e.dataTransfer.getData(DRAG_MIME).split('|');
+      const item = findItem(taskId, fromDate || null);
+      if (item) moveItem(item, date);
+    } else if (e.dataTransfer.types.includes(NOTE_DRAG_MIME)) {
+      const ref = JSON.parse(e.dataTransfer.getData(NOTE_DRAG_MIME));
+      const item = noteItems.find((it) => it.filePath === ref.filePath && it.raw === ref.raw);
+      if (item && item.date !== date) await moveNoteItem(item, date);
+    } else {
+      const ref = JSON.parse(e.dataTransfer.getData(DB_DRAG_MIME));
+      if (ref.date === date || !window.mdState.rootFolder) return;
+      await window.mdEditor.db.setCell(window.mdState.rootFolder, ref.rowId, ref.columnId, date);
+      await Promise.all([loadDbItems(), loadDbReminders()]);
+      render();
+    }
   });
 }
 
@@ -880,7 +918,13 @@ function noteChip(item) {
   chip.appendChild(box);
   chip.appendChild(el('span', 'home-task-title', item.title));
   const fileName = item.filePath.split(/[\\/]/).pop();
-  chip.title = `${item.title}\nNota: ${fileName}\n(clic para abrirla)`;
+  chip.title = `${item.title}\nNota: ${fileName}\n(clic para abrirla · arrastrá para cambiar el día)`;
+  chip.draggable = true;
+  chip.addEventListener('dragstart', (e) => {
+    e.stopPropagation();
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData(NOTE_DRAG_MIME, JSON.stringify({ filePath: item.filePath, raw: item.raw }));
+  });
   chip.addEventListener('click', async (e) => {
     e.stopPropagation();
     close();
@@ -891,7 +935,13 @@ function noteChip(item) {
 
 function dbChip(item) {
   const chip = el('div', 'home-db-item' + (item.done ? ' home-task-done' : ''), item.title);
-  chip.title = `${item.title}\nBase de datos: ${item.databaseName}\n(clic para abrirla)`;
+  chip.title = `${item.title}\nBase de datos: ${item.databaseName}\n(clic para abrirla · arrastrá para cambiar la fecha)`;
+  chip.draggable = true;
+  chip.addEventListener('dragstart', (e) => {
+    e.stopPropagation();
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData(DB_DRAG_MIME, JSON.stringify({ rowId: item.rowId, columnId: item.columnId, date: item.date }));
+  });
   chip.addEventListener('click', (e) => {
     e.stopPropagation();
     close();

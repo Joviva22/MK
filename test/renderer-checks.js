@@ -1821,13 +1821,34 @@
     const diskA = await window.mdEditor.readFile(kanbanAPath);
     const toggleWroteCorrectFileOk = !!diskA && diskA.content.includes('[x] tarea desde A');
 
+    // Arrastrar entre columnas en modo carpeta: la tarjeta de B va a "Hecho"
+    // (B ya tiene esa columna); la de A también (A no la tiene: se crea).
+    const dragTo = async (text, colTitle) => {
+      await waitFor(() => Array.from(document.querySelectorAll('.kanban-card')).some((c) => c.textContent.includes(text)));
+      const card = Array.from(document.querySelectorAll('.kanban-card')).find((c) => c.textContent.includes(text));
+      const colEl = Array.from(document.querySelectorAll('.kanban-column')).find((c) => c.querySelector('.kanban-column-title').textContent.startsWith(colTitle));
+      const dt = new DataTransfer();
+      card.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+      colEl.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    };
+    await dragTo('tarea desde B', 'Hecho');
+    const movedB = await waitFor(async () => {
+      const d = await window.mdEditor.readFile(kanbanBPath);
+      return d && d.content === '## Por hacer\n\n## Hecho\n- [x] ya hecha en B\n- [ ] tarea desde B\n';
+    });
+    await dragTo('tarea desde A', 'Hecho');
+    const movedA = await waitFor(async () => {
+      const d = await window.mdEditor.readFile(kanbanAPath);
+      return d && /## Por hacer\n\n## Hecho\n- \[x\] tarea desde A/.test(d.content);
+    });
+
     window.mdKanban.setScope('file');
     window.mdKanban.close();
 
-    kanbanFolderOk = cardsInPorHacer === 2 && hasSourceBadge && !!cardFromA && toggleWroteCorrectFileOk;
-    kanbanFolderDetail = `tarjetasPorHacer=${cardsInPorHacer} badgeOrigen=${hasSourceBadge} tarjetaAEncontrada=${!!cardFromA} escribioArchivoCorrecto=${toggleWroteCorrectFileOk}`;
+    kanbanFolderOk = cardsInPorHacer === 2 && hasSourceBadge && !!cardFromA && toggleWroteCorrectFileOk && !!movedB && !!movedA;
+    kanbanFolderDetail = `tarjetasPorHacer=${cardsInPorHacer} badgeOrigen=${hasSourceBadge} tarjetaAEncontrada=${!!cardFromA} escribioArchivoCorrecto=${toggleWroteCorrectFileOk} arrastreB=${!!movedB} arrastreA(crea columna)=${!!movedA}`;
   }
-  check('Tablero Kanban en modo "carpeta completa": junta columnas de varios archivos y togglea el archivo correcto', kanbanFolderOk, kanbanFolderDetail);
+  check('Tablero Kanban en modo "carpeta completa": junta columnas de varios archivos, togglea y arrastra entre columnas en el archivo correcto', kanbanFolderOk, kanbanFolderDetail);
 
   // 37c. Bases de datos relacionales (tipo Notion): crear dos bases, columna
   // numérica, fórmula que referencia otra columna, relación entre bases
@@ -2741,6 +2762,52 @@
     variosDetail = `shiftRango=${rangeOk} copiarRuta=${copyOk} renombrarTerminal=${renameTabOk} ordenMultiple=${multiSortOk}(${names()} ${arrows}) manana=${tomorrowOk} callout=${calloutOk} mermaid=${mermaidOk}`;
   }
   check('Mejoras: Shift+clic, copiar ruta, renombrar terminal, orden múltiple, "→ Mañana", callout y Mermaid en Live Preview', variosOk, variosDetail);
+
+  // Home: arrastrar a otro día una tarea "📅" de una nota (reescribe la fecha
+  // en el archivo) y una fila de base de datos (cambia su columna Fecha).
+  let dragHomeOk = false;
+  let dragHomeDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const pad = (n) => String(n).padStart(2, '0');
+    const isoOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const now = new Date();
+    const todayIsoStr = isoOf(now);
+    window.mdState.rootFolder = fixturesDir;
+    const notePath = window.mdEditor.joinPath(fixturesDir, 'arrastrar.md');
+    await window.mdEditor.saveFile(`- [ ] Pagar la luz 📅 ${todayIsoStr} #casa\n`, notePath, false);
+    const dDb = await window.mdEditor.db.createDatabase(fixturesDir, 'ArrastreDB');
+    const [dName] = await window.mdEditor.db.listColumns(fixturesDir, dDb.id);
+    const dDate = await window.mdEditor.db.createColumn(fixturesDir, dDb.id, { name: 'Fecha', type: 'date' });
+    const dRow = await window.mdEditor.db.createRow(fixturesDir, dDb.id, { [dName.id]: 'Reunión', [dDate.id]: todayIsoStr });
+
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const days = () => Array.from(document.querySelectorAll('#home-main .home-day'));
+    const todayIdx = days().findIndex((d) => d.classList.contains('home-today'));
+    const targetIdx = (todayIdx + 1) % 7;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+    const targetIso = isoOf(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + targetIdx));
+    const drag = (chip) => {
+      const dt = new DataTransfer();
+      chip.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+      days()[targetIdx].dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    };
+    const noteChip = await waitFor(() => Array.from(days()[todayIdx].querySelectorAll('.home-note-item')).find((c) => c.textContent.includes('Pagar la luz')));
+    if (noteChip) drag(noteChip);
+    const noteMoved = await waitFor(async () => (await window.mdEditor.readFile(notePath)).content === `- [ ] Pagar la luz 📅 ${targetIso} #casa\n`);
+    const dbChip = await waitFor(() => Array.from(days()[todayIdx].querySelectorAll('.home-db-item')).find((c) => c.textContent.includes('Reunión')));
+    if (dbChip) drag(dbChip);
+    const dbMoved = await waitFor(async () => {
+      const rows = await window.mdEditor.db.listRows(fixturesDir, dDb.id);
+      return rows.find((r) => r.id === dRow).cells[dDate.id] === targetIso;
+    });
+    const shownInTarget = await waitFor(() => days()[targetIdx].querySelector('.home-db-item') && days()[targetIdx].querySelector('.home-note-item'));
+    window.mdHome.close();
+    await window.mdEditor.db.deleteDatabase(fixturesDir, dDb.id);
+    dragHomeOk = !!noteChip && !!noteMoved && !!dbChip && !!dbMoved && !!shownInTarget;
+    dragHomeDetail = `chipNota=${!!noteChip} notaMovida=${!!noteMoved} chipBD=${!!dbChip} filaMovida=${!!dbMoved} seVeEnDestino=${!!shownInTarget}`;
+  }
+  check('Home: arrastrar de día tareas 📅 de notas y filas de bases de datos', dragHomeOk, dragHomeDetail);
 
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.

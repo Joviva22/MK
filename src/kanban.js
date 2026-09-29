@@ -8,9 +8,10 @@
 //   funcionan solos, sin tocar disco por cuenta propia.
 // - "Carpeta completa": junta las columnas (por título) de TODOS los
 //   archivos de texto de la carpeta abierta en un solo tablero. Cada
-//   tarjeta lleva de qué archivo vino (badge) y clic la togglea leyendo/
-//   escribiendo ESE archivo en disco directo (no pasa por el editor) — ver
-//   MANUAL.md para el límite de arrastrar entre columnas en este modo.
+//   tarjeta lleva de qué archivo vino (badge); clic la togglea y arrastrarla
+//   a otra columna la mueve DENTRO de su archivo (creando ahí el "## Columna"
+//   si no lo tiene) — escribe ese archivo en disco, o el buffer del editor si
+//   es el que está abierto.
 
 const overlay = document.getElementById('kanban-panel');
 const board = document.getElementById('kanban-board');
@@ -90,22 +91,25 @@ async function toggleCard(card) {
   render();
 }
 
-function moveCard(lineIndex, targetTitle) {
-  const cm = window.mdCodeMirror;
-  const lines = cm.getValue().split('\n');
+// Mueve la línea lineIndex (una tarjeta) al final de la columna "## targetTitle".
+// Si esa columna no existe en el texto: con createIfMissing la agrega al
+// final; si no, devuelve null (no se mueve nada).
+function moveLineInText(text, lineIndex, targetTitle, createIfMissing) {
+  const lines = text.split('\n');
   const cardLine = lines[lineIndex];
-  if (cardLine == null) return;
+  if (cardLine == null || !/^-\s+/.test(cardLine)) return null;
   lines.splice(lineIndex, 1);
 
-  let targetHeadingIdx = -1;
-  for (let i = 0; i < lines.length; i++) {
-    const h = lines[i].match(/^##\s+(.*)/);
-    if (h && h[1].trim() === targetTitle) {
-      targetHeadingIdx = i;
-      break;
-    }
+  let targetHeadingIdx = lines.findIndex((l) => {
+    const h = l.match(/^##\s+(.*)/);
+    return h && h[1].trim() === targetTitle;
+  });
+  if (targetHeadingIdx === -1) {
+    if (!createIfMissing) return null;
+    while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+    lines.push('', `## ${targetTitle}`);
+    targetHeadingIdx = lines.length - 1;
   }
-  if (targetHeadingIdx === -1) return;
 
   let insertAt = lines.length;
   for (let i = targetHeadingIdx + 1; i < lines.length; i++) {
@@ -114,8 +118,35 @@ function moveCard(lineIndex, targetTitle) {
       break;
     }
   }
+  // Justo después de la última tarjeta de la columna (no después de líneas en blanco).
+  while (insertAt > targetHeadingIdx + 1 && lines[insertAt - 1].trim() === '') insertAt--;
   lines.splice(insertAt, 0, cardLine);
-  cm.setValue(lines.join('\n'));
+  return lines.join('\n');
+}
+
+function moveCard(lineIndex, targetTitle) {
+  const cm = window.mdCodeMirror;
+  const updated = moveLineInText(cm.getValue(), lineIndex, targetTitle, false);
+  if (updated === null) return;
+  cm.setValue(updated);
+  render();
+}
+
+// Modo carpeta: la tarjeta se mueve DENTRO de su propio archivo (a la
+// columna de ese nombre; si el archivo no la tiene, se crea al final). Si el
+// archivo está abierto en el editor se cambia el buffer, si no el disco.
+async function moveFolderCard(card, targetTitle) {
+  const active = window.mdTabs && window.mdTabs.getActiveTabInfo();
+  if (active && active.filePath === card.filePath) {
+    const cm = window.mdCodeMirror;
+    const updated = moveLineInText(cm.getValue(), card.line, targetTitle, true);
+    if (updated !== null) cm.setValue(updated);
+  } else {
+    const result = await window.mdEditor.readFile(card.filePath);
+    if (!result || result.binary) return;
+    const updated = moveLineInText(result.content, card.line, targetTitle, true);
+    if (updated !== null) await window.mdEditor.saveFile(updated, card.filePath, false);
+  }
   render();
 }
 
@@ -150,40 +181,46 @@ async function render() {
       cardEl.textContent = card.text || '(vacío)';
       cardEl.addEventListener('click', () => toggleCard(card));
 
+      cardEl.draggable = true;
       if (scope === 'folder') {
         const src = document.createElement('span');
         src.className = 'kanban-card-source';
         src.textContent = card.filePath.split(/[\\/]/).pop();
         cardEl.appendChild(src);
-        cardEl.title = 'Clic: marcar/desmarcar. (Arrastrar entre columnas no está disponible en modo carpeta completa.)';
+        cardEl.title = 'Clic: marcar/desmarcar. Arrastrar: mover de columna (dentro de su archivo).';
       } else {
-        cardEl.draggable = true;
         cardEl.title = 'Clic: marcar/desmarcar. Arrastrar: mover de columna.';
-        cardEl.addEventListener('dragstart', (e) => {
-          e.stopPropagation();
-          e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData(KANBAN_DRAG_MIME, String(card.line));
-        });
       }
+      cardEl.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData(KANBAN_DRAG_MIME, JSON.stringify({ line: card.line, filePath: card.filePath || null, from: col.title }));
+      });
       listEl.appendChild(cardEl);
     });
     colEl.appendChild(listEl);
 
-    if (scope === 'file') {
-      colEl.addEventListener('dragover', (e) => {
-        if (!e.dataTransfer.types.includes(KANBAN_DRAG_MIME)) return;
-        e.preventDefault();
-        colEl.classList.add('drag-over');
-      });
-      colEl.addEventListener('dragleave', () => colEl.classList.remove('drag-over'));
-      colEl.addEventListener('drop', (e) => {
-        if (!e.dataTransfer.types.includes(KANBAN_DRAG_MIME)) return;
-        e.preventDefault();
-        colEl.classList.remove('drag-over');
-        const lineIndex = Number(e.dataTransfer.getData(KANBAN_DRAG_MIME));
-        moveCard(lineIndex, col.title);
-      });
-    }
+    colEl.addEventListener('dragover', (e) => {
+      if (!e.dataTransfer.types.includes(KANBAN_DRAG_MIME)) return;
+      e.preventDefault();
+      colEl.classList.add('drag-over');
+    });
+    colEl.addEventListener('dragleave', () => colEl.classList.remove('drag-over'));
+    colEl.addEventListener('drop', (e) => {
+      if (!e.dataTransfer.types.includes(KANBAN_DRAG_MIME)) return;
+      e.preventDefault();
+      colEl.classList.remove('drag-over');
+      let ref;
+      try {
+        ref = JSON.parse(e.dataTransfer.getData(KANBAN_DRAG_MIME));
+      } catch (err) {
+        return;
+      }
+      if (typeof ref === 'number') ref = { line: ref }; // formato viejo: solo la línea
+      if (ref.from === col.title) return;
+      if (scope === 'folder' && ref.filePath) moveFolderCard({ line: ref.line, filePath: ref.filePath }, col.title);
+      else moveCard(ref.line, col.title);
+    });
 
     board.appendChild(colEl);
   });

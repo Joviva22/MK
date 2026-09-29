@@ -18,6 +18,8 @@
 ## Modo "Carpeta completa"
 Junta todas las columnas del mismo nombre de **todas** tus notas (ej. todos los `## Por hacer`) en un solo tablero; cada tarjeta muestra de qué archivo viene.
 
+**Arrastrar también funciona acá**: la tarjeta se mueve de columna **dentro de su propio archivo**. Si ese archivo no tiene la columna destino (ej. no tiene `## Hecho`), MK la crea al final del archivo.
+
 ## Usos
 - Tablero de un proyecto dentro de su propia nota.
 - Modo carpeta: "¿qué tengo pendiente en todos mis proyectos?".
@@ -29,4 +31,4 @@ Junta todas las columnas del mismo nombre de **todas** tus notas (ej. todos los 
 | Por **estado**, dentro de notas | Por **fecha**, calendario | Por estado, con campos extra (fechas, números, relaciones) |
 
 ## Límites
-En modo carpeta no se arrastra entre columnas. Solo encabezados `##`.
+Solo encabezados `##` (nivel 2) son columnas.

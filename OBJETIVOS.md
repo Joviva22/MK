@@ -4,7 +4,37 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 39 de 61 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 40 de 62 objetivos cumplidos · última actualización 2026-09-29.
+
+---
+
+## Prioridad recomendada (según Claude)
+
+Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada uno están en las secciones de abajo.
+
+**P1 — Seguridad y que nada se pierda** (poco trabajo, evita problemas serios)
+1. **Arreglar las 2 vulnerabilidades altas de `npm audit`**: la principal es **Electron 32** mismo (la base de la app, con fallos de seguridad conocidos) y la otra `extract-zip` (la trae Electron). Se arregla actualizando Electron a una versión actual: cambio grande, hay que recompilar `node-pty` y correr toda la suite de tests, pero es lo único que toca seguridad.
+2. **Lanzador del escritorio apuntando al AppImage**: hoy "Iniciar con el sistema" y el `.desktop` dependen de la carpeta del proyecto; si la movés o borrás `node_modules`, MK deja de arrancar y los recordatorios no suenan.
+3. **Home dentro de la carpeta (opcional)**: hoy tus tareas viven solo en la configuración de esta PC, sin respaldo; en `.mk/` entran en git y en tus copias de seguridad.
+
+**P2 — Lo que más se nota en el uso diario**
+4. **Gráficos en las bases de datos** (vista Gráfico): lo pediste, y reutiliza filtros y tipos de columna que ya existen.
+5. **Búsqueda global también en bases de datos y tareas del Home**: hoy `Ctrl+Shift+F` no las encuentra; con tantas cosas fuera de los `.md`, se vuelve un hueco.
+6. **Recordatorios y resumen diario por Gmail**: el sistema de avisos ya está completo; falta el canal de correo (necesita tu contraseña de aplicación de Google).
+7. **Home: estadísticas**: aprovecha los gráficos del punto 4 (tareas hechas por semana, rachas de hábitos).
+
+**P3 — Comodidad**
+8. **Gráficos desde tablas Markdown** (`chart`).
+9. **Bases de datos dentro de una nota** (bloque `database`).
+10. **Nota diaria configurable** (carpeta y nombre).
+11. **Terminal: pantalla dividida**.
+
+**P4 — Mantenimiento técnico** (no se ve, pero hace que lo demás sea más fácil y seguro de cambiar)
+12. **Separar `main.js`** en módulos.
+13. **Migrar a módulos ES** (después del 12).
+
+**P5 — Proyectos grandes** (requieren decidir antes el diseño; hacerlos de a uno y con tiempo)
+14. Sincronización entre dispositivos · 15. Windows y macOS · 16. Sistema de plugins · 17. Pizarra Excalidraw · 18. Dos editores escribibles · 19. Ejecutar Python en el preview · 20. YouTube embebido · 21. Editar texto dentro de un PDF.
 
 ---
 
@@ -49,10 +79,11 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 - [x] ~~**Terminal: renombrar una pestaña** con doble clic~~ (2026-09-29)
 - [x] ~~**Sidebar: "Copiar ruta" / "Copiar ruta relativa"** y **selección de rango con `Shift`+clic**~~ (2026-09-29)
 - [x] ~~**Live Preview: callouts y diagramas Mermaid** dibujados~~ (2026-09-29)
+- [x] ~~**Arrastrar en todos los tableros**: en el Home también las tareas 📅 de notas (cambia la fecha en el archivo) y las filas de bases de datos; en el Kanban modo carpeta, entre columnas (dentro de su archivo)~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
-Mejoras chicas y de uso diario: se hacen en una sesión cada una.
+Mejoras chicas y de uso diario: se hacen en una sesión cada una. *(Todas hechas — ver "Prioridad recomendada" para lo que sigue.)*
 
 
 ## Mediano plazo
@@ -69,7 +100,7 @@ Funciones más grandes o que tocan varias partes de la app.
 - [ ] **Terminal: pantalla dividida** (dos terminales visibles lado a lado)
 - [ ] **Búsqueda global también en bases de datos y tareas del Home**
 - [ ] **Separar `main.js`** (más de 1100 líneas) en módulos por área, como ya se hizo con `dbengine.js` y `ptyhost.js`
-- [ ] **Actualizar el aviso de vulnerabilidades de `npm audit`** (2 de severidad alta en dependencias)
+- [ ] **Actualizar Electron 32 a una versión actual** (arregla las 2 vulnerabilidades altas de `npm audit`: Electron y `extract-zip`)
 - [ ] **Nota diaria configurable**: elegir carpeta y formato del nombre (hoy siempre `Diario/AAAA-MM-DD.md`)
 - [ ] **Lanzador del escritorio apuntando al AppImage** (`bin/mk-editor` hoy corre `node_modules/electron`, solo sirve en esta máquina)
 
