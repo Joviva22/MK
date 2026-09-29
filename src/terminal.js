@@ -400,6 +400,69 @@ async function runActiveFile() {
   await runCommand(command);
 }
 
+// ---- Abrir con IA (Claude Code, Gemini CLI, Codex) ----
+// Abre una pestaña de terminal en la carpeta del archivo con la IA ya
+// arrancada y el archivo como contexto. Son los programas de terminal del
+// usuario, con sus cuentas y su configuración: MK solo escribe el comando.
+
+const AI_TOOLS = [
+  { id: 'claude', label: 'Claude Code', bin: 'claude', mention: (name) => `@${name}` },
+  { id: 'gemini', label: 'Gemini CLI', bin: 'gemini', flag: '-i', mention: (name) => `@${name}` },
+  { id: 'codex', label: 'Codex', bin: 'codex', mention: (name) => `el archivo ${name}` }
+];
+
+// Comando a escribir en la terminal. isFolder: la IA arranca en la carpeta,
+// sin prompt; si no, con un prompt corto que le presenta el archivo.
+function aiCommand(toolId, targetPath, isFolder) {
+  const tool = AI_TOOLS.find((t) => t.id === toolId);
+  if (!tool) return null;
+  const dir = isFolder ? targetPath : window.mdEditor.dirName(targetPath);
+  let cmd = `cd ${shellQuote(dir)} && ${tool.bin}`;
+  if (!isFolder) {
+    const name = targetPath.split(/[\\/]/).pop();
+    const prompt = `Vamos a trabajar con ${tool.mention(name)} (está en esta carpeta). Leelo y esperá mis instrucciones.`;
+    cmd += `${tool.flag ? ' ' + tool.flag : ''} ${shellQuote(prompt)}`;
+  }
+  return cmd;
+}
+
+// opts.dryRun (tests): abre la pestaña pero no ejecuta nada.
+async function openWithAI(toolId, targetPath, opts) {
+  const tool = AI_TOOLS.find((t) => t.id === toolId);
+  const isFolder = !!(opts && opts.isFolder);
+  if (!tool || !targetPath) return null;
+  // Si es el archivo abierto y tiene cambios, guardarlo antes: la IA lee el disco.
+  const info = window.mdTabs && window.mdTabs.getActiveTabInfo();
+  if (!isFolder && info && info.filePath === targetPath && info.modified) await window.mdTabs.saveActive();
+  const command = aiCommand(toolId, targetPath, isFolder);
+  const session = await newTerminal(isFolder ? targetPath : window.mdEditor.dirName(targetPath));
+  if (!session || session.exited) return command;
+  session.title = tool.label;
+  renderTabs();
+  if (!(opts && opts.dryRun)) window.mdEditor.terminal.write(session.id, command + '\r');
+  return command;
+}
+
+// Botón "IA ▾" de la toolbar: sobre el archivo abierto.
+async function openActiveWithAI(toolId) {
+  const info = window.mdTabs && window.mdTabs.getActiveTabInfo();
+  if (!info || !info.filePath) {
+    const root = window.mdState.rootFolder;
+    if (root) return openWithAI(toolId, root, { isFolder: true });
+    alert('Guardá el archivo (o abrí una carpeta) para abrir la IA sobre él.');
+    return null;
+  }
+  return openWithAI(toolId, info.filePath);
+}
+
+window.initDropdown('btn-ai', 'ai-menu');
+document.querySelectorAll('#ai-menu button[data-ai]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.getElementById('ai-menu').hidden = true;
+    openActiveWithAI(btn.dataset.ai);
+  });
+});
+
 window.mdEditor.terminal.onData(({ id, data }) => {
   const s = sessions.find((x) => x.id === id);
   if (s) s.term.write(data);
@@ -473,6 +536,6 @@ new MutationObserver(() => {
   if (config.terminalHeight) panel.style.height = `${config.terminalHeight}px`;
 })();
 
-window.mdTerminal = { show, hide, toggle, newTerminal, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
+window.mdTerminal = { AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
 
 })();

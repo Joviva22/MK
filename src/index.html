@@ -38,6 +38,14 @@
     <button id="btn-toc" class="toolbar-button toolbar-optional" title="Índice del documento (Ctrl+Shift+O)"><i data-lucide="list"></i></button>
     <button id="btn-focus" class="toolbar-button toolbar-optional" title="Modo: Normal → clic: Enfoque (Enfoque Ctrl+Shift+E · Lectura Ctrl+Shift+R · Live Preview Ctrl+Shift+L)"><i data-lucide="focus"></i></button>
     <button id="btn-search" class="toolbar-button toolbar-optional" title="Búsqueda global en la carpeta (Ctrl+Shift+F)"><i data-lucide="search"></i></button>
+    <div class="dropdown">
+      <button id="btn-ai" class="toolbar-button toolbar-optional" title="Abrir con IA (Claude Code, Gemini CLI, Codex) sobre el archivo actual, en la terminal"><i data-lucide="bot"></i> IA ▾</button>
+      <div id="ai-menu" class="dropdown-menu" hidden>
+        <button data-ai="claude">Claude Code</button>
+        <button data-ai="gemini">Gemini CLI</button>
+        <button data-ai="codex">Codex</button>
+      </div>
+    </div>
     <button id="btn-run-file" class="toolbar-button toolbar-optional" title="Ejecutar archivo actual en la terminal (F5) — .py, .sh, .js, .c, .cpp, .java..."><i data-lucide="circle-play"></i></button>
     <button id="btn-terminal" class="toolbar-button toolbar-optional" title="Terminal integrada (Ctrl+` / Ctrl+Ñ)"><i data-lucide="square-terminal"></i></button>
     <button id="btn-command-palette" class="toolbar-button toolbar-optional" title="Paleta de comandos (Ctrl+Shift+P)"><i data-lucide="command"></i></button>

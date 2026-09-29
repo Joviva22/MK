@@ -2864,6 +2864,29 @@
   }
   check('Home en la carpeta abierta (.mk/home.json): activar copia las tareas, guarda ahí, desactivar vuelve sin perder nada', inFolderOk, inFolderDetail);
 
+  // Abrir con IA: comando correcto por herramienta (con el archivo como
+  // contexto, comillas seguras) y pestaña de terminal con su nombre. Sin
+  // ejecutar nada de verdad (dryRun).
+  {
+    const file = "/tmp/mis notas/it's.md";
+    const c = window.mdTerminal.aiCommand('claude', file, false);
+    const g = window.mdTerminal.aiCommand('gemini', file, false);
+    const x = window.mdTerminal.aiCommand('codex', file, false);
+    const f = window.mdTerminal.aiCommand('claude', '/tmp/mis notas', true);
+    const cmdOk = c.startsWith("cd '/tmp/mis notas' && claude '") && c.includes("@it'\\''s.md") &&
+      g.includes("&& gemini -i '") && g.includes('@it') &&
+      x.includes('&& codex \'') && x.includes('el archivo it') &&
+      f === "cd '/tmp/mis notas' && claude";
+    let tabOk = false;
+    if (fixturesDir) {
+      await window.mdTerminal.openWithAI('gemini', window.mdEditor.joinPath(fixturesDir, 'note.md'), { dryRun: true });
+      tabOk = !!(await waitFor(() => Array.from(document.querySelectorAll('.terminal-tab-label')).some((l) => l.textContent.includes('Gemini CLI'))));
+      for (let i = 0; i < 10 && document.querySelector('.terminal-tab-close'); i++) document.querySelector('.terminal-tab-close').click();
+    }
+    const menuOk = document.querySelectorAll('#ai-menu button[data-ai]').length === 3;
+    check('Abrir con IA: comandos de Claude Code / Gemini CLI / Codex con el archivo como contexto, pestaña con nombre', cmdOk && tabOk && menuOk, `comandos=${cmdOk} pestaña=${tabOk} menu=${menuOk} | ${c} | ${g} | ${x}`);
+  }
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {

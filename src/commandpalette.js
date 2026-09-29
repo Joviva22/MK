@@ -47,6 +47,10 @@ function buildCommands() {
   cmds.push({ label: 'Modo Live Preview (escribir viendo el Markdown renderizado)', run: () => window.mdModes && window.mdModes.toggleMode('live') });
   cmds.push({ label: 'Terminal: mostrar/ocultar', run: () => window.mdTerminal && window.mdTerminal.toggle() });
   cmds.push({ label: 'Ejecutar archivo actual en la terminal (F5)', run: () => window.mdTerminal && window.mdTerminal.runActiveFile() });
+  ['claude', 'gemini', 'codex'].forEach((id) => {
+    const label = { claude: 'Claude Code', gemini: 'Gemini CLI', codex: 'Codex' }[id];
+    cmds.push({ label: `IA: abrir ${label} sobre el archivo actual`, run: () => window.mdTerminal && window.mdTerminal.openActiveWithAI(id) });
+  });
   cmds.push({ label: 'Terminal: nueva terminal', run: () => window.mdTerminal && window.mdTerminal.newTerminal() });
   cmds.push({ label: 'Home: planificador semanal y mensual', run: () => window.mdHome && window.mdHome.open() });
   cmds.push({ label: 'Bases de datos', run: () => window.mdDatabase && window.mdDatabase.open() });

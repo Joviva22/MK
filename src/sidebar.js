@@ -303,10 +303,17 @@ function showSidebarMenu(x, y, node, multiNodes) {
   }
 
   // Terminal integrada: en una carpeta (o la raíz) abre ahí; en un archivo,
-  // en la carpeta que lo contiene.
+  // en la carpeta que lo contiene. Y las IAs de terminal sobre ese archivo.
   if (window.mdTerminal) {
     const termDir = node && !node.esCarpeta ? window.mdEditor.dirName(node.ruta) : dirPath;
     addMenuItem('Abrir terminal aquí', () => window.mdTerminal.newTerminal(termDir));
+    const aiTarget = node ? node.ruta : dirPath;
+    const isFolder = !node || node.esCarpeta;
+    if (aiTarget) {
+      window.mdTerminal.AI_TOOLS.forEach((tool) => {
+        addMenuItem(`🤖 Abrir con ${tool.label}`, () => window.mdTerminal.openWithAI(tool.id, aiTarget, { isFolder }));
+      });
+    }
   }
 
   if (node) {

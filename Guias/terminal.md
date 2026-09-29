@@ -38,6 +38,20 @@ Con un archivo de código abierto, **F5** (o el botón ▶ de la toolbar, o la p
 
 Si el programa pide datos (`input()`, `scanf`), escribilos en la terminal.
 
+## Abrir con IA (Claude Code, Gemini CLI, Codex)
+
+Si tenés instaladas las IAs de terminal (`claude`, `gemini`, `codex`), MK las abre en la terminal integrada ya apuntando a tu archivo:
+
+| Dónde | Qué hace |
+|---|---|
+| Clic derecho en un **archivo** del sidebar → **🤖 Abrir con Claude Code / Gemini CLI / Codex** | Pestaña nueva (con el nombre de la IA) en la carpeta del archivo; la IA arranca con un prompt que le presenta el archivo (`@notas.md`) y espera tus instrucciones |
+| Clic derecho en una **carpeta** (o la raíz) | La IA arranca en esa carpeta, sin prompt |
+| Botón **IA ▾** de la toolbar, o paleta → "IA: abrir …" | Lo mismo sobre el archivo que tenés abierto (si tiene cambios sin guardar, los guarda antes) |
+
+- Cada IA queda en su propia pestaña: podés tener Claude y Gemini a la vez sobre la misma nota.
+- Corren con **tus** cuentas y configuración, como si las abrieras vos en una terminal; MK no maneja claves ni manda nada por su cuenta.
+- Si alguna no está instalada, la terminal dice `command not found`.
+
 ## Abrir terminal en una carpeta
 
 Clic derecho en una carpeta del sidebar → **"Abrir terminal aquí"** (en un archivo, abre en su carpeta).
