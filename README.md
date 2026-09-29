@@ -105,7 +105,12 @@ Todo se carga como `<script>` suelto desde `node_modules` (sin bundler, sin webp
 ```
 MK/
 ├── src/
-│   ├── main.js         # proceso principal: ventana, IPC, protocolo md-local://, búsqueda/tags/backlinks, git, PDF/docx
+│   ├── main.js         # proceso principal: arranque, ventana, config/sesión/Home, protocolo md-local://
+│   ├── mainctx.js       # (main) estado compartido: ventana, config, modo test
+│   ├── ipc-files.js     # (main) abrir/guardar, historial de versiones, árbol, crear/mover/borrar
+│   ├── ipc-notes.js     # (main) búsqueda, etiquetas, wikilinks, backlinks, grafo, Kanban de carpeta
+│   ├── ipc-export.js    # (main) CSV, PDF, docx, HTML, EPUB, Anki
+│   ├── ipc-system.js    # (main) git y reproductor del sistema (playerctl)
 │   ├── folderwatch.js   # (main) vigila la carpeta abierta con fs.watch
 │   ├── folderindex.js   # (main) índice en memoria de las notas: solo se relee lo que cambió
 │   ├── dbengine.js      # (main) bases de datos con sql.js en <carpeta>/.mk/

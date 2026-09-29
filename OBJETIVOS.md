@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 61 de 98 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 62 de 98 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -29,7 +29,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 11. ~~**Terminal: pantalla dividida**~~ ✅ hecho.
 
 **P4 — Mantenimiento técnico** (no se ve, pero hace que lo demás sea más fácil y seguro de cambiar)
-12. **Separar `main.js`** en módulos.
+12. ~~**Separar `main.js`** en módulos~~ ✅ hecho.
 13. **Migrar a módulos ES** (después del 12).
 
 **Escalabilidad** — ver la sección "Escalabilidad y solidez": ~~índice de la carpeta~~, ~~vigilar la carpeta~~ y ~~disco asíncrono~~ hechos (2026-09-29): una carpeta con miles de notas ya no congela MK.
@@ -131,7 +131,7 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 - [ ] **Medición continua** (`npm run bench`): arranque, render del preview y apertura de carpeta, con valores de referencia para detectar si algo empeora
 
 ### Arquitectura
-- [ ] **Separar `main.js`** y **migrar a módulos ES** (ver Mediano/Largo plazo)
+- [ ] **Migrar a módulos ES** (ver Mediano/Largo plazo; `main.js` ya está separado)
 - [ ] **Una sola capa de acceso a archivos** con validación de rutas centralizada (hoy cada IPC valida por su cuenta)
 - [ ] **Tareas pesadas fuera de la ventana** (Web Workers / proceso aparte): parseo de la carpeta, grafo, CSV grandes, PDFs grandes
 - [ ] **Traducciones (i18n)**: los textos están escritos en el código; sacarlos a archivos para poder tener MK en inglés u otros idiomas
@@ -157,7 +157,7 @@ Funciones más grandes o que tocan varias partes de la app.
 
 - [ ] **Recordatorios por Gmail**: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: es la única función que necesita internet
 - [ ] **Resumen diario por Gmail**: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas
-- [ ] **Separar `main.js`** (más de 1100 líneas) en módulos por área, como ya se hizo con `dbengine.js` y `ptyhost.js`
+- [x] ~~**Separar `main.js`** (más de 1100 líneas) en módulos por área~~ (2026-09-29: queda en ~340 líneas; `ipc-files`, `ipc-notes`, `ipc-export`, `ipc-system`, `mainctx`, `folderwatch`, `folderindex`)
 
 ## Largo plazo
 

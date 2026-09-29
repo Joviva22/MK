@@ -1790,7 +1790,7 @@
     const firstChangeAlreadyCommittedOk = !/linea2 MODIFICADA/.test(diffAfter || '');
 
     gitHunkOk = twoHunksShownOk && !!hunkCommitMsg && remainingHunks === 1 && secondChangeStillPendingOk && firstChangeAlreadyCommittedOk;
-    gitHunkDetail = `dosHunksOk=${twoHunksShownOk} commiteo=${!!hunkCommitMsg} hunksRestantes=${remainingHunks} segundoCambioPendienteOk=${secondChangeStillPendingOk} primerCambioYaCommiteadoOk=${firstChangeAlreadyCommittedOk}`;
+    gitHunkDetail = `dosHunksOk=${twoHunksShownOk} commiteo=${!!hunkCommitMsg} hunksRestantes=${remainingHunks} segundoCambioPendienteOk=${secondChangeStillPendingOk} primerCambioYaCommiteadoOk=${firstChangeAlreadyCommittedOk}` + (gitHunkOk ? '' : ` aviso="${hunkCommitMsg}"`);
   } else {
     gitHunkDetail = gitRepoDir ? 'git no disponible en este entorno, se saltea' : 'sin fixturesDir';
   }
