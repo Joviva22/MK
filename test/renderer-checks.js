@@ -3620,7 +3620,7 @@
       insideImg = await loadImg(window.mdEditor.joinPath(fixturesDir, 'guard-ok.svg'));
       // El ícono de MK: una imagen real que existe en cualquier máquina y
       // está fuera de lo autorizado (la carpeta del programa).
-      const appIcon = window.mdEditor.joinPath(window.mdEditor.dirName(decodeURIComponent(location.pathname)), '..', 'build', 'icon.png');
+      const appIcon = window.mdEditor.joinPath(window.mdEditor.dirName(decodeURIComponent(window.location.pathname)), '..', 'build', 'icon.png');
       outsideImg = await loadImg(appIcon);
     }
     const mdLocalStatus = `${insideImg}/${outsideImg}`;
