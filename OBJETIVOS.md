@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 60 de 97 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 61 de 98 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -32,7 +32,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 12. **Separar `main.js`** en módulos.
 13. **Migrar a módulos ES** (después del 12).
 
-**Escalabilidad** — ver la sección "Escalabilidad y solidez": lo más urgente es el **índice de la carpeta**, ~~vigilar la carpeta~~ y el ~~disco asíncrono~~ (hechos) (sin eso, una carpeta con miles de notas congela MK).
+**Escalabilidad** — ver la sección "Escalabilidad y solidez": ~~índice de la carpeta~~, ~~vigilar la carpeta~~ y ~~disco asíncrono~~ hechos (2026-09-29) (sin eso, una carpeta con miles de notas congela MK).
 
 **P5 — Proyectos grandes** (requieren decidir antes el diseño; hacerlos de a uno y con tiempo)
 14. Sincronización entre dispositivos · 15. Windows y macOS · 16. Sistema de plugins · 17. Pizarra Excalidraw · 18. Dos editores escribibles · 19. Ejecutar Python en el preview · 20. YouTube embebido · 21. Editar texto dentro de un PDF.
@@ -101,6 +101,8 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Terminal: pantalla dividida** (◫ / Ctrl+Shift+5, hasta 4 shells lado a lado por pestaña, cerrar un panel o la pestaña)~~ (2026-09-29)
 - [x] ~~**Vigilar la carpeta** (`fs.watch` por carpeta, sin ocultas ni node_modules, tope 3000: el árbol y las pestañas abiertas se actualizan solos)~~ (2026-09-29)
 - [x] ~~**Disco asíncrono en el proceso principal** (árbol en paralelo, leer/guardar, backups con poda en segundo plano, búsqueda/etiquetas/backlinks/grafo/Kanban leyendo de a 16, wikilinks, bytes de PDF/docx; el árbol de MK+node_modules pasa de 249 ms bloqueando a 110 ms sin bloquear. Quedan `…Sync` solo en config, diálogos y exportar)~~ (2026-09-29)
+- [x] ~~**Índice de la carpeta** (`src/folderindex.js`: lista y contenido en memoria, se relee solo lo que avisa el vigilante o lo que guarda MK; búsqueda/etiquetas/backlinks/grafo/Kanban/tareas del Home sobre 3000 notas: 159 ms la primera vez → 7 ms)~~ (2026-09-29)
+- [ ] **Índice guardado en `.mk/index`** para que la primera consulta tras abrir MK también sea rápida (y etiquetas/enlaces precalculados en el índice, no solo el texto)
 
 ## Corto plazo (próximas sesiones)
 
@@ -112,7 +114,6 @@ Mejoras chicas y de uso diario: se hacen en una sesión cada una. *(Todas hechas
 Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas grandes** (miles de notas), **más datos** (años de tareas, bases de miles de filas) y **más funciones**. Basado en lo que hoy hace el código (medido el 2026-09-29).
 
 ### Carpetas grandes
-- [ ] **Índice de la carpeta**: hoy búsqueda, etiquetas, backlinks, grafo, Kanban de carpeta y tareas 📅 del Home **releen todos los archivos** en cada consulta. Un índice en memoria (ruta → fecha de modificación, etiquetas, enlaces, tareas) actualizado solo con lo que cambia, y guardado en `.mk/index` para arrancar rápido
 - [ ] **Árbol del sidebar virtualizado y cargado por demanda**: hoy se lee la carpeta entera (recursivo) al abrirla; leer cada subcarpeta al desplegarla y dibujar solo las filas visibles
 - [ ] **Búsqueda con índice y sin tope de 200**: resultados al instante, con filtros (carpeta, tipo, fecha) y búsqueda aproximada
 

@@ -11,6 +11,7 @@ const { registerDatabaseIpc } = require('./dbengine');
 const { registerTerminalIpc, killAllTerminals } = require('./ptyhost');
 const trayMode = require('./traymode');
 const { createFolderWatcher } = require('./folderwatch');
+const { createFolderIndex } = require('./folderindex');
 
 const APP_ICON = path.join(__dirname, '..', 'build', 'icon.png');
 // Nombre visible "MK" (notificaciones, etc.). OJO: setName también cambia
@@ -339,8 +340,10 @@ ipcMain.handle('file:save', async (event, { content, filePath, forceDialog }) =>
     if (result.canceled || !result.filePath) return null;
     target = result.filePath;
   }
+  const existed = await fsp.access(target).then(() => true, () => false);
   await makeBackup(target);
   await fsp.writeFile(target, content, 'utf-8');
+  indexTouch(target, !existed);
   return target;
 });
 
@@ -466,13 +469,19 @@ ipcMain.handle('folder:read', async (event, rootPath) => {
 
 // Vigilar la carpeta abierta (ver folderwatch.js): el renderer pide vigilar
 // la raíz cada vez que la cambia y recibe 'folder:changed'.
+// El índice (folderindex.js) confía en su caché solo para la carpeta
+// vigilada entera (si se llegó al tope de carpetas, compara fechas).
+const folderIndex = createFolderIndex();
+
 const folderWatcher = createFolderWatcher((payload) => {
+  folderIndex.onFolderChanged(payload);
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('folder:changed', payload);
 });
 
 ipcMain.handle('folder:watch', (event, rootPath) => {
   if (!rootPath) {
     folderWatcher.stop();
+    folderIndex.setWatchedRoot(null);
     return { dirs: 0, limited: false };
   }
   if (folderWatcher.currentRoot() === rootPath) return { dirs: -1, limited: false }; // ya vigilada
@@ -481,8 +490,19 @@ ipcMain.handle('folder:watch', (event, rootPath) => {
   } catch {
     return { error: 'La carpeta no existe.' };
   }
-  return folderWatcher.start(rootPath);
+  const info = folderWatcher.start(rootPath);
+  folderIndex.setWatchedRoot(info.limited ? null : rootPath);
+  return info;
 });
+
+// Cambios hechos por el propio MK: marcarlos ya, sin esperar el aviso del
+// vigilante (una búsqueda justo después de guardar vería el texto viejo).
+function indexTouch(filePath, structural) {
+  const root = folderWatcher.currentRoot();
+  if (root) folderIndex.onFolderChanged({ root, structural: !!structural, changes: [{ path: filePath }] });
+}
+
+ipcMain.handle('index:stats', () => folderIndex.stats());
 
 // Arrastrar un archivo del sidebar afuera de MK (a otra app: navegador,
 // explorador de archivos, Claude en el navegador para adjuntarlo, etc.) —
@@ -518,6 +538,7 @@ ipcMain.handle('fs:createFile', (event, { dirPath, name }) => {
   if (fs.existsSync(target)) return { error: 'Ya existe un archivo o carpeta con ese nombre.' };
   try {
     fs.writeFileSync(target, '', 'utf-8');
+    indexTouch(target, true);
     return { path: target };
   } catch (e) {
     return { error: e.message };
@@ -530,6 +551,7 @@ ipcMain.handle('fs:createFolder', (event, { dirPath, name }) => {
   if (fs.existsSync(target)) return { error: 'Ya existe un archivo o carpeta con ese nombre.' };
   try {
     fs.mkdirSync(target);
+    indexTouch(target, true);
     return { path: target };
   } catch (e) {
     return { error: e.message };
@@ -542,6 +564,7 @@ ipcMain.handle('fs:rename', (event, { targetPath, newName }) => {
   if (fs.existsSync(dest)) return { error: 'Ya existe un archivo o carpeta con ese nombre.' };
   try {
     fs.renameSync(targetPath, dest);
+    indexTouch(dest, true);
     return { path: dest };
   } catch (e) {
     return { error: e.message };
@@ -565,6 +588,7 @@ ipcMain.handle('fs:move', (event, { sourcePath, destDir }) => {
   if (fs.existsSync(dest)) return { error: 'Ya existe un archivo o carpeta con ese nombre ahí.' };
   try {
     fs.renameSync(sourcePath, dest);
+    indexTouch(dest, true);
     return { path: dest };
   } catch (e) {
     return { error: e.message };
@@ -583,6 +607,7 @@ ipcMain.handle('fs:delete', async (event, { targetPath, isFolder }) => {
     // en ese caso, borrar directo en vez de dejar la operación a medias.
     try {
       fs.rmSync(targetPath, { recursive: !!isFolder, force: false });
+      indexTouch(targetPath, true);
       return { ok: true };
     } catch (e2) {
       return { error: e2.message };
@@ -615,7 +640,6 @@ ipcMain.handle('asset:copy', (event, { srcPath, targetDir }) => {
   }
 });
 
-const SEARCH_TEXT_EXT = /\.(md|markdown|txt|tex)$/i;
 const SEARCH_MAX_RESULTS = 200;
 
 // Recorre los archivos "de texto" (md/markdown/txt/tex) de una carpeta,
@@ -623,41 +647,9 @@ const SEARCH_MAX_RESULTS = 200;
 // Compartido por búsqueda global, etiquetas y backlinks para no repetir el
 // recorrido del árbol tres veces.
 //
-// Asíncrono: primero junta las rutas (en el mismo orden de siempre, en
-// profundidad) y después las lee de a READ_BATCH en paralelo, llamando
-// onFile en orden. Si onFile devuelve false, corta (búsqueda llena).
-const READ_BATCH = 16;
-
-async function listTextFiles(root) {
-  const out = [];
-  async function walk(dirPath) {
-    let entries;
-    try {
-      entries = await fsp.readdir(dirPath, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      if (entry.name.startsWith('.')) continue;
-      const fullPath = path.join(dirPath, entry.name);
-      if (entry.isDirectory()) await walk(fullPath);
-      else if (SEARCH_TEXT_EXT.test(entry.name)) out.push(fullPath);
-    }
-  }
-  await walk(root);
-  return out;
-}
-
-async function walkTextFiles(root, onFile) {
-  const files = await listTextFiles(root);
-  for (let i = 0; i < files.length; i += READ_BATCH) {
-    const batch = files.slice(i, i + READ_BATCH);
-    const contents = await Promise.all(batch.map((f) => fsp.readFile(f, 'utf-8').catch(() => null)));
-    for (let j = 0; j < batch.length; j++) {
-      if (contents[j] === null) continue;
-      if (onFile(batch[j], contents[j]) === false) return;
-    }
-  }
+// Va por el índice (folderindex.js): solo se relee lo que cambió.
+function walkTextFiles(root, onFile) {
+  return folderIndex.walk(root, onFile);
 }
 
 // Tablero Kanban en modo "carpeta completa" (ver kanban.js): junta el
@@ -757,32 +749,8 @@ ipcMain.handle('tags:list', async (event, root) => {
 ipcMain.handle('wikilink:resolve', async (event, { root, target }) => {
   if (!root || !target) return null;
   const wanted = target.trim().toLowerCase();
-  let found = null;
-  async function walk(dirPath) {
-    if (found) return;
-    let entries;
-    try {
-      entries = await fsp.readdir(dirPath, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      if (found) return;
-      if (entry.name.startsWith('.')) continue;
-      const fullPath = path.join(dirPath, entry.name);
-      if (entry.isDirectory()) {
-        await walk(fullPath);
-      } else if (SEARCH_TEXT_EXT.test(entry.name)) {
-        const base = path.basename(entry.name, path.extname(entry.name)).toLowerCase();
-        if (base === wanted) {
-          found = fullPath;
-          return;
-        }
-      }
-    }
-  }
-  await walk(root);
-  return found;
+  const list = await folderIndex.files(root);
+  return list.find((f) => path.basename(f, path.extname(f)).toLowerCase() === wanted) || null;
 });
 
 const WIKILINK_RE = /\[\[([^\]|#]+)(?:\|[^\]]+)?\]\]/g;

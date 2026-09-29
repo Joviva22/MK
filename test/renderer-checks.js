@@ -3365,6 +3365,34 @@
   }
   check('Vigilar la carpeta: archivos nuevos, pestañas abiertas y subcarpetas nuevas se actualizan solos', watchOk, watchDetail);
 
+  // Índice de la carpeta: la segunda búsqueda no relee nada; guardar un
+  // archivo relee solo ese y la búsqueda ya ve el texto nuevo; un archivo
+  // nuevo entra en la lista al instante.
+  let indexOk = false;
+  let indexDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const J = window.mdEditor.joinPath;
+    const idir = J(fixturesDir, 'indexada');
+    await window.mdEditor.createFolder(fixturesDir, 'indexada');
+    for (let i = 0; i < 5; i++) await window.mdEditor.saveFile(`# nota ${i}\npalabra-comun\n`, J(idir, `n${i}.md`), false);
+    window.mdSidebar.renderFolder(await window.mdEditor.readFolder(idir));
+    await new Promise((r) => setTimeout(r, 400));
+    const first = await window.mdEditor.searchInFolder(idir, 'palabra-comun');
+    const s1 = await window.mdEditor.indexStats();
+    const second = await window.mdEditor.searchInFolder(idir, 'palabra-comun');
+    const s2 = await window.mdEditor.indexStats();
+    const noReread = s2.reads === s1.reads && s2.listBuilds === s1.listBuilds && second.length === first.length && first.length === 5;
+    await window.mdEditor.saveFile('# nota 2\ntexto-recien-guardado\n', J(idir, 'n2.md'), false);
+    const fresh = await window.mdEditor.searchInFolder(idir, 'texto-recien-guardado');
+    const s3 = await window.mdEditor.indexStats();
+    const onlyOne = s3.reads === s2.reads + 1;
+    await window.mdEditor.saveFile('palabra-comun', J(idir, 'nueva.md'), false);
+    const withNew = await window.mdEditor.searchInFolder(idir, 'palabra-comun');
+    indexOk = noReread && fresh.length === 1 && onlyOne && withNew.length === 5;
+    indexDetail = `sinReleer=${noReread} textoNuevo=${fresh.length} soloUno=${onlyOne}(${s3.reads - s2.reads}) archivoNuevo=${withNew.length}`;
+  }
+  check('Índice de la carpeta: búsquedas repetidas no releen, guardar relee solo ese archivo, archivos nuevos entran al instante', indexOk, indexDetail);
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {
