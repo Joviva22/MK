@@ -32,7 +32,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 12. **Separar `main.js`** en módulos.
 13. **Migrar a módulos ES** (después del 12).
 
-**Escalabilidad** — ver la sección "Escalabilidad y solidez": ~~índice de la carpeta~~, ~~vigilar la carpeta~~ y ~~disco asíncrono~~ hechos (2026-09-29) (sin eso, una carpeta con miles de notas congela MK).
+**Escalabilidad** — ver la sección "Escalabilidad y solidez": ~~índice de la carpeta~~, ~~vigilar la carpeta~~ y ~~disco asíncrono~~ hechos (2026-09-29): una carpeta con miles de notas ya no congela MK.
 
 **P5 — Proyectos grandes** (requieren decidir antes el diseño; hacerlos de a uno y con tiempo)
 14. Sincronización entre dispositivos · 15. Windows y macOS · 16. Sistema de plugins · 17. Pizarra Excalidraw · 18. Dos editores escribibles · 19. Ejecutar Python en el preview · 20. YouTube embebido · 21. Editar texto dentro de un PDF.
