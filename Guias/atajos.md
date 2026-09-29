@@ -9,6 +9,7 @@
 | `Ctrl+O` | Abrir archivo |
 | `Ctrl+S` / `Ctrl+Shift+S` | Guardar / Guardar como |
 | `Ctrl+W` | Cerrar pestaña |
+| `Ctrl+Q` | Salir de MK (cerrar la ventana solo la manda a la bandeja) |
 | `Ctrl+Tab` / `Ctrl+Shift+Tab` | Pestaña siguiente / anterior |
 
 ## Navegar y buscar

@@ -183,4 +183,28 @@ pomodoroBreakSelect.addEventListener('change', async (e) => {
   window.mdCodeMirror.refresh();
 })();
 
+// Bandeja y arranque con el sistema (ver traymode.js). "Seguir en la
+// bandeja" viene activado por defecto (config.keepInTray !== false).
+const keepInTrayToggle = document.getElementById('keep-in-tray-toggle');
+const autostartToggle = document.getElementById('autostart-toggle');
+(async () => {
+  const config = await window.mdEditor.getConfig();
+  keepInTrayToggle.checked = config.keepInTray !== false;
+  autostartToggle.checked = await window.mdEditor.getAutostart();
+})();
+keepInTrayToggle.addEventListener('change', () => window.mdEditor.setConfig({ keepInTray: keepInTrayToggle.checked }));
+autostartToggle.addEventListener('change', async () => {
+  autostartToggle.checked = await window.mdEditor.setAutostart(autostartToggle.checked);
+});
+
+// Ctrl+Q: salir de verdad (cerrar la ventana solo la manda a la bandeja).
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'q') {
+    e.preventDefault();
+    window.mdEditor.quitApp();
+  }
+});
+
+window.mdEditor.onTrayOpenHome(() => { if (window.mdHome) window.mdHome.open(); });
+
 })();

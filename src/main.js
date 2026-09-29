@@ -7,6 +7,11 @@ const JSZip = require('jszip');
 const { execFile } = require('child_process');
 const { registerDatabaseIpc } = require('./dbengine');
 const { registerTerminalIpc, killAllTerminals } = require('./ptyhost');
+const trayMode = require('./traymode');
+
+const APP_ICON = path.join(__dirname, '..', 'build', 'icon.png');
+// --hidden (lo usa "Iniciar con el sistema"): arrancar directo en la bandeja.
+const startHidden = trayMode.isStartHidden(process.argv);
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -41,8 +46,8 @@ if (!gotLock) {
 } else {
   app.on('second-instance', (event, argv) => {
     if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
+    // Puede estar oculta en la bandeja: volver a mostrarla.
+    trayMode.showWindow(mainWindow);
     const filePath = getFileArgFromArgv(argv);
     if (filePath) sendOpenExternalFile(filePath);
   });
@@ -85,14 +90,19 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    icon: path.join(__dirname, '..', 'build', 'icon.png'),
+    show: !startHidden,
+    icon: APP_ICON,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: false,
+      // Oculta en la bandeja, Chromium frena los timers de la página: los
+      // recordatorios (setInterval de home.js) sonarían tarde.
+      backgroundThrottling: false
     }
   });
+  trayMode.attachWindow(mainWindow, { loadConfig, saveConfig, isTestMode });
 
   const loadOptions = isTestMode ? { query: { mkTestFixtures: testFixturesDir } } : undefined;
   mainWindow.loadFile(path.join(__dirname, 'index.html'), loadOptions);
@@ -1118,6 +1128,7 @@ app.whenReady().then(() => {
     return net.fetch('file://' + filePath);
   });
   createWindow();
+  trayMode.setupTray({ getWindow: () => mainWindow, iconPath: APP_ICON, ipcMain, isTestMode });
 });
 
 app.on('window-all-closed', () => {

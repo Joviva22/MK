@@ -109,7 +109,9 @@ La notificación dice qué y cuándo:
 (1 día antes dice *"Mañana: …"* y el mismo día *"Hoy a las 18:30: …"*). No hace falta que la tarea tenga hora: sin hora, el aviso muestra solo el día. La tarjeta muestra 🔔 si tiene algún aviso.
 
 - Funcionan con MK abierto, **aunque el Home esté cerrado** (MK revisa cada 30 segundos).
-- Si MK estaba cerrado a la hora del aviso, al abrirlo te avisa solo si pasaron menos de 10 minutos; los más viejos se descartan para no llenarte de notificaciones.
+- **Y con la ventana cerrada**: cerrar MK lo deja en la **bandeja del sistema** (ícono de MK junto al reloj) y los avisos siguen sonando. Para salir de verdad: `Ctrl+Q` o clic derecho en el ícono de la bandeja → **Salir de MK**. Se desactiva en ⚙ Ajustes → "Al cerrar, seguir en la bandeja".
+- **Iniciar con el sistema**: ⚙ Ajustes → "Iniciar MK con el sistema (en la bandeja)". MK arranca oculto al iniciar sesión, así los avisos suenan aunque no lo abras. Para verlo: clic en el ícono de la bandeja, o abrí MK normalmente.
+- Si MK estaba **cerrado del todo** (con `Ctrl+Q`) a la hora del aviso, al abrirlo te avisa solo si pasaron menos de 10 minutos; los más viejos se descartan para no llenarte de notificaciones.
 - Una tarea ya tildada no avisa. En una recurrente, avisa antes de cada repetición.
 
 **Cuando suena un aviso**, además de la notificación del sistema aparece una tarjeta abajo a la derecha de MK:
