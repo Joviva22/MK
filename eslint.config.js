@@ -16,7 +16,8 @@ const nodeGlobals = {
   Buffer: 'readonly',
   URL: 'readonly',
   setTimeout: 'readonly',
-  clearTimeout: 'readonly'
+  clearTimeout: 'readonly',
+  Response: 'readonly' // fetch API global de Node/Electron (protocol.handle)
 };
 
 // El renderer no usa bundler ni módulos: cada src/*.js es un <script> suelto

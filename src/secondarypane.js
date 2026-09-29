@@ -25,7 +25,6 @@ const closeBtn = document.getElementById('secondary-pane-close');
 const MD_EXT = /\.(md|markdown|txt|tex)$/i;
 const PDF_EXT = /\.pdf$/i;
 const DOCX_EXT = /\.docx$/i;
-const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
 
 let currentPath = null;
 // 'read' (renderizado) | 'code' (fuente cruda, sin renderizar) — solo
@@ -63,11 +62,8 @@ async function renderContent(filePath) {
     return;
   }
 
-  if (IMAGE_EXT.test(filePath)) {
-    const img = document.createElement('img');
-    img.src = window.mdEditor.toLocalUrl(filePath);
-    img.className = 'secondary-pane-image';
-    bodyEl.appendChild(img);
+  if (window.mdMedia.kindOf(filePath)) {
+    bodyEl.appendChild(window.mdMedia.createViewer(filePath, { compact: true }));
     return;
   }
 
@@ -140,8 +136,8 @@ async function promote() {
     await window.mdDocxImport.openAsMarkdown(promoted);
   } else if (PDF_EXT.test(promoted)) {
     window.showPdfPreview(promoted);
-  } else if (IMAGE_EXT.test(promoted)) {
-    window.showImagePreview(promoted);
+  } else if (window.mdMedia.kindOf(promoted)) {
+    window.showMediaPreview(promoted);
   } else {
     await window.openFileAtPath(promoted);
   }

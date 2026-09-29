@@ -4,7 +4,6 @@
 const previewPane = document.getElementById('preview-pane');
 const containerEl = document.querySelector('.container');
 
-const VIDEO_EXT = /\.(mp4|webm|ogv|ogg)$/i;
 const PDF_EXT = /\.pdf$/i;
 
 // Protege bloques ```fence``` y `código inline` de las transformaciones de
@@ -31,7 +30,10 @@ function restoreCode(text, store) {
 
 function embedMediaSyntax(text) {
   return text.replace(/!\[\[(.+?)\]\]/g, (match, filename) => {
-    if (VIDEO_EXT.test(filename)) return `<video controls src="${filename}"></video>`;
+    const kind = window.mdMedia && window.mdMedia.kindOf(filename);
+    if (kind === 'video') return `<video controls preload="metadata" src="${filename}"></video>`;
+    if (kind === 'audio') return `<audio controls preload="metadata" src="${filename}"></audio>`;
+    if (kind === 'image') return `<img src="${filename}" alt="${filename}">`;
     if (PDF_EXT.test(filename)) return `<embed src="${filename}" type="application/pdf" class="pdf-embed-inline">`;
     return match;
   });
@@ -198,7 +200,7 @@ window.mdRenderMarkdownForExport = renderMarkdownForExport;
 // de DOMPurify por defecto, hay que añadirlo o borra los src de assets.
 const SANITIZE_CONFIG = {
   ADD_TAGS: ['embed'],
-  ADD_ATTR: ['controls', 'type'],
+  ADD_ATTR: ['controls', 'type', 'preload'],
   ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|md-local):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
 };
 
@@ -524,15 +526,14 @@ window.showPdfPreview = function (filePath) {
   forceReadModeForPdf(filePath);
 };
 
-// Clic en una imagen del sidebar: mostrarla en el preview en vez de
-// intentar "editarla" como texto (eso era lo que colgaba la app antes).
-window.showImagePreview = function (filePath) {
-  const url = window.mdEditor.toLocalUrl(filePath);
-  const name = filePath.split(/[\\/]/).pop();
+// Clic en una foto, video o audio del sidebar: mostrarlo en el preview (ver
+// media.js) en vez de intentar "editarlo" como texto.
+window.showMediaPreview = function (filePath) {
   previewPane.classList.add('pdf-mode');
-  previewPane.innerHTML = `<div class="image-preview"><img src="${url}" alt="${name}"></div>`;
+  previewPane.replaceChildren(window.mdMedia.createViewer(filePath));
   forceReadModeForPdf(filePath);
 };
+window.showImagePreview = window.showMediaPreview;
 
 let debounceTimer = null;
 // Con el preview oculto (modo enfoque, Live Preview, archivo de código)

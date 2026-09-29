@@ -212,6 +212,8 @@ Los archivos `.tex` completos también se editan con resaltado de sintaxis LaTeX
 - **Arrastrar una fila del sidebar** (un archivo que ya está en tu carpeta abierta) directo al editor: inserta el link/embed apuntando a donde ya está el archivo, sin copiarlo de nuevo.
 - Desde el [menú contextual](#17-menú-contextual-del-editor) del editor: "Insertar imagen".
 
+**Fotos, video y audio de cualquier formato común** (png, jpg, gif, webp, avif, svg, bmp, ico · mp4, webm, mkv, mov · mp3, wav, flac, ogg, opus, m4a, aac…): clic en el sidebar los abre en un visor con controles (se puede adelantar en archivos largos); `![[cancion.mp3]]` embebe un reproductor de audio en la nota. Lo que Chromium no puede mostrar (TIFF, HEIC, AVI, WMV…) ofrece **"Abrir con la aplicación del sistema"**, que también está en el clic derecho de cualquier archivo.
+
 **Ver una imagen o un PDF sueltos**: hacé clic en el archivo desde el sidebar (no hace falta que esté referenciado en ningún `.md`) — se muestra a pantalla completa en el panel de preview. Con un PDF podés navegarlo con el visor nativo; con una imagen, se centra y ajusta al espacio disponible. Se abre siempre en **modo lectura** (aunque estuvieras en modo enfoque o normal) — así nunca queda tapado detrás de otro modo ni compartiendo pantalla con un editor mostrando un archivo sin relación.
 
 ## 6. Etiquetas y wikilinks

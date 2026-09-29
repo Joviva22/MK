@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 52 de 95 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 54 de 97 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -93,6 +93,8 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Escribir en PDF**: texto libre en cualquier lugar de la página (tamaño, color, mover, borrar) y formularios PDF (texto, casillas, listas), guardado en un PDF nuevo~~ (2026-09-29)
 - [x] ~~**Búsqueda global en tareas del Home y bases de datos** (secciones Archivos / Tareas / Bases de datos; clic abre la tarea o la base filtrada)~~ (2026-09-29)
 - [x] ~~**Home: estadísticas** (📈): semana/mes, racha, atrasadas, hechas por semana, pendientes por prioridad y rachas de hábitos~~ (2026-09-29)
+- [x] ~~**Optimización medida**: arranque −30 % (~1150 → ~800 ms), memoria JS −47 % (32 → 17 MB, librerías grandes bajo demanda), render con fórmulas −67 % (184 → 61 ms, caché de KaTeX y fórmulas después de DOMPurify), preview oculto sin redibujar, ESLint 63 → 0 warnings~~ (2026-09-29)
+- [x] ~~**Fotos, video y audio de cualquier formato común** (visor único, audio embebido `![[x.mp3]]`, adelantar en archivos largos con pedidos por rango, "Abrir con la aplicación del sistema" para lo que no se puede mostrar)~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 

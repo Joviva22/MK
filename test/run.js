@@ -96,6 +96,20 @@ async function writePdfFixture() {
   other.addPage([400, 300]).drawText('Otro PDF', { x: 40, y: 250, size: 20, font: otherFont });
   fs.writeFileSync(path.join(fixturesDir, 'otro.pdf'), await other.save());
 
+  // Audio WAV de 2 s (tono de 440 Hz, 8 kHz, 8 bits mono) generado a mano,
+  // para probar el visor y el adelantar/retroceder (pedidos por rango).
+  const rate = 8000;
+  const samples = rate * 2;
+  const wav = Buffer.alloc(44 + samples);
+  wav.write('RIFF', 0); wav.writeUInt32LE(36 + samples, 4); wav.write('WAVE', 8);
+  wav.write('fmt ', 12); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22);
+  wav.writeUInt32LE(rate, 24); wav.writeUInt32LE(rate, 28); wav.writeUInt16LE(1, 32); wav.writeUInt16LE(8, 34);
+  wav.write('data', 36); wav.writeUInt32LE(samples, 40);
+  for (let i = 0; i < samples; i++) wav[44 + i] = 128 + Math.round(40 * Math.sin((2 * Math.PI * 440 * i) / rate));
+  fs.writeFileSync(path.join(fixturesDir, 'tono.wav'), wav);
+  // Un "TIFF" que Chromium no puede mostrar: el visor tiene que ofrecer la app del sistema.
+  fs.writeFileSync(path.join(fixturesDir, 'escaneo.tiff'), Buffer.from('II*\0no-es-una-imagen-real'));
+
   // PDF con formulario (AcroForm): texto, casilla y lista desplegable.
   const formDoc = await PDFDocument.create();
   const formPage = formDoc.addPage([400, 300]);

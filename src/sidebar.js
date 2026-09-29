@@ -15,12 +15,10 @@ const ICONS_BY_EXT = {
   json: 'file-json',
   pdf: 'file',
   docx: 'file-type-2',
-  png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image',
-  mp4: 'video', webm: 'video',
-  mp3: 'music'
+  svg: 'image'
 };
 const DEFAULT_FILE_ICON = 'paperclip';
-const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
+// Fotos, video y audio: ver media.js (una sola lista para todo MK).
 
 // Iconos personalizados por archivo (lucide), guardados en config.json bajo
 // fileIcons: { "ruta/relativa/a/la/raiz.md": "star" }. Se guarda por ruta
@@ -101,9 +99,11 @@ function relKeyFor(node) {
   return root ? window.mdEditor.relativeToRoot(root, node.ruta) : node.ruta;
 }
 
+const MEDIA_ICONS = { image: 'image', video: 'video', audio: 'music' };
+
 function iconFor(node) {
   if (node.esCarpeta) return 'folder';
-  return fileIcons[relKeyFor(node)] || ICONS_BY_EXT[extOf(node)] || DEFAULT_FILE_ICON;
+  return fileIcons[relKeyFor(node)] || ICONS_BY_EXT[extOf(node)] || MEDIA_ICONS[window.mdMedia.kindOf(node.nombre)] || DEFAULT_FILE_ICON;
 }
 
 async function setFileIcon(node, iconName) {
@@ -332,6 +332,7 @@ function showSidebarMenu(x, y, node, multiNodes) {
 
   if (node && !node.esCarpeta) {
     addMenuItem('Abrir en panel secundario', () => window.mdSecondaryPane.open(node.ruta));
+    addMenuItem('Abrir con la aplicación del sistema', () => window.mdEditor.openWithSystem(node.ruta));
     if (extOf(node) === 'pdf' && window.mdPdfHighlight) {
       addMenuItem('Escribir / subrayar en este PDF', () => {
         window.mdPdfHighlight.open();
@@ -510,8 +511,8 @@ function buildTree(nodes) {
         clearSelection();
         if (extOf(node) === 'pdf') {
           window.showPdfPreview(node.ruta);
-        } else if (IMAGE_EXT.test(node.nombre)) {
-          window.showImagePreview(node.ruta);
+        } else if (window.mdMedia.kindOf(node.nombre)) {
+          window.showMediaPreview(node.ruta);
         } else {
           window.openFileAtPath(node.ruta);
         }

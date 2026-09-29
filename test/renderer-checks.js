@@ -3165,6 +3165,38 @@
     check('Preview: fórmulas rápidas y seguras (HTML en $…$ no se ejecuta, no inyectan atributos)', katexOk && noImg && noHandler && noEvents && !window.__xss1 && !window.__xss2, `katex=${katexOk} sinImgOnerror=${noImg} sinOnmouseover=${noHandler}`);
   }
 
+  // Fotos, video y audio: tipos reconocidos, visor de audio con duración,
+  // adelantar (pedido por rango al protocolo md-local) y formato no
+  // soportado → botón para abrir con la app del sistema.
+  let mediaOk = false;
+  let mediaDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const kinds = ['a.PNG', 'b.webp', 'c.avif', 'd.mkv', 'e.mov', 'f.flac', 'g.m4a', 'h.opus', 'i.txt'].map((f) => window.mdMedia.kindOf(f) || '-').join(',');
+    const kindsOk = kinds === 'image,image,image,video,video,audio,audio,audio,-';
+    window.showMediaPreview(window.mdEditor.joinPath(fixturesDir, 'tono.wav'));
+    const audio = await waitFor(() => document.querySelector('#preview-pane .media-viewer audio'));
+    let duration = 0;
+    let seeked = false;
+    if (audio) {
+      await waitFor(() => audio.readyState >= 1 && audio.duration > 0, 5000);
+      duration = audio.duration;
+      await new Promise((resolve) => {
+        audio.addEventListener('seeked', () => { seeked = true; resolve(); }, { once: true });
+        audio.currentTime = 1.5;
+        setTimeout(resolve, 3000);
+      });
+    }
+    const audioOk = Math.abs(duration - 2) < 0.1 && seeked && Math.abs(audio.currentTime - 1.5) < 0.2;
+    window.showMediaPreview(window.mdEditor.joinPath(fixturesDir, 'escaneo.tiff'));
+    const fallback = await waitFor(() => document.querySelector('#preview-pane .media-unsupported button'), 5000);
+    const fallbackOk = !!fallback && fallback.textContent.includes('aplicación del sistema');
+    window.mdModes.setLayoutMode('normal');
+    window.renderPreview();
+    mediaOk = kindsOk && audioOk && fallbackOk;
+    mediaDetail = `tipos=${kinds} audio=${audioOk}(duración ${duration.toFixed(2)}s, adelantar=${seeked}) noSoportado=${fallbackOk}`;
+  }
+  check('Fotos, video y audio: tipos reconocidos, audio con adelantar (rangos) y formato no soportado ofrece la app del sistema', mediaOk, mediaDetail);
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {

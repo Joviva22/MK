@@ -3,8 +3,7 @@
 
 const editorPaneEl = document.getElementById('editor-pane');
 
-const DND_IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg)$/i;
-const DND_VIDEO_PDF_EXT = /\.(mp4|webm|ogv|ogg|pdf)$/i;
+// Fotos → ![nombre](ruta); video, audio y PDF → ![[ruta]] (ver media.js).
 
 // Igual que DRAG_MIME en sidebar.js: al soltar una fila del árbol (que ya
 // está dentro del proyecto), se referencia in-situ en vez de copiarla a
@@ -12,8 +11,9 @@ const DND_VIDEO_PDF_EXT = /\.(mp4|webm|ogv|ogg|pdf)$/i;
 const SIDEBAR_DRAG_MIME = 'application/x-mk-node';
 
 function snippetFor(name, refPath) {
-  if (DND_IMAGE_EXT.test(refPath)) return `![${name}](${refPath})`;
-  if (DND_VIDEO_PDF_EXT.test(refPath)) return `![[${refPath}]]`;
+  const kind = window.mdMedia.kindOf(refPath);
+  if (kind === 'image') return `![${name}](${refPath})`;
+  if (kind === 'video' || kind === 'audio' || /\.pdf$/i.test(refPath)) return `![[${refPath}]]`;
   return `[${name}](${refPath})`;
 }
 

@@ -5,6 +5,7 @@ const os = require('os');
 const crypto = require('crypto');
 const JSZip = require('jszip');
 const { execFile } = require('child_process');
+const { Readable } = require('stream');
 const { registerDatabaseIpc } = require('./dbengine');
 const { registerTerminalIpc, killAllTerminals } = require('./ptyhost');
 const trayMode = require('./traymode');
@@ -205,6 +206,19 @@ ipcMain.handle('window:toggleFullscreen', () => {
 
 // Solo http(s)/mailto — nunca abrir esquemas arbitrarios (file:, md-local:,
 // etc.) que un .md ajeno podría meter en un link.
+// "Abrir con la aplicación del sistema" (formatos que MK no muestra, o el
+// usuario lo prefiere): solo archivos existentes; nunca ejecutables.
+ipcMain.handle('shell:openPath', async (event, filePath) => {
+  if (typeof filePath !== 'string' || isTestMode) return;
+  try {
+    const st = fs.statSync(filePath);
+    if (!st.isFile() || (st.mode & 0o111) !== 0) return; // no abrir binarios ejecutables
+  } catch {
+    return;
+  }
+  await shell.openPath(filePath);
+});
+
 ipcMain.handle('shell:openExternal', (event, url) => {
   if (typeof url === 'string' && /^https?:|^mailto:/i.test(url)) {
     // En modo test no se abre un navegador/cliente de mail real.
@@ -1151,9 +1165,48 @@ ipcMain.handle('media:status', async () => {
   return { ok: true, status: status.output, title: meta.ok ? meta.output : '' };
 });
 
+const MEDIA_MIME = {
+  mp4: 'video/mp4', m4v: 'video/mp4', webm: 'video/webm', mkv: 'video/x-matroska', mov: 'video/quicktime', ogv: 'video/ogg',
+  mp3: 'audio/mpeg', wav: 'audio/wav', flac: 'audio/flac', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/ogg',
+  m4a: 'audio/mp4', aac: 'audio/aac', weba: 'audio/webm'
+};
+
+function serveRange(filePath, rangeHeader) {
+  let size;
+  try {
+    size = fs.statSync(filePath).size;
+  } catch {
+    return new Response('No encontrado', { status: 404 });
+  }
+  const m = /bytes=(\d*)-(\d*)/.exec(rangeHeader);
+  let start = m && m[1] ? Number(m[1]) : 0;
+  let end = m && m[2] ? Number(m[2]) : size - 1;
+  if (m && !m[1] && m[2]) { start = Math.max(0, size - Number(m[2])); end = size - 1; } // "bytes=-500": los últimos 500
+  end = Math.min(end, size - 1);
+  if (!(start <= end) || start >= size) {
+    return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } });
+  }
+  const ext = path.extname(filePath).slice(1).toLowerCase();
+  const stream = Readable.toWeb(fs.createReadStream(filePath, { start, end }));
+  return new Response(stream, {
+    status: 206,
+    headers: {
+      'Content-Type': MEDIA_MIME[ext] || 'application/octet-stream',
+      'Content-Range': `bytes ${start}-${end}/${size}`,
+      'Content-Length': String(end - start + 1),
+      'Accept-Ranges': 'bytes'
+    }
+  });
+}
+
 app.whenReady().then(() => {
   protocol.handle('md-local', (request) => {
     const filePath = decodeURIComponent(new URL(request.url).pathname);
+    // Video y audio piden el archivo "por rangos" (Range: bytes=…) para
+    // poder adelantar/retroceder sin leerlo entero; net.fetch(file://) no
+    // los respetaba, y en archivos largos no se podía saltar a otra parte.
+    const range = request.headers.get('range');
+    if (range) return serveRange(filePath, range);
     return net.fetch('file://' + filePath);
   });
   createWindow();

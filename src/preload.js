@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('mdEditor', {
   setAutostart: (enabled) => ipcRenderer.invoke('app:setAutostart', enabled),
   onTrayOpenHome: (callback) => ipcRenderer.on('tray:openHome', () => callback()),
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+  openWithSystem: (filePath) => ipcRenderer.invoke('shell:openPath', filePath),
   saveSession: (data) => ipcRenderer.invoke('session:save', data),
   loadSession: () => ipcRenderer.invoke('session:load'),
   homeLoad: (root) => ipcRenderer.invoke('home:load', root || null),
