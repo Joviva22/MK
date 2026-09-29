@@ -23,6 +23,8 @@ const modeWeekBtn = document.getElementById('home-mode-week');
 const modeMonthBtn = document.getElementById('home-mode-month');
 const showDbToggle = document.getElementById('home-show-db');
 const showNotesToggle = document.getElementById('home-show-notes');
+const weekBeforeToggle = document.getElementById('home-week-before');
+const weekBeforeTime = document.getElementById('home-week-before-time');
 const startupToggle = document.getElementById('home-startup-toggle');
 const DRAG_MIME = 'application/x-mk-home-task';
 const NOTE_DRAG_MIME = 'application/x-mk-home-note'; // tarea "📅" de una nota
@@ -53,7 +55,11 @@ const REMIND_OPTIONS = [
 const CLICK_DELAY_MS = 250; // para distinguir clic (abrir editor) de doble clic (renombrar)
 const REMINDER_GRACE_MS = 10 * 60 * 1000; // avisos atrasados más que esto (app cerrada) se descartan
 
-let data = { tasks: [], goals: {}, notes: {}, showDatabases: true, showNotes: true, notified: {}, snoozes: [] };
+// weekBefore: aviso automático una semana antes de TODO lo que tenga fecha
+// (tareas del Home no recurrentes, tareas 📅 de notas y fechas de bases de
+// datos), sin tener que configurarlo tarea por tarea. Activado por defecto.
+const WEEK_BEFORE_DEFAULT = { on: true, time: '09:00' };
+let data = { tasks: [], goals: {}, notes: {}, showDatabases: true, showNotes: true, notified: {}, snoozes: [], weekBefore: { ...WEEK_BEFORE_DEFAULT } };
 let noteItems = []; // tareas "- [ ] ... 📅 AAAA-MM-DD" encontradas en las notas de la carpeta
 let saveTimer = null;
 let mode = 'week'; // 'week' | 'month'
@@ -142,11 +148,16 @@ async function readStored(root) {
       showDatabases: stored.showDatabases !== false,
       showNotes: stored.showNotes !== false,
       notified: stored.notified && typeof stored.notified === 'object' ? stored.notified : {},
-      snoozes: Array.isArray(stored.snoozes) ? stored.snoozes : []
+      snoozes: Array.isArray(stored.snoozes) ? stored.snoozes : [],
+      weekBefore: stored.weekBefore && typeof stored.weekBefore === 'object'
+        ? { on: stored.weekBefore.on !== false, time: /^\d{2}:\d{2}$/.test(stored.weekBefore.time) ? stored.weekBefore.time : WEEK_BEFORE_DEFAULT.time }
+        : { ...WEEK_BEFORE_DEFAULT }
     };
   }
   showDbToggle.checked = data.showDatabases;
   showNotesToggle.checked = data.showNotes;
+  weekBeforeToggle.checked = data.weekBefore.on;
+  weekBeforeTime.value = data.weekBefore.time;
   if (seeded) await window.mdEditor.homeSave(data, dataRoot);
 }
 
@@ -346,6 +357,9 @@ function formatWhen(dateIso, time) {
 function reminderTitle(days, title, time) {
   if (days === 0) return time ? `Hoy a las ${time}: ${title}` : `Hoy: ${title}`;
   if (days === 1) return `Mañana: ${title}`;
+  if (days === 7) return `Falta 1 semana para ${title}`;
+  if (days === 14) return `Faltan 2 semanas para ${title}`;
+  if (days === 30) return `Falta 1 mes para ${title}`;
   return `Faltan ${days} días para ${title}`;
 }
 
@@ -404,6 +418,57 @@ function remindersFiringToday() {
       });
     });
   }
+  out.push(...weekBeforeReminders(today));
+  return out;
+}
+
+// El aviso automático "una semana antes" (data.weekBefore). Se salta lo que
+// ya tiene su propio aviso de 7 días (no avisar dos veces) y las tareas
+// recurrentes (una tarea diaria avisaría todos los días).
+const WEEK_DAYS = 7;
+
+function weekBeforeReminders(today) {
+  const wb = data.weekBefore;
+  if (!wb || !wb.on) return [];
+  const date = iso(addDays(parseIso(today), WEEK_DAYS));
+  const at = atTime(today, wb.time);
+  const out = [];
+  occurrencesOn(date).forEach((item) => {
+    const t = item.task;
+    if (item.done || item.recurring || (t.advance || []).some((r) => r.days === WEEK_DAYS)) return;
+    out.push({
+      key: `${today}|home:${t.id}|${date}|week`,
+      at,
+      lateOk: true,
+      title: reminderTitle(WEEK_DAYS, t.title, t.time),
+      body: formatWhen(date, t.time) + (t.notes ? `\n${t.notes}` : ''),
+      source: { kind: 'home', taskId: t.id, date }
+    });
+  });
+  noteItemsOn(date).forEach((it) => {
+    if (it.done) return;
+    out.push({
+      key: `${today}|note:${it.filePath}|${it.title}|${date}|week`,
+      at,
+      lateOk: true,
+      title: reminderTitle(WEEK_DAYS, it.title, null),
+      body: `${formatWhen(date, null)}\nNota: ${it.filePath.split(/[\\/]/).pop()}`,
+      source: { kind: 'note', item: it }
+    });
+  });
+  dbItemsOn(date).forEach((it) => {
+    if (it.done) return;
+    const own = dbReminderItems.find((r) => r.rowId === it.rowId && r.columnId === it.columnId);
+    if (own && own.reminders.some((r) => r.days === WEEK_DAYS)) return;
+    out.push({
+      key: `${today}|db:${it.rowId}:${it.columnId}|${date}|week`,
+      at,
+      lateOk: true,
+      title: reminderTitle(WEEK_DAYS, it.title, null),
+      body: `${formatWhen(date, null)}\nBase de datos: ${it.databaseName}`,
+      source: { kind: 'db', databaseId: it.databaseId, rowId: it.rowId, doneColumnId: null }
+    });
+  });
   return out;
 }
 
@@ -424,6 +489,8 @@ function openSource(source) {
   if (window.mdEditor.focusWindow) window.mdEditor.focusWindow();
   if (source && source.kind === 'db') {
     if (window.mdDatabase) window.mdDatabase.open(source.databaseId);
+  } else if (source && source.kind === 'note') {
+    window.openFileAtPath(source.item.filePath);
   } else {
     open();
   }
@@ -434,6 +501,8 @@ async function markSourceDone(source) {
   if (source.kind === 'home') {
     const item = findItem(source.taskId, source.date);
     if (item && !item.done) setItemDone(item, true);
+  } else if (source.kind === 'note') {
+    if (!source.item.done) await toggleNoteItem(source.item);
   } else if (source.kind === 'db' && source.doneColumnId && window.mdState.rootFolder) {
     await window.mdEditor.db.setCell(window.mdState.rootFolder, source.rowId, source.doneColumnId, '1');
     await loadDbReminders();
@@ -474,7 +543,7 @@ function showReminderToast(r) {
   if (r.body) toast.appendChild(el('div', 'reminder-toast-body', r.body));
 
   const actions = el('div', 'reminder-toast-actions');
-  const canComplete = r.source && (r.source.kind === 'home' || r.source.doneColumnId);
+  const canComplete = r.source && (r.source.kind === 'home' || r.source.kind === 'note' || r.source.doneColumnId);
   if (canComplete) {
     const done = el('button', 'reminder-toast-btn reminder-toast-done', '✓ Hecho');
     done.addEventListener('click', async () => {
@@ -516,7 +585,9 @@ function checkReminders() {
     if (now < r.at || data.notified[r.key]) return;
     data.notified[r.key] = true;
     changed = true;
-    if (now - r.at > REMINDER_GRACE_MS) return; // sonaba con la app cerrada: se descarta
+    // Sonaba con la app cerrada: se descarta — salvo los de "1 semana antes"
+    // (lateOk), que siguen sirviendo si abrís MK más tarde ese mismo día.
+    if (now - r.at > REMINDER_GRACE_MS && !r.lateOk) return;
     fireReminder(r);
   });
   // Avisos pospuestos: suenan cuando les toca aunque la app haya estado
@@ -1459,6 +1530,15 @@ showNotesToggle.addEventListener('change', async () => {
   await loadNoteItems();
   render();
 });
+weekBeforeToggle.addEventListener('change', () => {
+  data.weekBefore = { ...data.weekBefore, on: weekBeforeToggle.checked };
+  save();
+});
+weekBeforeTime.addEventListener('change', () => {
+  if (!/^\d{2}:\d{2}$/.test(weekBeforeTime.value)) return;
+  data.weekBefore = { ...data.weekBefore, time: weekBeforeTime.value };
+  save();
+});
 showDbToggle.addEventListener('change', async () => {
   data.showDatabases = showDbToggle.checked;
   save();
@@ -1692,6 +1772,6 @@ async function revealTask(id) {
   openTaskEditor(task.date ? findItem(task.id, task.date) : itemFor(task));
 }
 
-window.mdHome = { open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
+window.mdHome = { weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
 
 })();

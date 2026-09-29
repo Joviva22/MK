@@ -2,13 +2,16 @@
 
 **Para qué sirve:** que MK te avise antes de que se te pase algo — el mismo día, a la hora exacta o **días antes** ("faltan 3 días para…") — tanto para tareas del [Home](home-como-usar.md) como para fechas de tus [bases de datos](bases-de-datos-como-usar.md).
 
-## Tres tipos de aviso
+## Cuatro tipos de aviso
 
 | Aviso | Dónde se configura | Ejemplo de notificación |
 |---|---|---|
 | **A la hora / minutos antes** | Editor de tarea → **Hora** + **Aviso (según la hora)** | 🔔 *En 15 min: Dentista* |
 | **Días antes** (anticipado) | Editor de tarea → **Avisos anticipados → + Agregar aviso** | 🔔 *Faltan 3 días para Entregar TP* — *Viernes, 2 de octubre a las 18:30* |
 | **Fechas de una base de datos** | Base de datos → clic en el encabezado de una columna **Fecha** → Editar columna → **Avisos** | 🔔 *Mañana: Informe final* — *Base de datos: Proyectos · Entrega* |
+| **1 semana antes (automático)** | Nada: viene activado. Se apaga o se cambia la hora arriba en el Home: **🔔 1 semana antes, a las 09:00** | 🔔 *Falta 1 semana para Examen final* |
+
+**1 semana antes, automático:** todo lo que tenga fecha —tareas del Home, tareas `📅` de tus notas y fechas de bases de datos (si están visibles en el Home)— te avisa 7 días antes, sin configurar nada tarea por tarea. No avisa dos veces si la tarea ya tiene su propio aviso de 7 días, ni en tareas recurrentes (una diaria avisaría todos los días). Si ese día abrís MK después de la hora, el aviso igual sale (no se pierde). Desde el aviso, **✓ Hecho** tilda también las tareas de notas (reescribe `- [ ]` → `- [x]` en el archivo).
 
 ## Paso a paso: "tengo que entregar algo el jueves a las 8"
 

@@ -95,10 +95,12 @@ Cómo se comporta:
 2. Elegí **Aviso (según la hora)**: a la hora, o unos minutos antes.
 3. A esa hora aparece una notificación del sistema con el título (clic → abre el Home).
 
+**Aviso automático 1 semana antes:** arriba en el Home, **🔔 1 semana antes, a las 09:00** (activado por defecto) avisa de todo lo que tenga fecha —tareas del Home salvo las recurrentes, tareas 📅 de notas y fechas de bases de datos— 7 días antes. Destildalo para apagarlo o cambiá la hora. Ver [recordatorios.md](recordatorios.md).
+
 **Avisos anticipados ("faltan N días"):**
 
 1. En el editor de la tarea, **Avisos anticipados → + Agregar aviso**.
-2. Elegí cuántos días antes (el mismo día, 1, 2, 3, 5, 7, 14 o 30) y **a qué hora** te avisa ese día.
+2. Elegí cuántos días antes (el mismo día, 1, 2, 3, 5 días, **1 semana**, **2 semanas** o **1 mes**) y **a qué hora** te avisa ese día. Atajo: **+ 1 semana antes** agrega directo "1 semana antes, a las 09:00".
 3. Podés poner varios: por ejemplo *7 días antes a las 09:00*, *3 días antes a las 09:00* y *1 día antes a las 20:00*.
 
 La notificación dice qué y cuándo:

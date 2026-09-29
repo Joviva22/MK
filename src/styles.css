@@ -2607,6 +2607,16 @@ li.CodeMirror-hint-active {
   cursor: pointer;
 }
 
+.home-week-before-time {
+  font: inherit;
+  font-size: 12px;
+  padding: 1px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+}
+
 .command-palette .home-db-toggle input,
 .command-palette .home-task input[type="checkbox"],
 .command-palette .home-goal input[type="checkbox"] {

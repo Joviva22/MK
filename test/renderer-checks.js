@@ -2690,6 +2690,69 @@
     );
   }
 
+  // Aviso automático "1 semana antes": tarea del Home y tarea 📅 de una nota
+  // con fecha dentro de 7 días avisan sin configurar nada; se puede apagar;
+  // el editor de avisos muestra "1 semana antes" y tiene el botón rápido.
+  {
+    const pad = (n) => String(n).padStart(2, '0');
+    const isoOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const now = new Date();
+    const today = isoOf(now);
+    const in7 = isoOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7));
+    let detail = 'sin fixturesDir';
+    let ok = false;
+    if (fixturesDir) {
+      window.mdState.rootFolder = fixturesDir;
+      const notePath = window.mdEditor.joinPath(fixturesDir, 'semana-antes.md');
+      await window.mdEditor.saveFile(`# Pendientes\n\n- [ ] Entregar maqueta 📅 ${in7}\n`, notePath, false);
+      await window.mdHome.open();
+      window.mdHome.setMode('week');
+      const title = 'Examen final ' + Date.now();
+      const qa = await waitFor(() => document.querySelector('#home-main .home-day.home-today .home-quick-add'));
+      if (!qa) throw new Error('semana antes: sin quick-add; home-main=' + (document.getElementById('home-main') || {}).className + ' días=' + document.querySelectorAll('#home-main .home-day').length);
+      qa.value = title;
+      qa.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      const findCard = () => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
+      findCard().click();
+      await waitFor(() => document.querySelector('.home-editor'));
+      let editor = document.querySelector('.home-editor');
+      editor.querySelector('input[type="date"]').value = in7;
+      const labels = Array.from(editor.querySelectorAll('.reminder-list ~ .reminder-add')).map((b) => b.textContent);
+      const presetOk = labels.includes('+ 1 semana antes');
+      Array.from(editor.querySelectorAll('button')).find((b) => b.textContent === 'Guardar').click();
+      await window.mdHome.rootChanged();
+
+      const list = window.mdHome.weekBeforeReminders(today);
+      const homeR = list.find((r) => r.title === `Falta 1 semana para ${title}`);
+      const noteR = list.find((r) => r.title.includes('Entregar maqueta'));
+      const toggle = document.getElementById('home-week-before');
+      toggle.checked = false;
+      toggle.dispatchEvent(new Event('change'));
+      const offEmpty = window.mdHome.weekBeforeReminders(today).length === 0;
+      toggle.checked = true;
+      toggle.dispatchEvent(new Event('change'));
+      const labelOk = window.mdReminderUI.dayLabel(7) === '1 semana antes';
+
+      // Limpieza
+      document.getElementById('home-next').click();
+      const card = findCard();
+      if (card) {
+        const originalConfirm = window.confirm;
+        window.confirm = () => true;
+        card.click();
+        await waitFor(() => document.querySelector('.home-editor'));
+        editor = document.querySelector('.home-editor');
+        Array.from(editor.querySelectorAll('button')).find((b) => b.textContent === 'Eliminar').click();
+        window.confirm = originalConfirm;
+      }
+      document.getElementById('home-today').click(); // el test siguiente espera la semana actual
+      window.mdHome.close();
+      ok = !!homeR && homeR.lateOk && !!noteR && noteR.source.kind === 'note' && offEmpty && labelOk && presetOk && !!card;
+      detail = `home=${!!homeR} tardeOk=${homeR && homeR.lateOk} nota=${!!noteR} apagado=${offEmpty} etiqueta=${labelOk} botón=${presetOk} limpieza=${!!card}`;
+    }
+    check('Aviso "1 semana antes": automático para tareas del Home y de notas, se puede apagar, botón rápido', ok, detail);
+  }
+
   // Posponer un aviso: suena (notificación + tarjeta en pantalla), "10 min"
   // lo guarda como pospuesto, cuando le toca vuelve a sonar "(pospuesto)", y
   // "✓ Hecho" en la tarjeta tilda la tarea.

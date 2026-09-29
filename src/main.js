@@ -159,7 +159,10 @@ async function runTests() {
   try {
     const checksPath = path.join(__dirname, '..', 'test', 'renderer-checks.js');
     const code = fs.readFileSync(checksPath, 'utf-8');
-    const results = await mainWindow.webContents.executeJavaScript(code);
+    // Si la suite revienta, executeJavaScript pierde el stack: capturarlo
+    // adentro de la ventana para saber en qué línea fue.
+    const wrapped = `Promise.resolve().then(() => ${code.trim().replace(/;\s*$/, '')}\n).catch((e) => [{ name: 'harness', pass: false, detail: String((e && e.stack) || e) }])`;
+    const results = await mainWindow.webContents.executeJavaScript(wrapped);
     console.log('MK_TEST_RESULTS_JSON:' + JSON.stringify(results));
     const failed = Array.isArray(results) ? results.filter((r) => !r.pass) : [{ name: 'harness', pass: false }];
     app.exit(failed.length ? 1 : 0);

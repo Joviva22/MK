@@ -12,6 +12,9 @@ const DAY_OPTIONS = [0, 1, 2, 3, 5, 7, 14, 30];
 function dayLabel(days) {
   if (days === 0) return 'El mismo día';
   if (days === 1) return '1 día antes';
+  if (days === 7) return '1 semana antes';
+  if (days === 14) return '2 semanas antes';
+  if (days === 30) return '1 mes antes';
   return `${days} días antes`;
 }
 
@@ -60,6 +63,13 @@ function build(host, initial) {
   add.type = 'button';
   add.addEventListener('click', () => addRow(null));
   host.appendChild(add);
+  const week = el('button', 'reminder-add', '+ 1 semana antes');
+  week.type = 'button';
+  week.title = 'Agrega un aviso 7 días antes, a las 09:00';
+  week.addEventListener('click', () => {
+    if (!rows.some((r) => r.daysSel.value === '7')) addRow({ days: 7, time: '09:00' });
+  });
+  host.appendChild(week);
 
   return () => rows
     .filter((r) => r.time.value)
