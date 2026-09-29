@@ -4,9 +4,38 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 11 de 36 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 44 de 63 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
+
+## Prioridad recomendada (según Claude)
+
+Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada uno están en las secciones de abajo.
+
+**P1 — Seguridad y que nada se pierda** ✅ *hecho (2026-09-29): Electron 44 sin vulnerabilidades, instalación con `npm run install-desktop`, Home opcional en la carpeta.*
+
+**P2 — Lo que más se nota en el uso diario**
+3. ~~**Abrir con IA (Claude Code, Gemini CLI, Codex)**~~ ✅ hecho.
+4. **Gráficos en las bases de datos** (vista Gráfico): lo pediste, y reutiliza filtros y tipos de columna que ya existen.
+5. **Búsqueda global también en bases de datos y tareas del Home**: hoy `Ctrl+Shift+F` no las encuentra; con tantas cosas fuera de los `.md`, se vuelve un hueco.
+6. **Recordatorios y resumen diario por Gmail**: el sistema de avisos ya está completo; falta el canal de correo (necesita tu contraseña de aplicación de Google).
+7. **Home: estadísticas**: aprovecha los gráficos del punto 4 (tareas hechas por semana, rachas de hábitos).
+
+**P3 — Comodidad**
+8. **Gráficos desde tablas Markdown** (`chart`).
+9. **Bases de datos dentro de una nota** (bloque `database`).
+10. **Nota diaria configurable** (carpeta y nombre).
+11. **Terminal: pantalla dividida**.
+
+**P4 — Mantenimiento técnico** (no se ve, pero hace que lo demás sea más fácil y seguro de cambiar)
+12. **Separar `main.js`** en módulos.
+13. **Migrar a módulos ES** (después del 12).
+
+**P5 — Proyectos grandes** (requieren decidir antes el diseño; hacerlos de a uno y con tiempo)
+14. Sincronización entre dispositivos · 15. Windows y macOS · 16. Sistema de plugins · 17. Pizarra Excalidraw · 18. Dos editores escribibles · 19. Ejecutar Python en el preview · 20. YouTube embebido · 21. Editar texto dentro de un PDF.
+
+---
+
 ## Hecho recientemente
 
 - [x] ~~**Home**: planificador semanal y mensual con calendario, objetivos, notas, atrasadas y bandeja sin fecha~~ (2026-09-29)
@@ -20,46 +49,73 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 - [x] ~~**Bases de datos relacionales** tipo Notion (relaciones, fórmulas, rollups, vistas)~~ (antes de 2026-09-29)
 - [x] ~~**Tema personalizado** con selector de color~~ (antes de 2026-09-29)
 - [x] ~~Crear esta hoja de ruta (`OBJETIVOS.md`)~~ (2026-09-29)
+- [x] ~~**Regenerar el AppImage** (`npm run dist`) con todo lo nuevo, terminal incluida (node-pty verificado dentro del paquete)~~ (2026-09-29)
+- [x] ~~**Home: Pomodoro desde una tarea**: ⏱ en el editor de tarea, cuenta 🍅 y pregunta si la terminaste~~ (2026-09-29)
+- [x] ~~**Home: enlazar una nota** a la tarea (📄 en la tarjeta la abre)~~ (2026-09-29)
+- [x] ~~**Home: tareas de las notas en el calendario** (`- [ ] algo 📅 2026-10-03`), tildables desde el Home~~ (2026-09-29)
+- [x] ~~**Home: "Plan de hoy → nota diaria"** (sección `## Plan del día`, sin duplicar)~~ (2026-09-29)
+- [x] ~~**Bases de datos: vista Calendario** (arrastrar para cambiar la fecha, doble clic para crear)~~ (2026-09-29)
+- [x] ~~**Bases de datos: importar y exportar CSV** (detecta separador y tipos)~~ (2026-09-29)
+- [x] ~~**Terminal: colores ANSI adaptados a temas claros**~~ (2026-09-29)
+- [x] ~~**Terminal: "Abrir terminal aquí"** en el menú contextual del sidebar~~ (2026-09-29)
+- [x] ~~**Terminal: ejecutar el archivo actual** (F5 / ▶: `.py`, `.sh`, `.js`, `.c`, `.cpp`, `.java`, `.rb`, `.go`)~~ (2026-09-29)
+- [x] ~~Arreglo: el panel de Bases de datos quedaba recortado en alto~~ (2026-09-29)
+- [x] ~~**`desktopName` en `package.json`**: el AppImage trae `mk-editor.desktop` con `StartupWMClass=mk-editor`~~ (2026-09-29)
+- [x] ~~**Home: renombrar una tarea con doble clic** en el título~~ (2026-09-29)
+- [x] ~~**Bases de datos: ancho de columnas ajustable** (arrastrar el borde; se guarda por vista)~~ (2026-09-29)
+- [x] ~~**Bases de datos: duplicar una fila** (clic derecho → Duplicar, copia valores y relaciones)~~ (2026-09-29)
+- [x] ~~**Terminal: buscar dentro de la salida** (`Ctrl+F`)~~ (2026-09-29)
+- [x] ~~Terminal: fuentes Nerd Font para prompts con íconos (Powerlevel10k, Starship)~~ (2026-09-29)
+- [x] ~~**Modo "Live Preview"** (escribir viendo el Markdown renderizado; cuarto modo además de normal/enfoque/lectura, `Ctrl+Shift+L` y en el ciclo 🎯). Pedido del usuario~~ (2026-09-29)
+- [x] ~~Limpieza: fuera `ESTADO.md`, `MEJORAS.md` y `RESUMEN.md` (desactualizados; lo pendiente pasó acá), restos de build y de tests~~ (2026-09-29)
+- [x] ~~**Recordatorios para filas de bases de datos**: avisos configurables en cada columna Fecha, para todas sus filas~~ (2026-09-29)
+- [x] ~~**Recordatorios anticipados ("faltan N días")**: varios avisos por tarea, "N días antes a las HH:MM"; la notificación dice qué, qué día y a qué hora (*"Faltan 3 días para Entregar TP — Viernes, 2 de octubre a las 18:30"*)~~ (2026-09-29)
+- [x] ~~**Posponer avisos** (10 min, 1 hora, mañana 9:00) y **✓ Hecho** desde una tarjeta de aviso en MK (Linux no permite botones en la notificación del sistema); lo pospuesto se guarda entre sesiones~~ (2026-09-29)
+- [x] ~~**Recordatorios con la ventana cerrada**: cerrar deja MK en la bandeja del sistema (avisos activos; salir con `Ctrl+Q` o el menú de la bandeja) y opción "Iniciar MK con el sistema" (arranca oculto)~~ (2026-09-29)
+- [x] ~~**Home: "→ Mañana"** en el editor de tarea y **"A mañana"** para todas las atrasadas~~ (2026-09-29)
+- [x] ~~**Bases de datos: ordenar por varias columnas** ("+ Después por esta", niveles ↑1 ↓2)~~ (2026-09-29)
+- [x] ~~**Terminal: renombrar una pestaña** con doble clic~~ (2026-09-29)
+- [x] ~~**Sidebar: "Copiar ruta" / "Copiar ruta relativa"** y **selección de rango con `Shift`+clic**~~ (2026-09-29)
+- [x] ~~**Live Preview: callouts y diagramas Mermaid** dibujados~~ (2026-09-29)
+- [x] ~~**Arrastrar en todos los tableros**: en el Home también las tareas 📅 de notas (cambia la fecha en el archivo) y las filas de bases de datos; en el Kanban modo carpeta, entre columnas (dentro de su archivo)~~ (2026-09-29)
+- [x] ~~**P1 · Electron 32 → 44.4.5**: `npm audit` pasa de 2 vulnerabilidades altas a 0 (el portapapeles pasó al proceso principal, que Electron 44 exige)~~ (2026-09-29)
+- [x] ~~**P1 · Instalación en el usuario** (`npm run install-desktop`): AppImage en `~/.local/share/mk/`, lanzador del menú e "Iniciar con el sistema" apuntando ahí, sin depender de la carpeta del proyecto~~ (2026-09-29)
+- [x] ~~**P1 · Home en la carpeta abierta (opcional)**: `<carpeta>/.mk/home.json`, viaja con git; guardado atómico (sin archivos a medio escribir)~~ (2026-09-29)
+- [x] ~~**Abrir con IA**: Claude Code, Gemini CLI y Codex desde el sidebar, el botón "IA ▾" y la paleta, en una pestaña de la terminal con el archivo como contexto~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
-Mejoras chicas y de uso diario: se hacen en una sesión cada una.
+Mejoras chicas y de uso diario: se hacen en una sesión cada una. *(Todas hechas — ver "Prioridad recomendada" para lo que sigue.)*
 
-- [ ] **Regenerar el AppImage** (`npm run dist`): el de `dist/` es del 22/9 y no trae nada de lo nuevo
-- [ ] **Home: Pomodoro desde una tarea**: botón ⏱ en la tarea que arranca el Pomodoro y la tilda al terminar
-- [ ] **Home: enlazar una nota** a la tarea (`[[nota]]` en el editor de tarea → clic la abre)
-- [ ] **Home: tareas de las notas en el calendario**: `- [ ] algo 📅 2026-10-03` dentro de cualquier `.md` aparece ese día
-- [ ] **Home: arrastrar tareas del calendario a la nota diaria** (o botón "Copiar el plan de hoy a la nota diaria")
-- [ ] **Bases de datos: vista Calendario** dentro de la base (además de tabla/tablero/galería)
-- [ ] **Bases de datos: importar y exportar CSV** (traer desde Excel/Sheets, sacar para compartir)
-- [ ] **Terminal: colores ANSI adaptados a temas claros** (amarillo/verde con buen contraste)
-- [ ] **Terminal: "Abrir terminal aquí"** en el menú contextual de una carpeta del sidebar
-- [ ] **Terminal: ejecutar el archivo actual** (`.py`, `.sh`, `.c`, `.js`) con un botón ▶ que lo corre en la terminal
 
 ## Mediano plazo
 
 Funciones más grandes o que tocan varias partes de la app.
 
+- [ ] **Gráficos en las bases de datos**: nueva vista **Gráfico** (barras, líneas, torta) que agrupa por una columna (ej. Estado, Categoría, mes de una Fecha) y muestra cantidad, suma o promedio de otra (ej. Monto) — respeta los filtros de la vista y se actualiza sola
+- [ ] **Gráficos desde tablas Markdown**: un bloque ```` ```chart ```` (o botón en una tabla del preview) que dibuja barras/líneas/torta a partir de una tabla `| … |` de la nota, también en Live Preview
 - [ ] **Bases de datos dentro de una nota**: bloque ```` ```database Proyectos ```` ```` que muestra la tabla en el preview
-- [ ] **Home dentro de la carpeta (opcional)**: guardar las tareas en `.mk/home.json` para que viajen con git y se sincronicen entre computadoras
 - [ ] **Home: estadísticas**: tareas hechas por semana, racha de hábitos recurrentes, gráfico del mes
-- [ ] **Recordatorios con la app cerrada**: mini-servicio en la bandeja del sistema (tray) que sigue avisando
+- [ ] **Recordatorios por Gmail**: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: es la única función que necesita internet
+- [ ] **Resumen diario por Gmail**: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas
 - [ ] **Terminal: pantalla dividida** (dos terminales visibles lado a lado)
 - [ ] **Búsqueda global también en bases de datos y tareas del Home**
 - [ ] **Separar `main.js`** (más de 1100 líneas) en módulos por área, como ya se hizo con `dbengine.js` y `ptyhost.js`
-- [ ] **Actualizar el aviso de vulnerabilidades de `npm audit`** (2 de severidad alta en dependencias)
+- [ ] **Nota diaria configurable**: elegir carpeta y formato del nombre (hoy siempre `Diario/AAAA-MM-DD.md`)
 
 ## Largo plazo
 
-Proyectos pesados o que requieren decisiones de diseño/seguridad antes de empezar (ver `MEJORAS.md`).
+Proyectos pesados o que requieren decisiones de diseño/seguridad antes de empezar.
 
-- [ ] **Pizarra Excalidraw** embebida para dibujar diagramas a mano
-- [ ] **Sistema de plugins** seguro (scripts locales con API limitada, revisados antes de habilitarse)
-- [ ] **Ejecutar Python y otros lenguajes** dentro de los bloques de código del preview (hoy solo JS)
-- [ ] **Dos editores escribibles a la vez** en pantalla dividida (hoy el panel secundario es de solo lectura)
+- [ ] **Pizarra Excalidraw** embebida para dibujar diagramas a mano (viable con su build UMD, pero suma ~2 MB y React; decidir antes si se guarda como `.excalidraw` aparte o dentro del `.md`)
+- [ ] **Sistema de plugins** seguro: scripts locales en `plugins/` (nunca descargados), con una API limitada de hooks (`onRender`, `onSave`) sin acceso libre a `require`/`fs`, revisados antes de habilitarse
+- [ ] **Ejecutar Python y otros lenguajes** dentro de los bloques de código del preview (hoy solo JS aislado en un Worker; para otros lenguajes está F5 en la terminal, que es explícito)
+- [ ] **Dos editores escribibles a la vez** en pantalla dividida (hoy el panel secundario es de solo lectura; varios módulos asumen un único CodeMirror)
+- [ ] **Migrar los scripts sueltos (`window.mdX`) a módulos ES** (`import`/`export`): refactor de todo `src/`, mejor hacerlo solo y con tiempo
+- [ ] **Embeber vídeos de YouTube** (fácil técnicamente, pero rompe la premisa "sin internet": habría que marcar esas notas como no-offline)
 - [ ] **Sincronización entre dispositivos** sin depender de git (carpeta en la nube / servidor propio)
 - [ ] **Versión para Windows y macOS** (hoy el empaquetado y el reproductor multimedia son solo Linux)
-- [ ] **Editar el texto dentro de un PDF** (hoy solo operaciones de página y subrayado)
+- [ ] **Editar el texto dentro de un PDF** (hoy solo operaciones de página y subrayado: un PDF guarda glifos posicionados, no texto editable)
 
 ---
 
