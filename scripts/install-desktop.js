@@ -69,7 +69,9 @@ fs.writeFileSync(desktopFile, [
   // --no-sandbox: igual que el lanzador que genera electron-builder dentro
   // del AppImage (el sandbox SUID de Chromium no funciona desde un AppImage).
   `Exec=${q(target)} --no-sandbox %f`,
-  'Icon=mk-editor',
+  // Ruta completa: el ícono no depende de la búsqueda por nombre en el tema
+  // de íconos (KDE cachea los "no encontrado" y mostraba un ícono genérico).
+  `Icon=${iconTarget}`,
   'Terminal=false',
   'StartupWMClass=mk-editor',
   'MimeType=text/markdown;text/x-markdown;',
@@ -84,7 +86,18 @@ if (fs.existsSync(autostartFile)) {
   console.log(`✓ Inicio con el sistema actualizado: ${autostartFile}`);
 }
 
-for (const [cmd, args] of [['update-desktop-database', [path.dirname(desktopFile)]], ['gtk-update-icon-cache', ['-f', '-t', path.join(DATA, 'icons', 'hicolor')]]]) {
+// KDE: la caché de íconos puede tener guardado que "mk-editor" no existía
+// (de antes de instalarlo) → ícono desconocido en la barra de tareas. Es solo
+// caché: se regenera sola.
+const kdeIconCache = path.join(process.env.XDG_CACHE_HOME || path.join(HOME, '.cache'), 'icon-cache.kcache');
+if (fs.existsSync(kdeIconCache)) fs.rmSync(kdeIconCache, { force: true });
+
+for (const [cmd, args] of [
+  ['update-desktop-database', [path.dirname(desktopFile)]],
+  ['gtk-update-icon-cache', ['-f', '-t', path.join(DATA, 'icons', 'hicolor')]],
+  ['kbuildsycoca6', []], // base de lanzadores de KDE Plasma 6
+  ['kbuildsycoca5', []]
+]) {
   try {
     execFileSync(cmd, args, { stdio: 'ignore' });
   } catch (e) {
