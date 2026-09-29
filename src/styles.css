@@ -3611,3 +3611,8 @@ li.CodeMirror-hint-active {
 .mk-live-callout .callout p {
   margin: 2px 0;
 }
+
+/* Pestaña cuyo archivo cambió fuera de MK con cambios sin guardar (tabs.js). */
+.tab.tab-conflict .tab-label {
+  color: #e8590c;
+}

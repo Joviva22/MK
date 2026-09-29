@@ -2887,6 +2887,40 @@
     check('Abrir con IA: comandos de Claude Code / Gemini CLI / Codex con el archivo como contexto, pestaña con nombre', cmdOk && tabOk && menuOk, `comandos=${cmdOk} pestaña=${tabOk} menu=${menuOk} | ${c} | ${g} | ${x}`);
   }
 
+  // Archivo cambiado FUERA de la pestaña (bug real: una pestaña vieja pisó
+  // OBJETIVOS.md): sin cambios propios se recarga; con cambios, el
+  // autoguardado no pisa la versión del disco (⚠); guardar a mano pregunta.
+  let externalOk = false;
+  let externalDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const p = window.mdEditor.joinPath(fixturesDir, 'externo.md');
+    await window.mdEditor.saveFile('versión 1\n', p, false);
+    await window.mdTabs.openTab(p);
+    const cm = window.mdCodeMirror;
+    await window.mdEditor.saveFile('versión 2 (desde afuera)\n', p, false);
+    await window.mdTabs.syncActiveWithDisk();
+    const reloaded = cm.getValue() === 'versión 2 (desde afuera)\n' && !window.mdTabs.getActiveTabInfo().modified;
+
+    cm.replaceRange('mi cambio\n', { line: 0, ch: 0 }); // cambio propio sin guardar
+    await window.mdEditor.saveFile('versión 3 (desde afuera)\n', p, false);
+    await new Promise((r) => setTimeout(r, 2500)); // pasa el autoguardado
+    const diskAfterAutosave = (await window.mdEditor.readFile(p)).content;
+    const notOverwritten = diskAfterAutosave === 'versión 3 (desde afuera)\n';
+    const warned = !!document.querySelector('#tabbar .tab.active.tab-conflict');
+
+    const originalConfirm = window.confirm;
+    let asked = false;
+    window.confirm = () => { asked = true; return true; }; // "guardar mi versión"
+    await window.mdTabs.saveActive();
+    window.confirm = originalConfirm;
+    const diskAfterSave = (await window.mdEditor.readFile(p)).content;
+    const savedMine = asked && diskAfterSave === 'mi cambio\nversión 2 (desde afuera)\n' && !document.querySelector('#tabbar .tab.active.tab-conflict');
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    externalOk = reloaded && notOverwritten && warned && savedMine;
+    externalDetail = `recarga=${reloaded} noPisa=${notOverwritten} avisa=${warned} guardarPregunta=${savedMine}`;
+  }
+  check('Archivo cambiado fuera de MK: recarga si no hay cambios, el autoguardado no lo pisa (⚠), guardar a mano pregunta', externalOk, externalDetail);
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {

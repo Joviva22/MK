@@ -46,24 +46,77 @@ function labelFor(tab) {
   return tab.filePath ? tab.filePath.split(/[\\/]/).pop() : 'Sin título';
 }
 
-function createTab(filePath, content) {
+// diskContent: lo que había en disco la última vez que la pestaña se cargó
+// o se guardó. Sirve para detectar que el archivo cambió FUERA de esta
+// pestaña (otro programa, git, el Home/Kanban escribiendo el archivo, u otra
+// copia de MK): antes una pestaña con contenido viejo lo pisaba al guardar.
+function createTab(filePath, content, diskContent) {
   const modeInfo = modeInfoForPath(filePath);
   const doc = new CodeMirror.Doc(content, modeInfo.mode);
-  const tab = { id: nextId++, filePath, doc, mode: modeInfo.mode, modeLabel: modeInfo.label, modified: false, autosaveTimer: null };
+  const tab = {
+    id: nextId++, filePath, doc, mode: modeInfo.mode, modeLabel: modeInfo.label, modified: false, autosaveTimer: null,
+    diskContent: diskContent !== undefined ? diskContent : (filePath ? content : null),
+    conflict: false
+  };
   tabs.push(tab);
   return tab;
+}
+
+let suppressChange = false; // recargas desde disco: no cuentan como edición
+
+async function readDisk(tab) {
+  if (!tab.filePath) return null;
+  const r = await window.mdEditor.readFile(tab.filePath);
+  return r && !r.binary ? r.content : null;
+}
+
+function replaceContent(tab, text) {
+  const cursor = tab.doc.getCursor();
+  suppressChange = true;
+  try {
+    tab.doc.setValue(text);
+  } finally {
+    suppressChange = false;
+  }
+  tab.doc.setCursor(cursor);
+  if (tab.id === activeId && window.renderPreview) window.renderPreview();
+}
+
+// El archivo cambió afuera: sin cambios propios → se recarga solo; con
+// cambios propios → queda marcado ⚠ (y el autoguardado no lo pisa).
+async function syncWithDisk(tab) {
+  if (!tab || !tab.filePath || tab.diskContent == null) return;
+  const disk = await readDisk(tab);
+  if (disk === null || disk === tab.diskContent) return;
+  if (!tab.modified) {
+    replaceContent(tab, disk);
+    tab.diskContent = disk;
+    tab.conflict = false;
+  } else {
+    tab.conflict = true;
+  }
+  renderTabbar();
+  persistSession();
+}
+
+async function diskChangedSince(tab) {
+  if (!tab.filePath || tab.diskContent == null) return false;
+  const disk = await readDisk(tab);
+  return disk !== null && disk !== tab.diskContent;
 }
 
 function renderTabbar() {
   tabbarEl.innerHTML = '';
   for (const tab of tabs) {
     const el = document.createElement('div');
-    el.className = 'tab' + (tab.id === activeId ? ' active' : '');
-    el.title = tab.filePath || 'Sin título';
+    el.className = 'tab' + (tab.id === activeId ? ' active' : '') + (tab.conflict ? ' tab-conflict' : '');
+    el.title = tab.conflict
+      ? `${tab.filePath}\n⚠ Cambió fuera de MK mientras tenías cambios sin guardar: el autoguardado está en pausa. Guardá (Ctrl+S) para elegir qué versión queda.`
+      : (tab.filePath || 'Sin título');
 
     const label = document.createElement('span');
     label.className = 'tab-label';
-    label.textContent = labelFor(tab) + (tab.modified ? ' ●' : '');
+    label.textContent = (tab.conflict ? '⚠ ' : '') + labelFor(tab) + (tab.modified ? ' ●' : '');
     el.appendChild(label);
 
     const closeBtn = document.createElement('span');
@@ -92,6 +145,7 @@ function activateTab(id) {
   renderTabbar();
   if (window.renderPreview) window.renderPreview();
   persistSession();
+  syncWithDisk(tab);
 }
 
 function markModified(id, value) {
@@ -137,7 +191,7 @@ async function openTab(filePath) {
     activateTab(tab.id);
     return;
   }
-  const tab = createTab(filePath, result.content);
+  const tab = createTab(filePath, result.content, result.content);
   activateTab(tab.id);
 }
 
@@ -151,9 +205,25 @@ async function saveActive(forceDialog = false) {
   const tab = tabs.find((t) => t.id === activeId);
   if (!tab) return;
   clearTimeout(tab.autosaveTimer);
+  if (!forceDialog && await diskChangedSince(tab)) {
+    const reload = !confirm(`"${labelFor(tab)}" cambió fuera de MK desde que lo abriste (otro programa, git, el Home...).\n\nAceptar: guardar TU versión encima de la otra.\nCancelar: descartar tus cambios y cargar la versión del disco.`);
+    if (reload) {
+      const disk = await readDisk(tab);
+      if (disk !== null) {
+        replaceContent(tab, disk);
+        tab.diskContent = disk;
+        tab.conflict = false;
+        markModified(tab.id, false);
+        renderTabbar();
+      }
+      return;
+    }
+  }
   const content = tab.doc.getValue();
   const filePath = await window.mdEditor.saveFile(content, tab.filePath, forceDialog);
   if (!filePath) return;
+  tab.diskContent = content;
+  tab.conflict = false;
   tab.filePath = filePath;
   const modeInfo = modeInfoForPath(filePath);
   tab.mode = modeInfo.mode;
@@ -220,10 +290,17 @@ function scheduleAutosave(tab) {
   const interval = window.mdGetAutosaveInterval ? window.mdGetAutosaveInterval() : 1500;
   if (!interval) return;
   tab.autosaveTimer = setTimeout(async () => {
-    if (!tab.filePath || !tab.modified) return;
+    if (!tab.filePath || !tab.modified || tab.conflict) return;
+    if (await diskChangedSince(tab)) {
+      // Nunca pisar en silencio una versión más nueva del disco.
+      tab.conflict = true;
+      renderTabbar();
+      return;
+    }
     const content = tab.doc.getValue();
     const savedPath = await window.mdEditor.saveFile(content, tab.filePath, false);
     if (savedPath) {
+      tab.diskContent = content;
       markModified(tab.id, false);
       persistSession();
     }
@@ -244,6 +321,7 @@ function persistSession() {
 }
 
 tabCm.on('change', () => {
+  if (suppressChange) return;
   const tab = tabs.find((t) => t.id === activeId);
   if (!tab) return;
   markModified(tab.id, true);
@@ -322,7 +400,11 @@ function updateTabPath(oldPath, newPath) {
   persistSession();
 }
 
-window.mdTabs = { newTab, openTab, openViaDialog, saveActive, closeTab, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode };
+// Volver a la ventana (por ejemplo después de editar en otro programa o
+// hacer git pull): revisar si el archivo activo cambió afuera.
+window.addEventListener('focus', () => syncWithDisk(tabs.find((t) => t.id === activeId)));
+
+window.mdTabs = { newTab, openTab, openViaDialog, saveActive, closeTab, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
 window.openFileAtPath = openTab;
 
 window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));
@@ -331,7 +413,18 @@ window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));
   const session = await window.mdEditor.loadSession();
   if (session && Array.isArray(session.tabs) && session.tabs.length) {
     for (const t of session.tabs) {
-      const tab = createTab(t.filePath, t.content);
+      // La sesión guarda el contenido de cada pestaña: si mientras tanto el
+      // archivo cambió en disco y la pestaña no tenía cambios propios, manda
+      // el disco (antes se restauraba la versión vieja y el siguiente
+      // guardado pisaba la nueva).
+      let content = t.content;
+      let disk;
+      if (t.filePath) {
+        const r = await window.mdEditor.readFile(t.filePath);
+        disk = r && !r.binary ? r.content : null;
+        if (disk !== null && !t.modified && disk !== t.content) content = disk;
+      }
+      const tab = createTab(t.filePath, content, t.filePath ? (disk != null ? disk : t.content) : null);
       tab.modified = !!t.modified;
     }
     const idx = Math.min(Math.max(session.activeIndex || 0, 0), tabs.length - 1);

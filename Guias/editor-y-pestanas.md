@@ -11,6 +11,7 @@
 - `Ctrl+S` guardar, `Ctrl+Shift+S` guardar como.
 - **Autoguardado** cada 1 s por defecto (⚙ Ajustes para cambiarlo o apagarlo). Solo en pestañas que ya tienen archivo en disco.
 - Cada guardado respalda la versión anterior → [historial-y-git.md](historial-y-git.md).
+- **Si el archivo cambia fuera de MK** (otro programa, git, una IA): sin cambios tuyos la pestaña se recarga sola; con cambios tuyos se marca **⚠**, el autoguardado no pisa la otra versión y `Ctrl+S` te pregunta cuál dejar.
 
 ## Ayudas de escritura
 

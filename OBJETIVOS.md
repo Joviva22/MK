@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 44 de 63 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 45 de 64 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -82,6 +82,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**P1 · Instalación en el usuario** (`npm run install-desktop`): AppImage en `~/.local/share/mk/`, lanzador del menú e "Iniciar con el sistema" apuntando ahí, sin depender de la carpeta del proyecto~~ (2026-09-29)
 - [x] ~~**P1 · Home en la carpeta abierta (opcional)**: `<carpeta>/.mk/home.json`, viaja con git; guardado atómico (sin archivos a medio escribir)~~ (2026-09-29)
 - [x] ~~**Abrir con IA**: Claude Code, Gemini CLI y Codex desde el sidebar, el botón "IA ▾" y la paleta, en una pestaña de la terminal con el archivo como contexto~~ (2026-09-29)
+- [x] ~~**Arreglo (pérdida de datos)**: una pestaña con contenido viejo ya no pisa un archivo que cambió fuera de MK — recarga si no hay cambios propios, ⚠ + autoguardado en pausa si los hay, y Ctrl+S pregunta~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
