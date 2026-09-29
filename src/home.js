@@ -629,11 +629,27 @@ function dbItemsOn(dateIso) {
 
 const NOTE_TASK_RE = /^(\s*[-*]\s+\[)([ xX])(\]\s+)(.*?)\s*📅\s*(\d{4}-\d{2}-\d{2})(.*)$/u;
 
+// Lo que está dentro de código no es una tarea: un ejemplo como
+// `- [ ] algo 📅 2026-10-03` en la documentación aparecía en el calendario, y
+// al moverlo el Home reescribía el archivo (le pasó a OBJETIVOS.md).
+function dateOutsideCode(line) {
+  const masked = line.replace(/`[^`]*`/g, (code) => ' '.repeat(code.length));
+  return /📅\s*\d{4}-\d{2}-\d{2}/u.test(masked);
+}
+
 function parseNoteTasks(filePath, content) {
   const items = [];
+  let inFence = null;
   content.split('\n').forEach((line, idx) => {
+    const fence = line.match(/^\s{0,3}(`{3,}|~{3,})/);
+    if (fence) {
+      if (!inFence) inFence = fence[1][0];
+      else if (fence[1][0] === inFence) inFence = null;
+      return;
+    }
+    if (inFence) return;
     const m = line.match(NOTE_TASK_RE);
-    if (!m) return;
+    if (!m || !dateOutsideCode(line)) return;
     const title = (m[4] + ' ' + m[6]).replace(/\s+/g, ' ').trim();
     items.push({ date: m[5], title: title || '(sin texto)', done: m[2].toLowerCase() === 'x', filePath, line: idx, raw: line });
   });

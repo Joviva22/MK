@@ -3024,6 +3024,14 @@
   }
   check('Bases de datos: vista Gráfico (suma por categoría, cantidad por mes con meses vacíos en 0, SVG + tabla)', chartOk, chartDetail);
 
+  // Tareas 📅 de notas: lo que está dentro de código NO es una tarea (un
+  // ejemplo de la documentación aparecía en el Home y moverlo reescribía el archivo).
+  {
+    const txt = '- [ ] real 📅 2026-10-01\n- [x] ejemplo `- [ ] algo 📅 2026-10-03`\n```\n- [ ] en bloque 📅 2026-10-05\n```\n- [ ] otra 📅 2026-10-07';
+    const found = window.mdHome.parseNoteTasks('/x.md', txt).map((i) => i.date).join(',');
+    check('Tareas 📅 de notas: ignora las que están dentro de código (inline o bloques)', found === '2026-10-01,2026-10-07', `encontradas=${found}`);
+  }
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {
