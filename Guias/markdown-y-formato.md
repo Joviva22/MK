@@ -31,6 +31,8 @@ Tipos: `NOTE`, `TIP`, `WARNING`, `IMPORTANT`, `CAUTION`.
 
 **Diagramas Mermaid** — bloque ```` ```mermaid ````: flujo, secuencia, Gantt, etc. Se adaptan al tema. Ejemplos en [`../Ejemplos/diagramas-mermaid.md`](../Ejemplos/diagramas-mermaid.md).
 
+**Gráficos** — bloque ```` ```chart ```` con `tipo: barras|líneas|torta` y una tabla Markdown adentro → se dibuja como gráfico. Ver [graficos.md](graficos.md).
+
 **Ejecutar JavaScript** — bloque ```` ```js ```` → botón **▶ Ejecutar** en el preview. Muestra `console.log` y el valor de la última línea. Aislado en un Worker, corta a los 3 s.
 
 **Código con resaltado** — ```` ```python ````, ```` ```js ````, etc.

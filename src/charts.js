@@ -309,6 +309,91 @@ function render(host, opts) {
   renderTable(host, data, opts);
 }
 
-window.mdCharts = { render, niceScale, palette };
+// ---- bloque ```chart``` en notas ----
+// Opciones "clave: valor" (español o inglés) y después una tabla Markdown:
+//   tipo: barras | líneas | torta        (type: bar | line | pie)
+//   título: ...                          (title)
+//   valor: nombre de la columna a medir  (value) — por defecto la 2ª
+//   tiempo: sí                           (time) — columnas verticales en orden
+// La primera columna son las etiquetas.
+
+const TYPE_ALIASES = {
+  bar: 'bar', barras: 'bar', barra: 'bar', columnas: 'bar',
+  line: 'line', lineas: 'line', líneas: 'line', linea: 'line', línea: 'line',
+  pie: 'pie', torta: 'pie', tarta: 'pie', dona: 'pie', anillo: 'pie', circular: 'pie'
+};
+
+// "1.234,5" (es), "1,234.5" (en), "12 €", "45%": el último separador es el decimal.
+function parseNumber(raw) {
+  const t = String(raw).replace(/[^\d.,-]/g, '');
+  if (!/\d/.test(t)) return null;
+  const lastSep = Math.max(t.lastIndexOf(','), t.lastIndexOf('.'));
+  const decimals = lastSep === -1 ? 0 : t.length - lastSep - 1;
+  // "1.234" con 3 decimales exactos y un solo separador: es de miles.
+  const isThousands = lastSep !== -1 && decimals === 3 && (t.match(/[.,]/g) || []).length === 1;
+  const normalized = lastSep === -1 || isThousands
+    ? t.replace(/[.,]/g, '')
+    : t.slice(0, lastSep).replace(/[.,]/g, '') + '.' + t.slice(lastSep + 1);
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : null;
+}
+
+function splitRow(line) {
+  return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+}
+
+function parseChartBlock(text) {
+  const opts = {};
+  const tableLines = [];
+  String(text).split('\n').forEach((line) => {
+    if (/^\s*\|/.test(line)) { tableLines.push(line); return; }
+    const m = line.match(/^\s*([\wáéíóúñ]+)\s*:\s*(.+?)\s*$/i);
+    if (m) opts[m[1].toLowerCase()] = m[2];
+  });
+  const rows = tableLines.map(splitRow).filter((r) => !r.every((c) => /^:?-{2,}:?$/.test(c)));
+  if (rows.length < 2) return { error: 'El bloque chart necesita una tabla Markdown (encabezado + al menos una fila).' };
+  const header = rows[0];
+  const body = rows.slice(1);
+  const wanted = opts.valor || opts.value || opts.columna || opts.column;
+  let col = wanted ? header.findIndex((h) => h.toLowerCase() === wanted.toLowerCase()) : 1;
+  if (col < 1) return { error: `No encontré la columna "${wanted}" en la tabla.` };
+  const data = body.map((r) => ({ label: r[0] || '', value: parseNumber(r[col]) })).filter((d) => d.label && d.value !== null);
+  if (!data.length) return { error: `La columna "${header[col]}" no tiene números.` };
+  const typeRaw = (opts.tipo || opts.type || 'barras').toLowerCase();
+  const time = /^(s[ií]|yes|true|1)$/i.test(opts.tiempo || opts.time || '');
+  return {
+    type: TYPE_ALIASES[typeRaw] || 'bar',
+    title: opts['título'] || opts.titulo || opts.title || '',
+    data,
+    time,
+    valueLabel: header[col],
+    labelTitle: header[0]
+  };
+}
+
+// Dibuja un bloque chart (texto crudo) dentro de host, con título o error.
+function renderChartBlock(host, text) {
+  host.innerHTML = '';
+  host.classList.add('md-chart-block');
+  const spec = parseChartBlock(text);
+  if (spec.error) {
+    const err = document.createElement('div');
+    err.className = 'md-chart-error';
+    err.textContent = '📊 ' + spec.error;
+    host.appendChild(err);
+    return;
+  }
+  if (spec.title) {
+    const t = document.createElement('div');
+    t.className = 'md-chart-title';
+    t.textContent = spec.title;
+    host.appendChild(t);
+  }
+  const plot = document.createElement('div');
+  host.appendChild(plot);
+  render(plot, spec);
+}
+
+window.mdCharts = { render, niceScale, palette, parseChartBlock, renderChartBlock };
 
 })();

@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 54 de 97 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 55 de 97 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -23,7 +23,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 7. ~~**Home: estadísticas**~~ ✅ hecho.
 
 **P3 — Comodidad**
-8. **Gráficos desde tablas Markdown** (`chart`).
+8. ~~**Gráficos desde tablas Markdown**~~ ✅ hecho.
 9. **Bases de datos dentro de una nota** (bloque `database`).
 10. **Nota diaria configurable** (carpeta y nombre).
 11. **Terminal: pantalla dividida**.
@@ -95,6 +95,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Home: estadísticas** (📈): semana/mes, racha, atrasadas, hechas por semana, pendientes por prioridad y rachas de hábitos~~ (2026-09-29)
 - [x] ~~**Optimización medida**: arranque −30 % (~1150 → ~800 ms), memoria JS −47 % (32 → 17 MB, librerías grandes bajo demanda), render con fórmulas −67 % (184 → 61 ms, caché de KaTeX y fórmulas después de DOMPurify), preview oculto sin redibujar, ESLint 63 → 0 warnings~~ (2026-09-29)
 - [x] ~~**Fotos, video y audio de cualquier formato común** (visor único, audio embebido `![[x.mp3]]`, adelantar en archivos largos con pedidos por rango, "Abrir con la aplicación del sistema" para lo que no se puede mostrar)~~ (2026-09-29)
+- [x] ~~**Gráficos desde tablas Markdown** (bloque `chart`: barras, líneas, torta; preview, Live Preview y export)~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
@@ -150,7 +151,6 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 
 Funciones más grandes o que tocan varias partes de la app.
 
-- [ ] **Gráficos desde tablas Markdown**: un bloque ```` ```chart ```` (o botón en una tabla del preview) que dibuja barras/líneas/torta a partir de una tabla `| … |` de la nota, también en Live Preview
 - [ ] **Bases de datos dentro de una nota**: bloque ```` ```database Proyectos ```` ```` que muestra la tabla en el preview
 - [ ] **Recordatorios por Gmail**: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: es la única función que necesita internet
 - [ ] **Resumen diario por Gmail**: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas

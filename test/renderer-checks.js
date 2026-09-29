@@ -3197,6 +3197,34 @@
   }
   check('Fotos, video y audio: tipos reconocidos, audio con adelantar (rangos) y formato no soportado ofrece la app del sistema', mediaOk, mediaDetail);
 
+  // Bloque ```chart```: tabla Markdown → gráfico en el preview y en Live
+  // Preview; errores claros si falta la tabla o la columna.
+  {
+    const fence = '```';
+    window.mdModes.setLayoutMode('normal');
+    window.mdTabs.newTab([
+      '# Gráficos', '',
+      fence + 'chart', 'tipo: barras', 'título: Gastos', '| Categoría | Monto |', '|---|---|', '| Comida | 1.234,5 |', '| Casa | 135 |', '| Ocio | 84 € |', fence, '',
+      fence + 'chart', 'tipo: torta', 'valor: Nada', '| A | B |', '|---|---|', '| x | 1 |', fence, '', 'fin'
+    ].join('\n'));
+    window.renderPreview();
+    const blocks = document.querySelectorAll('#preview-pane .md-chart-block');
+    const bars = blocks[0] ? blocks[0].querySelectorAll('.chart-mark').length : 0;
+    const title = blocks[0] && blocks[0].querySelector('.md-chart-title') ? blocks[0].querySelector('.md-chart-title').textContent : '';
+    const firstValue = window.mdCharts.parseChartBlock('| a | b |\n|---|---|\n| x | 1.234,5 |').data[0].value;
+    const errorOk = !!(blocks[1] && blocks[1].querySelector('.md-chart-error') && blocks[1].textContent.includes('Nada'));
+    window.mdModes.setLayoutMode('live');
+    window.mdCodeMirror.setCursor({ line: 21, ch: 0 });
+    window.mdLivePreview.rebuild();
+    const liveOk = !!(await waitFor(() => document.querySelector('.cm-live .mk-live-chart svg .chart-mark')));
+    window.mdModes.setLayoutMode('normal');
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    window.confirm = originalConfirm;
+    check('Bloque chart: tabla Markdown → gráfico (preview y Live Preview), números es/en y error claro', blocks.length === 2 && bars === 3 && title === 'Gastos' && firstValue === 1234.5 && errorOk && liveOk, `bloques=${blocks.length} barras=${bars} título="${title}" 1.234,5→${firstValue} error=${errorOk} live=${liveOk}`);
+  }
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {

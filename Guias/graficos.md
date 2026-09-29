@@ -2,12 +2,13 @@
 
 **Para qué sirve:** ver de un vistazo lo que hay en tus datos — cuánto gastaste por categoría, cuántas tareas hay en cada estado, cómo evoluciona algo mes a mes — sin exportar a Excel.
 
-MK tiene gráficos en dos lugares:
+MK tiene gráficos en tres lugares:
 
 | Dónde | Qué muestra |
 |---|---|
 | **Vista Gráfico** de una [base de datos](bases-de-datos-como-usar.md) | Lo que elijas de esa base |
 | **📈 Estadísticas** del [Home](home-como-usar.md) | Tu avance: semana, mes, racha, hábitos |
+| **Bloque `chart`** en cualquier nota | Una tabla Markdown dibujada como gráfico |
 
 ## Vista Gráfico (bases de datos)
 
@@ -40,6 +41,34 @@ MK tiene gráficos en dos lugares:
 - La torta junta en **"Otros"** lo que pase de 8 porciones.
 - Respeta los **filtros** de la vista: si la vista filtra "solo septiembre", el gráfico muestra solo septiembre.
 
+## Gráficos dentro de una nota (bloque `chart`)
+
+Escribí un bloque de código con lenguaje `chart`: unas opciones y una tabla Markdown.
+
+````markdown
+```chart
+tipo: torta
+título: Gastos de septiembre
+| Categoría | Monto |
+|---|---|
+| Comida | 370 |
+| Casa | 135 |
+| Ocio | 84 |
+```
+````
+
+| Opción | Valores | Por defecto |
+|---|---|---|
+| `tipo:` | `barras` · `líneas` · `torta` (también `bar`, `line`, `pie`) | barras |
+| `título:` | cualquier texto | sin título |
+| `valor:` | nombre de la columna a graficar | la 2ª columna |
+| `tiempo:` | `sí` → columnas verticales en el orden de la tabla (días, meses) | no: barras horizontales de mayor a menor |
+
+- La **primera columna** son las etiquetas.
+- Los números pueden venir como `1.234,5`, `1,234.5`, `12 €` o `45%`.
+- Se ve en el **preview**, en **Live Preview** (con el cursor fuera del bloque) y al **exportar** a HTML/PDF.
+- Si falta la tabla o la columna, el bloque muestra qué corregir.
+
 ## 📈 Estadísticas del Home
 
 Botón **📈** en la cabecera del Home:
@@ -53,4 +82,3 @@ Botón **📈** en la cabecera del Home:
 ## Límites
 
 - Un gráfico mide **una sola cosa** (un eje): para comparar dos medidas distintas (ej. monto y cantidad), armá dos vistas Gráfico.
-- Todavía no hay gráficos a partir de una **tabla Markdown** de una nota (está en [`OBJETIVOS.md`](../OBJETIVOS.md)).

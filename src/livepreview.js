@@ -412,6 +412,12 @@ function decorateUnit(u, active) {
   if (u.kind === 'fence' && u.data.lang === 'mermaid' && u.data.closed && u.to > u.from + 1 && !unitActive(u, active)) {
     const code = cm.getRange({ line: u.from + 1, ch: 0 }, { line: u.to - 1, ch: cm.getLine(u.to - 1).length });
     replaceWith({ line: u.from, ch: 0 }, blockEnd(u), renderMermaid(code), true);
+  } else if (u.kind === 'fence' && u.data.lang === 'chart' && u.data.closed && u.to > u.from + 1 && !unitActive(u, active)) {
+    const code = cm.getRange({ line: u.from + 1, ch: 0 }, { line: u.to - 1, ch: cm.getLine(u.to - 1).length });
+    const div = el('div', 'mk-live-chart');
+    replaceWith({ line: u.from, ch: 0 }, blockEnd(u), div, true);
+    // Dibujar cuando ya está en el documento (necesita el ancho real).
+    requestAnimationFrame(() => window.mdCharts.renderChartBlock(div, code));
   } else if (u.kind === 'fence') {
     for (let k = u.from; k <= u.to; k++) addLineClass(k, 'wrap', k === u.from || k === u.to ? 'mk-live-fence mk-live-fence-edge' : 'mk-live-fence');
   } else if (u.kind === 'callout') {

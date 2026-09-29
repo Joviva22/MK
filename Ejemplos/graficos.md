@@ -21,6 +21,44 @@ Esta carpeta trae una base de datos **Gastos** (19 gastos de julio a octubre) co
 - Agregá un gasto en la **Tabla** y volvé al gráfico: se actualiza solo.
 - Pasá el mouse por una barra o porción: muestra el valor exacto. **Ver tabla** debajo muestra todos los números.
 
+## Gráficos dentro de una nota
+
+Un bloque `chart` convierte una tabla en gráfico (miralo en el preview o en Live Preview):
+
+```chart
+tipo: barras
+título: Horas de estudio por materia
+| Materia | Horas |
+|---|---|
+| Álgebra | 12 |
+| Historia | 7,5 |
+| Física | 9 |
+| Inglés | 4 |
+```
+
+```chart
+tipo: líneas
+tiempo: sí
+título: Pasos por día
+| Día | Pasos |
+|---|---|
+| Lun | 6.200 |
+| Mar | 8.400 |
+| Mié | 5.100 |
+| Jue | 9.800 |
+| Vie | 7.300 |
+```
+
+```chart
+tipo: torta
+| Gasto | € |
+|---|---|
+| Alquiler | 650 |
+| Comida | 280 |
+| Transporte | 60 |
+| Ocio | 90 |
+```
+
 ## Estadísticas del Home
 
 El **Home** (`Ctrl+Shift+H`) también tiene gráficos: botón **📈** → tu semana, tu mes, racha y hábitos.

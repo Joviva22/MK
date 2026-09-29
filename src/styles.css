@@ -4233,3 +4233,31 @@ li.CodeMirror-hint-active {
   max-width: 100%;
   border-radius: 6px;
 }
+
+/* ---- Bloque ```chart``` en notas ---- */
+.md-chart-block {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.md-chart-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.md-chart-error {
+  color: #e8590c;
+  font-size: 13px;
+}
+
+.mk-live-chart {
+  display: block;
+  cursor: text;
+  font-family: Inter, system-ui, sans-serif;
+  line-height: 1.4;
+}

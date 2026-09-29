@@ -180,7 +180,9 @@ Proceso-->Fin;
 ```
 ````
 
-No hace falta instalar ni activar nada — basta con escribir el bloque, y en el preview aparece dibujado en vez de mostrarse como texto. Soporta lo que soporta [Mermaid](https://mermaid.js.org) — diagramas de flujo (`graph`), de secuencia (`sequenceDiagram`), Gantt (`gantt`), y más. El diagrama se adapta automáticamente al tema activo: si estás en un tema oscuro se dibuja con fondo oscuro, y cambiar de tema lo vuelve a dibujar al toque.
+**Gráficos**: un bloque ```` ```chart ```` con opciones (`tipo: barras|líneas|torta`, `título:`, `valor:` columna, `tiempo: sí`) y una tabla Markdown adentro se dibuja como gráfico, en el preview y en Live Preview.
+
+No hace falta instalar ni activar nada — basta con escribir el bloque de Mermaid, y en el preview aparece dibujado en vez de mostrarse como texto. Soporta lo que soporta [Mermaid](https://mermaid.js.org) — diagramas de flujo (`graph`), de secuencia (`sequenceDiagram`), Gantt (`gantt`), y más. El diagrama se adapta automáticamente al tema activo: si estás en un tema oscuro se dibuja con fondo oscuro, y cambiar de tema lo vuelve a dibujar al toque.
 
 ## 4. Fórmulas matemáticas (LaTeX)
 

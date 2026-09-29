@@ -291,6 +291,15 @@ function embedMermaidNodeImages(container) {
   });
 }
 
+// Bloques ```chart``` (tabla Markdown → gráfico, ver charts.js).
+function renderChartBlocks() {
+  previewPane.querySelectorAll('pre code.language-chart').forEach((code) => {
+    const host = document.createElement('div');
+    code.parentElement.replaceWith(host);
+    window.mdCharts.renderChartBlock(host, code.textContent);
+  });
+}
+
 function renderMermaidBlocks() {
   const blocks = Array.from(previewPane.querySelectorAll('pre code.language-mermaid'));
   if (!blocks.length) return;
@@ -446,6 +455,7 @@ function render() {
   previewPane.replaceChildren(injectMath(DOMPurify.sanitize(html, SANITIZE_CONFIG), store));
   markMissingAssets();
   renderMermaidBlocks();
+  renderChartBlocks();
   highlightCode();
   addRunButtons();
   wireTaskCheckboxes(markdownText);
