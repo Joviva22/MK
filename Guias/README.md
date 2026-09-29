@@ -11,6 +11,8 @@ Una guía especializada por cada función del sistema. Cada una empieza con **pa
 |---|---|---|
 | **Home** — planificador semanal y mensual con calendario | [home-como-usar.md](home-como-usar.md) | [home-para-que-sirve.md](home-para-que-sirve.md) |
 | **Bases de datos** — relacionales, tipo Notion | [bases-de-datos-como-usar.md](bases-de-datos-como-usar.md) | [bases-de-datos-para-que-sirve.md](bases-de-datos-para-que-sirve.md) |
+| **Recordatorios** — avisos a la hora, días antes, posponer, bandeja | [recordatorios.md](recordatorios.md) | ↑ misma guía |
+| **Gráficos** — vista Gráfico y estadísticas del Home | [graficos.md](graficos.md) | ↑ |
 | **Kanban** — tablero desde una nota | [kanban.md](kanban.md) | ↑ misma guía |
 | **Nota diaria** | [nota-diaria.md](nota-diaria.md) | ↑ |
 | **Pomodoro y reproductor** | [pomodoro-y-reproductor.md](pomodoro-y-reproductor.md) | ↑ |
@@ -37,10 +39,12 @@ Una guía especializada por cada función del sistema. Cada una empieza con **pa
 
 | Guía | Trata |
 |---|---|
-| [terminal.md](terminal.md) | Terminal integrada (`` Ctrl+` ``), copiar/pegar, varias terminales |
+| [terminal.md](terminal.md) | Terminal integrada (`` Ctrl+` ``), copiar/pegar, varias terminales, F5 |
+| [ia-en-la-terminal.md](ia-en-la-terminal.md) | Abrir Claude Code, Gemini CLI o Codex sobre un archivo |
 | [historial-y-git.md](historial-y-git.md) | Versiones anteriores, diff, git |
 | [exportar.md](exportar.md) | HTML, PDF, Word, EPUB, Anki; importar `.docx` |
-| [herramientas-pdf.md](herramientas-pdf.md) | Unir, separar, rotar, firmar, marca de agua, subrayar |
+| **PDF** — escribir encima, formularios, subrayar, páginas | [pdf-como-usar.md](pdf-como-usar.md) · [pdf-para-que-sirve.md](pdf-para-que-sirve.md) · resumen: [herramientas-pdf.md](herramientas-pdf.md) |
+| [instalar-y-actualizar.md](instalar-y-actualizar.md) | Instalar en el menú, actualizar, fijar en la barra de tareas, bandeja |
 | [personalizar.md](personalizar.md) | Ajustes, temas, tema personalizado, toolbar |
 | [atajos.md](atajos.md) | Todos los atajos de teclado |
 
@@ -57,4 +61,8 @@ Una guía especializada por cada función del sistema. Cada una empieza con **pa
 | Entregar un trabajo en Word o PDF | [Exportar](exportar.md) |
 | Recuperar algo que borré | [Historial](historial-y-git.md) |
 | Correr comandos, git o programas sin salir | [Terminal](terminal.md) |
+| Completar o firmar un PDF | [PDF](pdf-como-usar.md) |
+| Que me avisen antes de una entrega | [Recordatorios](recordatorios.md) |
+| Ver mis datos en un gráfico | [Gráficos](graficos.md) |
+| Pedirle a una IA que trabaje sobre una nota | [IA en la terminal](ia-en-la-terminal.md) |
 | Concentrarme | [Pomodoro](pomodoro-y-reproductor.md) + [modo enfoque](modos-de-vista.md) |

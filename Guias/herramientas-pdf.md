@@ -1,6 +1,8 @@
 # Herramientas PDF
 
-**Para qué sirve:** hacer lo típico con PDFs sin instalar otro programa — unir, separar, rotar, firmar, marca de agua y subrayar.
+**Para qué sirve:** hacer lo típico con PDFs sin instalar otro programa — escribir encima, completar formularios, unir, separar, rotar, firmar, marca de agua y subrayar.
+
+> Guía completa paso a paso: [pdf-como-usar.md](pdf-como-usar.md) · ideas de uso: [pdf-para-que-sirve.md](pdf-para-que-sirve.md).
 
 ## Operaciones de páginas (🗂)
 Paleta → "Operaciones de páginas PDF...". Todo en memoria; el original no se toca.
