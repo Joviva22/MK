@@ -221,6 +221,14 @@ body {
   display: inline-flex;
 }
 
+/* Menús que abren hacia arriba (el panel de la terminal está abajo). */
+.dropdown-menu.dropdown-menu-up {
+  top: auto;
+  bottom: calc(100% + 4px);
+  left: auto;
+  right: 0;
+}
+
 .dropdown-menu {
   position: absolute;
   top: calc(100% + 4px);

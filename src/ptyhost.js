@@ -39,12 +39,59 @@ function defaultShell() {
   return process.env.SHELL || '/bin/bash';
 }
 
+// Shells instalados que se pueden elegir (⚙ Ajustes o el menú ▾ del panel):
+// los de /etc/shells más los conocidos que estén en el PATH, sin los que no
+// son para uso interactivo. El renderer solo puede pedir uno de esta lista.
+const EXTRA_SHELLS = ['bash', 'zsh', 'fish', 'nu', 'pwsh', 'xonsh', 'elvish', 'dash', 'ksh', 'tcsh', 'sh'];
+const NOT_INTERACTIVE = new Set(['git-shell', 'rbash', 'systemd-home-fallback-shell', 'nologin', 'false']);
+
+function isExecutable(p) {
+  try {
+    const st = fs.statSync(p);
+    return st.isFile() && (st.mode & 0o111) !== 0;
+  } catch {
+    return false;
+  }
+}
+
+function listShells() {
+  if (process.platform === 'win32') return [{ path: defaultShell(), name: path.basename(defaultShell()) }];
+  const candidates = [];
+  try {
+    fs.readFileSync('/etc/shells', 'utf-8').split('\n').forEach((line) => {
+      const p = line.trim();
+      if (p && !p.startsWith('#')) candidates.push(p);
+    });
+  } catch {
+    // sin /etc/shells: queda lo del PATH
+  }
+  const dirs = (process.env.PATH || '').split(':').filter(Boolean);
+  EXTRA_SHELLS.forEach((name) => {
+    const dir = dirs.find((d) => isExecutable(path.join(d, name)));
+    if (dir) candidates.push(path.join(dir, name));
+  });
+  const byName = new Map();
+  candidates.forEach((p) => {
+    const name = path.basename(p);
+    if (NOT_INTERACTIVE.has(name) || byName.has(name) || !isExecutable(p)) return;
+    byName.set(name, p);
+  });
+  const def = defaultShell();
+  if (!byName.has(path.basename(def)) && isExecutable(def)) byName.set(path.basename(def), def);
+  return Array.from(byName, ([name, p]) => ({ name, path: p })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// requested: ruta pedida por el renderer (vacía = $SHELL). Solo se acepta si
+// está en listShells(); si no, el predeterminado.
 // En la suite de tests (MK_TEST=1): bash sin configuración del usuario, para
 // que un prompt/asistente del shell (ej. el de Powerlevel10k) no se coma los
-// comandos que escribe el test.
-function shellCommand() {
-  if (process.env.MK_TEST === '1' && process.platform !== 'win32') return ['/bin/bash', ['--norc', '--noprofile']];
-  return [defaultShell(), []];
+// comandos que escribe el test (otro shell pedido a propósito sí se respeta).
+function shellCommand(requested) {
+  const allowed = requested && listShells().find((s) => s.path === requested);
+  if (process.env.MK_TEST === '1' && process.platform !== 'win32' && (!allowed || allowed.name === 'bash')) {
+    return ['/bin/bash', ['--norc', '--noprofile']];
+  }
+  return [allowed ? allowed.path : defaultShell(), []];
 }
 
 // Agrupa la salida en tandas de ~8 ms: un comando que escupe mucho texto
@@ -85,11 +132,13 @@ function registerTerminalIpc(ipcMain, getMainWindow) {
     return !!win && !win.isDestroyed() && event.senderFrame === win.webContents.mainFrame;
   };
 
-  ipcMain.handle('term:create', (event, { cwd, cols, rows }) => {
+  ipcMain.handle('term:listShells', () => ({ shells: listShells(), defaultName: path.basename(defaultShell()) }));
+
+  ipcMain.handle('term:create', (event, { cwd, cols, rows, shell: requestedShell }) => {
     if (!fromMainFrame(event)) return { error: 'No permitido.' };
     const lib = loadPty();
     if (!lib) return { error: `No se pudo cargar node-pty (${ptyLoadError}). Probá "npm install" de nuevo.` };
-    const [shell, shellArgs] = shellCommand();
+    const [shell, shellArgs] = shellCommand(typeof requestedShell === 'string' ? requestedShell : '');
     let dir = os.homedir();
     try {
       if (cwd && fs.statSync(cwd).isDirectory()) dir = cwd;
@@ -121,7 +170,7 @@ function registerTerminalIpc(ipcMain, getMainWindow) {
       }
       terms.delete(id);
     });
-    return { id, shell: path.basename(shell), cwd: dir };
+    return { id, shell: path.basename(shell), shellPath: shell, cwd: dir };
   });
 
   ipcMain.on('term:write', (event, { id, data }) => {

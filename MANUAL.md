@@ -586,7 +586,7 @@ Paleta de comandos → "Bases de datos". Tipo Notion: columnas tipadas (texto, n
 
 Panel inferior con una terminal real, como la de VS Code: `` Ctrl+` `` (o `Ctrl+Ñ` en teclado español), el botón de terminal de la toolbar, o la paleta ("Terminal: mostrar/ocultar", "Terminal: nueva terminal").
 
-1. Abre tu shell (`$SHELL`) en la carpeta abierta — con tus alias, colores y programas interactivos (`vim`, `htop`, `less`, `git log`).
+1. Abre tu shell (`$SHELL`, o el elegido en ⚙ Ajustes → "Shell de la terminal"; el **▾** junto al **+** abre una con otro shell) en la carpeta abierta — con tus alias, colores y programas interactivos (`vim`, `htop`, `less`, `git log`).
 2. **+** abre otra terminal en una pestaña nueva; **◫** (o `Ctrl+Shift+5`) **divide** la pestaña: otro shell al lado, hasta 4 paneles (clic en un panel lo activa, × en su esquina lo cierra); **×** en la pestaña la cierra (con todos sus paneles); **✕** del panel solo lo oculta (siguen corriendo).
 3. `Ctrl+Shift+C` / `Ctrl+Shift+V` copian/pegan. Con el foco en la terminal, las teclas van al shell (`Ctrl+W` borra una palabra, no cierra la pestaña del editor), salvo `` Ctrl+` ``, `Ctrl+Shift+P`, `Ctrl+Shift+H` y `F11`.
 4. El alto se cambia arrastrando el borde de arriba y se recuerda.

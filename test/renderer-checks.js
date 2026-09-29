@@ -2333,6 +2333,33 @@
     );
   }
 
+  // Terminal: elegir el shell. La lista viene del sistema; pedir uno de la
+  // lista abre ese; pedir cualquier otro programa se ignora (predeterminado);
+  // Ajustes tiene el selector y el panel el menú ▾.
+  {
+    const { shells } = await window.mdTerminal.listShells();
+    const sh = shells.find((s) => s.name === 'sh' || s.name === 'dash');
+    const hasBash = shells.some((s) => s.name === 'bash');
+    const noGitShell = !shells.some((s) => s.name === 'git-shell');
+    let chosenOk = false;
+    let rejectOk = false;
+    if (sh) {
+      const s1 = await window.mdTerminal.newTerminal(null, sh.path);
+      chosenOk = !!s1 && s1.shellName === sh.name;
+      const s2 = await window.mdTerminal.newTerminal(null, '/usr/bin/env');
+      rejectOk = !!s2 && s2.shellName === 'bash';
+    }
+    const selectOk = document.querySelectorAll('#terminal-shell-select option').length === shells.length + 1;
+    document.getElementById('terminal-new-menu').click();
+    await waitFor(() => document.querySelectorAll('#terminal-shell-menu button').length === shells.length);
+    const menuOk = document.querySelectorAll('#terminal-shell-menu button').length === shells.length;
+    document.body.click();
+    for (let i = 0; i < 10 && document.querySelector('.terminal-tab-close'); i++) document.querySelector('.terminal-tab-close').click();
+    check('Terminal: elegir shell (lista del sistema, abre el elegido, rechaza otros programas, Ajustes y menú ▾)',
+      hasBash && noGitShell && chosenOk && rejectOk && selectOk && menuOk,
+      `shells=${shells.map((s) => s.name).join(',')} elegido=${chosenOk} rechaza=${rejectOk} ajustes=${selectOk} menú=${menuOk}`);
+  }
+
   // Terminal: pantalla dividida — dos shells lado a lado en una pestaña,
   // cada uno con su salida y su ancho; cerrar un panel deja el otro.
   {

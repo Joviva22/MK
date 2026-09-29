@@ -16,12 +16,25 @@ const { execFile } = require('child_process');
 // si la carpeta ya es un repo git existente — nunca corre "git init" por
 // cuenta propia. Nada bloqueante ni ruidoso: si no hay nada para commitear,
 // no es un error.
-function runGit(args, cwd) {
+function runGitOnce(args, cwd) {
   return new Promise((resolve) => {
     execFile('git', args, { cwd }, (error, stdout, stderr) => {
       resolve({ error, stdout, stderr });
     });
   });
+}
+
+// Dos comandos git a la vez (el panel refrescando `git status` mientras se
+// hace `git add`) chocan en .git/index.lock y el segundo falla con "Unable
+// to create ... index.lock: File exists". Es momentáneo: reintentar un poco.
+async function runGit(args, cwd) {
+  let result;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    result = await runGitOnce(args, cwd);
+    if (!result.error || !/index\.lock/.test(result.stderr || '')) return result;
+    await new Promise((r) => setTimeout(r, 100 * (attempt + 1)));
+  }
+  return result;
 }
 
 ipcMain.handle('git:isRepo', async (event, root) => {

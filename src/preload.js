@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('mdEditor', {
   homeSave: (data, root) => ipcRenderer.invoke('home:save', data, root || null),
   terminal: {
     create: (opts) => ipcRenderer.invoke('term:create', opts),
+    listShells: () => ipcRenderer.invoke('term:listShells'),
     write: (id, data) => ipcRenderer.send('term:write', { id, data }),
     resize: (id, cols, rows) => ipcRenderer.send('term:resize', { id, cols, rows }),
     kill: (id) => ipcRenderer.invoke('term:kill', { id }),

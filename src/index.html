@@ -122,6 +122,9 @@
           <div id="dailynote-example" class="dailynote-example"></div>
         </div>
 
+        <label class="dropdown-label" for="terminal-shell-select">Shell de la terminal</label>
+        <select id="terminal-shell-select" title="Qué shell abre la terminal integrada (+, Ctrl+`). El ▾ del panel abre una con otro shell sin cambiar este."></select>
+
         <label class="dropdown-label" for="gitsync-toggle">
           <input type="checkbox" id="gitsync-toggle" /> Sincronizar con git al guardar
         </label>
@@ -229,7 +232,11 @@
       </div>
       <span class="terminal-hint">Ctrl+Shift+C / Ctrl+Shift+V: copiar / pegar · Ctrl+F: buscar</span>
       <button id="terminal-search-btn" class="toolbar-button terminal-header-btn" title="Buscar en la salida (Ctrl+F)">🔍</button>
-      <button id="terminal-new" class="toolbar-button terminal-header-btn" title="Nueva terminal">+</button>
+      <button id="terminal-new" class="toolbar-button terminal-header-btn" title="Nueva terminal (shell elegido en ⚙ Ajustes)">+</button>
+      <div class="dropdown">
+        <button id="terminal-new-menu" class="toolbar-button terminal-header-btn" title="Nueva terminal con otro shell (bash, zsh, fish...)">▾</button>
+        <div id="terminal-shell-menu" class="dropdown-menu dropdown-menu-up" hidden></div>
+      </div>
       <button id="terminal-split" class="toolbar-button terminal-header-btn" title="Dividir: otra terminal al lado, en la misma pestaña (Ctrl+Shift+5)">◫</button>
       <button id="terminal-hide" class="toolbar-button terminal-header-btn" title="Ocultar panel (Ctrl+` / Ctrl+Ñ) — las terminales siguen abiertas">✕</button>
     </div>

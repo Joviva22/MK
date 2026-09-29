@@ -220,7 +220,19 @@ async function copySelection(term) {
   if (text) window.mdEditor.clipboardWriteText(text);
 }
 
+// ---- elegir shell (bash, zsh, fish...) ----
+// La lista la arma el proceso principal (ptyhost.js: /etc/shells + PATH) y
+// solo acepta uno de ella. '' = el del sistema ($SHELL).
+let shellsCache = null;
+let preferredShell = '';
+
+async function listShells() {
+  if (!shellsCache) shellsCache = await window.mdEditor.terminal.listShells();
+  return shellsCache;
+}
+
 // opts.split: agrega el panel al lado del activo, en la misma pestaña.
+// opts.shell: ruta del shell (si no, el elegido en Ajustes).
 async function createSession(cwd, opts) {
   try {
     await window.mdLoadLib('xterm'); // se carga recién al abrir la primera terminal
@@ -269,7 +281,8 @@ async function createSession(cwd, opts) {
   const result = await window.mdEditor.terminal.create({
     cwd: cwd || window.mdState.rootFolder || null,
     cols: term.cols,
-    rows: term.rows
+    rows: term.rows,
+    shell: (opts && opts.shell) || preferredShell
   });
   if (!result || result.error) {
     term.write(`\x1b[31m${(result && result.error) || 'No se pudo abrir la terminal.'}\x1b[0m\r\n`);
@@ -280,7 +293,7 @@ async function createSession(cwd, opts) {
     return failed;
   }
 
-  const session = { id: result.id, term, fit, search, el, title: result.shell, shellName: result.shell, cwd: result.cwd, exited: false, group };
+  const session = { id: result.id, term, fit, search, el, title: result.shell, shellName: result.shell, shellPath: result.shellPath, cwd: result.cwd, exited: false, group };
   paneClose.addEventListener('click', (e) => {
     e.stopPropagation();
     closeSession(session.id);
@@ -358,7 +371,7 @@ async function splitTerminal() {
     return null;
   }
   panel.hidden = false;
-  return createSession(current.cwd || null, { split: true });
+  return createSession(current.cwd || null, { split: true, shell: current.shellPath });
 }
 
 async function show() {
@@ -437,9 +450,9 @@ document.getElementById('terminal-search-next').addEventListener('click', () => 
 document.getElementById('terminal-search-close').addEventListener('click', closeSearch);
 document.getElementById('terminal-search-btn').addEventListener('click', openSearch);
 
-async function newTerminal(cwd) {
+async function newTerminal(cwd, shell) {
   panel.hidden = false;
-  return createSession(cwd);
+  return createSession(cwd, shell ? { shell } : undefined);
 }
 
 // Comillas simples estilo POSIX: sirve igual en bash, zsh y fish.
@@ -596,6 +609,54 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.getElementById('terminal-new').addEventListener('click', () => newTerminal());
+
+// Menú ▾ junto al +: abrir una terminal con otro shell sin cambiar el
+// predeterminado. Y el selector de ⚙ Ajustes elige el predeterminado.
+const shellMenu = document.getElementById('terminal-shell-menu');
+const shellSelect = document.getElementById('terminal-shell-select');
+
+async function fillShellMenu() {
+  const { shells, defaultName } = await listShells();
+  shellMenu.innerHTML = '';
+  shells.forEach((s) => {
+    const b = document.createElement('button');
+    b.textContent = s.name + (s.name === defaultName ? ' (del sistema)' : '') + (s.path === preferredShell ? ' ✓' : '');
+    b.title = s.path;
+    b.addEventListener('click', () => {
+      shellMenu.hidden = true;
+      newTerminal(null, s.path);
+    });
+    shellMenu.appendChild(b);
+  });
+}
+
+window.initDropdown('terminal-new-menu', 'terminal-shell-menu');
+document.getElementById('terminal-new-menu').addEventListener('click', fillShellMenu);
+
+(async () => {
+  const config = await window.mdEditor.getConfig();
+  preferredShell = typeof config.terminalShell === 'string' ? config.terminalShell : '';
+  if (!shellSelect) return;
+  const { shells, defaultName } = await listShells();
+  shellSelect.innerHTML = '';
+  const def = document.createElement('option');
+  def.value = '';
+  def.textContent = `Del sistema (${defaultName})`;
+  shellSelect.appendChild(def);
+  shells.forEach((s) => {
+    const o = document.createElement('option');
+    o.value = s.path;
+    o.textContent = s.name;
+    shellSelect.appendChild(o);
+  });
+  // Si el guardado ya no está instalado, vuelve al del sistema.
+  if (preferredShell && !shells.some((s) => s.path === preferredShell)) preferredShell = '';
+  shellSelect.value = preferredShell;
+  shellSelect.addEventListener('change', () => {
+    preferredShell = shellSelect.value;
+    window.mdEditor.setConfig({ terminalShell: preferredShell });
+  });
+})();
 document.getElementById('terminal-split').addEventListener('click', () => splitTerminal());
 document.getElementById('terminal-hide').addEventListener('click', hide);
 document.getElementById('btn-terminal').addEventListener('click', toggle);
@@ -639,6 +700,6 @@ new MutationObserver(() => {
   if (config.terminalHeight) panel.style.height = `${config.terminalHeight}px`;
 })();
 
-window.mdTerminal = { AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, splitTerminal, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
+window.mdTerminal = { AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, splitTerminal, listShells, getPreferredShell: () => preferredShell, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
 
 })();

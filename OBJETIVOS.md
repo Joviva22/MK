@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 63 de 99 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 64 de 100 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -103,6 +103,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Disco asíncrono en el proceso principal** (árbol en paralelo, leer/guardar, backups con poda en segundo plano, búsqueda/etiquetas/backlinks/grafo/Kanban leyendo de a 16, wikilinks, bytes de PDF/docx; el árbol de MK+node_modules pasa de 249 ms bloqueando a 110 ms sin bloquear. Quedan `…Sync` solo en config, diálogos y exportar)~~ (2026-09-29)
 - [x] ~~**Índice de la carpeta** (`src/folderindex.js`: lista y contenido en memoria, se relee solo lo que avisa el vigilante o lo que guarda MK; búsqueda/etiquetas/backlinks/grafo/Kanban/tareas del Home sobre 3000 notas: 159 ms la primera vez → 7 ms)~~ (2026-09-29)
 - [x] ~~**Aviso automático "1 semana antes"** (tareas del Home, 📅 de notas y fechas de bases de datos; interruptor y hora en el Home; "+ 1 semana antes" en el editor de avisos)~~ (2026-09-29)
+- [x] ~~**Terminal: elegir el shell** (⚙ Ajustes o menú ▾; lista de /etc/shells + PATH, validada en el proceso principal)~~ (2026-09-29)
 - [ ] **Índice guardado en `.mk/index`** para que la primera consulta tras abrir MK también sea rápida (y etiquetas/enlaces precalculados en el índice, no solo el texto)
 
 ## Corto plazo (próximas sesiones)

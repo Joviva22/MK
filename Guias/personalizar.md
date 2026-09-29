@@ -11,6 +11,7 @@
 | Tabulación | 2 · 4 · 8 espacios |
 | Ajuste de línea | Sí / No |
 | Snippets | `/abrev = texto`, uno por línea |
+| Shell de la terminal | Del sistema, bash, zsh, fish… (los instalados). Ver [terminal.md](terminal.md) |
 | Nota diaria | Carpeta, formato del nombre (`AAAA-MM-DD`, `AAAA/MM/DD`…) y plantilla. Ver [nota-diaria.md](nota-diaria.md) |
 | Git al guardar | Ver [historial-y-git.md](historial-y-git.md) |
 | Abrir Home al iniciar | Ver [Home](home-como-usar.md) |

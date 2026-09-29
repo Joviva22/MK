@@ -15,6 +15,7 @@
 ## Cómo funciona
 
 - Es una terminal **real** (pseudo-terminal): usa tu shell (`$SHELL`: bash, zsh, fish…) con tu configuración, colores y alias.
+- **Elegir el shell**: ⚙ Ajustes → **Shell de la terminal** ("Del sistema" o cualquiera instalado: bash, zsh, fish, nu, pwsh…). El **▾** al lado del **+** abre una terminal con otro shell sin cambiar el predeterminado. La pantalla dividida usa el mismo shell que el panel activo.
 - Arranca en la **carpeta abierta** en MK (si no hay ninguna, en tu carpeta personal).
 - Programas interactivos funcionan: `vim`, `nano`, `htop`, `less`, `git log`, `python` interactivo, `ssh`.
 - **Varias terminales**: botón **+**, cada una en su pestaña (`1: zsh`, `2: zsh`…). **Doble clic en el nombre** de una pestaña para renombrarla ("servidor", "git"…).
