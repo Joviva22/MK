@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Editor de Markdown sencillo para usar en local, sin depender de servicios externos ni conexión a internet.",
   "main": "src/main.js",
+  "desktopName": "mk-editor.desktop",
   "scripts": {
     "start": "electron .",
     "test": "node test/run.js",
@@ -17,6 +18,7 @@
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-search": "^0.16.0",
     "@xterm/xterm": "^6.0.0",
     "codemirror": "^5.65.16",
     "diff": "^9.0.0",
@@ -63,7 +65,8 @@
       "mimeTypes": [
         "text/markdown",
         "text/x-markdown"
-      ]
+      ],
+      "syncDesktopName": true
     }
   }
 }

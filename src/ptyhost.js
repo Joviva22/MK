@@ -39,6 +39,14 @@ function defaultShell() {
   return process.env.SHELL || '/bin/bash';
 }
 
+// En la suite de tests (MK_TEST=1): bash sin configuración del usuario, para
+// que un prompt/asistente del shell (ej. el de Powerlevel10k) no se coma los
+// comandos que escribe el test.
+function shellCommand() {
+  if (process.env.MK_TEST === '1' && process.platform !== 'win32') return ['/bin/bash', ['--norc', '--noprofile']];
+  return [defaultShell(), []];
+}
+
 // Agrupa la salida en tandas de ~8 ms: un comando que escupe mucho texto
 // (un `cat` grande, un build) manda miles de trozos chicos, y un mensaje IPC
 // por trozo trabaría el renderer.
@@ -81,7 +89,7 @@ function registerTerminalIpc(ipcMain, getMainWindow) {
     if (!fromMainFrame(event)) return { error: 'No permitido.' };
     const lib = loadPty();
     if (!lib) return { error: `No se pudo cargar node-pty (${ptyLoadError}). Probá "npm install" de nuevo.` };
-    const shell = defaultShell();
+    const [shell, shellArgs] = shellCommand();
     let dir = os.homedir();
     try {
       if (cwd && fs.statSync(cwd).isDirectory()) dir = cwd;
@@ -90,7 +98,7 @@ function registerTerminalIpc(ipcMain, getMainWindow) {
     }
     let proc;
     try {
-      proc = lib.spawn(shell, [], {
+      proc = lib.spawn(shell, shellArgs, {
         name: 'xterm-256color',
         cols: Math.max(2, cols | 0) || 80,
         rows: Math.max(2, rows | 0) || 24,

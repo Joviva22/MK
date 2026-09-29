@@ -7,7 +7,8 @@
 //
 // Atajos: Ctrl+` (o Ctrl+Ñ en teclado español) muestra/oculta el panel;
 // F5 guarda y ejecuta el archivo activo (.py, .sh, .js, .c, .cpp, .java...);
-// Ctrl+Shift+C / Ctrl+Shift+V copian/pegan dentro de la terminal. Con el
+// Ctrl+Shift+C / Ctrl+Shift+V copian/pegan dentro de la terminal; Ctrl+F
+// busca en la salida. Con el
 // foco en la terminal, las teclas NO llegan a los atajos globales de MK
 // (Ctrl+W en el shell borra una palabra, no cierra la pestaña del editor),
 // salvo unos pocos de la lista GLOBAL_KEYS.
@@ -150,7 +151,9 @@ async function createSession(cwd) {
 
   const term = new Terminal({
     cursorBlink: true,
-    fontFamily: '"JetBrains Mono", "Fira Code", Consolas, monospace',
+    // Primero variantes "Nerd Font": los prompts con íconos (powerlevel10k,
+    // starship, oh-my-posh) usan glifos que las fuentes comunes no tienen.
+    fontFamily: '"JetBrainsMono Nerd Font Mono", "FiraCode Nerd Font Mono", "MesloLGS NF", "Symbols Nerd Font Mono", "JetBrains Mono", "Fira Code", Consolas, monospace',
     fontSize: 13,
     scrollback: 5000,
     allowProposedApi: false,
@@ -158,6 +161,8 @@ async function createSession(cwd) {
   });
   const fit = new FitAddon.FitAddon();
   term.loadAddon(fit);
+  const search = new SearchAddon.SearchAddon();
+  term.loadAddon(search);
   term.open(el);
   try {
     fit.fit();
@@ -172,13 +177,13 @@ async function createSession(cwd) {
   });
   if (!result || result.error) {
     term.write(`\x1b[31m${(result && result.error) || 'No se pudo abrir la terminal.'}\x1b[0m\r\n`);
-    const failed = { id: 'err' + Date.now(), term, fit, el, title: 'error', cwd: '', exited: true };
+    const failed = { id: 'err' + Date.now(), term, fit, search, el, title: 'error', cwd: '', exited: true };
     sessions.push(failed);
     activate(failed.id);
     return failed;
   }
 
-  const session = { id: result.id, term, fit, el, title: result.shell, cwd: result.cwd, exited: false };
+  const session = { id: result.id, term, fit, search, el, title: result.shell, cwd: result.cwd, exited: false };
   term.onData((data) => {
     if (!session.exited) window.mdEditor.terminal.write(session.id, data);
   });
@@ -187,6 +192,10 @@ async function createSession(cwd) {
     const ctrl = e.ctrlKey || e.metaKey;
     if (ctrl && e.shiftKey && e.key.toLowerCase() === 'c') {
       copySelection(term);
+      return false;
+    }
+    if (ctrl && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f') {
+      openSearch();
       return false;
     }
     if (ctrl && e.shiftKey && e.key.toLowerCase() === 'v') {
@@ -241,6 +250,59 @@ function hide() {
 function toggle() {
   if (panel.hidden) show(); else hide();
 }
+
+// ---- buscar en la salida (Ctrl+F con el foco en la terminal) ----
+
+const searchBar = document.getElementById('terminal-search');
+const searchInput = document.getElementById('terminal-search-input');
+const searchStatus = document.getElementById('terminal-search-status');
+
+function runSearch(backwards) {
+  const s = activeSession();
+  const q = searchInput.value;
+  if (!s || !q) {
+    searchStatus.textContent = '';
+    return;
+  }
+  const opts = { caseSensitive: false, incremental: !backwards };
+  const found = backwards ? s.search.findPrevious(q, opts) : s.search.findNext(q, opts);
+  searchStatus.textContent = found ? '' : 'Sin resultados';
+}
+
+function openSearch() {
+  searchBar.hidden = false;
+  const s = activeSession();
+  const selected = s && s.term.getSelection();
+  if (selected && !selected.includes('\n')) searchInput.value = selected;
+  searchInput.focus();
+  searchInput.select();
+}
+
+function closeSearch() {
+  searchBar.hidden = true;
+  searchStatus.textContent = '';
+  const s = activeSession();
+  if (s) {
+    s.term.clearSelection();
+    s.term.focus();
+  }
+}
+
+searchInput.addEventListener('input', () => runSearch(false));
+searchInput.addEventListener('keydown', (e) => {
+  e.stopPropagation();
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    runSearch(e.shiftKey);
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    closeSearch();
+  }
+});
+document.getElementById('terminal-search-prev').addEventListener('click', () => runSearch(true));
+document.getElementById('terminal-search-next').addEventListener('click', () => runSearch(false));
+document.getElementById('terminal-search-close').addEventListener('click', closeSearch);
+document.getElementById('terminal-search-btn').addEventListener('click', openSearch);
 
 async function newTerminal(cwd) {
   panel.hidden = false;
@@ -377,6 +439,6 @@ new MutationObserver(() => {
   if (config.terminalHeight) panel.style.height = `${config.terminalHeight}px`;
 })();
 
-window.mdTerminal = { show, hide, toggle, newTerminal, runCommand, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
+window.mdTerminal = { show, hide, toggle, newTerminal, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
 
 })();

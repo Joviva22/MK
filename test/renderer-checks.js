@@ -2326,6 +2326,7 @@
     await window.mdHome.open();
     const card = Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
     card.click();
+    await waitFor(() => document.querySelector('.home-editor'));
     Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent.includes('Pomodoro')).click();
     await waitFor(() => document.getElementById('status-pomodoro').textContent.includes(title));
     const pomoOk = document.getElementById('status-pomodoro').textContent.includes(title);
@@ -2336,6 +2337,7 @@
     const originalConfirm = window.confirm;
     window.confirm = () => true;
     Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title)).click();
+    await waitFor(() => document.querySelector('.home-editor'));
     Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
     window.confirm = originalConfirm;
     window.mdHome.close();
@@ -2344,6 +2346,91 @@
     homeExtrasDetail = `chipNota=${!!noteChip} tildaArchivo=${toggledOk} plan=${planOk} sinDuplicar=${noDup} pomodoro=${pomoOk}`;
   }
   check('Home: tareas 📅 de las notas, plan de hoy a la nota diaria y Pomodoro sobre una tarea', homeExtrasOk, homeExtrasDetail);
+
+  // Corto plazo 2: duplicar fila y ancho de columna (bases de datos), buscar
+  // en la salida de la terminal, renombrar tarea del Home con doble clic.
+  let short2Ok = false;
+  let short2Detail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    const dupDb = await window.mdEditor.db.createDatabase(fixturesDir, 'DupTest');
+    const [dupName] = await window.mdEditor.db.listColumns(fixturesDir, dupDb.id);
+    const dupNum = await window.mdEditor.db.createColumn(fixturesDir, dupDb.id, { name: 'Cant', type: 'number' });
+    await window.mdEditor.db.createRow(fixturesDir, dupDb.id, { [dupName.id]: 'Original', [dupNum.id]: 7 });
+    await window.mdEditor.db.createRow(fixturesDir, dupDb.id, { [dupName.id]: 'Otra' });
+    await window.mdDatabase.open(dupDb.id);
+    const names = () => Array.from(document.querySelectorAll('.database-table tbody tr td:first-child input')).map((i) => i.value).join('|');
+    await waitFor(() => names() === 'Original|Otra');
+    const firstRow = document.querySelector('.database-table tbody tr');
+    firstRow.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    await waitFor(() => document.querySelector('.database-row-menu'));
+    Array.from(document.querySelectorAll('.database-row-menu button')).find((b) => b.textContent.includes('Duplicar')).click();
+    await waitFor(() => names() === 'Original|Original|Otra');
+    const dupRows = await window.mdEditor.db.listRows(fixturesDir, dupDb.id);
+    const dupOk = names() === 'Original|Original|Otra' && dupRows[1].cells[dupNum.id] === '7';
+
+    const grip = document.querySelector('.database-th .database-col-resizer');
+    const r = grip.getBoundingClientRect();
+    grip.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: r.left }));
+    document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: r.left - 1000 }));
+    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    const widthSaved = await waitFor(async () => {
+      const v = await window.mdEditor.db.listViews(fixturesDir, dupDb.id);
+      return (JSON.parse(v[0].config || '{}').colWidths || {})[dupName.id] === 60;
+    });
+    window.mdDatabase.close();
+    await window.mdEditor.db.deleteDatabase(fixturesDir, dupDb.id);
+
+    await window.mdTerminal.show();
+    const ts = await waitFor(() => window.mdTerminal.getSessions().find((x) => !x.exited));
+    await new Promise((res) => setTimeout(res, 400));
+    window.mdEditor.terminal.write(ts.id, 'echo AGUJA_EN_PAJAR\r');
+    await waitFor(() => {
+      const buf = ts.term.buffer.active;
+      for (let i = 0; i < buf.length; i++) if (buf.getLine(i).translateToString(true).includes('AGUJA_EN_PAJAR')) return true;
+      return false;
+    }, 8000);
+    window.mdTerminal.openSearch();
+    const sInput = document.getElementById('terminal-search-input');
+    sInput.value = 'aguja_en';
+    sInput.dispatchEvent(new Event('input'));
+    const searchOk = !document.getElementById('terminal-search').hidden && ts.term.getSelection().toLowerCase() === 'aguja_en';
+    sInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    for (let i = 0; i < 10 && document.querySelector('.terminal-tab-close'); i++) document.querySelector('.terminal-tab-close').click();
+
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const rTitle = 'Renombrar ' + Date.now();
+    const qa = document.querySelector('#home-main .home-day.home-today .home-quick-add');
+    qa.value = rTitle;
+    qa.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const findCard = (t) => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(t));
+    const titleSpan = findCard(rTitle).querySelector('.home-task-title');
+    titleSpan.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+    titleSpan.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }));
+    const renameInput = document.querySelector('.home-task-rename');
+    let renameOk = false;
+    if (renameInput) {
+      renameInput.value = rTitle + ' OK';
+      renameInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      await new Promise((res) => setTimeout(res, 350)); // pasado el retraso del clic simple
+      renameOk = !!findCard(rTitle + ' OK') && !document.querySelector('.home-editor');
+    }
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    const toDelete = findCard(rTitle);
+    if (toDelete) {
+      toDelete.click();
+      await waitFor(() => document.querySelector('.home-editor'));
+      Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
+    }
+    window.confirm = originalConfirm;
+    window.mdHome.close();
+
+    short2Ok = dupOk && !!widthSaved && searchOk && renameOk;
+    short2Detail = `duplicar=${dupOk} ancho=${!!widthSaved} buscarTerminal=${searchOk} renombrar=${renameOk}`;
+  }
+  check('Corto plazo: duplicar fila, ancho de columna, buscar en la terminal y renombrar tarea con doble clic', short2Ok, short2Detail);
 
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
@@ -2356,6 +2443,7 @@
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     const cardsOf = () => Array.from(document.querySelectorAll('#home-main .home-task')).filter((c) => c.textContent.includes(title));
     cardsOf()[0].click();
+    await waitFor(() => document.querySelector('.home-editor'));
     const editor = document.querySelector('.home-editor');
     const repeatSel = Array.from(editor.querySelectorAll('select')).find((s) => Array.from(s.options).some((o) => o.value === 'daily'));
     repeatSel.value = 'daily';
@@ -2384,6 +2472,7 @@
     const originalConfirm = window.confirm;
     window.confirm = () => true;
     cardsOf()[0].click();
+    await waitFor(() => document.querySelector('.home-editor'));
     Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar serie').click();
     window.confirm = originalConfirm;
     const deleted = cardsOf().length === 0;
@@ -2419,6 +2508,7 @@
       const originalConfirm = window.confirm;
       window.confirm = () => true;
       card.click();
+      await waitFor(() => document.querySelector('.home-editor'));
       Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
       window.confirm = originalConfirm;
       deleted = !findCard();

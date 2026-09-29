@@ -192,7 +192,15 @@
       <span class="terminal-heading">Terminal</span>
       <div id="terminal-tabs" class="terminal-tabs"></div>
       <span class="toolbar-spacer"></span>
-      <span class="terminal-hint">Ctrl+Shift+C / Ctrl+Shift+V: copiar / pegar</span>
+      <div id="terminal-search" class="terminal-search" hidden>
+        <input id="terminal-search-input" type="text" placeholder="Buscar en la salida..." autocomplete="off" spellcheck="false" />
+        <span id="terminal-search-status" class="terminal-search-status"></span>
+        <button id="terminal-search-prev" class="toolbar-button terminal-header-btn" title="Anterior (Shift+Enter)">↑</button>
+        <button id="terminal-search-next" class="toolbar-button terminal-header-btn" title="Siguiente (Enter)">↓</button>
+        <button id="terminal-search-close" class="toolbar-button terminal-header-btn" title="Cerrar (Escape)">✕</button>
+      </div>
+      <span class="terminal-hint">Ctrl+Shift+C / Ctrl+Shift+V: copiar / pegar · Ctrl+F: buscar</span>
+      <button id="terminal-search-btn" class="toolbar-button terminal-header-btn" title="Buscar en la salida (Ctrl+F)">🔍</button>
       <button id="terminal-new" class="toolbar-button terminal-header-btn" title="Nueva terminal">+</button>
       <button id="terminal-hide" class="toolbar-button terminal-header-btn" title="Ocultar panel (Ctrl+` / Ctrl+Ñ) — las terminales siguen abiertas">✕</button>
     </div>
@@ -513,6 +521,7 @@
   <script src="home.js"></script>
   <script src="../node_modules/@xterm/xterm/lib/xterm.js"></script>
   <script src="../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+  <script src="../node_modules/@xterm/addon-search/lib/addon-search.js"></script>
   <script src="terminal.js"></script>
   <script src="graph.js"></script>
   <script src="pdfpages.js"></script>

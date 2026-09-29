@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 22 de 42 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 28 de 48 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -32,21 +32,27 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 - [x] ~~**Terminal: "Abrir terminal aquí"** en el menú contextual del sidebar~~ (2026-09-29)
 - [x] ~~**Terminal: ejecutar el archivo actual** (F5 / ▶: `.py`, `.sh`, `.js`, `.c`, `.cpp`, `.java`, `.rb`, `.go`)~~ (2026-09-29)
 - [x] ~~Arreglo: el panel de Bases de datos quedaba recortado en alto~~ (2026-09-29)
+- [x] ~~**`desktopName` en `package.json`**: el AppImage trae `mk-editor.desktop` con `StartupWMClass=mk-editor`~~ (2026-09-29)
+- [x] ~~**Home: renombrar una tarea con doble clic** en el título~~ (2026-09-29)
+- [x] ~~**Bases de datos: ancho de columnas ajustable** (arrastrar el borde; se guarda por vista)~~ (2026-09-29)
+- [x] ~~**Bases de datos: duplicar una fila** (clic derecho → Duplicar, copia valores y relaciones)~~ (2026-09-29)
+- [x] ~~**Terminal: buscar dentro de la salida** (`Ctrl+F`)~~ (2026-09-29)
+- [x] ~~Terminal: fuentes Nerd Font para prompts con íconos (Powerlevel10k, Starship)~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
 Mejoras chicas y de uso diario: se hacen en una sesión cada una.
 
-- [ ] **`desktopName` en `package.json`**: que el escritorio agrupe la ventana del AppImage con su lanzador (aviso de electron-builder)
-- [ ] **Home: editar el título con doble clic** directo en la tarjeta, sin abrir el editor
-- [ ] **Bases de datos: ancho de columnas ajustable** en la vista tabla (arrastrando el borde del encabezado)
-- [ ] **Bases de datos: duplicar una fila** (clic derecho → Duplicar)
-- [ ] **Terminal: buscar dentro de la salida** (`Ctrl+F` con el foco en la terminal)
+- [ ] **Home: mover una tarea a "mañana"** con un clic (botón en el editor de tarea y en las atrasadas)
+- [ ] **Bases de datos: ordenar por varias columnas** (ej. Estado y después Fecha)
+- [ ] **Terminal: renombrar una pestaña** con doble clic (ej. "servidor", "git")
+- [ ] **Sidebar: "Copiar ruta"** en el menú contextual de un archivo
 
 ## Mediano plazo
 
 Funciones más grandes o que tocan varias partes de la app.
 
+- [ ] **Modo "Live Preview" (escribir en modo lectura)**: editar el `.md` viéndolo renderizado — solo la línea (o bloque) donde está el cursor muestra la sintaxis Markdown para escribir, todo lo demás se ve como en modo lectura (encabezados grandes, negrita, listas, imágenes, tablas), igual que Obsidian. Pedido del usuario.
 - [ ] **Bases de datos dentro de una nota**: bloque ```` ```database Proyectos ```` ```` que muestra la tabla en el preview
 - [ ] **Home dentro de la carpeta (opcional)**: guardar las tareas en `.mk/home.json` para que viajen con git y se sincronicen entre computadoras
 - [ ] **Home: estadísticas**: tareas hechas por semana, racha de hábitos recurrentes, gráfico del mes

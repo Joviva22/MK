@@ -56,6 +56,8 @@ Paleta de comandos (`Ctrl+Shift+P`) → **"Bases de datos"**. `Escape` o clic af
 - **Clic en una celda** para editarla (según el tipo: escribir, elegir fecha, tildar, elegir opción...).
 - **Arrastrá una fila** para reordenarla.
 - **×** al final de la fila la borra.
+- **Clic derecho** en una fila (o tarjeta del tablero/galería) → **Duplicar fila** (copia valores y relaciones, queda justo debajo), abrir la fila completa o eliminarla.
+- **Ancho de columna**: arrastrá el borde derecho del encabezado; doble clic en ese borde vuelve al ancho automático. Se guarda en la vista.
 - **Filtrar filas...**: escribí y quedan solo las filas donde alguna columna contenga ese texto.
 
 ## Ordenar y filtrar

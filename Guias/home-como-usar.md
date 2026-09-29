@@ -41,7 +41,8 @@ Para que aparezca solo al abrir MK: ⚙ **Ajustes** → tildá **"Abrir Home al 
 3. **Agregar una tarea**: escribí en el cuadro "+ Agregar tarea" al pie del día y apretá `Enter`. El cuadro queda listo para escribir la siguiente. `Escape` lo vacía.
 4. **Marcar como hecha**: tildá el checkbox de la tarea (se tacha y baja al final de la lista).
 5. **Moverla a otro día**: arrastrala y soltala en otra columna.
-6. **Editarla**: clic en el texto de la tarea → se abre el editor (ver abajo).
+6. **Editarla**: clic en la tarea → se abre el editor (ver abajo).
+7. **Renombrarla rápido**: doble clic en el título → escribí → `Enter` (`Escape` cancela).
 
 ## Vista Mes (calendario)
 
@@ -149,6 +150,7 @@ Con una carpeta abierta y **"Fechas de bases de datos"** tildado, cada fila de u
 | `Enter` en "+ Agregar tarea" | Crear tarea en ese día |
 | Doble clic en día del calendario | Crear tarea ahí |
 | Arrastrar tarea | Cambiar de día / a "Sin fecha" |
+| Doble clic en el título | Renombrar en el lugar |
 | Clic en tarea | Editar (hora, aviso, repetición, prioridad, notas, nota enlazada, ⏱ Pomodoro) |
 | Clic en número del día (Mes) | Ir a esa semana |
 | `Escape` | Cierra el editor de tarea, o el Home |

@@ -48,6 +48,7 @@ const REMIND_OPTIONS = [
   { value: '30', label: '30 min antes' },
   { value: '60', label: '1 hora antes' }
 ];
+const CLICK_DELAY_MS = 250; // para distinguir clic (abrir editor) de doble clic (renombrar)
 const REMINDER_GRACE_MS = 10 * 60 * 1000; // avisos atrasados más que esto (app cerrada) se descartan
 
 let data = { tasks: [], goals: {}, notes: {}, showDatabases: true, showNotes: true, notified: {} };
@@ -598,7 +599,14 @@ function taskCard(item, compact) {
   card.appendChild(box);
 
   if (task.time) card.appendChild(el('span', 'home-task-time', task.time));
-  card.appendChild(el('span', 'home-task-title', task.title));
+  const titleEl = el('span', 'home-task-title', task.title);
+  titleEl.title = 'Doble clic: renombrar';
+  titleEl.addEventListener('dblclick', (e) => {
+    e.stopPropagation();
+    clearTimeout(card._clickTimer);
+    startInlineRename(card, titleEl, task);
+  });
+  card.appendChild(titleEl);
   const badges = (item.recurring ? '🔁' : '') + (task.remind != null && task.time ? '🔔' : '') + (task.pomodoros ? `🍅${task.pomodoros}` : '');
   if (badges) card.appendChild(el('span', 'home-task-badges', badges));
   if (task.note) {
@@ -610,8 +618,43 @@ function taskCard(item, compact) {
     });
     card.appendChild(link);
   }
-  card.addEventListener('click', () => openTaskEditor(item));
+  // Clic abre el editor, pero con un pequeño retraso: si llega un doble clic
+  // sobre el título (renombrar) se cancela, así no se abren las dos cosas.
+  card.addEventListener('click', (e) => {
+    if (card.classList.contains('home-task-renaming')) return;
+    clearTimeout(card._clickTimer);
+    if (e.detail > 1) return;
+    card._clickTimer = setTimeout(() => openTaskEditor(item), CLICK_DELAY_MS);
+  });
   return card;
+}
+
+// Renombrar en el lugar: el título se vuelve un input. Enter / clic afuera
+// guarda, Escape cancela.
+function startInlineRename(card, titleEl, task) {
+  card.classList.add('home-task-renaming');
+  card.draggable = false;
+  const input = el('input', 'home-task-rename');
+  input.value = task.title;
+  titleEl.replaceWith(input);
+  input.focus();
+  input.select();
+  let done = false;
+  const finish = (commit) => {
+    if (done) return;
+    done = true;
+    const value = input.value.trim();
+    if (commit && value && value !== task.title) updateTask(task.id, { title: value });
+    else render();
+  };
+  input.addEventListener('click', (e) => e.stopPropagation());
+  input.addEventListener('dblclick', (e) => e.stopPropagation());
+  input.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Enter') finish(true);
+    else if (e.key === 'Escape') finish(false);
+  });
+  input.addEventListener('blur', () => finish(true));
 }
 
 function noteChip(item) {

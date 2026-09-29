@@ -67,7 +67,8 @@ const browserGlobals = {
   ResizeObserver: 'readonly',
   MutationObserver: 'readonly',
   Terminal: 'readonly',
-  FitAddon: 'readonly'
+  FitAddon: 'readonly',
+  SearchAddon: 'readonly'
 };
 
 module.exports = [

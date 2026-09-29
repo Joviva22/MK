@@ -19,6 +19,7 @@
 - Programas interactivos funcionan: `vim`, `nano`, `htop`, `less`, `git log`, `python` interactivo, `ssh`.
 - **Varias terminales**: botón **+**, cada una en su pestaña (`1: zsh`, `2: zsh`…).
 - **Alto del panel**: arrastrá el borde de arriba. Se recuerda.
+- Usa una fuente **Nerd Font** si tenés alguna instalada (JetBrainsMono / FiraCode / MesloLGS Nerd Font), así los prompts con íconos (Powerlevel10k, Starship) se ven bien.
 - Sigue los colores del **tema** de MK (fondo, texto, cursor), con una paleta de colores ANSI distinta para temas claros y oscuros, para que todo se lea bien.
 
 ## Ejecutar el archivo actual (F5)
@@ -47,6 +48,10 @@ Clic derecho en una carpeta del sidebar → **"Abrir terminal aquí"** (en un ar
 |---|---|
 | `Ctrl+Shift+C` | Copiar la selección |
 | `Ctrl+Shift+V` | Pegar |
+
+## Buscar en la salida
+
+`Ctrl+F` con el foco en la terminal (o 🔍 en la cabecera) abre un buscador: escribí y se selecciona la coincidencia; `Enter` / `Shift+Enter` siguiente / anterior, `Escape` cierra. Útil para encontrar un error en la salida larga de un build.
 
 `Ctrl+C` sin Shift es el de siempre en una terminal: **corta el programa** que está corriendo.
 

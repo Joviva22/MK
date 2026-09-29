@@ -34,6 +34,7 @@
 | `` Ctrl+` `` / `Ctrl+Ñ` | Mostrar/ocultar terminal |
 | `Ctrl+Shift+C` / `Ctrl+Shift+V` | Copiar / pegar en la terminal |
 | `F5` | Guardar y ejecutar el archivo actual en la terminal |
+| `Ctrl+F` (en la terminal) | Buscar en la salida |
 
 ## Vista
 | Atajo | Acción |

@@ -3173,3 +3173,72 @@ li.CodeMirror-hint-active {
 .palette-overlay:has(.database-modal) {
   padding-top: 5vh;
 }
+
+/* ---- Terminal: buscar en la salida ---- */
+.terminal-search {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.terminal-search[hidden] {
+  display: none;
+}
+
+.terminal-search input {
+  width: 200px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+}
+
+.terminal-search-status {
+  font-size: 11px;
+  color: #ef476f;
+}
+
+/* ---- Bases de datos: ancho de columnas ---- */
+.database-th {
+  position: relative;
+}
+
+.database-table-fixed {
+  table-layout: fixed;
+}
+
+.database-table-fixed .database-th,
+.database-table-fixed .database-td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.database-col-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+}
+
+.database-col-resizer:hover {
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+/* ---- Home: renombrar tarea con doble clic ---- */
+.command-palette input.home-task-rename {
+  flex: 1 1 70px;
+  min-width: 0;
+  padding: 1px 4px;
+  font-size: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+}

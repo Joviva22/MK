@@ -758,6 +758,50 @@ function openFiltersPopover() {
   });
 }
 
+// ---- duplicar / eliminar fila (clic derecho) ----
+
+// Copia los valores guardados (no fórmulas/rollups/fecha de creación, que se
+// calculan solos) y las relaciones, y deja la copia justo debajo.
+async function duplicateRow(row) {
+  const cells = {};
+  state.columns.forEach((col) => {
+    if (['formula', 'rollup', 'created_time', 'relation'].includes(col.type)) return;
+    const v = row.cells[col.id];
+    if (v != null && v !== '') cells[col.id] = v;
+  });
+  const newId = await window.mdEditor.db.createRow(root(), state.databaseId, cells);
+  for (const col of state.columns.filter((c) => c.type === 'relation')) {
+    const targets = row.relations[col.id] || [];
+    if (targets.length) await window.mdEditor.db.setRelations(root(), col.id, newId, targets);
+  }
+  const ids = state.rows.map((r) => r.id);
+  ids.splice(ids.indexOf(row.id) + 1, 0, newId);
+  await window.mdEditor.db.reorderRows(root(), state.databaseId, ids);
+  state.rows = await window.mdEditor.db.listRows(root(), state.databaseId);
+  await loadRelatedData();
+  renderView();
+  return newId;
+}
+
+function openRowMenu(anchorEl, row) {
+  openPopover(anchorEl, 'database-view-popover database-row-menu', (pop, close) => {
+    const item = (label, fn, cls) => {
+      const btn = document.createElement('button');
+      btn.className = 'toolbar-button database-popover-row' + (cls ? ' ' + cls : '');
+      btn.textContent = label;
+      btn.addEventListener('click', async () => { close(); await fn(); });
+      pop.appendChild(btn);
+    };
+    item('⧉ Duplicar fila', () => duplicateRow(row));
+    item('✎ Abrir fila completa', () => openRowEditor(row));
+    item('🗑 Eliminar fila', async () => {
+      await window.mdEditor.db.deleteRow(root(), row.id);
+      state.rows = await window.mdEditor.db.listRows(root(), state.databaseId);
+      renderView();
+    }, 'database-popover-danger');
+  });
+}
+
 // Clic en un encabezado de la tabla: ordenar o editar la columna.
 function openColumnMenu(th, col) {
   const sort = currentViewConfig().sort;
@@ -793,9 +837,34 @@ function renderView() {
 
 function renderTableView() {
   const rows = filteredRows();
-  const sort = currentViewConfig().sort;
+  const viewCfg = currentViewConfig();
+  const sort = viewCfg.sort;
+  const colWidths = viewCfg.colWidths || {};
   const table = document.createElement('table');
   table.className = 'database-table';
+
+  // Anchos elegidos a mano (arrastrando el borde del encabezado), por vista.
+  // Con alguno puesto, layout fijo: si no, el navegador los recalcula según
+  // el contenido y el arrastre "rebota".
+  const colgroup = document.createElement('colgroup');
+  const colEls = {};
+  state.columns.forEach((col) => {
+    const c = document.createElement('col');
+    if (colWidths[col.id]) c.style.width = colWidths[col.id] + 'px';
+    colEls[col.id] = c;
+    colgroup.appendChild(c);
+  });
+  ['32px', '28px'].forEach((w) => {
+    const c = document.createElement('col');
+    c.style.width = w;
+    colgroup.appendChild(c);
+  });
+  table.appendChild(colgroup);
+  if (Object.keys(colWidths).length) {
+    table.classList.add('database-table-fixed');
+    const fixedTotal = state.columns.reduce((sum, col) => sum + (colWidths[col.id] || 140), 60);
+    table.style.minWidth = fixedTotal + 'px';
+  }
 
   const thead = document.createElement('thead');
   const headRow = document.createElement('tr');
@@ -811,6 +880,42 @@ function renderTableView() {
     }
     th.title = 'Clic: ordenar o editar columna';
     th.addEventListener('click', () => openColumnMenu(th, col));
+
+    const grip = document.createElement('span');
+    grip.className = 'database-col-resizer';
+    grip.title = 'Arrastrar: ancho de la columna · Doble clic: automático';
+    grip.addEventListener('click', (e) => e.stopPropagation());
+    grip.addEventListener('dblclick', async (e) => {
+      e.stopPropagation();
+      const widths = { ...(currentViewConfig().colWidths || {}) };
+      delete widths[col.id];
+      await saveViewConfig({ colWidths: widths });
+      renderView();
+    });
+    grip.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const startX = e.clientX;
+      const startW = th.getBoundingClientRect().width;
+      table.classList.add('database-table-fixed');
+      document.body.classList.add('resizing');
+      let width = startW;
+      const onMove = (ev) => {
+        width = Math.max(60, Math.min(800, startW + ev.clientX - startX));
+        colEls[col.id].style.width = width + 'px';
+      };
+      const onUp = async () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.classList.remove('resizing');
+        const widths = { ...(currentViewConfig().colWidths || {}), [col.id]: Math.round(width) };
+        await saveViewConfig({ colWidths: widths });
+        renderView();
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+    th.appendChild(grip);
     headRow.appendChild(th);
   });
   const thAdd = document.createElement('th');
@@ -828,6 +933,11 @@ function renderTableView() {
     // Con un orden activo, arrastrar para reordenar a mano no tendría efecto
     // visible (el orden lo decide la columna), así que se desactiva.
     tr.draggable = !sort;
+    tr.addEventListener('contextmenu', (e) => {
+      if (e.target.closest('input, textarea')) return; // menú normal de texto
+      e.preventDefault();
+      openRowMenu(tr.firstChild || tr, row);
+    });
     tr.addEventListener('dragstart', (e) => {
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('application/x-mk-db-row', row.id);
@@ -919,6 +1029,7 @@ function renderBoardView() {
       card.draggable = true;
       card.textContent = displayText(cellDisplayValue(state.columns[0], row, state.columns)) || '(sin nombre)';
       card.addEventListener('click', () => openRowEditor(row));
+      card.addEventListener('contextmenu', (e) => { e.preventDefault(); openRowMenu(card, row); });
       card.addEventListener('dragstart', (e) => {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('application/x-mk-db-row', row.id);
@@ -954,6 +1065,7 @@ function renderGalleryView() {
     const card = document.createElement('div');
     card.className = 'database-gallery-card';
     card.addEventListener('click', () => openRowEditor(row));
+    card.addEventListener('contextmenu', (e) => { e.preventDefault(); openRowMenu(card, row); });
 
     const title = document.createElement('div');
     title.className = 'database-gallery-title';
@@ -1768,6 +1880,6 @@ function close() {
   overlay.hidden = true;
 }
 
-window.mdDatabase = { open, close, parseCsv, inferColumn };
+window.mdDatabase = { open, close, parseCsv, inferColumn, duplicateRow };
 
 })();
