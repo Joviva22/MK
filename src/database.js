@@ -2099,6 +2099,123 @@ function close() {
   overlay.hidden = true;
 }
 
+// ---- base de datos dentro de una nota (bloque ```database```) ----
+// Opciones "clave: valor" (o solo el nombre en la primera línea):
+//   base: Gastos        vista: Por categoría        filas: 10
+// Muestra esa vista como en el panel (tabla con sus filtros/orden, o su
+// gráfico), de solo lectura, con un botón para abrir la base y editarla.
+
+function parseEmbedSpec(text) {
+  const spec = {};
+  String(text).split('\n').map((l) => l.trim()).filter(Boolean).forEach((line) => {
+    const m = line.match(/^([\wáéíóúñ]+)\s*:\s*(.+)$/i);
+    if (m) spec[m[1].toLowerCase()] = m[2].trim();
+    else if (!spec.base) spec.base = line;
+  });
+  return {
+    base: spec.base || spec.database || spec.nombre || '',
+    vista: spec.vista || spec.view || '',
+    filas: Math.max(1, Math.min(500, Number(spec.filas || spec.rows) || 20))
+  };
+}
+
+// Calcula con el mismo motor que el panel, "prestándole" el estado un
+// instante (todo síncrono, así no se mezcla con el panel si está abierto).
+function withTemporaryState(temp, fn) {
+  const keys = ['columns', 'rows', 'views', 'viewId', 'relatedData', 'databaseId', 'filter'];
+  const saved = {};
+  keys.forEach((k) => { saved[k] = state[k]; });
+  Object.assign(state, temp);
+  try {
+    return fn();
+  } finally {
+    Object.assign(state, saved);
+  }
+}
+
+async function renderEmbed(host, text) {
+  const spec = parseEmbedSpec(text);
+  host.innerHTML = '';
+  host.classList.add('db-embed');
+  const note = (msg) => {
+    const d = document.createElement('div');
+    d.className = 'db-embed-error';
+    d.textContent = '▤ ' + msg;
+    host.appendChild(d);
+  };
+  const r = root();
+  if (!r) return note('Abrí la carpeta donde está la base de datos para verla acá.');
+  if (!spec.base) return note('Falta el nombre de la base: `base: Nombre`.');
+  const databases = await window.mdEditor.db.listDatabases(r);
+  const db = databases.find((d) => d.name.toLowerCase() === spec.base.toLowerCase());
+  if (!db) return note(`No hay una base "${spec.base}" en esta carpeta. Disponibles: ${databases.map((d) => d.name).join(', ') || '(ninguna)'}.`);
+  const [columns, rows, views] = await Promise.all([
+    window.mdEditor.db.listColumns(r, db.id), window.mdEditor.db.listRows(r, db.id), window.mdEditor.db.listViews(r, db.id)
+  ]);
+  const view = spec.vista ? views.find((v) => v.name.toLowerCase() === spec.vista.toLowerCase()) : views[0];
+  if (!view) return note(`La base "${db.name}" no tiene una vista "${spec.vista}". Vistas: ${views.map((v) => v.name).join(', ')}.`);
+
+  // Bases relacionadas (para relaciones/rollups), como loadRelatedData.
+  const targets = new Set();
+  columns.forEach((c) => {
+    const o = parseOptions(c);
+    if (c.type === 'relation' && o.targetDatabaseId) targets.add(o.targetDatabaseId);
+  });
+  const relatedData = {};
+  await Promise.all(Array.from(targets).map(async (id) => {
+    const [cols, rs] = await Promise.all([window.mdEditor.db.listColumns(r, id), window.mdEditor.db.listRows(r, id)]);
+    relatedData[id] = { columns: cols, rows: rs };
+  }));
+  relatedData[db.id] = { columns, rows };
+
+  const cfg = parseView(view);
+  const temp = { columns, rows, views, viewId: view.id, relatedData, databaseId: db.id, filter: '' };
+  const computed = withTemporaryState(temp, () => {
+    if (view.type === 'chart') return { chart: chartData(cfg) };
+    const list = filteredRows();
+    return {
+      total: list.length,
+      rows: list.slice(0, spec.filas).map((row) => columns.map((c) => displayText(cellDisplayValue(c, row, columns))))
+    };
+  });
+
+  const head = document.createElement('div');
+  head.className = 'db-embed-head';
+  const title = document.createElement('span');
+  title.textContent = `▤ ${db.icon ? db.icon + ' ' : ''}${db.name} · ${view.name}`;
+  const openBtn = document.createElement('button');
+  openBtn.className = 'db-embed-open';
+  openBtn.textContent = 'Abrir';
+  openBtn.title = 'Abrir la base para editarla';
+  openBtn.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); open(db.id); });
+  head.append(title, openBtn);
+  host.appendChild(head);
+
+  if (computed.chart) {
+    const plot = document.createElement('div');
+    host.appendChild(plot);
+    window.mdCharts.render(plot, { type: cfg.chartType || 'bar', data: computed.chart.data, time: computed.chart.time, valueLabel: computed.chart.valueLabel, labelTitle: computed.chart.groupName });
+    return;
+  }
+  const table = document.createElement('table');
+  table.className = 'db-embed-table';
+  const tr = document.createElement('tr');
+  columns.forEach((c) => { const th = document.createElement('th'); th.textContent = c.name; tr.appendChild(th); });
+  table.appendChild(tr);
+  computed.rows.forEach((cells) => {
+    const row = document.createElement('tr');
+    cells.forEach((v) => { const td = document.createElement('td'); td.textContent = v; row.appendChild(td); });
+    table.appendChild(row);
+  });
+  host.appendChild(table);
+  if (computed.total > computed.rows.length) {
+    const more = document.createElement('div');
+    more.className = 'db-embed-more';
+    more.textContent = `… y ${computed.total - computed.rows.length} fila(s) más (filas: N para mostrar más)`;
+    host.appendChild(more);
+  }
+}
+
 // Abrir una base con el buscador de filas ya filtrando (búsqueda global).
 async function openWithFilter(databaseId, text) {
   await open(databaseId);
@@ -2149,6 +2266,6 @@ async function searchRows(query, limit) {
   return out;
 }
 
-window.mdDatabase = { open, openWithFilter, searchRows, close, parseCsv, inferColumn, duplicateRow, chartData };
+window.mdDatabase = { open, openWithFilter, searchRows, renderEmbed, parseEmbedSpec, close, parseCsv, inferColumn, duplicateRow, chartData };
 
 })();

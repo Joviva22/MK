@@ -291,6 +291,17 @@ function embedMermaidNodeImages(container) {
   });
 }
 
+// Bloques ```database``` (vista de una base de datos, ver database.js).
+function renderDatabaseBlocks() {
+  previewPane.querySelectorAll('pre code.language-database').forEach((code) => {
+    const host = document.createElement('div');
+    host.className = 'db-embed db-embed-loading';
+    host.textContent = 'Cargando base de datos…';
+    code.parentElement.replaceWith(host);
+    if (window.mdDatabase) window.mdDatabase.renderEmbed(host, code.textContent).finally(() => host.classList.remove('db-embed-loading'));
+  });
+}
+
 // Bloques ```chart``` (tabla Markdown → gráfico, ver charts.js).
 function renderChartBlocks() {
   previewPane.querySelectorAll('pre code.language-chart').forEach((code) => {
@@ -456,6 +467,7 @@ function render() {
   markMissingAssets();
   renderMermaidBlocks();
   renderChartBlocks();
+  renderDatabaseBlocks();
   highlightCode();
   addRunButtons();
   wireTaskCheckboxes(markdownText);

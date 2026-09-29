@@ -174,6 +174,26 @@ Clic en el encabezado de una columna **Fecha** → **Editar columna** → **Avis
 
 **Ejemplos:** gastos → Torta, agrupar por Categoría, medir Suma de Monto · proyectos → Barras por Estado, Cantidad · ventas → Líneas por Fecha (Mes), Suma de Importe.
 
+## Mostrar una base dentro de una nota
+
+Un bloque `database` en cualquier nota muestra una vista de una base (de la carpeta abierta):
+
+````markdown
+```database
+base: Gastos
+vista: Sin pagar
+filas: 10
+```
+````
+
+- `base:` nombre de la base (también sirve escribir solo el nombre en la primera línea).
+- `vista:` qué vista mostrar (por defecto, la primera). Respeta sus **filtros y orden**; si es una vista **Gráfico**, dibuja el gráfico.
+- `filas:` cuántas filas como máximo (por defecto 20).
+- Es de solo lectura y se actualiza sola; el botón **Abrir** abre la base para editarla.
+- Se ve en el preview y en Live Preview. Si el nombre no existe, te dice cuáles hay.
+
+Ideal para una nota de proyecto que muestre sus tareas pendientes, o un resumen mensual con el gráfico de gastos.
+
 ## CSV: importar y exportar
 
 **Exportar** — botón **⇩ CSV** (arriba a la derecha): guarda la **vista actual** (con sus filtros y orden) como `.csv`, listo para abrir en Excel, LibreOffice o Google Sheets (con tildes bien).

@@ -3225,6 +3225,56 @@
     check('Bloque chart: tabla Markdown → gráfico (preview y Live Preview), números es/en y error claro', blocks.length === 2 && bars === 3 && title === 'Gastos' && firstValue === 1234.5 && errorOk && liveOk, `bloques=${blocks.length} barras=${bars} título="${title}" 1.234,5→${firstValue} error=${errorOk} live=${liveOk}`);
   }
 
+  // Base de datos dentro de una nota (```database```): la vista tabla con
+  // sus filtros, la vista gráfico, límite de filas, error claro y "Abrir".
+  let embedOk = false;
+  let embedDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    const edb = await window.mdEditor.db.createDatabase(fixturesDir, 'Libros Embed');
+    const [eName] = await window.mdEditor.db.listColumns(fixturesDir, edb.id);
+    const eLeido = await window.mdEditor.db.createColumn(fixturesDir, edb.id, { name: 'Leído', type: 'checkbox' });
+    const ePag = await window.mdEditor.db.createColumn(fixturesDir, edb.id, { name: 'Páginas', type: 'number' });
+    await window.mdEditor.db.createRows(fixturesDir, edb.id, [
+      { [eName.id]: 'Rayuela', [eLeido.id]: '1', [ePag.id]: 600 },
+      { [eName.id]: 'Ficciones', [eLeido.id]: '0', [ePag.id]: 200 },
+      { [eName.id]: 'El Aleph', [eLeido.id]: '0', [ePag.id]: 150 },
+      { [eName.id]: 'Martín Fierro', [eLeido.id]: '0', [ePag.id]: 100 }
+    ]);
+    await window.mdEditor.db.createView(fixturesDir, edb.id, { name: 'Pendientes', type: 'table', config: { filters: [{ columnId: eLeido.id, op: 'unchecked', value: '' }] } });
+    await window.mdEditor.db.createView(fixturesDir, edb.id, { name: 'Gráfico', type: 'chart', config: { chartType: 'bar', groupBy: eName.id, measure: 'sum', valueCol: ePag.id } });
+    const fence = '```';
+    window.mdModes.setLayoutMode('normal');
+    window.mdTabs.newTab([
+      fence + 'database', 'base: Libros Embed', 'vista: Pendientes', 'filas: 2', fence, '',
+      fence + 'database', 'Libros Embed', 'vista: Gráfico', fence, '',
+      fence + 'database', 'base: No Existe', fence, '', 'fin'
+    ].join('\n'));
+    window.renderPreview();
+    await waitFor(() => document.querySelectorAll('#preview-pane .db-embed:not(.db-embed-loading)').length === 3, 5000);
+    const embeds = document.querySelectorAll('#preview-pane .db-embed');
+    const bodyRows = embeds[0] ? embeds[0].querySelectorAll('table.db-embed-table tr').length - 1 : 0;
+    const moreText = embeds[0] && embeds[0].querySelector('.db-embed-more') ? embeds[0].querySelector('.db-embed-more').textContent : '';
+    const chartOk = !!(embeds[1] && embeds[1].querySelector('svg .chart-mark'));
+    const errOk = !!(embeds[2] && embeds[2].textContent.includes('Libros Embed'));
+    embeds[0].querySelector('.db-embed-open').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    const opened = await waitFor(() => !document.getElementById('database-panel').hidden && document.getElementById('database-name-input').value === 'Libros Embed');
+    window.mdDatabase.close();
+    window.mdModes.setLayoutMode('live');
+    window.mdCodeMirror.setCursor({ line: 15, ch: 0 });
+    window.mdLivePreview.rebuild();
+    const liveOk = !!(await waitFor(() => document.querySelector('.cm-live .mk-live-db table.db-embed-table'), 5000));
+    window.mdModes.setLayoutMode('normal');
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    window.confirm = originalConfirm;
+    await window.mdEditor.db.deleteDatabase(fixturesDir, edb.id);
+    embedOk = bodyRows === 2 && moreText.includes('1 fila') && chartOk && errOk && !!opened && liveOk;
+    embedDetail = `filas=${bodyRows} "${moreText}" grafico=${chartOk} error=${errOk} abrir=${!!opened} live=${liveOk}`;
+  }
+  check('Base de datos dentro de una nota: vista con filtros, gráfico, límite de filas, error claro, Abrir y Live Preview', embedOk, embedDetail);
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {

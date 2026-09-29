@@ -59,7 +59,7 @@ Regla práctica: si te encontrás haciendo una tabla Markdown que crece y queré
 | Combinación | Resultado |
 |---|---|
 | Base + **Home** | Fechas de la base en el calendario semanal/mensual |
-| Base + **Notas** | La base guarda los datos; la nota `.md` del proyecto guarda el texto largo (enlazala escribiendo su nombre en una columna de texto) |
+| Base + **Notas** | La base guarda los datos; la nota `.md` del proyecto guarda el texto largo — y con un bloque `database` la nota **muestra** la vista de la base (tabla o gráfico) |
 | Base + **git** | `.mk/databases.sqlite3` se versiona con tu carpeta |
 | Tablero de la base vs. **Kanban** | Kanban trabaja sobre el texto de una nota; el Tablero de la base, sobre filas con más datos (fechas, números, relaciones) |
 

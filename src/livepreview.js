@@ -412,6 +412,12 @@ function decorateUnit(u, active) {
   if (u.kind === 'fence' && u.data.lang === 'mermaid' && u.data.closed && u.to > u.from + 1 && !unitActive(u, active)) {
     const code = cm.getRange({ line: u.from + 1, ch: 0 }, { line: u.to - 1, ch: cm.getLine(u.to - 1).length });
     replaceWith({ line: u.from, ch: 0 }, blockEnd(u), renderMermaid(code), true);
+  } else if (u.kind === 'fence' && u.data.lang === 'database' && u.data.closed && u.to > u.from && !unitActive(u, active)) {
+    const code = u.to > u.from + 1 ? cm.getRange({ line: u.from + 1, ch: 0 }, { line: u.to - 1, ch: cm.getLine(u.to - 1).length }) : '';
+    const div = el('div', 'mk-live-db db-embed');
+    div.textContent = 'Cargando base de datos…';
+    replaceWith({ line: u.from, ch: 0 }, blockEnd(u), div, true);
+    if (window.mdDatabase) window.mdDatabase.renderEmbed(div, code);
   } else if (u.kind === 'fence' && u.data.lang === 'chart' && u.data.closed && u.to > u.from + 1 && !unitActive(u, active)) {
     const code = cm.getRange({ line: u.from + 1, ch: 0 }, { line: u.to - 1, ch: cm.getLine(u.to - 1).length });
     const div = el('div', 'mk-live-chart');

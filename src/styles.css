@@ -4261,3 +4261,79 @@ li.CodeMirror-hint-active {
   font-family: Inter, system-ui, sans-serif;
   line-height: 1.4;
 }
+
+/* ---- Base de datos dentro de una nota (```database```) ---- */
+.db-embed {
+  margin: 12px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px 10px;
+  background: var(--bg);
+  font-size: 13px;
+  overflow-x: auto;
+}
+
+.db-embed-loading {
+  color: var(--text-muted);
+}
+
+.db-embed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.db-embed-open {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 2px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.db-embed-open:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#preview-pane table.db-embed-table,
+table.db-embed-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  font-size: 12px;
+}
+
+table.db-embed-table th,
+table.db-embed-table td {
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  text-align: left;
+}
+
+table.db-embed-table th {
+  background: var(--surface-2);
+}
+
+.db-embed-error,
+.db-embed-more {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.db-embed-error {
+  color: #e8590c;
+}
+
+.mk-live-db {
+  display: block;
+  cursor: text;
+  font-family: Inter, system-ui, sans-serif;
+  line-height: 1.4;
+}

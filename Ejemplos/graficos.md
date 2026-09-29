@@ -21,6 +21,20 @@ Esta carpeta trae una base de datos **Gastos** (19 gastos de julio a octubre) co
 - Agregá un gasto en la **Tabla** y volvé al gráfico: se actualiza solo.
 - Pasá el mouse por una barra o porción: muestra el valor exacto. **Ver tabla** debajo muestra todos los números.
 
+## Una base dentro de esta nota
+
+El bloque `database` muestra una vista de la base Gastos acá mismo (se actualiza sola):
+
+```database
+base: Gastos
+vista: Por mes
+```
+
+```database
+base: Gastos
+vista: Sin pagar
+```
+
 ## Gráficos dentro de una nota
 
 Un bloque `chart` convierte una tabla en gráfico (miralo en el preview o en Live Preview):
