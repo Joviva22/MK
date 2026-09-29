@@ -135,9 +135,22 @@ Una base puede tener varias vistas de los mismos datos. **+ Vista** → Tabla, T
 | **▤ Tabla** | Filas y columnas, edición celda por celda | Cargar y revisar datos |
 | **▥ Tablero** | Columnas tipo Kanban agrupadas por una **Selección única** | Flujos de estado: arrastrá tarjetas entre columnas para cambiar el valor |
 | **▦ Galería** | Tarjetas | Colecciones: libros, recetas, contactos |
+| **📅 Calendario** | Mes con las filas en su fecha | Entregas, eventos, turnos: arrastrá una fila a otro día para cambiarle la fecha; doble clic en un día crea una fila con esa fecha |
 
+- En Calendario: clic derecho en la pestaña → **"Fecha según"** para elegir qué columna Fecha usa. Respeta los filtros de la vista.
 - En Tablero: clic derecho en la pestaña → **"Agrupar por"** para elegir qué columna de selección define las columnas.
 - En Tablero y Galería, clic en una tarjeta abre el **editor de fila completa** con todos los campos.
+
+## CSV: importar y exportar
+
+**Exportar** — botón **⇩ CSV** (arriba a la derecha): guarda la **vista actual** (con sus filtros y orden) como `.csv`, listo para abrir en Excel, LibreOffice o Google Sheets (con tildes bien).
+
+**Importar** — botón **⇪ CSV** (arriba de la lista de bases): crea una **base nueva** con el nombre del archivo.
+
+- Primera fila = nombres de columna. La primera columna queda como título (texto).
+- Detecta el separador solo: coma, punto y coma (Excel en español) o tabulador.
+- Adivina el tipo de cada columna: **número** (`1.234,5` o `1,234.5`), **fecha** (`2026-10-03` o `03/10/2026`), **casilla** (sí/no, true/false, x), **selección única** (pocos valores que se repiten, ej. Estado) o **texto**.
+- Después podés cambiar cualquier tipo con clic en el encabezado → Editar columna.
 
 ## 8. Ver fechas en el calendario
 

@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="../node_modules/codemirror/lib/codemirror.css" />
   <link rel="stylesheet" href="../node_modules/codemirror/addon/hint/show-hint.css" />
   <link rel="stylesheet" href="../node_modules/katex/dist/katex.min.css" />
+  <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -37,6 +38,8 @@
     <button id="btn-toc" class="toolbar-button toolbar-optional" title="Índice del documento (Ctrl+Shift+O)"><i data-lucide="list"></i></button>
     <button id="btn-focus" class="toolbar-button toolbar-optional" title="Modo enfoque / lectura (Ctrl+Shift+E / Ctrl+Shift+R)"><i data-lucide="focus"></i></button>
     <button id="btn-search" class="toolbar-button toolbar-optional" title="Búsqueda global en la carpeta (Ctrl+Shift+F)"><i data-lucide="search"></i></button>
+    <button id="btn-run-file" class="toolbar-button toolbar-optional" title="Ejecutar archivo actual en la terminal (F5) — .py, .sh, .js, .c, .cpp, .java..."><i data-lucide="circle-play"></i></button>
+    <button id="btn-terminal" class="toolbar-button toolbar-optional" title="Terminal integrada (Ctrl+` / Ctrl+Ñ)"><i data-lucide="square-terminal"></i></button>
     <button id="btn-command-palette" class="toolbar-button toolbar-optional" title="Paleta de comandos (Ctrl+Shift+P)"><i data-lucide="command"></i></button>
     <button id="btn-tags" class="toolbar-button toolbar-optional" title="Etiquetas de la carpeta (Ctrl+Shift+T)"><i data-lucide="tag"></i></button>
     <button id="btn-backlinks" class="toolbar-button toolbar-optional" title="Backlinks: qué enlaza aquí (Ctrl+Shift+B)"><i data-lucide="link-2"></i></button>
@@ -183,6 +186,19 @@
     </div>
   </div>
 
+  <div id="terminal-panel" class="terminal-panel" hidden>
+    <div id="terminal-resizer" class="terminal-resizer" title="Arrastrar para cambiar el alto"></div>
+    <div class="terminal-header">
+      <span class="terminal-heading">Terminal</span>
+      <div id="terminal-tabs" class="terminal-tabs"></div>
+      <span class="toolbar-spacer"></span>
+      <span class="terminal-hint">Ctrl+Shift+C / Ctrl+Shift+V: copiar / pegar</span>
+      <button id="terminal-new" class="toolbar-button terminal-header-btn" title="Nueva terminal">+</button>
+      <button id="terminal-hide" class="toolbar-button terminal-header-btn" title="Ocultar panel (Ctrl+` / Ctrl+Ñ) — las terminales siguen abiertas">✕</button>
+    </div>
+    <div id="terminal-body" class="terminal-body"></div>
+  </div>
+
   <div class="statusbar">
     <span id="status-mode">Markdown</span>
     <span id="status-cursor">Ln 1, Col 1</span>
@@ -275,6 +291,7 @@
           <li><strong>Nota diaria</strong> — <code>Ctrl+Shift+D</code> o paleta de comandos.</li>
           <li><strong>Diagramas Mermaid</strong> — bloque <code>```mermaid```</code> en el preview.</li>
           <li><strong>Vista de grafo</strong> y <strong>tablero Kanban</strong> — paleta de comandos.</li>
+          <li><strong>Terminal integrada</strong> — botón de terminal en la toolbar o <code>Ctrl+`</code> / <code>Ctrl+Ñ</code>.</li>
           <li><strong>Home</strong> (planificador semanal/mensual con calendario) — botón Home o <code>Ctrl+Shift+H</code>.</li>
           <li><strong>Bases de datos relacionales</strong> (tipo Notion: columnas tipadas, relaciones, fórmulas, rollups, vistas tabla/tablero/galería) — paleta de comandos, "Bases de datos".</li>
           <li><strong>Exportar a EPUB</strong> y <strong>a tarjetas Anki</strong> — menú ⬇ Exportar.</li>
@@ -316,6 +333,9 @@
         </div>
         <span id="home-range-label" class="home-range-label"></span>
         <span class="toolbar-spacer"></span>
+        <label class="home-db-toggle" title="Mostrar en el calendario las tareas escritas en tus notas como  - [ ] algo 📅 2026-10-03">
+          <input type="checkbox" id="home-show-notes" /> Tareas de notas
+        </label>
         <label class="home-db-toggle" title="Mostrar en el calendario las filas de tus bases de datos que tengan una columna Fecha">
           <input type="checkbox" id="home-show-db" /> Fechas de bases de datos
         </label>
@@ -334,6 +354,7 @@
         <div class="database-sidebar">
           <div class="database-sidebar-header">
             <span>Bases de datos</span>
+            <button id="database-import-btn" class="toolbar-button" title="Importar CSV como base nueva">⇪ CSV</button>
             <button id="database-new-btn" class="toolbar-button" title="Nueva base de datos">+</button>
           </div>
           <div id="database-list" class="database-list"></div>
@@ -343,6 +364,7 @@
           <div id="database-content" class="database-content" hidden>
             <div class="database-content-header">
               <input id="database-name-input" class="database-name-input" />
+              <button id="database-export-btn" class="toolbar-button" title="Exportar la vista actual (con sus filtros y orden) a CSV">⇩ CSV</button>
               <button id="database-delete-btn" class="toolbar-button" title="Eliminar esta base de datos">🗑</button>
             </div>
             <div id="database-view-tabs" class="database-view-tabs"></div>
@@ -489,6 +511,9 @@
   <script src="kanban.js"></script>
   <script src="database.js"></script>
   <script src="home.js"></script>
+  <script src="../node_modules/@xterm/xterm/lib/xterm.js"></script>
+  <script src="../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+  <script src="terminal.js"></script>
   <script src="graph.js"></script>
   <script src="pdfpages.js"></script>
   <script src="pdfhighlight.js"></script>

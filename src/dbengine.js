@@ -333,6 +333,24 @@ async function createRow(root, databaseId, cells) {
   return id;
 }
 
+// Muchas filas de una (importar CSV): una sola escritura a disco al final en
+// vez de un db.export() + write por fila.
+async function createRows(root, databaseId, cellsList) {
+  const db = await getDb(root);
+  let order = nextOrder(db, 'mk_rows', 'database_id', databaseId);
+  const now = Date.now();
+  (cellsList || []).forEach((cells) => {
+    const id = uid();
+    db.run('INSERT INTO mk_rows (id, database_id, order_idx, created_at) VALUES (?, ?, ?, ?)', [id, databaseId, order++, now]);
+    Object.entries(cells || {}).forEach(([colId, value]) => {
+      if (value == null || value === '') return;
+      db.run('INSERT INTO mk_cells (row_id, column_id, value) VALUES (?, ?, ?)', [id, colId, String(value)]);
+    });
+  });
+  persist(root, db);
+  return (cellsList || []).length;
+}
+
 async function deleteRow(root, rowId) {
   const db = await getDb(root);
   db.run('DELETE FROM mk_rows WHERE id = ?', [rowId]);
@@ -440,6 +458,7 @@ function registerDatabaseIpc(ipcMain) {
 
   ipcMain.handle('db:listRows', (e, { root, databaseId }) => listRows(root, databaseId));
   ipcMain.handle('db:createRow', (e, { root, databaseId, cells }) => createRow(root, databaseId, cells));
+  ipcMain.handle('db:createRows', (e, { root, databaseId, cellsList }) => createRows(root, databaseId, cellsList));
   ipcMain.handle('db:deleteRow', (e, { root, rowId }) => deleteRow(root, rowId));
   ipcMain.handle('db:reorderRows', (e, { root, databaseId, orderedIds }) => reorderRows(root, databaseId, orderedIds));
   ipcMain.handle('db:setCell', (e, { root, rowId, columnId, value }) => setCell(root, rowId, columnId, value));

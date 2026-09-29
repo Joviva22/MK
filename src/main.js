@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const JSZip = require('jszip');
 const { execFile } = require('child_process');
 const { registerDatabaseIpc } = require('./dbengine');
+const { registerTerminalIpc, killAllTerminals } = require('./ptyhost');
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -95,6 +96,10 @@ function createWindow() {
 
   const loadOptions = isTestMode ? { query: { mkTestFixtures: testFixturesDir } } : undefined;
   mainWindow.loadFile(path.join(__dirname, 'index.html'), loadOptions);
+  // Terminales integradas (ptyhost.js): si la página se recarga o la ventana
+  // se cierra, sus shells quedarían huérfanos sin nadie que los lea.
+  mainWindow.webContents.on('did-navigate', killAllTerminals);
+  mainWindow.on('closed', killAllTerminals);
   // Sin barra de menú nativa (Archivo/Editar/Ver): la toolbar de la app ya
   // cubre esas acciones, y sus atajos (Ctrl+N/O/S/Shift+S) están registrados
   // aparte en el renderer (editor.js), no dependen de accelerators de menú.
@@ -541,6 +546,31 @@ function walkTextFiles(root, onFile) {
 // las columnas con el mismo parseColumns que ya usa en modo archivo activo
 // — la lógica de "## Columna" + lista queda en un solo lugar.
 registerDatabaseIpc(ipcMain);
+registerTerminalIpc(ipcMain, () => mainWindow);
+
+// CSV de las bases de datos (ver database.js): el renderer arma/parsea el
+// texto, acá solo los diálogos y el disco.
+ipcMain.handle('csv:save', async (event, { content, defaultName }) => {
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: (defaultName || 'base-de-datos').replace(/[\\/:*?"<>|]/g, '_') + '.csv',
+    filters: [{ name: 'CSV', extensions: ['csv'] }]
+  });
+  if (result.canceled || !result.filePath) return null;
+  // BOM: sin él, Excel abre el UTF-8 como Latin-1 (tildes rotas).
+  fs.writeFileSync(result.filePath, '\ufeff' + content, 'utf-8');
+  return result.filePath;
+});
+
+ipcMain.handle('csv:open', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [{ name: 'CSV', extensions: ['csv', 'tsv', 'txt'] }]
+  });
+  if (result.canceled || !result.filePaths.length) return null;
+  const filePath = result.filePaths[0];
+  const content = fs.readFileSync(filePath, 'utf-8').replace(/^\ufeff/, '');
+  return { name: path.basename(filePath, path.extname(filePath)), content };
+});
 
 ipcMain.handle('kanban:readFolderFiles', (event, root) => {
   if (!root) return [];
@@ -1083,6 +1113,7 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
+  killAllTerminals();
   if (process.platform !== 'darwin') app.quit();
 });
 

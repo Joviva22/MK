@@ -37,6 +37,7 @@ Una guía especializada por cada función del sistema. Cada una empieza con **pa
 
 | Guía | Trata |
 |---|---|
+| [terminal.md](terminal.md) | Terminal integrada (`` Ctrl+` ``), copiar/pegar, varias terminales |
 | [historial-y-git.md](historial-y-git.md) | Versiones anteriores, diff, git |
 | [exportar.md](exportar.md) | HTML, PDF, Word, EPUB, Anki; importar `.docx` |
 | [herramientas-pdf.md](herramientas-pdf.md) | Unir, separar, rotar, firmar, marca de agua, subrayar |
@@ -55,4 +56,5 @@ Una guía especializada por cada función del sistema. Cada una empieza con **pa
 | Estudiar con tarjetas | [Exportar a Anki](exportar.md#anki) |
 | Entregar un trabajo en Word o PDF | [Exportar](exportar.md) |
 | Recuperar algo que borré | [Historial](historial-y-git.md) |
+| Correr comandos, git o programas sin salir | [Terminal](terminal.md) |
 | Concentrarme | [Pomodoro](pomodoro-y-reproductor.md) + [modo enfoque](modos-de-vista.md) |

@@ -106,6 +106,32 @@ Todo lo del panel lateral depende del período que estés mirando: los objetivos
 - **Atrasadas**: aparece solo si hay tareas sin terminar con fecha anterior a hoy. **"Pasar a hoy"** las mueve todas a hoy de un clic.
 - **Sin fecha**: bandeja de tareas sin día asignado. Agregalas con "+ Tarea sin fecha", y **arrastralas a un día** cuando decidas cuándo hacerlas. También podés arrastrar una tarea de un día hasta acá para "desprogramarla".
 
+## Tareas escritas en tus notas 📅
+
+Cualquier tarea de una nota `.md` de la carpeta abierta con una fecha así:
+
+```markdown
+- [ ] Entregar TP de Historia 📅 2026-10-01
+```
+
+aparece ese día en el Home (chip con 📄), con el header **"Tareas de notas"** tildado.
+
+- **Tildarla** desde el Home escribe `[x]` en la línea real del archivo (si está abierto en el editor, cambia el editor y lo guarda el autoguardado).
+- **Clic en el texto** abre la nota.
+- Vale en cualquier nivel de lista (`-` o `*`, con sangría). El emoji 📅 se escribe con el selector de emojis del sistema (en Linux suele ser `Ctrl+.` o `Super+.`), o copiándolo de acá.
+
+## Nota enlazada a una tarea
+
+En el editor de tarea, **Nota enlazada**: escribí el nombre de una nota de la carpeta (se autocompleta). La tarea muestra un 📄: clic abre esa nota. Ideal para "Estudiar Álgebra" → nota `Algebra-resumen`.
+
+## Pomodoro sobre una tarea 🍅
+
+En el editor de tarea, **⏱ Pomodoro** arranca un foco con esa tarea: la barra de estado muestra `🍅 Foco 24:59 · Título`. Al terminar cada foco suma un 🍅 a la tarea y te pregunta si la terminaste — si decís que sí, se tilda sola.
+
+## Plan de hoy → nota diaria 📝
+
+Botón **"Plan de hoy → nota diaria"** en el panel lateral: abre (o crea) la [nota diaria](nota-diaria.md) y agrega una sección `## Plan del día` con todas las tareas de hoy como checklist (con hora, las de tus notas y las de bases de datos). Si lo apretás de nuevo, solo agrega lo que falta — no duplica.
+
 ## Integración con Bases de datos
 
 Con una carpeta abierta y **"Fechas de bases de datos"** tildado, cada fila de una base de datos que tenga una columna de tipo **Fecha** aparece en ese día como un chip con borde punteado (`▤ Nombre de la fila`).
@@ -123,7 +149,7 @@ Con una carpeta abierta y **"Fechas de bases de datos"** tildado, cada fila de u
 | `Enter` en "+ Agregar tarea" | Crear tarea en ese día |
 | Doble clic en día del calendario | Crear tarea ahí |
 | Arrastrar tarea | Cambiar de día / a "Sin fecha" |
-| Clic en tarea | Editar (hora, aviso, repetición, prioridad, notas) |
+| Clic en tarea | Editar (hora, aviso, repetición, prioridad, notas, nota enlazada, ⏱ Pomodoro) |
 | Clic en número del día (Mes) | Ir a esa semana |
 | `Escape` | Cierra el editor de tarea, o el Home |
 

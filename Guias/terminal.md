@@ -1,0 +1,72 @@
+# Terminal integrada
+
+**Para qué sirve:** usar la terminal sin salir de MK — correr `git`, `npm`, scripts, compilar un `.c` o un `.py` que estás escribiendo, instalar paquetes — igual que la terminal de VS Code.
+
+## Abrir y cerrar
+
+| Cómo | Qué hace |
+|---|---|
+| `` Ctrl+` `` (o `Ctrl+Ñ` en teclado español) | Muestra / oculta el panel |
+| Botón de terminal en la toolbar | Igual |
+| Paleta → "Terminal: mostrar/ocultar" o "Terminal: nueva terminal" | Igual / abre otra |
+| **✕** del panel | Oculta el panel (las terminales **siguen corriendo**) |
+| **×** de una pestaña | Cierra esa terminal (mata el proceso) |
+
+## Cómo funciona
+
+- Es una terminal **real** (pseudo-terminal): usa tu shell (`$SHELL`: bash, zsh, fish…) con tu configuración, colores y alias.
+- Arranca en la **carpeta abierta** en MK (si no hay ninguna, en tu carpeta personal).
+- Programas interactivos funcionan: `vim`, `nano`, `htop`, `less`, `git log`, `python` interactivo, `ssh`.
+- **Varias terminales**: botón **+**, cada una en su pestaña (`1: zsh`, `2: zsh`…).
+- **Alto del panel**: arrastrá el borde de arriba. Se recuerda.
+- Sigue los colores del **tema** de MK (fondo, texto, cursor), con una paleta de colores ANSI distinta para temas claros y oscuros, para que todo se lea bien.
+
+## Ejecutar el archivo actual (F5)
+
+Con un archivo de código abierto, **F5** (o el botón ▶ de la toolbar, o la paleta → "Ejecutar archivo actual") lo **guarda** y lo corre en la terminal, en su carpeta:
+
+| Archivo | Comando |
+|---|---|
+| `.py` | `python3 archivo.py` |
+| `.sh`, `.bash` | `bash archivo.sh` |
+| `.js`, `.mjs` | `node archivo.js` |
+| `.c` | `gcc archivo.c -o /tmp/mk-run-archivo && /tmp/mk-run-archivo` |
+| `.cpp`, `.cc`, `.cxx` | igual con `g++` |
+| `.java` | `java Archivo.java` |
+| `.rb`, `.go` | `ruby` / `go run` |
+
+Si el programa pide datos (`input()`, `scanf`), escribilos en la terminal.
+
+## Abrir terminal en una carpeta
+
+Clic derecho en una carpeta del sidebar → **"Abrir terminal aquí"** (en un archivo, abre en su carpeta).
+
+## Copiar y pegar
+
+| Atajo | Acción |
+|---|---|
+| `Ctrl+Shift+C` | Copiar la selección |
+| `Ctrl+Shift+V` | Pegar |
+
+`Ctrl+C` sin Shift es el de siempre en una terminal: **corta el programa** que está corriendo.
+
+## Atajos de MK con el foco en la terminal
+
+Con el cursor en la terminal, las teclas van **al shell**, no a MK: `Ctrl+W` borra una palabra (no cierra tu pestaña del editor), `Ctrl+R` busca en el historial, `Ctrl+L` limpia la pantalla. Excepciones que siguen yendo a MK: `` Ctrl+` ``/`Ctrl+Ñ`, `Ctrl+Shift+P` (paleta), `Ctrl+Shift+H` (Home) y `F11`. Para volver al editor, hacé clic en él.
+
+## Usos típicos
+
+- **Git a mano**: `git status`, `git log --oneline`, `git push` mientras escribís.
+- **Programar**: escribís `sintaxis.py` en el editor → `python sintaxis.py` en la terminal. Lo mismo con `gcc sintaxis.c && ./a.out`.
+- **Proyectos web**: `npm run dev` en una terminal, y otra libre para comandos.
+- **Convertir documentos**: `pandoc nota.md -o nota.docx`.
+- **Buscar en tus notas**: `grep -rn "parcial" .`
+
+## Seguridad
+
+Es una terminal con **tus permisos**, igual que cualquier otra: lo que ejecutes ahí puede modificar o borrar archivos. Solo la ventana principal de MK puede abrir terminales (no el contenido que se muestra en el preview).
+
+## Límites
+
+- Las terminales no se restauran al reabrir MK (el historial del shell sí, porque lo guarda tu shell).
+- Sin pantalla dividida dentro del panel (una terminal visible a la vez).

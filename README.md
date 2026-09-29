@@ -46,6 +46,7 @@ Todo esto viene ya armado en la app, no son plugins de terceros:
 | [`Guias/`](./Guias/README.md) | Una guía especializada por función: cómo usarla y para qué sirve (Home y Bases de datos con dos guías cada una) |
 | [`COMANDOS.md`](./COMANDOS.md) | Referencia rápida de todos los atajos de teclado |
 | [`ESTADO.md`](./ESTADO.md) | Qué está hecho, qué falta, y limitaciones conocidas |
+| [`OBJETIVOS.md`](./OBJETIVOS.md) | Hoja de ruta: objetivos de corto, mediano y largo plazo, tachados a medida que se cumplen |
 | [`MEJORAS.md`](./MEJORAS.md) | Ideas de qué mejorar a futuro |
 
 ## Cómo correrla
@@ -98,6 +99,7 @@ MK/
 ├── Guias/                  # guías especializadas por función (cómo usar / para qué sirve)
 ├── .github/workflows/ci.yml # lint + test en cada push/PR
 ├── package.json
+├── OBJETIVOS.md          # hoja de ruta (se tacha lo cumplido)
 ├── MANUAL.md             # guía de uso completa
 ├── COMANDOS.md           # referencia rápida de atajos
 ├── ESTADO.md             # estado real y detallado del proyecto

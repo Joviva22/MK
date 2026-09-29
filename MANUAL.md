@@ -32,6 +32,7 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 24. [Controlar el reproductor multimedia](#24-controlar-el-reproductor-multimedia)
 25. [Home: planificador semanal y mensual](#25-home-planificador-semanal-y-mensual)
 26. [Bases de datos relacionales](#26-bases-de-datos-relacionales)
+27. [Terminal integrada](#27-terminal-integrada)
 
 > Guías especializadas por función (cómo usar / para qué sirve): carpeta [`Guias/`](./Guias/README.md).
 
@@ -464,6 +465,8 @@ Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene 
 | `Ctrl+Shift+B` | Backlinks del archivo activo |
 | `Ctrl+Shift+D` | Nota diaria de hoy |
 | `Ctrl+Shift+H` | Home: planificador semanal y mensual |
+| `` Ctrl+` `` / `Ctrl+Ñ` | Terminal integrada |
+| `F5` | Ejecutar el archivo actual en la terminal |
 | `Ctrl+Shift+O` | Índice del documento |
 | `Ctrl+Shift+E` | Modo enfoque |
 | `Ctrl+Shift+R` | Modo lectura |
@@ -555,8 +558,23 @@ Botón **Home** en la toolbar, `Ctrl+Shift+H` o paleta de comandos → "Home: pl
 
 5. **Hora, aviso y repetición** (en el editor de la tarea): con hora, las tareas se ordenan por hora y pueden avisar con una notificación del sistema (a la hora o 5/15/30/60 min antes) — funciona con MK abierto aunque el Home esté cerrado. **Repetir**: todos los días, días hábiles, semanal (días elegidos), mensual o anual, con fecha "Hasta" opcional. Tildar marca solo ese día; editar cambia toda la serie; arrastrar una repetición la separa como tarea suelta; "Eliminar este día" / "Eliminar serie".
 
+6. **Tareas de tus notas**: cualquier `- [ ] algo 📅 2026-10-03` en un `.md` de la carpeta aparece ese día (header "Tareas de notas"); tildarla desde el Home reescribe la línea del archivo.
+7. **Nota enlazada**, **⏱ Pomodoro** sobre la tarea (al terminar el foco pregunta si la terminaste) y **"Plan de hoy → nota diaria"** (agrega `## Plan del día` con las tareas de hoy, sin duplicar).
+
 No necesita carpeta abierta: las tareas son personales y se guardan en `home.json` en la carpeta de configuración de la app. **Límite:** los avisos solo suenan con MK abierto (si estaba cerrado, al abrir se avisa solo lo de los últimos 10 minutos). Guías: [`Guias/home-como-usar.md`](./Guias/home-como-usar.md) y [`Guias/home-para-que-sirve.md`](./Guias/home-para-que-sirve.md).
 
 ## 26. Bases de datos relacionales
 
-Paleta de comandos → "Bases de datos". Tipo Notion: columnas tipadas (texto, número, fecha, casilla, selección única/múltiple, relación, fórmula, rollup, fecha de creación), relaciones de dos vías entre bases, fórmulas JS con `prop("Columna")`, rollups (cantidad, suma, promedio, mínimo, máximo, únicos) y vistas tabla / tablero / galería. Cada vista guarda su **orden** (clic en el encabezado → ascendente/descendente) y sus **filtros por campo** (botón "Filtros": condiciones según el tipo, como "antes de hoy", "esta semana", "> 5" o "es Alta"; se cumplen todos). Necesita carpeta abierta: se guardan en `.mk/databases.sqlite3` dentro de ella. Ejemplo con datos en [`Ejemplos/bases-de-datos.md`](./Ejemplos/bases-de-datos.md); guías: [`Guias/bases-de-datos-como-usar.md`](./Guias/bases-de-datos-como-usar.md) y [`Guias/bases-de-datos-para-que-sirve.md`](./Guias/bases-de-datos-para-que-sirve.md).
+Paleta de comandos → "Bases de datos". Tipo Notion: columnas tipadas (texto, número, fecha, casilla, selección única/múltiple, relación, fórmula, rollup, fecha de creación), relaciones de dos vías entre bases, fórmulas JS con `prop("Columna")`, rollups (cantidad, suma, promedio, mínimo, máximo, únicos) y vistas tabla / tablero / galería / **calendario** (por una columna Fecha, arrastrar para cambiar la fecha). **CSV**: "⇩ CSV" exporta la vista actual; "⇪ CSV" importa un archivo como base nueva, detectando separador y tipos de columna. Cada vista guarda su **orden** (clic en el encabezado → ascendente/descendente) y sus **filtros por campo** (botón "Filtros": condiciones según el tipo, como "antes de hoy", "esta semana", "> 5" o "es Alta"; se cumplen todos). Necesita carpeta abierta: se guardan en `.mk/databases.sqlite3` dentro de ella. Ejemplo con datos en [`Ejemplos/bases-de-datos.md`](./Ejemplos/bases-de-datos.md); guías: [`Guias/bases-de-datos-como-usar.md`](./Guias/bases-de-datos-como-usar.md) y [`Guias/bases-de-datos-para-que-sirve.md`](./Guias/bases-de-datos-para-que-sirve.md).
+
+## 27. Terminal integrada
+
+Panel inferior con una terminal real, como la de VS Code: `` Ctrl+` `` (o `Ctrl+Ñ` en teclado español), el botón de terminal de la toolbar, o la paleta ("Terminal: mostrar/ocultar", "Terminal: nueva terminal").
+
+1. Abre tu shell (`$SHELL`) en la carpeta abierta — con tus alias, colores y programas interactivos (`vim`, `htop`, `less`, `git log`).
+2. **+** abre otra terminal en una pestaña nueva; **×** en la pestaña la cierra; **✕** del panel solo lo oculta (siguen corriendo).
+3. `Ctrl+Shift+C` / `Ctrl+Shift+V` copian/pegan. Con el foco en la terminal, las teclas van al shell (`Ctrl+W` borra una palabra, no cierra la pestaña del editor), salvo `` Ctrl+` ``, `Ctrl+Shift+P`, `Ctrl+Shift+H` y `F11`.
+4. El alto se cambia arrastrando el borde de arriba y se recuerda.
+5. **F5** (o ▶ en la toolbar) guarda y ejecuta el archivo actual en la terminal según su extensión (`.py`, `.sh`, `.js`, `.c`, `.cpp`, `.java`, `.rb`, `.go`). Clic derecho en una carpeta del sidebar → "Abrir terminal aquí". Los colores ANSI se adaptan a temas claros/oscuros.
+
+Por debajo: [xterm.js](https://xtermjs.org) dibuja la terminal y [node-pty](https://github.com/microsoft/node-pty) corre el shell en el proceso principal. **Límite:** las terminales no se restauran al reabrir MK. Guía: [`Guias/terminal.md`](./Guias/terminal.md).

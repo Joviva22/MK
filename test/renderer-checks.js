@@ -2199,6 +2199,152 @@
   }
   check('Bases de datos: ordenar por columna y filtrar por campo (guardado en la vista)', dbSortFilterOk, dbSortFilterDetail);
 
+  // Terminal integrada: abre un pty real, ejecuta un comando y ve la salida;
+  // Ctrl+W con el foco en la terminal NO cierra la pestaña del editor.
+  {
+    await window.mdTerminal.show();
+    const session = await waitFor(() => window.mdTerminal.getSessions().find((s) => !s.exited));
+    let outputOk = false;
+    let ctrlWOk = false;
+    if (session) {
+      const screenText = () => {
+        const buf = session.term.buffer.active;
+        let text = '';
+        for (let i = 0; i < buf.length; i++) text += buf.getLine(i).translateToString(true) + '\n';
+        return text;
+      };
+      await new Promise((r) => setTimeout(r, 500)); // que el shell termine de arrancar
+      window.mdEditor.terminal.write(session.id, 'echo MK_TERM_$((40+2))\r');
+      outputOk = !!(await waitFor(() => screenText().includes('MK_TERM_42'), 8000));
+
+      const tabsBefore = document.querySelectorAll('#tabbar .tab').length;
+      const textarea = session.el.querySelector('textarea');
+      textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'w', code: 'KeyW', ctrlKey: true, bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 100));
+      ctrlWOk = document.querySelectorAll('#tabbar .tab').length === tabsBefore;
+    }
+    const panelShown = !document.getElementById('terminal-panel').hidden;
+    // Tope de vueltas: si cerrar una pestaña no la saca del DOM, que falle el
+    // check en vez de colgar toda la suite.
+    for (let i = 0; i < 10 && document.querySelector('.terminal-tab-close'); i++) {
+      document.querySelector('.terminal-tab-close').click();
+    }
+    const closedOk = document.getElementById('terminal-panel').hidden && window.mdTerminal.getSessions().length === 0;
+    check(
+      'Terminal integrada: pty real ejecuta un comando, Ctrl+W no cierra pestañas del editor, se cierra bien',
+      panelShown && outputOk && ctrlWOk && closedOk,
+      `panel=${panelShown} salida=${outputOk} ctrlW=${ctrlWOk} cerrada=${closedOk}`
+    );
+  }
+
+  // Terminal: F5 / "Ejecutar archivo" guarda y corre el archivo activo.
+  let runFileOk = false;
+  let runFileDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    const scriptPath = window.mdEditor.joinPath(fixturesDir, 'correr prueba.sh');
+    await window.mdEditor.saveFile('echo RUN_OK_$((1+1))\n', scriptPath, false);
+    await window.mdTabs.openTab(scriptPath);
+    const cmd = window.mdTerminal.commandForFile(scriptPath);
+    await window.mdTerminal.runActiveFile();
+    const session = await waitFor(() => window.mdTerminal.getSessions().find((s) => !s.exited));
+    const screen = () => {
+      if (!session) return '';
+      const buf = session.term.buffer.active;
+      let t = '';
+      for (let i = 0; i < buf.length; i++) t += buf.getLine(i).translateToString(true) + '\n';
+      return t;
+    };
+    const ran = !!(await waitFor(() => screen().includes('RUN_OK_2'), 8000));
+    const pyCmd = window.mdTerminal.commandForFile('/tmp/x y/it\'s.py');
+    runFileOk = ran && cmd.startsWith('cd ') && cmd.includes("bash '") && pyCmd.includes("python3 '/tmp/x y/it'\\''s.py'");
+    runFileDetail = `salida=${ran} cmd=${cmd} py=${pyCmd}`;
+    for (let i = 0; i < 10 && document.querySelector('.terminal-tab-close'); i++) document.querySelector('.terminal-tab-close').click();
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+  }
+  check('Terminal: ejecutar el archivo actual (F5) arma el comando según la extensión y lo corre', runFileOk, runFileDetail);
+
+  // Bases de datos: vista Calendario y parseo/inferencia de CSV.
+  let dbCalOk = false;
+  let dbCalDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    const calDb = await window.mdEditor.db.createDatabase(fixturesDir, 'CalTest');
+    const [calName] = await window.mdEditor.db.listColumns(fixturesDir, calDb.id);
+    const calDate = await window.mdEditor.db.createColumn(fixturesDir, calDb.id, { name: 'Entrega', type: 'date' });
+    const now = new Date();
+    const todayIsoStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    await window.mdEditor.db.createRow(fixturesDir, calDb.id, { [calName.id]: 'Entrega hoy', [calDate.id]: todayIsoStr });
+    await window.mdEditor.db.createView(fixturesDir, calDb.id, { name: 'Calendario', type: 'calendar', config: { dateColumn: calDate.id } });
+    await window.mdDatabase.open(calDb.id);
+    await waitFor(() => document.querySelectorAll('.database-view-tab').length === 2);
+    document.querySelectorAll('.database-view-tab')[1].click();
+    await waitFor(() => document.querySelector('.database-calendar-today .database-calendar-chip'));
+    const calChipOk = (document.querySelector('.database-calendar-today .database-calendar-chip') || {}).textContent === 'Entrega hoy';
+    window.mdDatabase.close();
+    await window.mdEditor.db.deleteDatabase(fixturesDir, calDb.id);
+
+    const parsed = window.mdDatabase.parseCsv('Nombre;Precio;Fecha;Estado;Pagado\n"Café; con leche";1.234,5;03/10/2026;Listo;sí\nTé;2;2026-10-04;Listo;no\nMate;3;;Pendiente;x\nAgua;4;;Pendiente;no\n');
+    const kinds = [1, 2, 3, 4].map((i) => window.mdDatabase.inferColumn(parsed.slice(1).map((r) => r[i])).type).join(',');
+    const csvOk = parsed.length === 5 && parsed[1][0] === 'Café; con leche' && kinds === 'number,date,select,checkbox';
+    dbCalOk = calChipOk && csvOk;
+    dbCalDetail = `calendario=${calChipOk} csvFilas=${parsed.length} tipos=${kinds}`;
+  }
+  check('Bases de datos: vista Calendario y CSV (separador ;, comillas, inferir número/fecha/selección/casilla)', dbCalOk, dbCalDetail);
+
+  // Home: tareas "- [ ] ... 📅 fecha" de las notas en el calendario, tildarlas
+  // reescribe el archivo; Pomodoro asociado a una tarea; plan de hoy → nota diaria.
+  let homeExtrasOk = false;
+  let homeExtrasDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    const now = new Date();
+    const todayIsoStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const notePath = window.mdEditor.joinPath(fixturesDir, 'con-fechas.md');
+    await window.mdEditor.saveFile(`# Pendientes\n\n- [ ] Llamar al banco 📅 ${todayIsoStr}\n- [ ] Sin fecha\n`, notePath, false);
+
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const noteChip = await waitFor(() => Array.from(document.querySelectorAll('#home-main .home-today .home-note-item')).find((c) => c.textContent.includes('Llamar al banco')));
+    let toggledOk = false;
+    if (noteChip) {
+      noteChip.querySelector('input').click();
+      toggledOk = !!(await waitFor(async () => (await window.mdEditor.readFile(notePath)).content.includes('- [x] Llamar al banco 📅')));
+    }
+
+    // Tarea del Home + plan de hoy
+    const title = 'Plan ' + Date.now();
+    const input = document.querySelector('#home-main .home-day.home-today .home-quick-add');
+    input.value = title;
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await window.mdHome.sendPlanToDailyNote();
+    const daily = window.mdCodeMirror.getValue();
+    const planOk = daily.includes('## Plan del día') && daily.includes(`- [ ] ${title}`) && daily.includes('Llamar al banco');
+    await window.mdHome.sendPlanToDailyNote(); // segunda vez: no duplica
+    const noDup = window.mdCodeMirror.getValue().split(title).length === 2;
+
+    // Pomodoro sobre la tarea
+    await window.mdHome.open();
+    const card = Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
+    card.click();
+    Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent.includes('Pomodoro')).click();
+    await waitFor(() => document.getElementById('status-pomodoro').textContent.includes(title));
+    const pomoOk = document.getElementById('status-pomodoro').textContent.includes(title);
+    window.mdPomodoro.reset();
+
+    // Limpieza
+    await window.mdHome.open();
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title)).click();
+    Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
+    window.confirm = originalConfirm;
+    window.mdHome.close();
+
+    homeExtrasOk = !!noteChip && toggledOk && planOk && noDup && pomoOk;
+    homeExtrasDetail = `chipNota=${!!noteChip} tildaArchivo=${toggledOk} plan=${planOk} sinDuplicar=${noDup} pomodoro=${pomoOk}`;
+  }
+  check('Home: tareas 📅 de las notas, plan de hoy a la nota diaria y Pomodoro sobre una tarea', homeExtrasOk, homeExtrasDetail);
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {

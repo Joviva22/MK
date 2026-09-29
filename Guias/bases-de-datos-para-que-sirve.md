@@ -73,5 +73,4 @@ Regla práctica: si te encontrás haciendo una tabla Markdown que crece y queré
 ## Límites actuales
 
 - Las filas no son notas `.md`: no aparecen en la búsqueda global ni en el grafo.
-- No hay importar/exportar CSV todavía.
 - Viven en una carpeta: bases de carpetas distintas no se pueden relacionar entre sí.

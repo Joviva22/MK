@@ -2911,3 +2911,265 @@ li.CodeMirror-hint-active {
 .home-task-compact .home-task-title {
   flex: 1 1 0;
 }
+
+/* ---- Terminal integrada (ver terminal.js) ---- */
+.terminal-panel {
+  position: relative;
+  flex: none;
+  height: 260px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.terminal-panel[hidden] {
+  display: none;
+}
+
+.terminal-resizer {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: row-resize;
+  z-index: 5;
+}
+
+.terminal-resizer:hover,
+.terminal-resizer.active {
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+.terminal-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 12px;
+}
+
+.terminal-heading {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.terminal-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.terminal-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 5px;
+  padding: 2px 6px 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.terminal-tab-active {
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.terminal-tab-close {
+  opacity: 0.6;
+}
+
+.terminal-tab-close:hover {
+  opacity: 1;
+  color: #ef476f;
+}
+
+.terminal-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.terminal-header-btn.toolbar-button {
+  height: 24px;
+  padding: 0 8px;
+}
+
+.terminal-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  padding: 4px 0 0 8px;
+}
+
+.terminal-instance {
+  position: absolute;
+  inset: 4px 0 0 8px;
+}
+
+.terminal-instance[hidden] {
+  display: none;
+}
+
+/* ---- Home: nota enlazada, tareas de notas, plan de hoy ---- */
+.home-task-note {
+  flex: none;
+  border: none;
+  background: transparent;
+  padding: 0 2px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.home-note-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px dashed var(--text-muted);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.home-note-item::before {
+  content: "📄";
+  font-size: 10px;
+}
+
+.command-palette .home-note-item input[type="checkbox"] {
+  padding: 0;
+  margin: 0;
+  border: none;
+  flex: none;
+}
+
+.home-calendar-cell .home-note-item .home-task-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-plan-button.toolbar-button {
+  margin-top: 4px;
+  justify-content: center;
+}
+
+/* ---- Bases de datos: vista calendario ---- */
+.database-calendar-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.database-calendar-header .toolbar-button {
+  height: 26px;
+  padding: 0 10px;
+}
+
+.database-calendar-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  margin-left: 6px;
+}
+
+.database-calendar-undated {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.database-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(90px, 1fr));
+  grid-template-rows: auto;
+  grid-auto-rows: minmax(62px, auto);
+  gap: 4px;
+}
+
+.database-calendar-dayname {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+  align-self: end;
+}
+
+.database-calendar-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  min-width: 0;
+}
+
+.database-calendar-outside {
+  opacity: 0.45;
+}
+
+.database-calendar-today {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.database-calendar-cell.drag-over {
+  border-style: dashed;
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.database-calendar-number {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.database-calendar-chip {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.database-calendar-chip:hover {
+  background: var(--surface);
+}
+
+/* El modal de bases de datos heredaba el max-height: 60vh de
+   .command-palette mientras su layout pide 78vh: quedaba recortado. */
+.database-modal {
+  max-height: 90vh;
+}
+
+.palette-overlay:has(.database-modal) {
+  padding-top: 5vh;
+}

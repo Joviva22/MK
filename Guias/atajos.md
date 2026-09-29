@@ -28,6 +28,13 @@
 | `Ctrl+Shift+H` | **Home** (semana / mes) |
 | `Ctrl+Shift+D` | Nota diaria de hoy |
 
+## Terminal
+| Atajo | Acción |
+|---|---|
+| `` Ctrl+` `` / `Ctrl+Ñ` | Mostrar/ocultar terminal |
+| `Ctrl+Shift+C` / `Ctrl+Shift+V` | Copiar / pegar en la terminal |
+| `F5` | Guardar y ejecutar el archivo actual en la terminal |
+
 ## Vista
 | Atajo | Acción |
 |---|---|

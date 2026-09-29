@@ -14,6 +14,10 @@ let phase = 'idle'; // 'idle' | 'focus' | 'break'
 let running = false;
 let remainingSeconds = 0;
 let intervalId = null;
+// Tarea del Home asociada (ver home.js startPomodoroFor): su título se ve en
+// la barra de estado, y al terminar cada foco se llama onFocusEnd — si
+// devuelve false, la tarea deja de estar asociada.
+let linked = null; // { label, onFocusEnd }
 
 async function focusMinutes() {
   const config = await window.mdEditor.getConfig();
@@ -39,7 +43,7 @@ function updateUI() {
   }
   statusEl.hidden = false;
   const label = phase === 'focus' ? '🍅 Foco' : '☕ Descanso';
-  statusEl.textContent = `${label} ${formatTime(remainingSeconds)}${running ? '' : ' (pausado)'}`;
+  statusEl.textContent = `${label} ${formatTime(remainingSeconds)}${running ? '' : ' (pausado)'}${linked ? ` · ${linked.label}` : ''}`;
   btn.title = running ? 'Pomodoro: pausar' : 'Pomodoro: reanudar';
 }
 
@@ -76,6 +80,11 @@ async function switchPhase() {
   notifyPhaseEnd(endedPhase, nextMinutes);
   updateUI();
   if (running) startInterval();
+  if (endedPhase === 'focus' && linked) {
+    const keep = linked.onFocusEnd();
+    if (keep === false) linked = null;
+    updateUI();
+  }
 }
 
 function tick() {
@@ -101,7 +110,19 @@ async function toggle() {
   updateUI();
 }
 
+// Arranca un foco nuevo (cortando el que hubiera) asociado a una tarea.
+async function startFor(label, onFocusEnd) {
+  stopInterval();
+  linked = { label, onFocusEnd };
+  phase = 'focus';
+  remainingSeconds = (await focusMinutes()) * 60;
+  running = true;
+  startInterval();
+  updateUI();
+}
+
 function reset() {
+  linked = null;
   phase = 'idle';
   running = false;
   remainingSeconds = 0;
@@ -114,6 +135,7 @@ statusEl.addEventListener('click', reset);
 
 window.mdPomodoro = {
   toggle,
+  startFor,
   reset,
   getState: () => ({ phase, running, remainingSeconds })
 };

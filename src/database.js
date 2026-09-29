@@ -381,7 +381,7 @@ function renderViewTabs() {
 }
 
 function viewTypeIcon(type) {
-  return { table: '▤', board: '▥', gallery: '▦' }[type] || '▤';
+  return { table: '▤', board: '▥', gallery: '▦', calendar: '📅' }[type] || '▤';
 }
 
 function openNewViewPopover(anchorEl) {
@@ -390,13 +390,15 @@ function openNewViewPopover(anchorEl) {
     title.className = 'database-popover-title';
     title.textContent = 'Nueva vista';
     pop.appendChild(title);
-    [['table', 'Tabla'], ['board', 'Tablero'], ['gallery', 'Galería']].forEach(([type, label]) => {
+    [['table', 'Tabla'], ['board', 'Tablero'], ['gallery', 'Galería'], ['calendar', 'Calendario']].forEach(([type, label]) => {
       const btn = document.createElement('button');
       btn.className = 'toolbar-button database-popover-row';
       btn.textContent = viewTypeIcon(type) + ' ' + label;
       btn.addEventListener('click', async () => {
         close();
-        const config = type === 'board' ? { groupBy: defaultGroupableColumn() } : {};
+        const firstDate = state.columns.find((c) => c.type === 'date');
+        const config = type === 'board' ? { groupBy: defaultGroupableColumn() }
+          : type === 'calendar' ? { dateColumn: firstDate ? firstDate.id : null } : {};
         const view = await window.mdEditor.db.createView(root(), state.databaseId, { name: label, type, config });
         state.views = await window.mdEditor.db.listViews(root(), state.databaseId);
         state.viewId = view.id;
@@ -415,6 +417,26 @@ function defaultGroupableColumn() {
 
 function openViewMenu(anchorEl, view) {
   openPopover(anchorEl, 'database-view-popover', (pop, close) => {
+    if (view.type === 'calendar') {
+      const label = document.createElement('div');
+      label.className = 'database-popover-title';
+      label.textContent = 'Fecha según';
+      pop.appendChild(label);
+      state.columns.filter((c) => c.type === 'date').forEach((c) => {
+        const btn = document.createElement('button');
+        btn.className = 'toolbar-button database-popover-row' + (parseView(view).dateColumn === c.id ? ' database-popover-row-active' : '');
+        btn.textContent = c.name;
+        btn.addEventListener('click', async () => {
+          close();
+          const cfg = parseView(view);
+          cfg.dateColumn = c.id;
+          await window.mdEditor.db.updateView(root(), view.id, { config: cfg });
+          state.views = await window.mdEditor.db.listViews(root(), state.databaseId);
+          renderView();
+        });
+        pop.appendChild(btn);
+      });
+    }
     if (view.type === 'board') {
       const label = document.createElement('div');
       label.className = 'database-popover-title';
@@ -763,6 +785,7 @@ function renderView() {
   updateFiltersButton();
   if (view.type === 'board') renderBoardView();
   else if (view.type === 'gallery') renderGalleryView();
+  else if (view.type === 'calendar') renderCalendarView();
   else renderTableView();
 }
 
@@ -958,6 +981,262 @@ function renderGalleryView() {
     empty.textContent = 'Sin filas que mostrar.';
     viewBodyEl.appendChild(empty);
   }
+}
+
+// ---- vista calendario (por una columna Fecha) ----
+
+let calCursor = new Date(); // cualquier día del mes visible
+
+function renderCalendarView() {
+  const view = currentViewObj();
+  const cfg = parseView(view);
+  const dateCol = findColumn(state.columns, cfg.dateColumn) || state.columns.find((c) => c.type === 'date');
+  if (!dateCol) {
+    const msg = document.createElement('div');
+    msg.className = 'command-palette-empty';
+    msg.textContent = 'Agregá una columna de tipo Fecha para usar el calendario (clic derecho en la pestaña de la vista para elegir cuál).';
+    viewBodyEl.appendChild(msg);
+    return;
+  }
+  const rows = filteredRows();
+  const first = new Date(calCursor.getFullYear(), calCursor.getMonth(), 1);
+  const last = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 0);
+  const today = isoDay(new Date());
+
+  const header = document.createElement('div');
+  header.className = 'database-calendar-header';
+  const nav = (label, title, fn) => {
+    const b = document.createElement('button');
+    b.className = 'toolbar-button';
+    b.textContent = label;
+    b.title = title;
+    b.addEventListener('click', () => { fn(); renderView(); });
+    header.appendChild(b);
+  };
+  nav('‹', 'Mes anterior', () => { calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() - 1, 1); });
+  nav('Hoy', 'Mes actual', () => { calCursor = new Date(); });
+  nav('›', 'Mes siguiente', () => { calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 1); });
+  const title = document.createElement('span');
+  title.className = 'database-calendar-title';
+  const monthLabel = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  title.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1) + ` · según "${dateCol.name}"`;
+  header.appendChild(title);
+  const undated = rows.filter((r) => !r.cells[dateCol.id]).length;
+  if (undated) {
+    const note = document.createElement('span');
+    note.className = 'database-calendar-undated';
+    note.textContent = `${undated} fila(s) sin fecha`;
+    header.appendChild(note);
+  }
+  viewBodyEl.appendChild(header);
+
+  const grid = document.createElement('div');
+  grid.className = 'database-calendar';
+  ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].forEach((n) => {
+    const d = document.createElement('div');
+    d.className = 'database-calendar-dayname';
+    d.textContent = n;
+    grid.appendChild(d);
+  });
+  const offset = (first.getDay() + 6) % 7;
+  const start = new Date(first.getFullYear(), first.getMonth(), 1 - offset);
+  const cells = Math.ceil((offset + last.getDate()) / 7) * 7;
+  for (let i = 0; i < cells; i++) {
+    const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    const dayIso = isoDay(day);
+    const cell = document.createElement('div');
+    cell.className = 'database-calendar-cell' +
+      (day.getMonth() === first.getMonth() ? '' : ' database-calendar-outside') +
+      (dayIso === today ? ' database-calendar-today' : '');
+    cell.title = 'Doble clic: nueva fila con esta fecha · Arrastrá filas entre días';
+    const num = document.createElement('div');
+    num.className = 'database-calendar-number';
+    num.textContent = String(day.getDate());
+    cell.appendChild(num);
+
+    rows.filter((r) => r.cells[dateCol.id] === dayIso).forEach((row) => {
+      const chip = document.createElement('div');
+      chip.className = 'database-calendar-chip';
+      chip.draggable = true;
+      chip.textContent = displayText(cellDisplayValue(state.columns[0], row, state.columns)) || '(sin nombre)';
+      chip.addEventListener('click', () => openRowEditor(row));
+      chip.addEventListener('dragstart', (e) => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('application/x-mk-db-row', row.id);
+      });
+      cell.appendChild(chip);
+    });
+
+    cell.addEventListener('dragover', (e) => {
+      if (!e.dataTransfer.types.includes('application/x-mk-db-row')) return;
+      e.preventDefault();
+      cell.classList.add('drag-over');
+    });
+    cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
+    cell.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      cell.classList.remove('drag-over');
+      const rowId = e.dataTransfer.getData('application/x-mk-db-row');
+      if (!rowId) return;
+      await window.mdEditor.db.setCell(root(), rowId, dateCol.id, dayIso);
+      state.rows = await window.mdEditor.db.listRows(root(), state.databaseId);
+      renderView();
+    });
+    cell.addEventListener('dblclick', async (e) => {
+      if (e.target !== cell && e.target !== num) return;
+      const rowId = await window.mdEditor.db.createRow(root(), state.databaseId, { [dateCol.id]: dayIso });
+      state.rows = await window.mdEditor.db.listRows(root(), state.databaseId);
+      renderView();
+      const row = state.rows.find((r) => r.id === rowId);
+      if (row) openRowEditor(row);
+    });
+    grid.appendChild(cell);
+  }
+  viewBodyEl.appendChild(grid);
+}
+
+// ---- CSV: exportar la vista actual / importar como base nueva ----
+
+function csvEscape(value) {
+  const s = value == null ? '' : String(value);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+async function exportCsv() {
+  if (!state.databaseId) return;
+  const rows = filteredRows();
+  const lines = [state.columns.map((c) => csvEscape(c.name)).join(',')];
+  rows.forEach((row) => {
+    lines.push(state.columns.map((col) => {
+      const v = cellDisplayValue(col, row, state.columns);
+      if (col.type === 'checkbox') return v ? 'true' : 'false';
+      if (col.type === 'created_time') return v ? isoDay(new Date(v)) : '';
+      return csvEscape(displayText(v));
+    }).join(','));
+  });
+  const db = state.databases.find((d) => d.id === state.databaseId);
+  const saved = await window.mdEditor.db.exportCsv(lines.join('\r\n') + '\r\n', db ? db.name : 'base-de-datos');
+  if (saved) alert(`Exportadas ${rows.length} fila(s) a:\n${saved}`);
+}
+
+// Parser CSV (RFC 4180): comillas, "" escapado y saltos de línea dentro de
+// comillas. El separador se adivina de la primera línea: coma, punto y coma
+// (Excel en español) o tabulador.
+function parseCsv(text) {
+  const firstLine = text.split(/\r?\n/, 1)[0];
+  const count = (ch) => firstLine.split(ch).length - 1;
+  const sep = [',', ';', '\t'].sort((a, b) => count(b) - count(a))[0];
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; } else if (ch === '"') inQuotes = false;
+      else field += ch;
+    } else if (ch === '"') inQuotes = true;
+    else if (ch === sep) { row.push(field); field = ''; } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else field += ch;
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  return rows.filter((r) => r.some((c) => c.trim() !== ''));
+}
+
+// Fecha en ISO desde "2026-10-03" o "03/10/2026" (día/mes/año).
+function toIsoDate(s) {
+  const t = s.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  const m = t.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+  return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : null;
+}
+
+function toNumber(s) {
+  const t = s.trim().replace(/\s/g, '');
+  if (!/^-?[\d.,]+$/.test(t)) return null;
+  // "1.234,5" (es) o "1,234.5" (en): el último separador es el decimal.
+  const lastSep = Math.max(t.lastIndexOf(','), t.lastIndexOf('.'));
+  const normalized = lastSep === -1 ? t : t.slice(0, lastSep).replace(/[.,]/g, '') + '.' + t.slice(lastSep + 1);
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : null;
+}
+
+const TRUE_WORDS = ['true', 'sí', 'si', 'yes', 'x', '1', 'verdadero'];
+const FALSE_WORDS = ['false', 'no', '0', 'falso', ''];
+
+// Tipo de cada columna según sus valores: casilla, número, fecha, selección
+// única (pocos valores repetidos) o texto.
+function inferColumn(values) {
+  const filled = values.map((v) => v.trim()).filter((v) => v !== '');
+  if (!filled.length) return { type: 'text' };
+  const lower = filled.map((v) => v.toLowerCase());
+  if (lower.every((v) => TRUE_WORDS.includes(v) || FALSE_WORDS.includes(v)) && lower.some((v) => !['1', '0'].includes(v))) return { type: 'checkbox' };
+  if (filled.every((v) => toIsoDate(v))) return { type: 'date' };
+  if (filled.every((v) => toNumber(v) !== null)) return { type: 'number' };
+  const distinct = Array.from(new Set(filled));
+  if (distinct.length <= 8 && filled.length >= distinct.length * 2 && distinct.every((v) => v.length <= 40)) {
+    return { type: 'select', options: { choices: distinct.map((label, i) => ({ id: crypto.randomUUID(), label, color: CHOICE_COLORS[i % CHOICE_COLORS.length] })) } };
+  }
+  return { type: 'text' };
+}
+
+function csvCellValue(col, raw) {
+  const v = (raw || '').trim();
+  if (v === '') return null;
+  switch (col.type) {
+    case 'checkbox': return TRUE_WORDS.includes(v.toLowerCase()) ? '1' : '0';
+    case 'date': return toIsoDate(v);
+    case 'number': return toNumber(v);
+    case 'select': {
+      const c = (parseOptions(col).choices || []).find((ch) => ch.label === v);
+      return c ? c.id : null;
+    }
+    default: return v;
+  }
+}
+
+async function importCsv() {
+  if (!root()) return;
+  const file = await window.mdEditor.db.importCsv();
+  if (!file) return;
+  const table = parseCsv(file.content);
+  if (table.length < 1) {
+    alert('El archivo está vacío.');
+    return;
+  }
+  const headers = table[0].map((h, i) => h.trim() || `Columna ${i + 1}`);
+  const body = table.slice(1);
+  const db = await window.mdEditor.db.createDatabase(root(), file.name);
+  const [titleCol] = await window.mdEditor.db.listColumns(root(), db.id);
+  const columns = [];
+  for (let i = 0; i < headers.length; i++) {
+    const values = body.map((r) => r[i] || '');
+    // La primera columna es el "título" de la fila: siempre texto.
+    const spec = i === 0 ? { type: 'text' } : inferColumn(values);
+    if (i === 0) {
+      await window.mdEditor.db.updateColumn(root(), titleCol.id, { name: headers[0] });
+      columns.push({ ...titleCol, name: headers[0] });
+    } else {
+      columns.push(await window.mdEditor.db.createColumn(root(), db.id, { name: headers[i], type: spec.type, options: spec.options }));
+    }
+  }
+  const cellsList = body.map((r) => {
+    const cells = {};
+    columns.forEach((col, i) => {
+      const v = csvCellValue(col, r[i]);
+      if (v != null) cells[col.id] = v;
+    });
+    return cells;
+  });
+  await window.mdEditor.db.createRows(root(), db.id, cellsList);
+  await loadDatabases();
+  await selectDatabase(db.id);
+  alert(`Importadas ${body.length} fila(s) y ${headers.length} columna(s) en la base "${file.name}".`);
 }
 
 // Editor simple de fila completa, usado desde tablero/galería (la vista
@@ -1447,6 +1726,8 @@ addRowBtn.addEventListener('click', async () => {
   renderView();
 });
 filtersBtn.addEventListener('click', () => openFiltersPopover());
+document.getElementById('database-export-btn').addEventListener('click', exportCsv);
+document.getElementById('database-import-btn').addEventListener('click', importCsv);
 filterInput.addEventListener('input', () => { state.filter = filterInput.value; renderView(); });
 nameInput.addEventListener('change', async () => {
   if (!state.databaseId) return;
@@ -1487,6 +1768,6 @@ function close() {
   overlay.hidden = true;
 }
 
-window.mdDatabase = { open, close };
+window.mdDatabase = { open, close, parseCsv, inferColumn };
 
 })();

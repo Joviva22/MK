@@ -44,6 +44,9 @@ function buildCommands() {
   cmds.push({ label: 'Plugins y comunidad', run: () => window.mdPlugins && window.mdPlugins.open() });
   cmds.push({ label: 'Nota diaria de hoy', run: () => window.mdDailyNote && window.mdDailyNote.open() });
   cmds.push({ label: 'Ver tablero Kanban', run: () => window.mdKanban && window.mdKanban.open() });
+  cmds.push({ label: 'Terminal: mostrar/ocultar', run: () => window.mdTerminal && window.mdTerminal.toggle() });
+  cmds.push({ label: 'Ejecutar archivo actual en la terminal (F5)', run: () => window.mdTerminal && window.mdTerminal.runActiveFile() });
+  cmds.push({ label: 'Terminal: nueva terminal', run: () => window.mdTerminal && window.mdTerminal.newTerminal() });
   cmds.push({ label: 'Home: planificador semanal y mensual', run: () => window.mdHome && window.mdHome.open() });
   cmds.push({ label: 'Bases de datos', run: () => window.mdDatabase && window.mdDatabase.open() });
   cmds.push({ label: 'Ver grafo de notas', run: () => window.mdGraph && window.mdGraph.open() });

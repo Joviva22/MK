@@ -22,6 +22,7 @@ const rangeLabel = document.getElementById('home-range-label');
 const modeWeekBtn = document.getElementById('home-mode-week');
 const modeMonthBtn = document.getElementById('home-mode-month');
 const showDbToggle = document.getElementById('home-show-db');
+const showNotesToggle = document.getElementById('home-show-notes');
 const startupToggle = document.getElementById('home-startup-toggle');
 const DRAG_MIME = 'application/x-mk-home-task';
 
@@ -49,7 +50,8 @@ const REMIND_OPTIONS = [
 ];
 const REMINDER_GRACE_MS = 10 * 60 * 1000; // avisos atrasados más que esto (app cerrada) se descartan
 
-let data = { tasks: [], goals: {}, notes: {}, showDatabases: true, notified: {} };
+let data = { tasks: [], goals: {}, notes: {}, showDatabases: true, showNotes: true, notified: {} };
+let noteItems = []; // tareas "- [ ] ... 📅 AAAA-MM-DD" encontradas en las notas de la carpeta
 let saveTimer = null;
 let mode = 'week'; // 'week' | 'month'
 let cursor = new Date(); // cualquier día dentro de la semana/mes visible
@@ -118,10 +120,12 @@ async function readStored() {
       goals: stored.goals && typeof stored.goals === 'object' ? stored.goals : {},
       notes: stored.notes && typeof stored.notes === 'object' ? stored.notes : {},
       showDatabases: stored.showDatabases !== false,
+      showNotes: stored.showNotes !== false,
       notified: stored.notified && typeof stored.notified === 'object' ? stored.notified : {}
     };
   }
   showDbToggle.checked = data.showDatabases;
+  showNotesToggle.checked = data.showNotes;
 }
 
 // Una sola lectura compartida: el arranque (recordatorios) y open() pueden
@@ -354,6 +358,168 @@ function dbItemsOn(dateIso) {
   return dbItems.filter((it) => it.date === dateIso);
 }
 
+// ---- tareas escritas en las notas (.md) con fecha ----
+// Cualquier "- [ ] texto 📅 2026-10-03" (o "* [x] ...") en un archivo de la
+// carpeta abierta aparece ese día en el calendario. Tildarla desde el Home
+// reescribe esa línea del archivo, igual que el Kanban en modo carpeta.
+
+const NOTE_TASK_RE = /^(\s*[-*]\s+\[)([ xX])(\]\s+)(.*?)\s*📅\s*(\d{4}-\d{2}-\d{2})(.*)$/u;
+
+function parseNoteTasks(filePath, content) {
+  const items = [];
+  content.split('\n').forEach((line, idx) => {
+    const m = line.match(NOTE_TASK_RE);
+    if (!m) return;
+    const title = (m[4] + ' ' + m[6]).replace(/\s+/g, ' ').trim();
+    items.push({ date: m[5], title: title || '(sin texto)', done: m[2].toLowerCase() === 'x', filePath, line: idx, raw: line });
+  });
+  return items;
+}
+
+async function loadNoteItems() {
+  noteItems = [];
+  const root = window.mdState.rootFolder;
+  if (!root || !data.showNotes) return;
+  try {
+    const files = await window.mdEditor.kanbanReadFolderFiles(root);
+    files.forEach((f) => { noteItems.push(...parseNoteTasks(f.path, f.content)); });
+  } catch (e) {
+    noteItems = [];
+  }
+}
+
+function noteItemsOn(dateIso) {
+  return noteItems.filter((it) => it.date === dateIso);
+}
+
+function toggleLine(text, item) {
+  const lines = text.split('\n');
+  // La línea pudo moverse si el archivo cambió: se busca por contenido.
+  let idx = lines[item.line] === item.raw ? item.line : lines.indexOf(item.raw);
+  if (idx === -1) return null;
+  lines[idx] = lines[idx].replace(NOTE_TASK_RE, (all, pre, mark, post, rest1, date, rest2) =>
+    `${pre}${mark.trim() ? ' ' : 'x'}${post}${rest1} 📅 ${date}${rest2}`);
+  return lines.join('\n');
+}
+
+async function toggleNoteItem(item) {
+  const active = window.mdTabs && window.mdTabs.getActiveTabInfo();
+  if (active && active.filePath === item.filePath) {
+    // Archivo abierto en el editor: se cambia el buffer (autoguardado lo escribe).
+    const updated = toggleLine(window.mdCodeMirror.getValue(), item);
+    if (updated !== null) window.mdCodeMirror.setValue(updated);
+  } else {
+    const result = await window.mdEditor.readFile(item.filePath);
+    if (!result || result.binary) return;
+    const updated = toggleLine(result.content, item);
+    if (updated === null) {
+      alert('Esa tarea cambió en el archivo desde que se cargó el Home. Volvé a abrirlo.');
+    } else {
+      await window.mdEditor.saveFile(updated, item.filePath, false);
+    }
+  }
+  await loadNoteItems();
+  render();
+}
+
+// ---- nota enlazada a una tarea ----
+
+async function openLinkedNote(name) {
+  const root = window.mdState.rootFolder;
+  if (!root) {
+    alert('Abrí una carpeta primero para poder abrir notas enlazadas.');
+    return;
+  }
+  const target = await window.mdEditor.resolveWikilink(root, name.replace(/\.md$/i, ''));
+  if (!target) {
+    alert(`No encontré la nota "${name}" en la carpeta abierta.`);
+    return;
+  }
+  close();
+  await window.openFileAtPath(target);
+}
+
+// Nombres de las notas de la carpeta, para autocompletar el campo "Nota".
+async function noteNames() {
+  const root = window.mdState.rootFolder;
+  if (!root) return [];
+  const names = [];
+  const walk = (nodes) => (nodes || []).forEach((n) => {
+    if (n.esCarpeta) walk(n.hijos);
+    else if (/\.(md|markdown|txt)$/i.test(n.nombre)) names.push(n.nombre.replace(/\.(md|markdown|txt)$/i, ''));
+  });
+  try {
+    walk(await window.mdEditor.readFolder(root));
+  } catch (e) {
+    return [];
+  }
+  return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+}
+
+// ---- Pomodoro sobre una tarea ----
+
+function startPomodoroFor(item) {
+  if (!window.mdPomodoro || !window.mdPomodoro.startFor) return;
+  const task = item.task;
+  window.mdPomodoro.startFor(task.title, () => {
+    const t = data.tasks.find((x) => x.id === task.id);
+    if (!t) return false;
+    t.pomodoros = (t.pomodoros || 0) + 1;
+    save();
+    render();
+    const current = findItem(t.id, item.date);
+    if (current && !current.done && confirm(`🍅 Terminó el foco de "${t.title}".\n\n¿La marcás como hecha?`)) {
+      setItemDone(current, true);
+      return false; // tarea terminada: el Pomodoro sigue, pero ya sin tarea asociada
+    }
+    return true;
+  });
+  close();
+}
+
+// ---- plan de hoy → nota diaria ----
+
+function todayPlanLines() {
+  const today = todayIso();
+  const lines = occurrencesOn(today).map((it) =>
+    `- [${it.done ? 'x' : ' '}] ${it.task.time ? it.task.time + ' ' : ''}${it.task.title}${it.task.note ? ` ([[${it.task.note}]])` : ''}`);
+  noteItemsOn(today).forEach((it) => lines.push(`- [${it.done ? 'x' : ' '}] ${it.title}`));
+  dbItemsOn(today).forEach((it) => lines.push(`- [${it.done ? 'x' : ' '}] ${it.title} (${it.databaseName})`));
+  return lines;
+}
+
+async function sendPlanToDailyNote() {
+  if (!window.mdState.rootFolder) {
+    alert('Abrí una carpeta primero: la nota diaria se guarda dentro de ella (Diario/).');
+    return;
+  }
+  const lines = todayPlanLines();
+  if (!lines.length) {
+    alert('No hay nada planificado para hoy.');
+    return;
+  }
+  close();
+  await window.mdDailyNote.open();
+  const cm = window.mdCodeMirror;
+  const text = cm.getValue();
+  const heading = '## Plan del día';
+  // Sin duplicar: solo se agregan las líneas cuyo texto (sin la casilla) no esté ya.
+  const missing = lines.filter((l) => !text.includes(l.slice(6)));
+  if (!missing.length) return;
+  const all = text.split('\n');
+  const hIdx = all.findIndex((l) => l.trim() === heading);
+  if (hIdx === -1) {
+    cm.setValue(text.replace(/\s*$/, '') + `\n\n${heading}\n\n${missing.join('\n')}\n`);
+  } else {
+    let insertAt = hIdx + 1;
+    while (insertAt < all.length && (all[insertAt].trim() === '' || /^\s*[-*]\s/.test(all[insertAt]))) insertAt++;
+    while (insertAt > hIdx + 1 && all[insertAt - 1].trim() === '') insertAt--;
+    all.splice(insertAt, 0, ...missing);
+    cm.setValue(all.join('\n'));
+  }
+  cm.setCursor(cm.lineCount() - 1, 0);
+}
+
 // ---- helpers de DOM ----
 
 function el(tag, className, text) {
@@ -433,10 +599,38 @@ function taskCard(item, compact) {
 
   if (task.time) card.appendChild(el('span', 'home-task-time', task.time));
   card.appendChild(el('span', 'home-task-title', task.title));
-  const badges = (item.recurring ? '🔁' : '') + (task.remind != null && task.time ? '🔔' : '');
+  const badges = (item.recurring ? '🔁' : '') + (task.remind != null && task.time ? '🔔' : '') + (task.pomodoros ? `🍅${task.pomodoros}` : '');
   if (badges) card.appendChild(el('span', 'home-task-badges', badges));
+  if (task.note) {
+    const link = el('button', 'home-task-note', '📄');
+    link.title = `Abrir la nota "${task.note}"`;
+    link.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openLinkedNote(task.note);
+    });
+    card.appendChild(link);
+  }
   card.addEventListener('click', () => openTaskEditor(item));
   return card;
+}
+
+function noteChip(item) {
+  const chip = el('div', 'home-note-item' + (item.done ? ' home-task-done' : ''));
+  const box = el('input');
+  box.type = 'checkbox';
+  box.checked = item.done;
+  box.addEventListener('click', (e) => e.stopPropagation());
+  box.addEventListener('change', () => toggleNoteItem(item));
+  chip.appendChild(box);
+  chip.appendChild(el('span', 'home-task-title', item.title));
+  const fileName = item.filePath.split(/[\\/]/).pop();
+  chip.title = `${item.title}\nNota: ${fileName}\n(clic para abrirla)`;
+  chip.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    close();
+    await window.openFileAtPath(item.filePath);
+  });
+  return chip;
 }
 
 function dbChip(item) {
@@ -473,6 +667,10 @@ function renderSide(periodTasks) {
 
   sideEl.appendChild(el('div', 'home-side-title', `Progreso ${ofPeriod}`));
   sideEl.appendChild(progressBar(periodTasks));
+  const planBtn = el('button', 'toolbar-button home-small-button home-plan-button', '📝 Plan de hoy → nota diaria');
+  planBtn.title = 'Copia las tareas de hoy como checklist en la nota diaria (sección "Plan del día")';
+  planBtn.addEventListener('click', sendPlanToDailyNote);
+  sideEl.appendChild(planBtn);
 
   // Objetivos del período
   sideEl.appendChild(el('div', 'home-side-title', `Objetivos ${ofPeriod}`));
@@ -584,6 +782,7 @@ function renderWeek() {
 
     const list = el('div', 'home-task-list');
     dayTasks.forEach((t) => list.appendChild(taskCard(t)));
+    noteItemsOn(dayIso).forEach((it) => list.appendChild(noteChip(it)));
     dbItemsOn(dayIso).forEach((it) => list.appendChild(dbChip(it)));
     col.appendChild(list);
     col.appendChild(quickAddInput(dayIso));
@@ -628,6 +827,7 @@ function renderMonth() {
 
     const items = [
       ...occurrencesOn(dayIso).map((it) => taskCard(it, true)),
+      ...noteItemsOn(dayIso).map((it) => noteChip(it)),
       ...dbItemsOn(dayIso).map((it) => dbChip(it))
     ];
     items.slice(0, MAX_VISIBLE).forEach((node) => cell.appendChild(node));
@@ -744,6 +944,19 @@ function openTaskEditor(item) {
 
   const prioSelect = field('Prioridad', selectOf(PRIORITIES, task.priority || 'media'));
 
+  const noteInput = field('Nota enlazada (opcional)', el('input', 'home-editor-input'));
+  noteInput.placeholder = 'Nombre de una nota de la carpeta';
+  noteInput.value = task.note || '';
+  const noteList = el('datalist');
+  noteList.id = 'home-note-names';
+  noteInput.setAttribute('list', noteList.id);
+  box.appendChild(noteList);
+  noteNames().then((names) => names.forEach((n) => {
+    const opt = el('option');
+    opt.value = n;
+    noteList.appendChild(opt);
+  }));
+
   const notesInput = field('Notas', el('textarea', 'home-editor-input home-editor-notes'));
   notesInput.value = task.notes || '';
 
@@ -786,12 +999,19 @@ function openTaskEditor(item) {
       remind: timeInput.value && remindSelect.value !== '' ? Number(remindSelect.value) : null,
       repeat: freq ? { freq, until: untilInput.value || null, days: freq === 'weekly' ? days : undefined } : null,
       priority: prioSelect.value,
-      notes: notesInput.value
+      notes: notesInput.value,
+      note: noteInput.value.trim() || null
     });
   };
   ok.addEventListener('click', commit);
   titleInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
-  actions.append(el('span', 'toolbar-spacer'), cancel, ok);
+  const pomo = el('button', 'toolbar-button', '⏱ Pomodoro');
+  pomo.title = 'Arrancar un Pomodoro sobre esta tarea (al terminar el foco te pregunta si la terminaste)';
+  pomo.addEventListener('click', () => {
+    closeTaskEditor();
+    startPomodoroFor(item);
+  });
+  actions.append(el('span', 'toolbar-spacer'), pomo, cancel, ok);
   box.appendChild(actions);
 
   modal.addEventListener('mousedown', (e) => { if (e.target === modal) closeTaskEditor(); });
@@ -824,7 +1044,7 @@ function shift(delta) {
 async function open() {
   overlay.hidden = false;
   await load();
-  await loadDbItems();
+  await Promise.all([loadDbItems(), loadNoteItems()]);
   render();
 }
 
@@ -840,6 +1060,12 @@ document.getElementById('home-next').addEventListener('click', () => shift(1));
 document.getElementById('home-today').addEventListener('click', () => { cursor = new Date(); render(); });
 document.getElementById('home-close').addEventListener('click', close);
 document.getElementById('btn-home').addEventListener('click', open);
+showNotesToggle.addEventListener('change', async () => {
+  data.showNotes = showNotesToggle.checked;
+  save();
+  await loadNoteItems();
+  render();
+});
 showDbToggle.addEventListener('change', async () => {
   data.showDatabases = showDbToggle.checked;
   save();
@@ -877,6 +1103,6 @@ startupToggle.addEventListener('change', () => {
   window.mdEditor.setConfig({ homeOnStartup: startupToggle.checked });
 });
 
-window.mdHome = { open, close, setMode, checkReminders };
+window.mdHome = { open, close, setMode, checkReminders, sendPlanToDailyNote, parseNoteTasks };
 
 })();

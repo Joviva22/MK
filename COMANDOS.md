@@ -28,6 +28,8 @@ Referencia rápida y resumida. Para la explicación completa de cada función, v
 
 | Atajo | Acción |
 |---|---|
+| `` Ctrl+` `` / `Ctrl+Ñ` | Terminal integrada (mostrar/ocultar); dentro: `Ctrl+Shift+C`/`Ctrl+Shift+V` copiar/pegar |
+| `F5` | Guardar y ejecutar el archivo actual (`.py`, `.sh`, `.js`, `.c`, `.cpp`, `.java`...) en la terminal |
 | `Ctrl+Shift+H` | Home: planificador semanal/mensual con calendario (abrir/cerrar) |
 | `Ctrl+B` | Ocultar/mostrar el sidebar de archivos |
 | `Ctrl+Shift+O` | Índice del documento (encabezados) |
