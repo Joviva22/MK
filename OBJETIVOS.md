@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 30 de 55 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 30 de 60 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -49,6 +49,9 @@ Mejoras chicas y de uso diario: se hacen en una sesión cada una.
 - [ ] **Bases de datos: ordenar por varias columnas** (ej. Estado y después Fecha)
 - [ ] **Terminal: renombrar una pestaña** con doble clic (ej. "servidor", "git")
 - [ ] **Sidebar: "Copiar ruta"** en el menú contextual de un archivo
+- [ ] **Recordatorios locales: posponer** ("recordar en 10 min / 1 h / mañana") desde la notificación o el Home
+- [ ] **Recordatorios locales para filas de bases de datos** con columna Fecha (+ hora opcional), no solo para tareas del Home
+- [ ] **Recordatorios locales anticipados ("faltan N días")**: además del aviso del mismo día, elegir avisos con días de anticipación (ej. 1, 3 y 7 días antes), **a un día y una hora concretos** (ej. "3 días antes, a las 09:00"). La notificación dice qué y cuándo: *"Faltan 3 días para Entregar TP — viernes 3 de octubre a las 18:30"* (o *"Mañana: …"* / *"Hoy a las 18:30: …"*). Vale para tareas del Home y filas de bases de datos con fecha
 
 ## Mediano plazo
 
@@ -57,7 +60,9 @@ Funciones más grandes o que tocan varias partes de la app.
 - [ ] **Bases de datos dentro de una nota**: bloque ```` ```database Proyectos ```` ```` que muestra la tabla en el preview
 - [ ] **Home dentro de la carpeta (opcional)**: guardar las tareas en `.mk/home.json` para que viajen con git y se sincronicen entre computadoras
 - [ ] **Home: estadísticas**: tareas hechas por semana, racha de hábitos recurrentes, gráfico del mes
-- [ ] **Recordatorios con la app cerrada**: mini-servicio en la bandeja del sistema (tray) que sigue avisando
+- [ ] **Recordatorios locales con la app cerrada**: MK queda en la bandeja del sistema (tray) al cerrar la ventana y sigue avisando; opción "iniciar con el sistema"
+- [ ] **Recordatorios por Gmail**: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: es la única función que necesita internet
+- [ ] **Resumen diario por Gmail**: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas
 - [ ] **Terminal: pantalla dividida** (dos terminales visibles lado a lado)
 - [ ] **Búsqueda global también en bases de datos y tareas del Home**
 - [ ] **Separar `main.js`** (más de 1100 líneas) en módulos por área, como ya se hizo con `dbengine.js` y `ptyhost.js`
