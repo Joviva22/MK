@@ -500,9 +500,13 @@ Botón 🗂 en la toolbar (o "Operaciones de páginas PDF..." en la paleta de co
 
 **Límite:** son operaciones de página, no edición de texto — no se puede cambiar una palabra que ya está impresa dentro del PDF (un PDF guarda glifos posicionados, no texto editable; está anotado como objetivo de largo plazo en `OBJETIVOS.md`).
 
-## 21. Subrayar texto en PDF
+## 21. Subrayar y escribir en PDF
 
-Botón 🖊 en la toolbar (o "Subrayar texto en PDF" en la paleta de comandos): marcá partes de un PDF con un subrayado amarillo real, guardado dentro del archivo.
+Botón 🖊 en la toolbar (o "PDF: subrayar y escribir" en la paleta, o clic derecho en un PDF del sidebar → "Escribir / subrayar en este PDF"): subrayá, **escribí texto en cualquier lugar de la página** y **completá formularios PDF**, todo guardado de verdad dentro de un PDF nuevo.
+
+- **T Escribir**: clic en la página → cuadro de texto (varias líneas con Enter), con tamaño y color de letra; se mueve con la agarradera ⠿ y se borra con ×. Helvetica: acentos, ñ y ¿¡ sí; emojis salen como "?".
+- **Formulario**: si el PDF trae campos rellenables, un panel a la derecha los lista (texto, casillas, listas) para completarlos.
+- **🖍 Subrayar**, como antes:
 
 1. **Abrir PDF...**: elegí el archivo. La página 1 se renderiza en el panel (con [pdf.js](https://mozilla.github.io/pdf.js/)).
 2. **Arrastrá el mouse** sobre el texto que querés marcar — se dibuja un rectángulo amarillo semitransparente en vivo.

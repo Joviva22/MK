@@ -332,6 +332,12 @@ function showSidebarMenu(x, y, node, multiNodes) {
 
   if (node && !node.esCarpeta) {
     addMenuItem('Abrir en panel secundario', () => window.mdSecondaryPane.open(node.ruta));
+    if (extOf(node) === 'pdf' && window.mdPdfHighlight) {
+      addMenuItem('Escribir / subrayar en este PDF', () => {
+        window.mdPdfHighlight.open();
+        window.mdPdfHighlight.loadFromPath(node.ruta);
+      });
+    }
     addMenuItem('Cambiar icono...', () => window.mdIconPicker.open(node.nombre, (iconName) => setFileIcon(node, iconName)));
     if (fileIcons[relKeyFor(node)]) {
       addMenuItem('Quitar icono personalizado', () => setFileIcon(node, null));

@@ -1,15 +1,21 @@
 (function () {
 'use strict';
 
-// Subrayar texto en un PDF: la página se renderiza con pdf.js (pdfjs-dist)
-// nomás para mostrarla en pantalla, arrastrar el mouse encima marca un
-// rectángulo. Recién al "Guardar como..." se abre el PDF original con
-// pdf-lib y se dibujan esos rectángulos de verdad encima del texto (color
-// amarillo semitransparente con blendMode "Multiply", como un marcador real).
-// Ver MANUAL.md.
+// PDF: subrayar y escribir. La página se renderiza con pdf.js (pdfjs-dist)
+// solo para mostrarla; lo que el usuario agrega vive en memoria:
+//   - subrayados: rectángulos (arrastrar el mouse en modo "Subrayar")
+//   - textos: cuadros de texto libres (clic en modo "Escribir"), con tamaño y
+//     color, que se mueven con su agarradera y se borran con ×
+//   - formulario: si el PDF trae campos rellenables (AcroForm), un panel al
+//     costado para completarlos
+// Recién al "Guardar como..." se abre el PDF original con pdf-lib y se
+// dibuja todo de verdad: rectángulos amarillos con blendMode Multiply (como
+// un marcador), el texto con Helvetica, y los valores del formulario en sus
+// campos. Se guarda como archivo nuevo: el original no se toca.
 
 const overlay = document.getElementById('pdfhighlight-panel');
 const emptyEl = document.getElementById('pdfhighlight-empty');
+const bodyEl = document.getElementById('pdfhighlight-body');
 const canvasWrap = document.getElementById('pdfhighlight-canvas-wrap');
 const canvas = document.getElementById('pdfhighlight-canvas');
 const pageInfoEl = document.getElementById('pdfhighlight-pageinfo');
@@ -17,6 +23,11 @@ const prevBtn = document.getElementById('pdfhighlight-prev');
 const nextBtn = document.getElementById('pdfhighlight-next');
 const undoBtn = document.getElementById('pdfhighlight-undo');
 const saveBtn = document.getElementById('pdfhighlight-save');
+const modeHighlightBtn = document.getElementById('pdfhighlight-mode-highlight');
+const modeTextBtn = document.getElementById('pdfhighlight-mode-text');
+const sizeSelect = document.getElementById('pdfhighlight-size');
+const colorInput = document.getElementById('pdfhighlight-color');
+const formPanel = document.getElementById('pdfhighlight-form');
 const ctx = canvas.getContext('2d');
 
 let originalBytes = null; // Uint8Array del PDF tal cual, sin tocar (para pdf-lib al guardar)
@@ -24,10 +35,16 @@ let pdfDoc = null; // documento pdf.js, solo para renderizar
 let baseName = 'documento.pdf';
 let pageNum = 1;
 let numPages = 0;
+let scale = 1; // px de pantalla por punto PDF de la página actual
 let baseCanvas = null; // página ya renderizada, sin subrayados encima (para redibujar rápido)
-let highlights = {}; // { [numDePagina]: [{x,y,w,h}] } normalizado 0..1 sobre el canvas
+let highlights = {}; // { [pagina]: [{x,y,w,h}] } normalizado 0..1 sobre el canvas
+let texts = {}; // { [pagina]: [{id,x,y,text,size,color}] } x/y normalizados (esquina sup. izq.), size en puntos PDF
+let formFields = []; // [{ name, kind, options }]
+let formValues = {}; // { nombreDeCampo: valor }
+let mode = 'highlight'; // 'highlight' | 'text'
 let dragStart = null;
 let dragCurrent = null;
+let nextTextId = 1;
 
 function base64ToBytes(base64) {
   const binary = atob(base64);
@@ -63,18 +80,119 @@ function updateUndoBtn() {
   undoBtn.disabled = !(highlights[pageNum] && highlights[pageNum].length);
 }
 
+function hasChanges() {
+  return Object.values(highlights).some((l) => l && l.length) ||
+    Object.values(texts).some((l) => l && l.some((t) => t.text.trim())) ||
+    Object.keys(formValues).length > 0;
+}
+
+// ---- cuadros de texto ----
+
+function textBoxFor(t) {
+  const box = document.createElement('div');
+  box.className = 'pdf-text-box';
+  box.dataset.id = t.id;
+  box.style.left = `${t.x * 100}%`;
+  box.style.top = `${t.y * 100}%`;
+
+  const handle = document.createElement('span');
+  handle.className = 'pdf-text-handle';
+  handle.title = 'Arrastrar para mover';
+  handle.textContent = '⠿';
+  const del = document.createElement('button');
+  del.className = 'pdf-text-del';
+  del.title = 'Borrar este texto';
+  del.textContent = '×';
+  const edit = document.createElement('div');
+  edit.className = 'pdf-text-edit';
+  edit.contentEditable = 'plaintext-only';
+  edit.spellcheck = false;
+  edit.textContent = t.text;
+  edit.style.fontSize = `${t.size * scale}px`;
+  edit.style.color = t.color;
+  box.append(handle, edit, del);
+
+  edit.addEventListener('input', () => { t.text = edit.innerText.replace(/\n$/, ''); });
+  edit.addEventListener('keydown', (e) => {
+    e.stopPropagation(); // Escape/atajos globales: no cerrar el panel mientras se escribe
+    if (e.key === 'Escape') edit.blur();
+  });
+  edit.addEventListener('blur', () => {
+    if (!t.text.trim()) removeText(t.id); // cuadro vacío: no queda nada
+  });
+  del.addEventListener('mousedown', (e) => e.preventDefault());
+  del.addEventListener('click', () => removeText(t.id));
+  box.addEventListener('mousedown', (e) => e.stopPropagation()); // no crear otro cuadro ni subrayar
+
+  // Mover: arrastrar la agarradera.
+  handle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const x0 = t.x;
+    const y0 = t.y;
+    const onMove = (ev) => {
+      t.x = Math.max(0, Math.min(0.98, x0 + (ev.clientX - startX) / rect.width));
+      t.y = Math.max(0, Math.min(0.98, y0 + (ev.clientY - startY) / rect.height));
+      box.style.left = `${t.x * 100}%`;
+      box.style.top = `${t.y * 100}%`;
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  });
+  return { box, edit };
+}
+
+function renderTexts() {
+  canvasWrap.querySelectorAll('.pdf-text-box').forEach((b) => b.remove());
+  (texts[pageNum] || []).forEach((t) => canvasWrap.appendChild(textBoxFor(t).box));
+}
+
+function addText(xNorm, yNorm, initialText) {
+  const t = {
+    id: nextTextId++,
+    x: xNorm,
+    y: yNorm,
+    text: initialText || '',
+    size: Number(sizeSelect.value) || 12,
+    color: colorInput.value || '#000000'
+  };
+  if (!texts[pageNum]) texts[pageNum] = [];
+  texts[pageNum].push(t);
+  const { box, edit } = textBoxFor(t);
+  canvasWrap.appendChild(box);
+  requestAnimationFrame(() => edit.focus());
+  return t;
+}
+
+function removeText(id) {
+  texts[pageNum] = (texts[pageNum] || []).filter((t) => t.id !== id);
+  const box = canvasWrap.querySelector(`.pdf-text-box[data-id="${id}"]`);
+  if (box) box.remove();
+}
+
+// ---- páginas ----
+
 async function renderPage(n) {
   const page = await pdfDoc.getPage(n);
   const unscaled = page.getViewport({ scale: 1 });
-  const scale = Math.min(700 / unscaled.width, 1.4);
+  scale = Math.min(700 / unscaled.width, 1.4);
   const viewport = page.getViewport({ scale });
   canvas.width = viewport.width;
   canvas.height = viewport.height;
+  canvasWrap.style.width = `${viewport.width}px`;
+  canvasWrap.style.height = `${viewport.height}px`;
   baseCanvas = document.createElement('canvas');
   baseCanvas.width = viewport.width;
   baseCanvas.height = viewport.height;
   await page.render({ canvasContext: baseCanvas.getContext('2d'), viewport }).promise;
   redraw();
+  renderTexts();
 }
 
 async function goToPage(n) {
@@ -87,8 +205,20 @@ async function goToPage(n) {
   updateUndoBtn();
 }
 
+function setMode(next) {
+  mode = next;
+  modeHighlightBtn.classList.toggle('pdfhighlight-mode-active', mode === 'highlight');
+  modeTextBtn.classList.toggle('pdfhighlight-mode-active', mode === 'text');
+  canvasWrap.classList.toggle('pdfhighlight-text-mode', mode === 'text');
+}
+
 canvas.addEventListener('mousedown', (e) => {
   const rect = canvas.getBoundingClientRect();
+  if (mode === 'text') {
+    e.preventDefault();
+    addText((e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height);
+    return;
+  }
   dragStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
   dragCurrent = dragStart;
 });
@@ -118,6 +248,119 @@ window.addEventListener('mouseup', () => {
   redraw();
 });
 
+// Tamaño/color: se aplican al cuadro que tiene el foco (y a los próximos).
+function applyStyleToFocused() {
+  const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest('.pdf-text-box');
+  if (!focused) return;
+  const t = (texts[pageNum] || []).find((x) => String(x.id) === focused.dataset.id);
+  if (!t) return;
+  t.size = Number(sizeSelect.value) || t.size;
+  t.color = colorInput.value || t.color;
+  const edit = focused.querySelector('.pdf-text-edit');
+  edit.style.fontSize = `${t.size * scale}px`;
+  edit.style.color = t.color;
+}
+[sizeSelect, colorInput].forEach((el) => {
+  el.addEventListener('mousedown', () => {
+    // Recordar el cuadro enfocado antes de que el select le robe el foco.
+    const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest('.pdf-text-box');
+    el._targetBox = focused || null;
+  });
+  el.addEventListener('change', () => {
+    if (el._targetBox) {
+      const edit = el._targetBox.querySelector('.pdf-text-edit');
+      if (edit) edit.focus();
+    }
+    applyStyleToFocused();
+  });
+});
+
+// ---- formulario (AcroForm) ----
+
+// instanceof y no constructor.name: la build de pdf-lib viene minificada.
+function fieldKind(field) {
+  if (field instanceof PDFLib.PDFTextField) return 'text';
+  if (field instanceof PDFLib.PDFCheckBox) return 'checkbox';
+  if (field instanceof PDFLib.PDFDropdown) return 'dropdown';
+  if (field instanceof PDFLib.PDFRadioGroup) return 'radio';
+  if (field instanceof PDFLib.PDFOptionList) return 'list';
+  return null;
+}
+
+async function loadFormFields() {
+  formFields = [];
+  formValues = {};
+  try {
+    const doc = await PDFLib.PDFDocument.load(originalBytes);
+    doc.getForm().getFields().forEach((f) => {
+      const kind = fieldKind(f);
+      if (!kind) return;
+      const entry = { name: f.getName(), kind, options: [] };
+      try {
+        if (kind === 'text') entry.value = f.getText() || '';
+        else if (kind === 'checkbox') entry.value = f.isChecked();
+        else {
+          entry.options = f.getOptions();
+          const sel = kind === 'radio' ? f.getSelected() : (f.getSelected() || [])[0];
+          entry.value = sel || '';
+        }
+      } catch (e) {
+        entry.value = '';
+      }
+      formFields.push(entry);
+    });
+  } catch (e) {
+    formFields = [];
+  }
+  renderFormPanel();
+}
+
+function renderFormPanel() {
+  formPanel.innerHTML = '';
+  formPanel.hidden = !formFields.length;
+  if (!formFields.length) return;
+  const title = document.createElement('div');
+  title.className = 'pdfhighlight-form-title';
+  title.textContent = `Formulario (${formFields.length} campo${formFields.length === 1 ? '' : 's'})`;
+  formPanel.appendChild(title);
+  formFields.forEach((f) => {
+    const row = document.createElement('label');
+    row.className = 'pdfhighlight-form-field';
+    const name = document.createElement('span');
+    name.textContent = f.name;
+    let input;
+    if (f.kind === 'checkbox') {
+      input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = !!f.value;
+      input.addEventListener('change', () => { formValues[f.name] = input.checked; });
+      row.classList.add('pdfhighlight-form-check');
+      row.append(input, name);
+    } else if (f.kind === 'text') {
+      input = document.createElement('input');
+      input.value = f.value || '';
+      input.addEventListener('input', () => { formValues[f.name] = input.value; });
+      row.append(name, input);
+    } else {
+      input = document.createElement('select');
+      ['', ...f.options].forEach((o) => {
+        const opt = document.createElement('option');
+        opt.value = o;
+        opt.textContent = o || '(sin elegir)';
+        input.appendChild(opt);
+      });
+      input.value = f.value || '';
+      input.addEventListener('change', () => { formValues[f.name] = input.value; });
+      row.append(name, input);
+    }
+    input.className = 'pdfhighlight-form-input';
+    input.addEventListener('keydown', (e) => e.stopPropagation());
+    formPanel.appendChild(row);
+  });
+}
+
+// ---- abrir / guardar ----
+
 async function loadFromPath(filePath) {
   if (!window.pdfjsLib) {
     alert('El visor de PDF todavía está cargando, probá de nuevo en un segundo.');
@@ -131,6 +374,7 @@ async function loadFromPath(filePath) {
   originalBytes = base64ToBytes(base64);
   baseName = filePath.split(/[\\/]/).pop();
   highlights = {};
+  texts = {};
   try {
     pdfDoc = await window.pdfjsLib.getDocument({ data: originalBytes.slice() }).promise;
   } catch (e) {
@@ -139,41 +383,42 @@ async function loadFromPath(filePath) {
   }
   numPages = pdfDoc.numPages;
   emptyEl.hidden = true;
-  canvasWrap.hidden = false;
+  bodyEl.hidden = false;
   saveBtn.disabled = false;
+  await loadFormFields();
   await goToPage(1);
 }
 
-document.getElementById('pdfhighlight-open').addEventListener('click', async () => {
-  const paths = await window.mdEditor.pdfPickFiles(false);
-  if (!paths) return;
-  await loadFromPath(paths[0]);
-});
+// Helvetica (fuente estándar de PDF) cubre los acentos, ñ, ¿¡ del español
+// (WinAnsi), pero no emojis u otros alfabetos: esos se reemplazan por "?"
+// en vez de romper el guardado.
+function drawableText(font, text) {
+  return Array.from(text).map((ch) => {
+    try {
+      font.encodeText(ch);
+      return ch;
+    } catch (e) {
+      return '?';
+    }
+  }).join('');
+}
 
-prevBtn.addEventListener('click', () => goToPage(pageNum - 1));
-nextBtn.addEventListener('click', () => goToPage(pageNum + 1));
+function hexToRgb(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  const n = m ? parseInt(m[1], 16) : 0;
+  return PDFLib.rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+}
 
-undoBtn.addEventListener('click', () => {
-  if (!highlights[pageNum] || !highlights[pageNum].length) return;
-  highlights[pageNum].pop();
-  updateUndoBtn();
-  redraw();
-});
-
-saveBtn.addEventListener('click', async () => {
-  if (!originalBytes) return;
-  const pageNumbers = Object.keys(highlights).map(Number).filter((n) => highlights[n] && highlights[n].length);
-  if (!pageNumbers.length) {
-    alert('Todavía no marcaste ningún subrayado (arrastrá el mouse sobre el texto).');
-    return;
-  }
+async function buildPdf() {
   const pdfLibDoc = await PDFLib.PDFDocument.load(originalBytes);
   const pages = pdfLibDoc.getPages();
-  pageNumbers.forEach((n) => {
+  const font = await pdfLibDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+
+  Object.keys(highlights).map(Number).forEach((n) => {
     const page = pages[n - 1];
     if (!page) return;
     const { width, height } = page.getSize();
-    highlights[n].forEach((h) => {
+    (highlights[n] || []).forEach((h) => {
       page.drawRectangle({
         x: h.x * width,
         y: height - (h.y + h.h) * height,
@@ -185,9 +430,86 @@ saveBtn.addEventListener('click', async () => {
       });
     });
   });
-  const bytes = await pdfLibDoc.save();
+
+  Object.keys(texts).map(Number).forEach((n) => {
+    const page = pages[n - 1];
+    if (!page) return;
+    const { width, height } = page.getSize();
+    (texts[n] || []).forEach((t) => {
+      if (!t.text.trim()) return;
+      // Misma caja que en pantalla: esquina superior izquierda en (x, y),
+      // interlineado 1.2; la línea base queda ~0.8 del tamaño abajo del borde.
+      t.text.split('\n').forEach((line, i) => {
+        page.drawText(drawableText(font, line), {
+          x: t.x * width,
+          y: height - t.y * height - t.size * (0.8 + i * 1.2),
+          size: t.size,
+          font,
+          color: hexToRgb(t.color)
+        });
+      });
+    });
+  });
+
+  const formNames = Object.keys(formValues);
+  if (formNames.length) {
+    const form = pdfLibDoc.getForm();
+    formNames.forEach((name) => {
+      const v = formValues[name];
+      try {
+        const field = form.getField(name);
+        const kind = fieldKind(field);
+        if (kind === 'text') {
+          field.setText(drawableText(font, String(v)));
+        } else if (kind === 'checkbox') {
+          if (v) field.check(); else field.uncheck();
+        } else if (v) {
+          field.select(v); // dropdown, lista u opción de un grupo
+        } else if (kind === 'dropdown' || kind === 'list') {
+          field.clear();
+        }
+      } catch (e) {
+        // un campo raro no tiene que impedir guardar el resto
+      }
+    });
+    try {
+      form.updateFieldAppearances(font);
+    } catch (e) {
+      // se guardan los valores aunque no se pueda regenerar la apariencia
+    }
+  }
+  return pdfLibDoc.save();
+}
+
+document.getElementById('pdfhighlight-open').addEventListener('click', async () => {
+  const paths = await window.mdEditor.pdfPickFiles(false);
+  if (!paths) return;
+  await loadFromPath(paths[0]);
+});
+
+prevBtn.addEventListener('click', () => goToPage(pageNum - 1));
+nextBtn.addEventListener('click', () => goToPage(pageNum + 1));
+modeHighlightBtn.addEventListener('click', () => setMode('highlight'));
+modeTextBtn.addEventListener('click', () => setMode('text'));
+
+undoBtn.addEventListener('click', () => {
+  if (!highlights[pageNum] || !highlights[pageNum].length) return;
+  highlights[pageNum].pop();
+  updateUndoBtn();
+  redraw();
+});
+
+saveBtn.addEventListener('click', async () => {
+  if (!originalBytes) return;
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  if (!hasChanges()) {
+    alert('Todavía no agregaste nada: subrayá (arrastrando), escribí (modo "Escribir" y clic en la página) o completá el formulario.');
+    return;
+  }
+  const bytes = await buildPdf();
   const base64 = await bytesToBase64(bytes);
-  const savedPath = await window.mdEditor.pdfSaveBytes(base64, baseName.replace(/\.pdf$/i, '') + '-subrayado.pdf');
+  const suffix = Object.values(texts).some((l) => l && l.length) || Object.keys(formValues).length ? '-editado.pdf' : '-subrayado.pdf';
+  const savedPath = await window.mdEditor.pdfSaveBytes(base64, baseName.replace(/\.pdf$/i, '') + suffix);
   if (savedPath) alert(`Guardado en: ${savedPath}`);
 });
 
@@ -212,15 +534,25 @@ window.mdPdfHighlight = {
   open,
   close,
   loadFromPath,
-  // Solo para test/renderer-checks.js: marca un subrayado directo por
-  // coordenadas normalizadas, sin simular el arrastre real del mouse.
+  setMode,
+  // Solo para test/renderer-checks.js: marca un subrayado / texto / campo
+  // directo, sin simular el mouse real.
   addHighlightForTest: (xNorm, yNorm, wNorm, hNorm) => {
     if (!highlights[pageNum]) highlights[pageNum] = [];
     highlights[pageNum].push({ x: xNorm, y: yNorm, w: wNorm, h: hNorm });
     updateUndoBtn();
     redraw();
   },
-  getState: () => (pdfDoc ? { pageNum, numPages, highlightCount: (highlights[pageNum] || []).length } : null)
+  addTextForTest: (xNorm, yNorm, text) => addText(xNorm, yNorm, text),
+  setFormValueForTest: (name, value) => { formValues[name] = value; },
+  buildPdfForTest: () => buildPdf(),
+  getState: () => (pdfDoc ? {
+    pageNum,
+    numPages,
+    highlightCount: (highlights[pageNum] || []).length,
+    textCount: (texts[pageNum] || []).length,
+    formFields: formFields.map((f) => f.name)
+  } : null)
 };
 
 })();

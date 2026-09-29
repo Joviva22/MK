@@ -95,6 +95,19 @@ async function writePdfFixture() {
   const otherFont = await other.embedFont(StandardFonts.Helvetica);
   other.addPage([400, 300]).drawText('Otro PDF', { x: 40, y: 250, size: 20, font: otherFont });
   fs.writeFileSync(path.join(fixturesDir, 'otro.pdf'), await other.save());
+
+  // PDF con formulario (AcroForm): texto, casilla y lista desplegable.
+  const formDoc = await PDFDocument.create();
+  const formPage = formDoc.addPage([400, 300]);
+  const form = formDoc.getForm();
+  const nombre = form.createTextField('nombre');
+  nombre.addToPage(formPage, { x: 40, y: 220, width: 200, height: 24 });
+  const acepto = form.createCheckBox('acepto');
+  acepto.addToPage(formPage, { x: 40, y: 180, width: 16, height: 16 });
+  const pais = form.createDropdown('pais');
+  pais.addOptions(['Argentina', 'España', 'México']);
+  pais.addToPage(formPage, { x: 40, y: 140, width: 150, height: 22 });
+  fs.writeFileSync(path.join(fixturesDir, 'formulario.pdf'), await formDoc.save());
 }
 
 function cleanup() {

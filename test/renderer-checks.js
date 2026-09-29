@@ -2184,6 +2184,45 @@
   }
   check('Subrayar texto en PDF: agrega un rectángulo y lo hornea al guardar', pdfHighlightOk, pdfHighlightDetail);
 
+  // Escribir en PDF: clic en modo "Escribir" crea un cuadro; el texto (con
+  // acentos y ñ) y los campos del formulario quedan de verdad en el PDF.
+  let pdfWriteOk = false;
+  let pdfWriteDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdPdfHighlight.open();
+    await window.mdPdfHighlight.loadFromPath(window.mdEditor.joinPath(fixturesDir, 'formulario.pdf'));
+    const st = window.mdPdfHighlight.getState();
+    const fieldsOk = st && st.formFields.join(',') === 'nombre,acepto,pais' && document.querySelectorAll('.pdfhighlight-form-field').length === 3;
+
+    window.mdPdfHighlight.setMode('text');
+    const canvasEl = document.getElementById('pdfhighlight-canvas');
+    const r = canvasEl.getBoundingClientRect();
+    canvasEl.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, clientX: r.left + r.width * 0.5, clientY: r.top + r.height * 0.8 }));
+    const boxOk = !!(await waitFor(() => document.querySelector('#pdfhighlight-canvas-wrap .pdf-text-box')));
+    const edit = document.querySelector('#pdfhighlight-canvas-wrap .pdf-text-edit');
+    if (edit) {
+      edit.textContent = 'Hola ñandú, ¿qué tal? 😀';
+      edit.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    window.mdPdfHighlight.setFormValueForTest('nombre', 'Julián');
+    window.mdPdfHighlight.setFormValueForTest('acepto', true);
+    window.mdPdfHighlight.setFormValueForTest('pais', 'España');
+    const bytes = await window.mdPdfHighlight.buildPdfForTest();
+
+    const saved = await PDFLib.PDFDocument.load(bytes);
+    const f = saved.getForm();
+    const formOk = f.getTextField('nombre').getText() === 'Julián' && f.getCheckBox('acepto').isChecked() && f.getDropdown('pais').getSelected()[0] === 'España';
+    const doc = await window.pdfjsLib.getDocument({ data: bytes }).promise;
+    const content = await (await doc.getPage(1)).getTextContent();
+    const allText = content.items.map((it) => it.str).join(' ');
+    const textOk = allText.includes('Hola ñandú, ¿qué tal? ?'); // el emoji no entra en Helvetica: queda "?"
+    window.mdPdfHighlight.setMode('highlight');
+    window.mdPdfHighlight.close();
+    pdfWriteOk = fieldsOk && boxOk && formOk && textOk;
+    pdfWriteDetail = `campos=${fieldsOk} cuadro=${boxOk} formulario=${formOk} texto=${textOk} ("${allText.slice(0, 60)}")`;
+  }
+  check('Escribir en PDF: texto libre (acentos/ñ) y formulario (texto, casilla, lista) quedan en el PDF guardado', pdfWriteOk, pdfWriteDetail);
+
   // Bases de datos: ordenar por columna (menú del encabezado) y filtrar por
   // campo (popover "Filtros"), ambos guardados en la config de la vista.
   let dbSortFilterOk = false;

@@ -53,7 +53,7 @@
     <button id="btn-backlinks" class="toolbar-button toolbar-optional" title="Backlinks: qué enlaza aquí (Ctrl+Shift+B)"><i data-lucide="link-2"></i></button>
     <button id="btn-plugins" class="toolbar-button toolbar-optional" title="Plugins y comunidad"><i data-lucide="puzzle"></i></button>
     <button id="btn-pdfpages" class="toolbar-button toolbar-optional" title="Operaciones de páginas PDF (unir, separar, rotar, marca de agua...)"><i data-lucide="file-stack"></i></button>
-    <button id="btn-pdfhighlight" class="toolbar-button toolbar-optional" title="Subrayar texto en PDF"><i data-lucide="highlighter"></i></button>
+    <button id="btn-pdfhighlight" class="toolbar-button toolbar-optional" title="PDF: subrayar y escribir (texto libre, formularios)"><i data-lucide="highlighter"></i></button>
     <button id="btn-pomodoro" class="toolbar-button toolbar-optional" title="Pomodoro: iniciar (foco/descanso configurables en Ajustes)"><i data-lucide="timer"></i></button>
     <button id="btn-media-prev" class="toolbar-button toolbar-optional" title="Reproductor multimedia: anterior (playerctl, solo Linux)"><i data-lucide="skip-back"></i></button>
     <button id="btn-media-playpause" class="toolbar-button toolbar-optional" title="Reproductor multimedia: play/pausa (playerctl, solo Linux)"><i data-lucide="play"></i></button>
@@ -457,18 +457,31 @@
 
   <div id="pdfhighlight-panel" class="modal-overlay palette-overlay" hidden>
     <div class="command-palette pdfhighlight-modal">
-      <div class="backlinks-title">Subrayar texto en PDF — arrastrá el mouse sobre el texto</div>
+      <div class="backlinks-title">PDF: subrayar y escribir — "Subrayar": arrastrá sobre el texto · "Escribir": clic donde quieras escribir</div>
       <div class="pdfpages-toolbar">
         <button id="pdfhighlight-open" class="toolbar-button">Abrir PDF...</button>
         <button id="pdfhighlight-prev" class="toolbar-button" disabled>◀</button>
         <span id="pdfhighlight-pageinfo" class="pdfpages-filename">–</span>
         <button id="pdfhighlight-next" class="toolbar-button" disabled>▶</button>
-        <button id="pdfhighlight-undo" class="toolbar-button" disabled>Deshacer último subrayado</button>
+        <span class="pdfhighlight-sep"></span>
+        <button id="pdfhighlight-mode-highlight" class="toolbar-button pdfhighlight-mode-active" title="Arrastrar sobre el texto para subrayarlo">🖍 Subrayar</button>
+        <button id="pdfhighlight-mode-text" class="toolbar-button" title="Clic en la página para escribir ahí">T Escribir</button>
+        <select id="pdfhighlight-size" class="pdfhighlight-size" title="Tamaño de letra (puntos)">
+          <option value="8">8</option><option value="10">10</option><option value="12" selected>12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="24">24</option><option value="32">32</option>
+        </select>
+        <input id="pdfhighlight-color" type="color" value="#000000" class="pdfhighlight-color" title="Color del texto" />
+        <span class="pdfhighlight-sep"></span>
+        <button id="pdfhighlight-undo" class="toolbar-button" disabled>Deshacer subrayado</button>
         <button id="pdfhighlight-save" class="toolbar-button" disabled>Guardar como...</button>
       </div>
       <div id="pdfhighlight-empty" class="command-palette-empty">Abrí un PDF para empezar.</div>
-      <div id="pdfhighlight-canvas-wrap" class="pdfhighlight-canvas-wrap" hidden>
-        <canvas id="pdfhighlight-canvas"></canvas>
+      <div id="pdfhighlight-body" class="pdfhighlight-body" hidden>
+        <div class="pdfhighlight-scroll">
+          <div id="pdfhighlight-canvas-wrap" class="pdfhighlight-canvas-wrap">
+            <canvas id="pdfhighlight-canvas"></canvas>
+          </div>
+        </div>
+        <div id="pdfhighlight-form" class="pdfhighlight-form" hidden></div>
       </div>
     </div>
   </div>
