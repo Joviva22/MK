@@ -2,7 +2,13 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <!-- Content Security Policy: aunque un .md ajeno lograra colar HTML en el
+       preview, no puede ejecutar scripts (solo los archivos locales de MK,
+       nada inline) ni mandar datos a internet (connect-src sin http).
+       'unsafe-eval': las fórmulas de las bases de datos (new Function). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' md-local: data: blob: https: http:; media-src 'self' md-local: data: blob:; font-src 'self' data:; connect-src 'self' md-local: data: blob:; worker-src 'self' blob:; object-src md-local:; frame-src md-local:; base-uri 'none'; form-action 'none'" />
   <title>Editor de Markdown Local</title>
+  <script src="cspwatch.js"></script>
   <link rel="stylesheet" href="../node_modules/codemirror/lib/codemirror.css" />
   <link rel="stylesheet" href="../node_modules/codemirror/addon/hint/show-hint.css" />
   <link rel="stylesheet" href="../node_modules/katex/dist/katex.min.css" />

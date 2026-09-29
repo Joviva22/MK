@@ -1757,7 +1757,7 @@
     modifiedLines[13] = 'linea14 MODIFICADA';
     await window.mdEditor.saveFile(modifiedLines.join('\n') + '\n', hunkPath, false);
 
-    window.mdState.rootFolder = gitRepoDir;
+    window.mdSidebar.renderFolder(await window.mdEditor.readFolder(gitRepoDir));
     window.mdGitPanel.open();
     const findHunkRow = () => Array.from(document.querySelectorAll('#git-file-list .git-file-row'))
       .find((r) => r.querySelector('.git-file-name')?.textContent.includes('hunkfile.md'));
@@ -3572,6 +3572,12 @@
       inWeek && inMonth && cells % 7 === 0 && cells >= 28 && deleted,
       `inWeek=${inWeek} inMonth=${inMonth} cells=${cells} deleted=${deleted}`
     );
+  }
+
+  // Ninguna función chocó con la Content Security Policy (cspwatch.js).
+  {
+    const v = window.__mkCspViolations || [];
+    check('Content Security Policy: ninguna violación durante toda la suite', v.length === 0, v.slice(0, 5).join(' | ') || 'ninguna');
   }
 
   return results;

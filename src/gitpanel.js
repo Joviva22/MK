@@ -116,7 +116,7 @@ async function toggleHunkView(root, file, toggleBtn, listEl2) {
 }
 
 async function render() {
-  const root = window.mdState.rootFolder;
+  const root = panelRoot || window.mdState.rootFolder;
   if (!root) {
     emptyEl.textContent = 'Abrí una carpeta primero.';
     emptyEl.hidden = false;
@@ -207,7 +207,7 @@ async function render() {
 // "git apply --cached" (equivalente a elegir hunks con "git add -p", pero
 // desde la UI del panel en vez de una sesión de terminal interactiva).
 commitBtn.addEventListener('click', async () => {
-  const root = window.mdState.rootFolder;
+  const root = panelRoot || window.mdState.rootFolder;
   // [data-file] filtra los checkboxes de archivo, únicos a los que se les
   // pone ese atributo — sin esto también entrarían los checkboxes de hunk
   // (anidados en el mismo #git-file-list cuando "Ver cambios" está abierto).
@@ -243,7 +243,7 @@ commitBtn.addEventListener('click', async () => {
 
   const addResult = await window.mdEditor.gitAddFiles(root, wholeFiles);
   if (!addResult.ok) {
-    alert('No se pudieron preparar algunos archivos completos.');
+    alert('No se pudieron preparar algunos archivos completos.' + (addResult.detail ? `\n\n${addResult.detail}` : ''));
     return;
   }
   for (const patch of partialPatches) {
@@ -264,7 +264,12 @@ commitBtn.addEventListener('click', async () => {
   render();
 });
 
+// Repo con el que se abrió el panel: si la carpeta cambia con el panel
+// abierto (o el árbol se refresca), el commit va igual al repo que se ve.
+let panelRoot = null;
+
 function open() {
+  panelRoot = window.mdState.rootFolder;
   overlay.hidden = false;
   messageInput.value = '';
   render();
@@ -272,6 +277,7 @@ function open() {
 
 function close() {
   overlay.hidden = true;
+  panelRoot = null;
 }
 
 overlay.addEventListener('mousedown', (e) => {

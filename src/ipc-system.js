@@ -78,7 +78,7 @@ ipcMain.handle('git:diffFile', async (event, { root, file }) => {
 ipcMain.handle('git:addFiles', async (event, { root, files }) => {
   if (!files || !files.length) return { ok: true };
   const result = await runGit(['add', '--', ...files], root);
-  return result.error ? { ok: false, reason: 'add-failed' } : { ok: true };
+  return result.error ? { ok: false, reason: 'add-failed', detail: (result.stderr || String(result.error.message || '')).trim() } : { ok: true };
 });
 
 ipcMain.handle('git:stageHunks', async (event, { root, patch }) => {
