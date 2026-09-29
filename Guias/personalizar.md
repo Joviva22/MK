@@ -13,6 +13,7 @@
 | Snippets | `/abrev = texto`, uno por línea |
 | Git al guardar | Ver [historial-y-git.md](historial-y-git.md) |
 | Abrir Home al iniciar | Ver [Home](home-como-usar.md) |
+| Guardar el Home en la carpeta abierta | Tareas en `<carpeta>/.mk/home.json` (viajan con git; cada carpeta con su Home) |
 | Al cerrar, seguir en la bandeja | Cerrar la ventana deja MK en la bandeja y los recordatorios siguen sonando (activado por defecto). Salir: `Ctrl+Q` |
 | Iniciar MK con el sistema | Arranca oculto en la bandeja al iniciar sesión |
 | Pomodoro | Minutos de foco y descanso |

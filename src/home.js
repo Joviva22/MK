@@ -115,8 +115,25 @@ function formatLong(d) {
 
 // ---- persistencia ----
 
-async function readStored() {
-  const stored = await window.mdEditor.homeLoad();
+// Dónde viven las tareas: null = configuración de la app (por defecto), o
+// la carpeta abierta (<carpeta>/.mk/home.json) si está activada la opción
+// "Guardar el Home en la carpeta abierta" en Ajustes.
+let homeInFolder = false;
+let dataRoot = null; // de dónde se cargaron los datos actuales (ahí se guardan)
+
+function wantedRoot() {
+  return homeInFolder && window.mdState.rootFolder ? window.mdState.rootFolder : null;
+}
+
+async function readStored(root) {
+  let stored = await window.mdEditor.homeLoad(root);
+  let seeded = false;
+  if (!stored && root) {
+    // Primera vez en esta carpeta: arranca con las tareas que ya tenías.
+    stored = await window.mdEditor.homeLoad(null);
+    seeded = true;
+  }
+  dataRoot = root;
   if (stored && typeof stored === 'object') {
     data = {
       tasks: Array.isArray(stored.tasks) ? stored.tasks : [],
@@ -130,19 +147,48 @@ async function readStored() {
   }
   showDbToggle.checked = data.showDatabases;
   showNotesToggle.checked = data.showNotes;
+  if (seeded) await window.mdEditor.homeSave(data, dataRoot);
 }
 
 // Una sola lectura compartida: el arranque (recordatorios) y open() pueden
-// pedirla a la vez.
+// pedirla a la vez. Si cambió dónde tienen que vivir los datos (otra carpeta
+// abierta, o se activó/desactivó la opción), se vuelve a leer.
 let loadPromise = null;
+let loadingFor; // carpeta (o null) que se está cargando o ya se cargó
 function load() {
-  if (!loadPromise) loadPromise = readStored();
+  const want = wantedRoot();
+  if (!loadPromise || want !== loadingFor) {
+    loadingFor = want;
+    loadPromise = switchLocation(want, loadPromise);
+  }
   return loadPromise;
+}
+
+async function switchLocation(want, previous) {
+  if (previous) {
+    // Recién cuando terminó la carga anterior hay datos reales: guardarlos
+    // donde estaban antes de pasar a la ubicación nueva. (Sin esto, dos
+    // cargas simultáneas podían guardar datos vacíos encima de las tareas.)
+    await previous;
+    clearTimeout(saveTimer);
+    await window.mdEditor.homeSave(data, dataRoot);
+  }
+  await readStored(want);
 }
 
 function save() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => window.mdEditor.homeSave(data), 300);
+  const root = dataRoot;
+  saveTimer = setTimeout(() => window.mdEditor.homeSave(data, root), 300);
+}
+
+// Abrieron otra carpeta (sidebar.js) o cambió la opción: recargar el Home
+// si sus datos tienen que salir de otro lado.
+async function rootChanged() {
+  if (!loadPromise || wantedRoot() === loadingFor) return;
+  await load();
+  await Promise.all([loadDbItems(), loadNoteItems(), loadDbReminders()]);
+  render();
 }
 
 function newId() {
@@ -1421,6 +1467,8 @@ document.addEventListener('keydown', (e) => {
 // "Abrir Home al iniciar" (Ajustes): se guarda en la config general.
 (async () => {
   const config = await window.mdEditor.getConfig();
+  homeInFolder = !!config.homeInFolder;
+  inFolderToggle.checked = homeInFolder;
   startupToggle.checked = !!config.homeOnStartup;
   if (config.homeOnStartup) open();
   // Recordatorios: cargar las tareas ya al arrancar (aunque el Home no se
@@ -1428,14 +1476,33 @@ document.addEventListener('keydown', (e) => {
   await load();
   await loadDbReminders();
   checkReminders();
-  setInterval(checkReminders, 30000);
+  setInterval(() => { rootChanged().then(checkReminders); }, 30000);
   // Las bases de datos pueden cambiar desde su panel: releer cada 2 min.
   setInterval(loadDbReminders, 120000);
 })();
+const inFolderToggle = document.getElementById('home-in-folder-toggle');
+inFolderToggle.addEventListener('change', async () => {
+  const enable = inFolderToggle.checked;
+  await load();
+  if (enable && !window.mdState.rootFolder) {
+    alert('Abrí una carpeta primero: el Home se guardaría en <carpeta>/.mk/home.json.');
+    inFolderToggle.checked = false;
+    return;
+  }
+  if (!enable && dataRoot) {
+    // Vuelve a la configuración de la app con las tareas tal como están ahora.
+    clearTimeout(saveTimer);
+    await window.mdEditor.homeSave(data, null);
+  }
+  homeInFolder = enable;
+  await window.mdEditor.setConfig({ homeInFolder: enable });
+  await rootChanged();
+});
+
 startupToggle.addEventListener('change', () => {
   window.mdEditor.setConfig({ homeOnStartup: startupToggle.checked });
 });
 
-window.mdHome = { open, close, setMode, checkReminders, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
+window.mdHome = { open, close, setMode, checkReminders, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
 
 })();

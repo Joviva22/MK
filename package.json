@@ -8,7 +8,8 @@
     "start": "electron .",
     "test": "node test/run.js",
     "lint": "eslint .",
-    "dist": "electron-builder --linux AppImage"
+    "dist": "electron-builder --linux AppImage",
+    "install-desktop": "node scripts/install-desktop.js"
   },
   "license": "MIT",
   "devDependencies": {

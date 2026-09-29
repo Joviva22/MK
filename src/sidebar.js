@@ -471,6 +471,7 @@ function buildTree(nodes) {
 function renderFolder(result) {
   currentTreeResult = result;
   window.mdState.rootFolder = result.rootPath;
+  if (window.mdHome) window.mdHome.rootChanged(); // el Home puede vivir en la carpeta
   sidebarPane.innerHTML = '';
 
   const parentPath = window.mdEditor.dirName(result.rootPath);

@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 40 de 62 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 43 de 62 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -12,10 +12,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada uno están en las secciones de abajo.
 
-**P1 — Seguridad y que nada se pierda** (poco trabajo, evita problemas serios)
-1. **Arreglar las 2 vulnerabilidades altas de `npm audit`**: la principal es **Electron 32** mismo (la base de la app, con fallos de seguridad conocidos) y la otra `extract-zip` (la trae Electron). Se arregla actualizando Electron a una versión actual: cambio grande, hay que recompilar `node-pty` y correr toda la suite de tests, pero es lo único que toca seguridad.
-2. **Lanzador del escritorio apuntando al AppImage**: hoy "Iniciar con el sistema" y el `.desktop` dependen de la carpeta del proyecto; si la movés o borrás `node_modules`, MK deja de arrancar y los recordatorios no suenan.
-3. **Home dentro de la carpeta (opcional)**: hoy tus tareas viven solo en la configuración de esta PC, sin respaldo; en `.mk/` entran en git y en tus copias de seguridad.
+**P1 — Seguridad y que nada se pierda** ✅ *hecho (2026-09-29): Electron 44 sin vulnerabilidades, instalación con `npm run install-desktop`, Home opcional en la carpeta.*
 
 **P2 — Lo que más se nota en el uso diario**
 4. **Gráficos en las bases de datos** (vista Gráfico): lo pediste, y reutiliza filtros y tipos de columna que ya existen.
@@ -80,6 +77,9 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Sidebar: "Copiar ruta" / "Copiar ruta relativa"** y **selección de rango con `Shift`+clic**~~ (2026-09-29)
 - [x] ~~**Live Preview: callouts y diagramas Mermaid** dibujados~~ (2026-09-29)
 - [x] ~~**Arrastrar en todos los tableros**: en el Home también las tareas 📅 de notas (cambia la fecha en el archivo) y las filas de bases de datos; en el Kanban modo carpeta, entre columnas (dentro de su archivo)~~ (2026-09-29)
+- [x] ~~**P1 · Electron 32 → 44.4.5**: `npm audit` pasa de 2 vulnerabilidades altas a 0 (el portapapeles pasó al proceso principal, que Electron 44 exige)~~ (2026-09-29)
+- [x] ~~**P1 · Instalación en el usuario** (`npm run install-desktop`): AppImage en `~/.local/share/mk/`, lanzador del menú e "Iniciar con el sistema" apuntando ahí, sin depender de la carpeta del proyecto~~ (2026-09-29)
+- [x] ~~**P1 · Home en la carpeta abierta (opcional)**: `<carpeta>/.mk/home.json`, viaja con git; guardado atómico (sin archivos a medio escribir)~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
@@ -93,16 +93,13 @@ Funciones más grandes o que tocan varias partes de la app.
 - [ ] **Gráficos en las bases de datos**: nueva vista **Gráfico** (barras, líneas, torta) que agrupa por una columna (ej. Estado, Categoría, mes de una Fecha) y muestra cantidad, suma o promedio de otra (ej. Monto) — respeta los filtros de la vista y se actualiza sola
 - [ ] **Gráficos desde tablas Markdown**: un bloque ```` ```chart ```` (o botón en una tabla del preview) que dibuja barras/líneas/torta a partir de una tabla `| … |` de la nota, también en Live Preview
 - [ ] **Bases de datos dentro de una nota**: bloque ```` ```database Proyectos ```` ```` que muestra la tabla en el preview
-- [ ] **Home dentro de la carpeta (opcional)**: guardar las tareas en `.mk/home.json` para que viajen con git y se sincronicen entre computadoras
 - [ ] **Home: estadísticas**: tareas hechas por semana, racha de hábitos recurrentes, gráfico del mes
 - [ ] **Recordatorios por Gmail**: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: es la única función que necesita internet
 - [ ] **Resumen diario por Gmail**: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas
 - [ ] **Terminal: pantalla dividida** (dos terminales visibles lado a lado)
 - [ ] **Búsqueda global también en bases de datos y tareas del Home**
 - [ ] **Separar `main.js`** (más de 1100 líneas) en módulos por área, como ya se hizo con `dbengine.js` y `ptyhost.js`
-- [ ] **Actualizar Electron 32 a una versión actual** (arregla las 2 vulnerabilidades altas de `npm audit`: Electron y `extract-zip`)
 - [ ] **Nota diaria configurable**: elegir carpeta y formato del nombre (hoy siempre `Diario/AAAA-MM-DD.md`)
-- [ ] **Lanzador del escritorio apuntando al AppImage** (`bin/mk-editor` hoy corre `node_modules/electron`, solo sirve en esta máquina)
 
 ## Largo plazo
 

@@ -188,4 +188,11 @@ Con una carpeta abierta y **"Fechas de bases de datos"** tildado, cada fila de u
 
 ## Dónde se guarda
 
-En `home.json`, dentro de la carpeta de configuración de MK (en Linux: `~/.config/md-editor-local/home.json`; en la versión empaquetada AppImage, `~/.config/MK/home.json`). Es un JSON simple: podés respaldarlo copiándolo.
+Por defecto en `home.json`, dentro de la carpeta de configuración de MK: `~/.config/md-editor-local/home.json` (la misma para la versión de desarrollo y el AppImage). Es un JSON simple: podés respaldarlo copiándolo.
+
+**Guardarlo en tu carpeta de notas** — ⚙ Ajustes → **"Guardar el Home en la carpeta abierta (.mk/)"**:
+
+- Las tareas pasan a `<tu carpeta>/.mk/home.json`: **viajan con git** y con tus copias de seguridad, y se sincronizan entre computadoras si sincronizás la carpeta.
+- La primera vez, la carpeta arranca con las tareas que ya tenías.
+- **Cada carpeta tiene su propio Home**: al abrir otra carpeta, el Home muestra las tareas de esa.
+- Al desactivarlo, las tareas vuelven a la configuración de la app tal como estaban.

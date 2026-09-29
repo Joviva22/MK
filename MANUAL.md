@@ -564,7 +564,7 @@ Botón **Home** en la toolbar, `Ctrl+Shift+H` o paleta de comandos → "Home: pl
 6. **Tareas de tus notas**: cualquier `- [ ] algo 📅 2026-10-03` en un `.md` de la carpeta aparece ese día (header "Tareas de notas"); tildarla desde el Home reescribe la línea del archivo, y arrastrarla a otro día le cambia la fecha. Las filas de bases de datos del calendario también se arrastran de día.
 7. **Doble clic en el título** de una tarea la renombra en el lugar. **Nota enlazada**, **⏱ Pomodoro** sobre la tarea (al terminar el foco pregunta si la terminaste) y **"Plan de hoy → nota diaria"** (agrega `## Plan del día` con las tareas de hoy, sin duplicar).
 
-No necesita carpeta abierta: las tareas son personales y se guardan en `home.json` en la carpeta de configuración de la app. **Límite:** los avisos solo suenan con MK abierto (si estaba cerrado, al abrir se avisa solo lo de los últimos 10 minutos). Guías: [`Guias/home-como-usar.md`](./Guias/home-como-usar.md) y [`Guias/home-para-que-sirve.md`](./Guias/home-para-que-sirve.md).
+No necesita carpeta abierta: las tareas son personales y se guardan en `home.json` en la carpeta de configuración de la app — o, con ⚙ Ajustes → "Guardar el Home en la carpeta abierta", en `<carpeta>/.mk/home.json` (viaja con git; cada carpeta tiene su propio Home). **Límite:** los avisos solo suenan con MK abierto (si estaba cerrado, al abrir se avisa solo lo de los últimos 10 minutos). Guías: [`Guias/home-como-usar.md`](./Guias/home-como-usar.md) y [`Guias/home-para-que-sirve.md`](./Guias/home-para-que-sirve.md).
 
 ## 26. Bases de datos relacionales
 

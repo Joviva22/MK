@@ -76,7 +76,7 @@ module.exports = [
     ignores: ['node_modules/**', 'dist/**', 'build/**']
   },
   {
-    files: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'test/run.js', 'eslint.config.js'],
+    files: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'scripts/*.js', 'test/run.js', 'eslint.config.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',

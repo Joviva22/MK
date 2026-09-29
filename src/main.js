@@ -345,18 +345,28 @@ ipcMain.handle('session:save', (event, data) => {
 
 // Home (ver home.js): tareas/objetivos personales, independientes de la
 // carpeta abierta — por eso van en userData y no en <root>/.mk.
-ipcMain.handle('home:load', () => {
+// root = null → la configuración de la app; root = carpeta → <carpeta>/.mk/home.json
+// (opción "Guardar el Home en la carpeta abierta", viaja con git/backups).
+function homeFileFor(root) {
+  return root ? path.join(root, '.mk', 'home.json') : homePath;
+}
+
+ipcMain.handle('home:load', (event, root) => {
   try {
-    return JSON.parse(fs.readFileSync(homePath, 'utf-8'));
+    return JSON.parse(fs.readFileSync(homeFileFor(root), 'utf-8'));
   } catch (e) {
     return null;
   }
 });
 
-ipcMain.handle('home:save', (event, data) => {
+ipcMain.handle('home:save', (event, data, root) => {
+  const file = homeFileFor(root);
   try {
-    fs.mkdirSync(path.dirname(homePath), { recursive: true });
-    fs.writeFileSync(homePath, JSON.stringify(data), 'utf-8');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    // Escribir a un temporal y renombrar: si se corta a mitad (apagón,
+    // cierre forzado) no queda un home.json roto con todas las tareas.
+    fs.writeFileSync(file + '.tmp', JSON.stringify(data), 'utf-8');
+    fs.renameSync(file + '.tmp', file);
     return true;
   } catch (e) {
     return false;

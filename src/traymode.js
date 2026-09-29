@@ -32,8 +32,13 @@ function showWindow(win) {
 
 // Qué ejecutar al iniciar sesión: el AppImage si corre empaquetado, o el
 // lanzador de desarrollo (bin/mk-editor) si corre desde el repo.
+// Si está instalado con `npm run install-desktop`, siempre ese AppImage (no
+// depende de la carpeta del proyecto).
+const INSTALLED_APPIMAGE = path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share'), 'mk', 'MK.AppImage');
+
 function launchCommand() {
   if (process.env.APPIMAGE) return process.env.APPIMAGE;
+  if (fs.existsSync(INSTALLED_APPIMAGE)) return INSTALLED_APPIMAGE;
   if (app.isPackaged) return process.execPath;
   return path.join(__dirname, '..', 'bin', 'mk-editor');
 }
@@ -54,7 +59,8 @@ function setAutostart(enabled, iconPath) {
     'Type=Application',
     'Name=MK',
     'Comment=MK en la bandeja: recordatorios del Home y bases de datos',
-    `Exec="${exec}" --hidden`,
+    // --no-sandbox solo hace falta si es un AppImage (ver scripts/install-desktop.js).
+    `Exec="${exec}"${/\.AppImage$/i.test(exec) ? ' --no-sandbox' : ''} --hidden`,
     `Icon=${iconPath}`,
     'Terminal=false',
     'X-GNOME-Autostart-enabled=true',

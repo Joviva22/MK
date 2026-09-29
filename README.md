@@ -73,6 +73,14 @@ npm run dist
 
 Genera `dist/MK-<version>.AppImage`, standalone (incluye Electron + dependencias).
 
+## Instalar en tu usuario (menú de aplicaciones)
+
+```bash
+npm run dist && npm run install-desktop
+```
+
+Copia el AppImage a `~/.local/share/mk/MK.AppImage`, instala el ícono y el lanzador del menú (`~/.local/share/applications/mk-editor.desktop`, con copia `.bak` del anterior) y, si "Iniciar con el sistema" está activado, lo apunta ahí. Desde entonces MK no depende de la carpeta del proyecto. Para actualizar, repetir el mismo comando. Usa la misma carpeta de datos que `npm start` (`~/.config/md-editor-local`).
+
 ## Stack
 
 Electron 32 · CodeMirror 5 · marked · KaTeX · DOMPurify · highlight.js · lucide · mermaid · diff (Myers) · jszip · sql.js (bases de datos) · xterm.js + node-pty (terminal).

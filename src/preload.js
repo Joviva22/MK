@@ -30,8 +30,8 @@ contextBridge.exposeInMainWorld('mdEditor', {
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   saveSession: (data) => ipcRenderer.invoke('session:save', data),
   loadSession: () => ipcRenderer.invoke('session:load'),
-  homeLoad: () => ipcRenderer.invoke('home:load'),
-  homeSave: (data) => ipcRenderer.invoke('home:save', data),
+  homeLoad: (root) => ipcRenderer.invoke('home:load', root || null),
+  homeSave: (data, root) => ipcRenderer.invoke('home:save', data, root || null),
   terminal: {
     create: (opts) => ipcRenderer.invoke('term:create', opts),
     write: (id, data) => ipcRenderer.send('term:write', { id, data }),

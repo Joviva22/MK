@@ -2809,6 +2809,61 @@
   }
   check('Home: arrastrar de día tareas 📅 de notas y filas de bases de datos', dragHomeOk, dragHomeDetail);
 
+  // Home guardado en la carpeta abierta: activarlo copia las tareas a
+  // <carpeta>/.mk/home.json, lo nuevo se guarda ahí, y desactivarlo vuelve a
+  // la configuración de la app con las tareas tal como quedaron.
+  let inFolderOk = false;
+  let inFolderDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    const homeFile = window.mdEditor.joinPath(fixturesDir, '.mk', 'home.json');
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const before = 'Antes ' + Date.now();
+    const addTask = (t) => {
+      const qa = document.querySelector('#home-main .home-day.home-today .home-quick-add');
+      qa.value = t;
+      qa.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    };
+    addTask(before);
+    await new Promise((r) => setTimeout(r, 400)); // debounce de guardado
+
+    const toggle = document.getElementById('home-in-folder-toggle');
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event('change'));
+    const seeded = await waitFor(async () => {
+      const f = await window.mdEditor.readFile(homeFile);
+      return f && f.content.includes(before) && window.mdHome.dataLocation() === fixturesDir;
+    });
+    const after = 'EnCarpeta ' + Date.now();
+    addTask(after);
+    const savedInFolder = await waitFor(async () => {
+      const f = await window.mdEditor.readFile(homeFile);
+      return f && f.content.includes(after);
+    });
+
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event('change'));
+    await waitFor(() => window.mdHome.dataLocation() === null);
+    const findCard = (t) => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(t));
+    const backInApp = await waitFor(() => findCard(after) && findCard(before));
+
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    for (const t of [before, after]) {
+      const card = findCard(t);
+      if (!card) continue;
+      card.click();
+      await waitFor(() => document.querySelector('.home-editor'));
+      Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
+    }
+    window.confirm = originalConfirm;
+    window.mdHome.close();
+    inFolderOk = !!seeded && !!savedInFolder && !!backInApp;
+    inFolderDetail = `copiadoACarpeta=${!!seeded} nuevaEnCarpeta=${!!savedInFolder} vuelveAApp=${!!backInApp}`;
+  }
+  check('Home en la carpeta abierta (.mk/home.json): activar copia las tareas, guarda ahí, desactivar vuelve sin perder nada', inFolderOk, inFolderDetail);
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {
