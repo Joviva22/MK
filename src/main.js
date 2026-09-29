@@ -6,6 +6,7 @@ const { registerDatabaseIpc } = require('./dbengine');
 const { registerTerminalIpc, killAllTerminals } = require('./ptyhost');
 const trayMode = require('./traymode');
 const ctx = require('./mainctx');
+const errlog = require('./errlog');
 
 const APP_ICON = path.join(__dirname, '..', 'build', 'icon.png');
 // Nombre visible "MK" (notificaciones, etc.). OJO: setName también cambia
@@ -36,6 +37,21 @@ protocol.registerSchemesAsPrivileged([
 
 let mainWindow;
 
+errlog.init(app.getPath('userData'));
+ctx.logError = errlog.logError;
+// Error que el usuario tiene que saber (no se guardó algo): al log y un
+// aviso en la ventana (errortoast.js), sin repetir el mismo en 30 s.
+const lastReported = new Map();
+ctx.reportError = (where, err, userMessage) => {
+  errlog.logError(where, err);
+  const now = Date.now();
+  if (now - (lastReported.get(userMessage) || 0) < 30000) return;
+  lastReported.set(userMessage, now);
+  const win = ctx.mainWindow;
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('app:error', { message: userMessage, detail: String((err && err.message) || err || ''), logFile: errlog.logFile() });
+  }
+};
 const configPath = path.join(app.getPath('userData'), 'config.json');
 const sessionPath = path.join(app.getPath('userData'), 'session.json');
 const homePath = path.join(app.getPath('userData'), 'home.json');
@@ -67,17 +83,15 @@ if (!gotLock) {
   });
 }
 
+// Config, sesión y Home: lectura que aparta un JSON dañado (en vez de que
+// el próximo guardado lo pise con {}) y escritura atómica (ver errlog.js).
 function loadConfig() {
-  try {
-    return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  } catch {
-    return {};
-  }
+  const config = errlog.readJsonSafe(configPath, {});
+  return config && typeof config === 'object' ? config : {};
 }
 
 function saveConfig(config) {
-  fs.mkdirSync(path.dirname(configPath), { recursive: true });
-  fs.writeFileSync(configPath, JSON.stringify(config), 'utf-8');
+  errlog.writeJsonAtomic(configPath, config);
 }
 
 ctx.loadConfig = loadConfig;
@@ -219,10 +233,9 @@ ipcMain.handle('shell:openExternal', (event, url) => {
 
 ipcMain.handle('session:save', (event, data) => {
   try {
-    fs.mkdirSync(path.dirname(sessionPath), { recursive: true });
-    fs.writeFileSync(sessionPath, JSON.stringify(data), 'utf-8');
-  } catch {
-    // no romper la app si falla el guardado de sesión
+    errlog.writeJsonAtomic(sessionPath, data);
+  } catch (e) {
+    errlog.logError('session:save', e); // no romper la app por la sesión
   }
 });
 
@@ -234,35 +247,25 @@ function homeFileFor(root) {
   return root ? path.join(root, '.mk', 'home.json') : homePath;
 }
 
-ipcMain.handle('home:load', (event, root) => {
-  try {
-    return JSON.parse(fs.readFileSync(homeFileFor(root), 'utf-8'));
-  } catch {
-    return null;
-  }
-});
+ipcMain.handle('home:load', (event, root) => errlog.readJsonSafe(homeFileFor(root), null));
 
 ipcMain.handle('home:save', (event, data, root) => {
   const file = homeFileFor(root);
   try {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    // Escribir a un temporal y renombrar: si se corta a mitad (apagón,
-    // cierre forzado) no queda un home.json roto con todas las tareas.
-    fs.writeFileSync(file + '.tmp', JSON.stringify(data), 'utf-8');
-    fs.renameSync(file + '.tmp', file);
+    // Atómico: si se corta a mitad (apagón, cierre forzado) no queda un
+    // home.json roto con todas las tareas.
+    errlog.writeJsonAtomic(file, data);
     return true;
-  } catch {
+  } catch (e) {
+    ctx.reportError('home:save', e, 'No se pudieron guardar las tareas del Home.');
     return false;
   }
 });
 
-ipcMain.handle('session:load', () => {
-  try {
-    return JSON.parse(fs.readFileSync(sessionPath, 'utf-8'));
-  } catch {
-    return null;
-  }
-});
+ipcMain.handle('session:load', () => errlog.readJsonSafe(sessionPath, null));
+
+// Errores del renderer que valen la pena (ver window.mdLogError en preload).
+ipcMain.handle('log:error', (event, where, message) => errlog.logError(`renderer:${String(where).slice(0, 80)}`, String(message).slice(0, 4000)));
 
 ipcMain.handle('config:get', () => loadConfig());
 
@@ -279,7 +282,7 @@ require('./ipc-files'); // abrir/guardar, historial, árbol, vigilancia e índic
 require('./ipc-notes'); // búsqueda, etiquetas, wikilinks, backlinks, grafo, Kanban de carpeta
 require('./ipc-export'); // CSV, PDF, docx, HTML, EPUB, Anki
 require('./ipc-system'); // git y reproductor del sistema (playerctl)
-registerDatabaseIpc(ipcMain);
+registerDatabaseIpc(ipcMain, (channel, e) => ctx.reportError(channel, e, 'Error en la base de datos: el último cambio pudo no guardarse.'));
 registerTerminalIpc(ipcMain, () => mainWindow);
 
 const MEDIA_MIME = {

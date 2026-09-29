@@ -147,6 +147,8 @@ contextBridge.exposeInMainWorld('mdEditor', {
   // el proceso principal. Leer devuelve una promesa.
   clipboardWriteText: (text) => ipcRenderer.invoke('clipboard:writeText', text),
   clipboardReadText: () => ipcRenderer.invoke('clipboard:readText'),
+  logError: (where, message) => ipcRenderer.invoke('log:error', where, message),
+  onAppError: (callback) => ipcRenderer.on('app:error', (event, info) => callback(info)),
   db: {
     listDatabases: (root) => ipcRenderer.invoke('db:listDatabases', { root }),
     createDatabase: (root, name) => ipcRenderer.invoke('db:createDatabase', { root, name }),

@@ -123,8 +123,8 @@ async function makeBackup(filePath) {
       await fsp.unlink(path.join(dir, entries.shift()));
     }
     pruneGlobalBackups(); // en segundo plano
-  } catch {
-    // un backup fallido no debe impedir guardar el archivo real
+  } catch (e) {
+    ctx.logError('backup', e); // un backup fallido no debe impedir guardar el archivo real
   }
 }
 
@@ -143,7 +143,15 @@ ipcMain.handle('file:save', async (event, { content, filePath, forceDialog }) =>
   }
   const existed = await fsp.access(target).then(() => true, () => false);
   await makeBackup(target);
-  await fsp.writeFile(target, content, 'utf-8');
+  try {
+    await fsp.writeFile(target, content, 'utf-8');
+  } catch (e) {
+    // Disco lleno, sin permiso, carpeta borrada...: antes la promesa se
+    // rechazaba y el autoguardado fallaba en silencio. null = no guardado
+    // (la pestaña sigue con cambios y reintenta) + aviso visible.
+    ctx.reportError('file:save', e, `No se pudo guardar ${path.basename(target)}.`);
+    return null;
+  }
   indexTouch(target, !existed);
   return target;
 });

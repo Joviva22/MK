@@ -455,7 +455,19 @@ async function reorderViews(root, databaseId, orderedIds) {
   persist(root, db);
 }
 
-function registerDatabaseIpc(ipcMain) {
+// onError(canal, error): cualquier fallo (disco lleno, base dañada) se
+// informa y registra; el error igual sigue hasta el renderer como antes.
+function registerDatabaseIpc(realIpcMain, onError) {
+  const ipcMain = {
+    handle: (channel, fn) => realIpcMain.handle(channel, (e, args) => {
+      try {
+        return fn(e, args);
+      } catch (err) {
+        if (onError) onError(channel, err);
+        throw err;
+      }
+    })
+  };
   ipcMain.handle('db:listDatabases', (e, { root }) => listDatabases(root));
   ipcMain.handle('db:createDatabase', (e, { root, name }) => createDatabase(root, name));
   ipcMain.handle('db:renameDatabase', (e, { root, id, name }) => renameDatabase(root, id, name));

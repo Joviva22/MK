@@ -3574,6 +3574,30 @@
     );
   }
 
+  // Errores visibles y registrados: guardar donde no se puede devuelve null
+  // (no revienta) y muestra un aviso que apunta al log; un home.json dañado
+  // se aparta (queda como .corrupt-…) en vez de pisarse con uno vacío.
+  {
+    let detail = 'sin fixturesDir';
+    let ok = false;
+    if (fixturesDir) {
+      const J = window.mdEditor.joinPath;
+      const bad = await window.mdEditor.saveFile('x', J(fixturesDir, 'no-existe-esta-carpeta', 'nota.md'), false);
+      const toast = await waitFor(() => Array.from(document.querySelectorAll('.app-error-toast')).find((t) => t.textContent.includes('No se pudo guardar nota.md')));
+      const logOk = !!toast && toast.textContent.includes('mk.log');
+      document.querySelectorAll('.app-error-toast').forEach((t) => t.remove());
+      const hroot = J(fixturesDir, 'home-danado');
+      await window.mdEditor.createFolder(fixturesDir, 'home-danado');
+      await window.mdEditor.createFolder(hroot, '.mk');
+      await window.mdEditor.saveFile('{ esto no es json', J(hroot, '.mk', 'home.json'), false);
+      const loaded = await window.mdEditor.homeLoad(hroot);
+      const original = await window.mdEditor.readFile(J(hroot, '.mk', 'home.json'));
+      ok = bad === null && !!toast && logOk && loaded === null && original === null;
+      detail = `guardarDevuelveNull=${bad === null} aviso=${!!toast} log=${logOk} homeDañadoApartado=${loaded === null && original === null}`;
+    }
+    check('Errores: guardar sin poder avisa (con el log) sin romper, y un JSON dañado se aparta en vez de pisarse', ok, detail);
+  }
+
   // Sandbox: el preload usa su propio helper de rutas (sin require('path')).
   // Casos con el resultado de path de Node (generados con Node).
   {

@@ -78,7 +78,7 @@ module.exports = [
     ignores: ['node_modules/**', 'dist/**', 'build/**']
   },
   {
-    files: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/ipc-*.js', 'scripts/*.js', 'test/run.js', 'eslint.config.js'],
+    files: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/ipc-*.js', 'scripts/*.js', 'test/run.js', 'eslint.config.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',
@@ -93,7 +93,7 @@ module.exports = [
     // src/*.js son <script> del renderer; test/renderer-checks.js corre
     // dentro de esa misma ventana vía executeJavaScript (no es Node).
     files: ['src/*.js', 'test/renderer-checks.js'],
-    ignores: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/ipc-*.js'],
+    ignores: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/ipc-*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',

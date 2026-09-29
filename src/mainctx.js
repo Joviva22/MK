@@ -9,5 +9,7 @@ module.exports = {
   mainWindow: null,
   isTestMode: process.env.MK_TEST === '1',
   loadConfig: null,
-  saveConfig: null
+  saveConfig: null,
+  logError: () => {},
+  reportError: () => {}
 };
