@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 52 de 68 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 52 de 95 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -31,6 +31,8 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 **P4 — Mantenimiento técnico** (no se ve, pero hace que lo demás sea más fácil y seguro de cambiar)
 12. **Separar `main.js`** en módulos.
 13. **Migrar a módulos ES** (después del 12).
+
+**Escalabilidad** — ver la sección "Escalabilidad y solidez": lo más urgente es el **índice de la carpeta**, **vigilar la carpeta** y el **disco asíncrono** (sin eso, una carpeta con miles de notas congela MK).
 
 **P5 — Proyectos grandes** (requieren decidir antes el diseño; hacerlos de a uno y con tiempo)
 14. Sincronización entre dispositivos · 15. Windows y macOS · 16. Sistema de plugins · 17. Pizarra Excalidraw · 18. Dos editores escribibles · 19. Ejecutar Python en el preview · 20. YouTube embebido · 21. Editar texto dentro de un PDF.
@@ -96,6 +98,51 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 
 Mejoras chicas y de uso diario: se hacen en una sesión cada una. *(Todas hechas — ver "Prioridad recomendada" para lo que sigue.)*
 
+
+## Escalabilidad y solidez
+
+Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas grandes** (miles de notas), **más datos** (años de tareas, bases de miles de filas) y **más funciones**. Basado en lo que hoy hace el código (medido el 2026-09-29).
+
+### Carpetas grandes
+- [ ] **Índice de la carpeta**: hoy búsqueda, etiquetas, backlinks, grafo, Kanban de carpeta y tareas 📅 del Home **releen todos los archivos** en cada consulta. Un índice en memoria (ruta → fecha de modificación, etiquetas, enlaces, tareas) actualizado solo con lo que cambia, y guardado en `.mk/index` para arrancar rápido
+- [ ] **Vigilar la carpeta** (`fs.watch`): el árbol, el índice y las pestañas se actualizan solos cuando algo cambia afuera (git, otra app, una IA), sin botón 🔄
+- [ ] **Disco asíncrono en el proceso principal**: 63 llamadas `…Sync` bloquean toda la ventana mientras leen/escriben; con carpetas grandes o discos lentos, la app se congela. Pasarlas a `fs.promises`
+- [ ] **Árbol del sidebar virtualizado y cargado por demanda**: hoy se lee la carpeta entera (recursivo) al abrirla; leer cada subcarpeta al desplegarla y dibujar solo las filas visibles
+- [ ] **Búsqueda con índice y sin tope de 200**: resultados al instante, con filtros (carpeta, tipo, fecha) y búsqueda aproximada
+
+### Datos que crecen
+- [ ] **Bases de datos: guardar solo lo que cambió**: hoy cada edición reescribe el archivo SQLite **entero** (`db.export()`); agrupar escrituras (guardar cada ~1 s) o pasar a SQLite nativo con WAL
+- [ ] **Bases de datos grandes**: tabla virtualizada (solo filas visibles), paginación y cálculo de fórmulas/rollups en segundo plano, para bases de 10.000+ filas
+- [ ] **Home con años de tareas**: archivar tareas terminadas viejas (siguen en búsqueda y estadísticas) y buscar avisos por fecha en vez de recorrer todas las tareas cada 30 s
+- [ ] **Versión en los archivos de datos** (`home.json`, `config.json`, esquema SQLite) con migraciones automáticas, para poder cambiar formatos sin romper datos viejos
+- [ ] **Exportar / importar todo**: un solo archivo con Home, bases de datos, ajustes y snippets (respaldo y mudanza a otra computadora)
+
+### Rendimiento de la edición
+- [ ] **Preview incremental**: redibujar solo los bloques que cambiaron (hoy se regenera todo el HTML en cada pausa)
+- [ ] **Live Preview incremental al escribir**: hoy cada cambio de texto reconstruye todas las marcas del documento; limitarlo a las líneas tocadas
+- [ ] **Migrar a CodeMirror 6**: CodeMirror 5 está en mantenimiento; la 6 es más rápida con documentos grandes, tiene mejor accesibilidad y decoraciones nativas para Live Preview
+- [ ] **Medición continua** (`npm run bench`): arranque, render del preview y apertura de carpeta, con valores de referencia para detectar si algo empeora
+
+### Arquitectura
+- [ ] **Separar `main.js`** y **migrar a módulos ES** (ver Mediano/Largo plazo)
+- [ ] **Una sola capa de acceso a archivos** con validación de rutas centralizada (hoy cada IPC valida por su cuenta)
+- [ ] **Tareas pesadas fuera de la ventana** (Web Workers / proceso aparte): parseo de la carpeta, grafo, CSV grandes, PDFs grandes
+- [ ] **Traducciones (i18n)**: los textos están escritos en el código; sacarlos a archivos para poder tener MK en inglés u otros idiomas
+- [ ] **Accesibilidad**: navegación completa con teclado, roles ARIA en paneles y menús, probado con lector de pantalla
+
+### Calidad
+- [ ] **Tests unitarios rápidos** (node:test) para la lógica pura (fechas del Home, CSV, filtros, fórmulas, parseo de tareas), además de la suite de la app completa (hoy 106 checks, ~25 s)
+- [ ] **Registro de errores local** (`~/.config/md-editor-local/logs`) y botón "Reportar un problema" que arme el informe sin datos personales
+- [ ] **Pruebas visuales**: capturas de referencia de los paneles principales en claro/oscuro, para detectar diseño roto
+
+### Seguridad
+- [ ] **Content-Security-Policy** en la ventana (hoy no hay): solo scripts propios, sin `eval` remoto
+- [ ] **`sandbox: true` en el renderer**: hoy está desactivado porque el `preload` usa módulos de Node; mover eso al proceso principal
+- [ ] **Permisos de la terminal e IAs** documentados y visibles (qué carpeta ve cada una)
+
+### Distribución
+- [ ] **Versiones y CHANGELOG** (semver) y **releases automáticos** del AppImage en GitHub Actions
+- [ ] **Actualización automática** del AppImage (avisar cuando hay versión nueva y actualizar con un clic)
 
 ## Mediano plazo
 
