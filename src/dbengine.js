@@ -109,8 +109,21 @@ async function getDb(root) {
   return db;
 }
 
+// Escritura atómica: primero a un temporal (con fsync) y después rename, que
+// en el mismo disco es todo-o-nada. Antes se escribía encima del archivo
+// directamente: un corte a mitad (apagón, cierre forzado) dejaba el
+// .sqlite3 truncado y se perdían TODAS las bases de la carpeta.
 function persist(root, db) {
-  fs.writeFileSync(dbPathFor(root), Buffer.from(db.export()));
+  const target = dbPathFor(root);
+  const tmp = `${target}.${process.pid}.tmp`;
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeSync(fd, Buffer.from(db.export()));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, target);
 }
 
 function all(db, sql, params) {

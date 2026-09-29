@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 64 de 100 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 65 de 113 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -33,6 +33,8 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 13. **Migrar a módulos ES** (después del 12).
 
 **Escalabilidad** — ver la sección "Escalabilidad y solidez": ~~índice de la carpeta~~, ~~vigilar la carpeta~~ y ~~disco asíncrono~~ hechos (2026-09-29): una carpeta con miles de notas ya no congela MK.
+
+**Consolidación** — ver la sección "Consolidación" (revisión externa): validación de rutas en el proceso principal, CSP, sandbox y registro de errores van **antes** que funciones nuevas.
 
 **P5 — Proyectos grandes** (requieren decidir antes el diseño; hacerlos de a uno y con tiempo)
 14. Sincronización entre dispositivos · 15. Windows y macOS · 16. Sistema de plugins · 17. Pizarra Excalidraw · 18. Dos editores escribibles · 19. Ejecutar Python en el preview · 20. YouTube embebido · 21. Editar texto dentro de un PDF.
@@ -105,6 +107,29 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Aviso automático "1 semana antes"** (tareas del Home, 📅 de notas y fechas de bases de datos; interruptor y hora en el Home; "+ 1 semana antes" en el editor de avisos)~~ (2026-09-29)
 - [x] ~~**Terminal: elegir el shell** (⚙ Ajustes o menú ▾; lista de /etc/shells + PATH, validada en el proceso principal)~~ (2026-09-29)
 - [ ] **Índice guardado en `.mk/index`** para que la primera consulta tras abrir MK también sea rápida (y etiquetas/enlaces precalculados en el índice, no solo el texto)
+
+## Consolidación (revisión externa, `REVISION_APLICACION.md`)
+
+La revisión concluye —y coincido— que ahora toca **consolidar más que añadir**. Verificado en el código el 2026-09-29.
+
+**Prioridad alta**
+- [x] ~~**Bases de datos: guardado atómico**~~ (temporal + fsync + rename: un corte a mitad ya no deja el `.sqlite3` truncado) (2026-09-29)
+- [ ] **Validación de rutas central en el proceso principal**: hoy leer/guardar/crear/mover/borrar, bases de datos, git y `md-local://` aceptan cualquier ruta que mande la interfaz (`md-local://` sirve cualquier archivo del disco). Una sola función `assertAllowedPath` (carpeta abierta + archivos abiertos explícitamente por el usuario)
+- [ ] **Content Security Policy estricta** en `index.html` (scripts solo locales, sin `eval`, conexiones solo a `md-local:`)
+- [ ] **Activar `sandbox: true`** (mover a main lo que hoy el preload hace con `require`: `path`, highlight.js, portapapeles)
+- [ ] **Registro local de errores**: los `catch` silenciosos de operaciones importantes (guardar, bases de datos, importar) escriben en `userData/logs/mk.log` y muestran un mensaje claro
+- [ ] **Bases de datos: agrupar escrituras** (hoy cada cambio reescribe el archivo entero; guardar agrupado cada ~300 ms y al salir) o motor nativo con WAL
+
+**Prioridad media**
+- [ ] **Dividir `database.js` (~2200 líneas), `home.js` (~1800) y `styles.css` (~4400)** por responsabilidad (va junto con la migración a módulos ES)
+- [ ] **Pruebas unitarias rápidas** (Node, sin Electron) para fechas y recurrencias, filtros, fórmulas, CSV, rutas y transformaciones de Markdown; más tarde pruebas visuales
+- [ ] **Accesibilidad**: roles y etiquetas ARIA en paneles, menús, pestañas y diálogos; navegación completa con teclado
+- [ ] **Quitar los `…Sync` que quedan** en el proceso principal (exportar, config, sesión, Home)
+
+**Prioridad baja**
+- [ ] **Versionado semántico y CHANGELOG** (hoy `package.json` sigue en 1.0.0)
+- [ ] **Documentación sin cifras volátiles** (README ya corregido; revisar el resto)
+- [ ] **Primer arranque guiado**: separar claramente escribir / planificar / herramientas avanzadas
 
 ## Corto plazo (próximas sesiones)
 

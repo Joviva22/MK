@@ -25,7 +25,7 @@ También se pueden abrir y editar archivos de código (`.py`, `.c`/`.cpp`, `.jav
 Terminal real integrada (`` Ctrl+` ``) con pestañas, **pantalla dividida** (`Ctrl+Shift+5`), búsqueda en la salida y **F5** para ejecutar el archivo actual (`.py`, `.c`, `.js`, `.sh`…). **Abrir con IA**: Claude Code, Gemini CLI o Codex arrancan en la terminal con el archivo como contexto.
 
 ### Carpetas grandes
-La carpeta abierta **se vigila sola** (lo que cambie git, otra app o una IA aparece en el árbol y en las pestañas sin refrescar), el disco se lee sin congelar la ventana y un **índice en memoria** hace que búsqueda, etiquetas, backlinks, grafo y Kanban no relean todo cada vez (3000 notas: 159 ms la primera consulta, 7 ms las siguientes).
+La carpeta abierta **se vigila sola** (lo que cambie git, otra app o una IA aparece en el árbol y en las pestañas sin refrescar), el disco se lee sin congelar la ventana y un **índice en memoria** hace que búsqueda, etiquetas, backlinks, grafo y Kanban no relean todo cada vez: la primera consulta lee la carpeta y las siguientes son casi instantáneas.
 
 ### Un segundo archivo al lado (split view)
 El **panel secundario** muestra un segundo archivo (Markdown, PDF, `.docx` o imagen) de solo lectura junto al principal, del mismo ancho y con su propio divisor para repartir el espacio. Un clic en el título lo "promueve" a principal — sin necesidad de una segunda instancia del editor.
