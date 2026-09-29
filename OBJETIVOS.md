@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 50 de 68 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 51 de 68 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -18,7 +18,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 1. ~~**Escribir en PDF**~~ ✅ hecho. *(era prioridad alta)* abrir un PDF, hacer clic en cualquier lugar de la página y escribir (tamaño y color de letra), mover/borrar lo agregado, **rellenar formularios PDF** (campos de texto y casillas) y guardar como PDF nuevo. Editar el texto que ya viene impreso sigue en largo plazo.
 3. ~~**Abrir con IA (Claude Code, Gemini CLI, Codex)**~~ ✅ hecho.
 4. ~~**Gráficos en las bases de datos**~~ ✅ hecho.
-5. **Búsqueda global también en bases de datos y tareas del Home**: hoy `Ctrl+Shift+F` no las encuentra; con tantas cosas fuera de los `.md`, se vuelve un hueco.
+5. ~~**Búsqueda global también en bases de datos y tareas del Home**~~ ✅ hecho.
 6. **Recordatorios y resumen diario por Gmail**: el sistema de avisos ya está completo; falta el canal de correo (necesita tu contraseña de aplicación de Google).
 7. **Home: estadísticas**: aprovecha los gráficos del punto 4 (tareas hechas por semana, rachas de hábitos).
 
@@ -89,6 +89,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Arreglo sidebar**: mover un archivo arrastrándolo volvía a fallar (el arrastre nativo pisaba al interno en Electron 44; ahora es `Alt`+arrastrar); el árbol ya no se pliega entero al crear/mover/renombrar (lo nuevo queda visible y resaltado); mover una carpeta actualiza las pestañas de sus archivos; "Mi nota" se crea como `Mi nota.md`~~ (2026-09-29)
 - [x] ~~**Gráficos en las bases de datos**: vista Gráfico (barras, líneas, torta) agrupando por cualquier columna o por día/semana/mes/año, midiendo cantidad/suma/promedio; tooltip y "Ver tabla"~~ (2026-09-29)
 - [x] ~~**Escribir en PDF**: texto libre en cualquier lugar de la página (tamaño, color, mover, borrar) y formularios PDF (texto, casillas, listas), guardado en un PDF nuevo~~ (2026-09-29)
+- [x] ~~**Búsqueda global en tareas del Home y bases de datos** (secciones Archivos / Tareas / Bases de datos; clic abre la tarea o la base filtrada)~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
@@ -105,7 +106,6 @@ Funciones más grandes o que tocan varias partes de la app.
 - [ ] **Recordatorios por Gmail**: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: es la única función que necesita internet
 - [ ] **Resumen diario por Gmail**: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas
 - [ ] **Terminal: pantalla dividida** (dos terminales visibles lado a lado)
-- [ ] **Búsqueda global también en bases de datos y tareas del Home**
 - [ ] **Separar `main.js`** (más de 1100 líneas) en módulos por área, como ya se hizo con `dbengine.js` y `ptyhost.js`
 - [ ] **Nota diaria configurable**: elegir carpeta y formato del nombre (hoy siempre `Diario/AAAA-MM-DD.md`)
 

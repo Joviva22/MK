@@ -134,10 +134,14 @@ function runElectron() {
   child.stdout.on('data', (d) => { stdout += d; });
   child.stderr.on('data', (d) => { stdout += d; });
 
+  // Límite de toda la suite. Eran 30 s y con ~100 checks la corrida normal
+  // rondaba ese número: a veces se cortaba justo después de imprimir los
+  // resultados (todo OK pero código de salida 1).
+  const startedAt = Date.now();
   const timeout = setTimeout(() => {
     console.error('Timeout: la app no terminó los tests a tiempo, matando proceso.');
     child.kill('SIGKILL');
-  }, 30000);
+  }, 120000);
 
   child.on('close', (code) => {
     clearTimeout(timeout);
@@ -167,7 +171,7 @@ function runElectron() {
       if (!r.pass) failCount++;
     }
 
-    console.log(`\n${results.length - failCount}/${results.length} checks OK`);
+    console.log(`\n${results.length - failCount}/${results.length} checks OK (${Math.round((Date.now() - startedAt) / 1000)} s)`);
     process.exit(failCount === 0 && code === 0 ? 0 : 1);
   });
 

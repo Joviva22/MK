@@ -1519,6 +1519,27 @@ startupToggle.addEventListener('change', () => {
   window.mdEditor.setConfig({ homeOnStartup: startupToggle.checked });
 });
 
-window.mdHome = { open, close, setMode, checkReminders, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
+// Búsqueda global (search.js): tareas del Home por título y notas.
+async function searchTasks(query) {
+  const q = (query || '').trim().toLowerCase();
+  if (q.length < 2) return [];
+  await load();
+  return data.tasks
+    .filter((t) => (t.title || '').toLowerCase().includes(q) || (t.notes || '').toLowerCase().includes(q))
+    .slice(0, 50)
+    .map((t) => ({ id: t.id, title: t.title, date: t.date, recurring: !!(t.repeat && t.repeat.freq), done: !!t.done, notes: t.notes || '' }));
+}
+
+// Abrir el Home en la semana de la tarea, con su editor abierto.
+async function revealTask(id) {
+  await open();
+  const task = data.tasks.find((t) => t.id === id);
+  if (!task) return;
+  if (task.date) cursor = parseIso(task.date);
+  setMode('week');
+  openTaskEditor(task.date ? findItem(task.id, task.date) : itemFor(task));
+}
+
+window.mdHome = { open, close, setMode, checkReminders, searchTasks, revealTask, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
 
 })();

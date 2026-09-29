@@ -13,8 +13,8 @@
 
 ## Detalles
 - `Ctrl+F`: `Enter`/`Shift+Enter` siguiente/anterior; ⇄ abre reemplazar ("Reemplazar" o "Todo"). Funciona también en modo lectura. Si había texto seleccionado, arranca buscándolo.
-- Búsqueda global: hasta 200 resultados en `.md`, `.txt`, `.tex`; clic abre el archivo en esa línea.
+- Búsqueda global: hasta 200 resultados en `.md`, `.txt`, `.tex`; clic abre el archivo en esa línea. Además busca en **Tareas del Home** (título y notas; clic abre el Home en esa semana con la tarea en edición) y en **Bases de datos** (cualquier campo, incluidas las etiquetas de selección; clic abre la base ya filtrada). Los resultados salen en tres secciones.
 - `Ctrl+P`: `↑`/`↓` y `Enter`.
 
 ## Límites
-La búsqueda global no reemplaza. No busca dentro de las bases de datos ni de las tareas del Home.
+La búsqueda global no reemplaza. En bases de datos no busca dentro de fórmulas ni rollups (se calculan al abrir la base).

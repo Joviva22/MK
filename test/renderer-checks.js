@@ -3071,6 +3071,55 @@
     check('Tareas 📅 de notas: ignora las que están dentro de código (inline o bloques)', found === '2026-10-01,2026-10-07', `encontradas=${found}`);
   }
 
+  // Búsqueda global también en tareas del Home y filas de bases de datos
+  // (por etiqueta de selección); clic en la fila abre la base ya filtrada.
+  let searchAllOk = false;
+  let searchAllDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    const token = 'zorzal' + Date.now();
+    const sdb = await window.mdEditor.db.createDatabase(fixturesDir, 'BuscarDB');
+    const [sName] = await window.mdEditor.db.listColumns(fixturesDir, sdb.id);
+    const sSel = await window.mdEditor.db.createColumn(fixturesDir, sdb.id, { name: 'Estado', type: 'select', options: { choices: [{ id: 'z', label: `Estado ${token}`, color: '#888' }] } });
+    await window.mdEditor.db.createRow(fixturesDir, sdb.id, { [sName.id]: 'Fila con etiqueta', [sSel.id]: 'z' });
+
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const qa = document.querySelector('#home-main .home-day.home-today .home-quick-add');
+    qa.value = `Tarea ${token}`;
+    qa.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    window.mdHome.close();
+
+    window.mdSearch.open();
+    const si = document.getElementById('search-input');
+    si.value = token;
+    si.dispatchEvent(new Event('input'));
+    await waitFor(() => document.querySelectorAll('#search-results .search-section-title').length >= 2, 6000);
+    const sections = Array.from(document.querySelectorAll('#search-results .search-section-title')).map((t) => t.textContent).join(' | ');
+    const hasTask = /Tareas del Home \(1\)/.test(sections);
+    const hasRow = /Bases de datos \(1\)/.test(sections);
+    const rowItem = Array.from(document.querySelectorAll('#search-results .search-result-item')).find((i) => i.textContent.includes('BuscarDB'));
+    if (rowItem) rowItem.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    const filtered = await waitFor(() => !document.getElementById('database-panel').hidden && document.getElementById('database-filter-input').value === token);
+    window.mdDatabase.close();
+
+    // Limpieza: la tarea de prueba.
+    const found = await window.mdHome.searchTasks(token);
+    if (found[0]) {
+      await window.mdHome.revealTask(found[0].id);
+      await waitFor(() => document.querySelector('.home-editor'));
+      const originalConfirm = window.confirm;
+      window.confirm = () => true;
+      Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
+      window.confirm = originalConfirm;
+      window.mdHome.close();
+    }
+    await window.mdEditor.db.deleteDatabase(fixturesDir, sdb.id);
+    searchAllOk = hasTask && hasRow && !!filtered && !!found[0];
+    searchAllDetail = `secciones="${sections}" abreBaseFiltrada=${!!filtered} revelaTarea=${!!found[0]}`;
+  }
+  check('Búsqueda global: también tareas del Home y filas de bases de datos (clic abre la base filtrada)', searchAllOk, searchAllDetail);
+
   // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
   // tildar una repetición no tilda las demás) y recordatorio con hora.
   {

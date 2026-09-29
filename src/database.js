@@ -2099,6 +2099,56 @@ function close() {
   overlay.hidden = true;
 }
 
-window.mdDatabase = { open, close, parseCsv, inferColumn, duplicateRow, chartData };
+// Abrir una base con el buscador de filas ya filtrando (búsqueda global).
+async function openWithFilter(databaseId, text) {
+  await open(databaseId);
+  state.filter = text || '';
+  filterInput.value = state.filter;
+  renderView();
+}
+
+// Búsqueda global (search.js): filas de todas las bases de la carpeta cuyo
+// texto (celdas, etiquetas de selección, casillas) contiene la consulta.
+// Fórmulas y rollups no: habría que calcular todo, y ya se ven al abrir.
+async function searchRows(query, limit) {
+  const r = root();
+  const q = (query || '').trim().toLowerCase();
+  if (!r || q.length < 2) return [];
+  const out = [];
+  const databases = await window.mdEditor.db.listDatabases(r);
+  for (const db of databases) {
+    const [columns, rows] = await Promise.all([window.mdEditor.db.listColumns(r, db.id), window.mdEditor.db.listRows(r, db.id)]);
+    const titleCol = columns[0];
+    const textOf = (col, row) => {
+      const raw = row.cells[col.id];
+      if (raw == null || raw === '') return '';
+      if (col.type === 'select') { const c = findChoice(col, raw); return c ? c.label : ''; }
+      if (col.type === 'multiselect') return parseJsonArray(raw).map((id) => { const c = findChoice(col, id); return c ? c.label : ''; }).join(' ');
+      if (col.type === 'checkbox') return raw === '1' ? col.name : '';
+      return String(raw);
+    };
+    for (const row of rows) {
+      for (const col of columns) {
+        if (['formula', 'rollup', 'relation', 'created_time'].includes(col.type)) continue;
+        const text = textOf(col, row);
+        const idx = text.toLowerCase().indexOf(q);
+        if (idx === -1) continue;
+        out.push({
+          databaseId: db.id,
+          databaseName: (db.icon ? db.icon + ' ' : '') + db.name,
+          rowId: row.id,
+          title: (titleCol && textOf(titleCol, row)) || '(sin nombre)',
+          column: col.name,
+          snippet: text.length > 120 ? '…' + text.slice(Math.max(0, idx - 40), idx + 80) + '…' : text
+        });
+        break; // una vez por fila alcanza
+      }
+      if (out.length >= (limit || 50)) return out;
+    }
+  }
+  return out;
+}
+
+window.mdDatabase = { open, openWithFilter, searchRows, close, parseCsv, inferColumn, duplicateRow, chartData };
 
 })();
