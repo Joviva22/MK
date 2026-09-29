@@ -12,7 +12,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "electron": "^32.0.0",
+    "electron": "^44.4.5",
     "electron-builder": "^26.15.3",
     "eslint": "^10.10.0"
   },
@@ -39,8 +39,8 @@
     "turndown-plugin-gfm": "^1.0.2"
   },
   "allowScripts": {
-    "electron@32.3.3": true,
-    "node-pty@1.1.0": true
+    "node-pty@1.1.0": true,
+    "electron@44.4.5": true
   },
   "build": {
     "appId": "local.mk.editor",

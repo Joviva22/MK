@@ -225,9 +225,10 @@ function runAction(action, value) {
       }
       break;
     case 'paste': {
-      const text = window.mdEditor.clipboardReadText();
-      if (text) cm.replaceSelection(text);
-      cm.focus();
+      window.mdEditor.clipboardReadText().then((text) => {
+        if (text) cm.replaceSelection(text);
+        cm.focus();
+      });
       break;
     }
     case 'selectall':

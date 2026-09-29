@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer, webUtils, clipboard } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 const path = require('path');
 // El paquete npm de highlight.js no trae un build listo para <script>: su
 // carpeta "es/" reexporta la build CommonJS, que un <script type="module">
@@ -90,8 +90,10 @@ contextBridge.exposeInMainWorld('mdEditor', {
   relativePath: (fromFile, toPath) => path.relative(path.dirname(fromFile), toPath),
   relativeToRoot: (root, filePath) => path.relative(root, filePath),
   getPathForFile: (file) => webUtils.getPathForFile(file),
-  clipboardWriteText: (text) => clipboard.writeText(text),
-  clipboardReadText: () => clipboard.readText(),
+  // El módulo clipboard ya no existe en el preload (Electron 40+): pasa por
+  // el proceso principal. Leer devuelve una promesa.
+  clipboardWriteText: (text) => ipcRenderer.invoke('clipboard:writeText', text),
+  clipboardReadText: () => ipcRenderer.invoke('clipboard:readText'),
   db: {
     listDatabases: (root) => ipcRenderer.invoke('db:listDatabases', { root }),
     createDatabase: (root, name) => ipcRenderer.invoke('db:createDatabase', { root, name }),

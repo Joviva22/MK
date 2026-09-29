@@ -233,7 +233,7 @@ async function createSession(cwd) {
       return false;
     }
     if (ctrl && e.shiftKey && e.key.toLowerCase() === 'v') {
-      Promise.resolve(window.mdEditor.clipboardReadText()).then((text) => { if (text) term.paste(text); });
+      window.mdEditor.clipboardReadText().then((text) => { if (text) term.paste(text); });
       return false;
     }
     // Atajos globales de MK: que xterm no los mande al shell.

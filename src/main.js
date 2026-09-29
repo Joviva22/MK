@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, net, shell, nativeImage } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, net, shell, nativeImage, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -169,6 +169,9 @@ async function runTests() {
 ipcMain.handle('spellcheck:addWord', (event, word) => {
   if (typeof word === 'string' && word) mainWindow.webContents.session.addWordToSpellCheckerDictionary(word);
 });
+
+ipcMain.handle('clipboard:writeText', (event, text) => clipboard.writeText(String(text == null ? '' : text)));
+ipcMain.handle('clipboard:readText', () => clipboard.readText());
 
 // Traer la ventana al frente (clic en la notificación de un recordatorio).
 ipcMain.handle('window:focus', () => {
