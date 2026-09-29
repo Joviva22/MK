@@ -295,6 +295,8 @@ Pensada para llevar un diario o un registro rápido del día, sin tener que crea
 2. MK busca (o crea, si no existe todavía) el archivo `Diario/AAAA-MM-DD.md` con la fecha de hoy, dentro de tu carpeta abierta — por ejemplo `Diario/2026-09-09.md`.
 3. Si es la primera vez que la abrís ese día, la crea con la fecha como encabezado; si ya escribiste algo hoy, la abre tal cual la dejaste.
 
+**Configurable** en ⚙ Ajustes → "Nota diaria": la **carpeta** (por defecto `Diario`), el **formato** del nombre (`AAAA`, `AA`, `MM`, `DD`; con `/` se reparte en subcarpetas, ej. `AAAA/MM/DD` → `2026/09/29.md`) y una **plantilla** opcional (una nota de tu carpeta; `{{fecha}}` se reemplaza por la fecha). Debajo se ve la ruta que tendría la nota de hoy.
+
 El atajo siempre te lleva a la nota de *hoy* — para ayer o mañana hay que abrir el archivo a mano desde el sidebar (`Diario/2026-09-08.md`, etc.). Necesita una carpeta abierta (si no tenés ninguna carpeta abierta, no sabe dónde crear `Diario/`).
 
 ## 10. Tablero Kanban

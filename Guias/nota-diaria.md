@@ -8,12 +8,22 @@
 
 Necesita carpeta abierta. Días anteriores: abrilos desde `Diario/` en el sidebar.
 
+## Configurarla (⚙ Ajustes → Nota diaria)
+| Campo | Qué hace | Ejemplo |
+|---|---|---|
+| **Carpeta** | Dónde se guardan (dentro de tu carpeta). Vacío = en la raíz | `Diario`, `Trabajo/Bitácora` |
+| **Formato** | Nombre del archivo: `AAAA` año, `AA` año corto, `MM` mes, `DD` día. Con `/` se reparte en subcarpetas | `AAAA-MM-DD` → `2026-09-29.md` · `AAAA/MM/DD` → `2026/09/29.md` |
+| **Plantilla** | Nota de tu carpeta cuyo texto se copia al crear la del día. `{{fecha}}` se cambia por la fecha | `Plantillas/diaria.md` |
+
+Debajo se ve cómo quedaría la nota de hoy. Las notas que ya existen no se tocan: cambiar el formato solo afecta a las nuevas.
+
 ## Ideas de uso
 - **Diario de trabajo**: qué hiciste, bloqueos, decisiones.
 - **Registro de estudio**: qué temas viste hoy y dudas para la clase.
 - **Bitácora personal**: gratitud, ánimo, lo que aprendiste.
-- Plantilla sugerida:
+- Plantilla sugerida (guardala como `Plantillas/diaria.md` y ponela en Ajustes):
   ```markdown
+  # {{fecha}}
   ## Plan
   - [ ]
   ## Notas

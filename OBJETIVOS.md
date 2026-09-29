@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 56 de 97 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 57 de 97 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -25,7 +25,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 **P3 — Comodidad**
 8. ~~**Gráficos desde tablas Markdown**~~ ✅ hecho.
 9. ~~**Bases de datos dentro de una nota**~~ ✅ hecho.
-10. **Nota diaria configurable** (carpeta y nombre).
+10. ~~**Nota diaria configurable**~~ ✅ hecho.
 11. **Terminal: pantalla dividida**.
 
 **P4 — Mantenimiento técnico** (no se ve, pero hace que lo demás sea más fácil y seguro de cambiar)
@@ -97,6 +97,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Fotos, video y audio de cualquier formato común** (visor único, audio embebido `![[x.mp3]]`, adelantar en archivos largos con pedidos por rango, "Abrir con la aplicación del sistema" para lo que no se puede mostrar)~~ (2026-09-29)
 - [x] ~~**Gráficos desde tablas Markdown** (bloque `chart`: barras, líneas, torta; preview, Live Preview y export)~~ (2026-09-29)
 - [x] ~~**Bases de datos dentro de una nota** (bloque `database`: base, vista con sus filtros o gráfico, filas; botón Abrir; preview y Live Preview)~~ (2026-09-29)
+- [x] ~~**Nota diaria configurable** (carpeta, formato AAAA/AA/MM/DD con subcarpetas y plantilla, en Ajustes)~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
@@ -156,7 +157,6 @@ Funciones más grandes o que tocan varias partes de la app.
 - [ ] **Resumen diario por Gmail**: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas
 - [ ] **Terminal: pantalla dividida** (dos terminales visibles lado a lado)
 - [ ] **Separar `main.js`** (más de 1100 líneas) en módulos por área, como ya se hizo con `dbengine.js` y `ptyhost.js`
-- [ ] **Nota diaria configurable**: elegir carpeta y formato del nombre (hoy siempre `Diario/AAAA-MM-DD.md`)
 
 ## Largo plazo
 

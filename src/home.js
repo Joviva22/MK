@@ -785,7 +785,7 @@ function todayPlanLines() {
 
 async function sendPlanToDailyNote() {
   if (!window.mdState.rootFolder) {
-    alert('Abrí una carpeta primero: la nota diaria se guarda dentro de ella (Diario/).');
+    alert('Abrí una carpeta primero: la nota diaria se guarda dentro de ella.');
     return;
   }
   const lines = todayPlanLines();

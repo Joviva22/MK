@@ -114,6 +114,14 @@
         <label class="dropdown-label" for="snippets-textarea">Snippets de texto (uno por línea)</label>
         <textarea id="snippets-textarea" class="snippets-textarea" rows="3" placeholder="/firma = Saludos, Tu Nombre"></textarea>
 
+        <div class="dropdown-label" title="Ctrl+Shift+D. Formato: AAAA (año), AA, MM (mes), DD (día); con / se reparte en subcarpetas, ej. AAAA/MM/AAAA-MM-DD">Nota diaria (Ctrl+Shift+D)</div>
+        <div class="dailynote-settings">
+          <input type="text" id="dailynote-folder" class="settings-text-input" placeholder="Carpeta (vacío = raíz)" title="Carpeta dentro de la carpeta abierta" />
+          <input type="text" id="dailynote-format" class="settings-text-input" placeholder="AAAA-MM-DD" title="Nombre: AAAA, AA, MM, DD; / = subcarpeta" />
+          <input type="text" id="dailynote-template" class="settings-text-input" placeholder="Plantilla (opcional): Plantillas/diaria.md" title="Nota cuyo texto se copia al crear la nota del día; {{fecha}} se reemplaza por la fecha" />
+          <div id="dailynote-example" class="dailynote-example"></div>
+        </div>
+
         <label class="dropdown-label" for="gitsync-toggle">
           <input type="checkbox" id="gitsync-toggle" /> Sincronizar con git al guardar
         </label>

@@ -290,6 +290,34 @@ label.dropdown-label {
   color: var(--text);
 }
 
+.dailynote-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 10px 6px;
+}
+
+.settings-text-input {
+  width: 220px;
+  padding: 5px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.dailynote-example {
+  font-size: 11px;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.dailynote-example-error {
+  color: var(--danger, #c0392b);
+}
+
 .snippets-textarea {
   margin: 4px 10px 6px;
   padding: 6px;

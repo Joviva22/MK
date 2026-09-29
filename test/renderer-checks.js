@@ -1561,6 +1561,26 @@
     check('Nota diaria: crea y abre Diario/AAAA-MM-DD.md con un encabezado', false, 'sin fixturesDir');
   }
 
+  // 32b. Nota diaria configurable: carpeta, formato con subcarpetas y
+  // plantilla; rutas raras se rechazan.
+  if (fixturesDir) {
+    const prev = window.mdDailyNote.getSettings();
+    const d = new Date(2026, 0, 5);
+    const fmtOk = window.mdDailyNote.formatName('AAAA/MM/DD-MM-AA', d) === '2026/01/05-01-26';
+    const badOk = !!window.mdDailyNote.pathFor(d, { folder: '../fuera', format: 'AAAA' }).error;
+    await window.mdEditor.saveFile('# Día {{fecha}}\n\n## Plan\n', window.mdEditor.joinPath(fixturesDir, 'plantilla-diaria.md'), false);
+    window.mdDailyNote.setSettings({ folder: 'Bitácora', format: 'AAAA/MM/DD', template: 'plantilla-diaria.md' });
+    await window.mdDailyNote.open(d);
+    const expected = window.mdEditor.joinPath(fixturesDir, 'Bitácora', '2026', '01', '05.md');
+    await waitFor(() => window.mdState.currentFilePath === expected);
+    const onDisk = await window.mdEditor.readFile(expected);
+    const tplOk = !!onDisk && onDisk.content.startsWith('# Día ') && onDisk.content.includes('## Plan') && !onDisk.content.includes('{{fecha}}');
+    window.mdDailyNote.setSettings(prev);
+    check('Nota diaria configurable: carpeta, AAAA/MM/DD en subcarpetas, plantilla y rutas inválidas rechazadas',
+      fmtOk && badOk && window.mdState.currentFilePath === expected && tplOk,
+      `formato=${fmtOk} rechaza=${badOk} ruta=${window.mdState.currentFilePath} plantilla=${tplOk}`);
+  }
+
   // 33. Diagramas Mermaid: un fence ```mermaid``` se reemplaza por un <div
   // class="mermaid"> renderizado (SVG), no un bloque de código
   window.mdCodeMirror.setValue('```mermaid\ngraph TD;\nA-->B;\n```\n');
