@@ -3207,13 +3207,72 @@ li.CodeMirror-hint-active {
   padding: 4px 0 0 8px;
 }
 
-.terminal-instance {
+.terminal-group {
   position: absolute;
   inset: 4px 0 0 8px;
+  display: flex;
 }
 
-.terminal-instance[hidden] {
+.terminal-group[hidden] {
   display: none;
+}
+
+.terminal-instance {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Pantalla dividida: separador entre paneles y el activo marcado arriba. */
+/* Sin padding/borde en el panel: FitAddon mide su ancho y los contaría. */
+.terminal-group-split {
+  gap: 9px;
+}
+
+.terminal-group-split .terminal-instance + .terminal-instance::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.terminal-group-split .terminal-instance-focused::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 8px;
+  top: -3px;
+  height: 2px;
+  z-index: 4;
+  background: var(--accent);
+}
+
+.terminal-pane-close {
+  display: none;
+  position: absolute;
+  top: 2px;
+  right: 14px;
+  z-index: 5;
+  border: none;
+  border-radius: 4px;
+  background: var(--bg-secondary, var(--bg));
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 5px;
+  opacity: 0;
+}
+
+.terminal-group-split .terminal-pane-close {
+  display: block;
+}
+
+.terminal-group-split .terminal-instance:hover .terminal-pane-close {
+  opacity: 1;
 }
 
 /* ---- Home: nota enlazada, tareas de notas, plan de hoy ---- */

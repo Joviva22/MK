@@ -52,6 +52,7 @@ function buildCommands() {
     cmds.push({ label: `IA: abrir ${label} sobre el archivo actual`, run: () => window.mdTerminal && window.mdTerminal.openActiveWithAI(id) });
   });
   cmds.push({ label: 'Terminal: nueva terminal', run: () => window.mdTerminal && window.mdTerminal.newTerminal() });
+  cmds.push({ label: 'Terminal: dividir (otra al lado)', run: () => window.mdTerminal && window.mdTerminal.splitTerminal() });
   cmds.push({ label: 'Home: planificador semanal y mensual', run: () => window.mdHome && window.mdHome.open() });
   cmds.push({ label: 'Bases de datos', run: () => window.mdDatabase && window.mdDatabase.open() });
   cmds.push({ label: 'Ver grafo de notas', run: () => window.mdGraph && window.mdGraph.open() });

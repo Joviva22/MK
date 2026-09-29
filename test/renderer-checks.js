@@ -2333,6 +2333,39 @@
     );
   }
 
+  // Terminal: pantalla dividida — dos shells lado a lado en una pestaña,
+  // cada uno con su salida y su ancho; cerrar un panel deja el otro.
+  {
+    const a = await window.mdTerminal.newTerminal();
+    await new Promise((r) => setTimeout(r, 300));
+    const b = await window.mdTerminal.splitTerminal();
+    let detail = 'sin sesiones';
+    let ok = false;
+    if (a && b && !a.exited && !b.exited) {
+      const screen = (s) => {
+        const buf = s.term.buffer.active;
+        let text = '';
+        for (let i = 0; i < buf.length; i++) text += buf.getLine(i).translateToString(true) + '\n';
+        return text;
+      };
+      const oneTab = document.querySelectorAll('.terminal-tab').length === 1 && a.group === b.group;
+      await new Promise((r) => requestAnimationFrame(r));
+      const aw = a.el.getBoundingClientRect().width;
+      const bw = b.el.getBoundingClientRect().width;
+      const sideBySide = aw > 50 && Math.abs(aw - bw) < 20 && b.el.getBoundingClientRect().left > a.el.getBoundingClientRect().left;
+      await new Promise((r) => setTimeout(r, 500));
+      window.mdEditor.terminal.write(b.id, 'echo SOLO_EN_B\r');
+      const outB = !!(await waitFor(() => screen(b).includes('SOLO_EN_B'), 8000));
+      const notInA = !screen(a).includes('SOLO_EN_B');
+      b.el.querySelector('.terminal-pane-close').click();
+      const afterClose = window.mdTerminal.getSessions().length === 1 && !a.el.hidden && document.querySelectorAll('.terminal-tab').length === 1;
+      ok = oneTab && sideBySide && outB && notInA && afterClose;
+      detail = `unaPestaña=${oneTab} ladoALado=${sideBySide}(${Math.round(aw)}/${Math.round(bw)}) salidaB=${outB} noEnA=${notInA} cerrarPanel=${afterClose}`;
+    }
+    for (let i = 0; i < 10 && document.querySelector('.terminal-tab-close'); i++) document.querySelector('.terminal-tab-close').click();
+    check('Terminal: pantalla dividida (dos shells lado a lado, cerrar un panel deja el otro)', ok && window.mdTerminal.getSessions().length === 0, detail);
+  }
+
   // Terminal: F5 / "Ejecutar archivo" guarda y corre el archivo activo.
   let runFileOk = false;
   let runFileDetail = 'sin fixturesDir';

@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 57 de 97 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 58 de 97 objetivos cumplidos · última actualización 2026-09-29.
 
 ---
 
@@ -26,7 +26,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 8. ~~**Gráficos desde tablas Markdown**~~ ✅ hecho.
 9. ~~**Bases de datos dentro de una nota**~~ ✅ hecho.
 10. ~~**Nota diaria configurable**~~ ✅ hecho.
-11. **Terminal: pantalla dividida**.
+11. ~~**Terminal: pantalla dividida**~~ ✅ hecho.
 
 **P4 — Mantenimiento técnico** (no se ve, pero hace que lo demás sea más fácil y seguro de cambiar)
 12. **Separar `main.js`** en módulos.
@@ -98,6 +98,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Gráficos desde tablas Markdown** (bloque `chart`: barras, líneas, torta; preview, Live Preview y export)~~ (2026-09-29)
 - [x] ~~**Bases de datos dentro de una nota** (bloque `database`: base, vista con sus filtros o gráfico, filas; botón Abrir; preview y Live Preview)~~ (2026-09-29)
 - [x] ~~**Nota diaria configurable** (carpeta, formato AAAA/AA/MM/DD con subcarpetas y plantilla, en Ajustes)~~ (2026-09-29)
+- [x] ~~**Terminal: pantalla dividida** (◫ / Ctrl+Shift+5, hasta 4 shells lado a lado por pestaña, cerrar un panel o la pestaña)~~ (2026-09-29)
 
 ## Corto plazo (próximas sesiones)
 
@@ -155,7 +156,6 @@ Funciones más grandes o que tocan varias partes de la app.
 
 - [ ] **Recordatorios por Gmail**: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: es la única función que necesita internet
 - [ ] **Resumen diario por Gmail**: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas
-- [ ] **Terminal: pantalla dividida** (dos terminales visibles lado a lado)
 - [ ] **Separar `main.js`** (más de 1100 líneas) en módulos por área, como ya se hizo con `dbengine.js` y `ptyhost.js`
 
 ## Largo plazo

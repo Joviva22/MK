@@ -18,6 +18,7 @@
 - Arranca en la **carpeta abierta** en MK (si no hay ninguna, en tu carpeta personal).
 - Programas interactivos funcionan: `vim`, `nano`, `htop`, `less`, `git log`, `python` interactivo, `ssh`.
 - **Varias terminales**: botón **+**, cada una en su pestaña (`1: zsh`, `2: zsh`…). **Doble clic en el nombre** de una pestaña para renombrarla ("servidor", "git"…).
+- **Pantalla dividida**: botón **◫** o `Ctrl+Shift+5` pone otra terminal **al lado**, en la misma pestaña (hasta 4 paneles; la pestaña se ve como `1: zsh │ zsh`). Ideal para un servidor corriendo a la izquierda y comandos a la derecha. Clic en un panel lo activa (raya de color arriba); la **×** que aparece en su esquina al pasar el mouse cierra solo ese panel; la **×** de la pestaña cierra todos.
 - **Alto del panel**: arrastrá el borde de arriba. Se recuerda.
 - Usa una fuente **Nerd Font** si tenés alguna instalada (JetBrainsMono / FiraCode / MesloLGS Nerd Font), así los prompts con íconos (Powerlevel10k, Starship) se ven bien.
 - Sigue los colores del **tema** de MK (fondo, texto, cursor), con una paleta de colores ANSI distinta para temas claros y oscuros, para que todo se lea bien.

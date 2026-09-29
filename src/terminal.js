@@ -8,7 +8,8 @@
 // Atajos: Ctrl+` (o Ctrl+Ñ en teclado español) muestra/oculta el panel;
 // F5 guarda y ejecuta el archivo activo (.py, .sh, .js, .c, .cpp, .java...);
 // Ctrl+Shift+C / Ctrl+Shift+V copian/pegan dentro de la terminal; Ctrl+F
-// busca en la salida. Con el
+// busca en la salida; Ctrl+Shift+5 (o ◫) divide la pestaña en paneles lado
+// a lado (hasta 4 por pestaña: cada panel es su propio shell). Con el
 // foco en la terminal, las teclas NO llegan a los atajos globales de MK
 // (Ctrl+W en el shell borra una palabra, no cierra la pestaña del editor),
 // salvo unos pocos de la lista GLOBAL_KEYS.
@@ -19,9 +20,39 @@ const tabsEl = document.getElementById('terminal-tabs');
 const resizer = document.getElementById('terminal-resizer');
 const MIN_HEIGHT = 100;
 
-const sessions = []; // { id, term, fit, el, title, exited }
+const sessions = []; // { id, term, fit, el, title, exited, group }
 let activeId = null;
 let creating = null;
+
+// Pantalla dividida: cada pestaña es un "grupo" con 1 a MAX_SPLIT paneles
+// lado a lado. groups: id -> contenedor .terminal-group en #terminal-body.
+const MAX_SPLIT = 4;
+const groups = new Map();
+let nextGroupId = 1;
+
+function groupSessions(groupId) {
+  return sessions.filter((s) => s.group === groupId);
+}
+
+// Grupos en el orden en que aparecen las pestañas (el de su primer panel).
+function groupOrder() {
+  const order = [];
+  sessions.forEach((s) => { if (!order.includes(s.group)) order.push(s.group); });
+  return order;
+}
+
+function newGroup() {
+  const id = nextGroupId++;
+  const el = document.createElement('div');
+  el.className = 'terminal-group';
+  body.appendChild(el);
+  groups.set(id, el);
+  return id;
+}
+
+function isSplitKey(e) {
+  return (e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && (e.code === 'Digit5' || e.key === '%');
+}
 
 function isToggleKey(e) {
   return (e.ctrlKey || e.metaKey) && !e.altKey && (e.code === 'Backquote' || e.key === 'ñ' || e.key === 'Ñ');
@@ -90,26 +121,35 @@ function activeSession() {
   return sessions.find((s) => s.id === activeId) || null;
 }
 
+// Ajusta todos los paneles de la pestaña visible (en una división, cambiar
+// el ancho de uno cambia el de los demás).
 function fitActive() {
-  const s = activeSession();
-  if (!s || panel.hidden) return;
-  try {
-    s.fit.fit();
-  } catch {
-    return;
-  }
-  if (!s.exited) window.mdEditor.terminal.resize(s.id, s.term.cols, s.term.rows);
+  const active = activeSession();
+  if (!active || panel.hidden) return;
+  groupSessions(active.group).forEach((s) => {
+    try {
+      s.fit.fit();
+    } catch {
+      return;
+    }
+    if (!s.exited) window.mdEditor.terminal.resize(s.id, s.term.cols, s.term.rows);
+  });
 }
 
 function renderTabs() {
   tabsEl.innerHTML = '';
-  sessions.forEach((s, idx) => {
+  const active = activeSession();
+  groupOrder().forEach((groupId, idx) => {
+    const members = groupSessions(groupId);
+    // El panel con foco dentro del grupo (o el primero): es el que se
+    // renombra y el que se enfoca al volver a la pestaña.
+    const s = members.find((m) => m.id === activeId) || members.find((m) => m.id === groups.get(groupId).lastFocused) || members[0];
     const tab = document.createElement('div');
-    tab.className = 'terminal-tab' + (s.id === activeId ? ' terminal-tab-active' : '');
-    tab.title = `${s.cwd}\nDoble clic en el nombre: renombrar`;
+    tab.className = 'terminal-tab' + (active && active.group === groupId ? ' terminal-tab-active' : '');
+    tab.title = `${s.cwd}\nDoble clic en el nombre: renombrar` + (members.length > 1 ? ' (el panel con foco)' : '');
     const label = document.createElement('span');
     label.className = 'terminal-tab-label';
-    label.textContent = `${idx + 1}: ${s.title}${s.exited ? ' (terminada)' : ''}`;
+    label.textContent = `${idx + 1}: ` + members.map((m) => `${m.title}${m.exited ? ' (terminada)' : ''}`).join(' │ ');
     label.addEventListener('dblclick', (e) => {
       e.stopPropagation();
       renameTab(s, label);
@@ -119,10 +159,10 @@ function renderTabs() {
     const close = document.createElement('span');
     close.className = 'terminal-tab-close';
     close.textContent = '×';
-    close.title = 'Cerrar esta terminal';
+    close.title = members.length > 1 ? `Cerrar esta pestaña (${members.length} paneles)` : 'Cerrar esta terminal';
     close.addEventListener('click', (e) => {
       e.stopPropagation();
-      closeSession(s.id);
+      members.forEach((m) => closeSession(m.id));
     });
     tab.appendChild(close);
     tabsEl.appendChild(tab);
@@ -158,7 +198,13 @@ function renameTab(session, label) {
 
 function activate(id) {
   activeId = id;
-  sessions.forEach((s) => { s.el.hidden = s.id !== id; });
+  const s0 = activeSession();
+  groups.forEach((el, groupId) => {
+    el.hidden = !s0 || s0.group !== groupId;
+    el.classList.toggle('terminal-group-split', groupSessions(groupId).length > 1);
+  });
+  if (s0) groups.get(s0.group).lastFocused = id;
+  sessions.forEach((s) => s.el.classList.toggle('terminal-instance-focused', s.id === id));
   renderTabs();
   const s = activeSession();
   if (s) {
@@ -174,7 +220,8 @@ async function copySelection(term) {
   if (text) window.mdEditor.clipboardWriteText(text);
 }
 
-async function createSession(cwd) {
+// opts.split: agrega el panel al lado del activo, en la misma pestaña.
+async function createSession(cwd, opts) {
   try {
     await window.mdLoadLib('xterm'); // se carga recién al abrir la primera terminal
   } catch {
@@ -184,9 +231,19 @@ async function createSession(cwd) {
     alert('No se pudo cargar xterm.js (node_modules/@xterm/xterm). Probá "npm install".');
     return null;
   }
+  const current = activeSession();
+  const group = opts && opts.split && current ? current.group : newGroup();
   const el = document.createElement('div');
   el.className = 'terminal-instance';
-  body.appendChild(el);
+  groups.get(group).appendChild(el);
+  // Visible ya (antes de medir), así el primer fit() tiene el ancho real.
+  groups.forEach((g, id) => { g.hidden = id !== group; });
+  groups.get(group).classList.toggle('terminal-group-split', groupSessions(group).length > 0);
+  const paneClose = document.createElement('button');
+  paneClose.className = 'terminal-pane-close';
+  paneClose.textContent = '×';
+  paneClose.title = 'Cerrar este panel';
+  el.appendChild(paneClose);
 
   const term = new Terminal({
     cursorBlink: true,
@@ -216,13 +273,26 @@ async function createSession(cwd) {
   });
   if (!result || result.error) {
     term.write(`\x1b[31m${(result && result.error) || 'No se pudo abrir la terminal.'}\x1b[0m\r\n`);
-    const failed = { id: 'err' + Date.now(), term, fit, search, el, title: 'error', cwd: '', exited: true };
+    const failed = { id: 'err' + Date.now(), term, fit, search, el, title: 'error', cwd: '', exited: true, group };
+    paneClose.addEventListener('click', () => closeSession(failed.id));
     sessions.push(failed);
     activate(failed.id);
     return failed;
   }
 
-  const session = { id: result.id, term, fit, search, el, title: result.shell, shellName: result.shell, cwd: result.cwd, exited: false };
+  const session = { id: result.id, term, fit, search, el, title: result.shell, shellName: result.shell, cwd: result.cwd, exited: false, group };
+  paneClose.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeSession(session.id);
+  });
+  // Clic en otro panel de la división: pasa a ser el activo.
+  el.addEventListener('focusin', () => {
+    if (activeId === session.id) return;
+    activeId = session.id;
+    groups.get(group).lastFocused = session.id;
+    sessions.forEach((x) => x.el.classList.toggle('terminal-instance-focused', x.id === session.id));
+    renderTabs();
+  });
   term.onData((data) => {
     if (!session.exited) window.mdEditor.terminal.write(session.id, data);
   });
@@ -235,6 +305,10 @@ async function createSession(cwd) {
     }
     if (ctrl && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f') {
       openSearch();
+      return false;
+    }
+    if (isSplitKey(e)) {
+      splitTerminal();
       return false;
     }
     if (ctrl && e.shiftKey && e.key.toLowerCase() === 'v') {
@@ -257,14 +331,34 @@ function closeSession(id) {
   s.term.dispose();
   s.el.remove();
   sessions.splice(idx, 1);
+  const siblings = groupSessions(s.group);
+  if (!siblings.length) {
+    groups.get(s.group).remove();
+    groups.delete(s.group);
+  }
   if (!sessions.length) {
     activeId = null;
     renderTabs(); // si no, la pestaña de la última terminal quedaba dibujada
     hide();
     return;
   }
-  if (activeId === id) activate((sessions[idx] || sessions[idx - 1]).id);
-  else renderTabs();
+  // Se cerró el activo: primero otro panel de la misma pestaña, si no la
+  // pestaña vecina.
+  if (activeId === id) activate((siblings[0] || sessions[idx] || sessions[idx - 1]).id);
+  else activate(activeId); // la división cambió: reajustar anchos
+}
+
+// Divide la pestaña activa: un shell nuevo al lado (en la carpeta del
+// activo). Sin terminal abierta, abre una normal.
+async function splitTerminal() {
+  const current = activeSession();
+  if (!current) return newTerminal();
+  if (groupSessions(current.group).length >= MAX_SPLIT) {
+    alert(`Como mucho ${MAX_SPLIT} paneles por pestaña: abrí otra pestaña con +.`);
+    return null;
+  }
+  panel.hidden = false;
+  return createSession(current.cwd || null, { split: true });
 }
 
 async function show() {
@@ -492,6 +586,9 @@ document.addEventListener('keydown', (e) => {
   if (isToggleKey(e)) {
     e.preventDefault();
     toggle();
+  } else if (isSplitKey(e) && !panel.hidden) {
+    e.preventDefault();
+    splitTerminal();
   } else if (e.key === 'F5' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
     e.preventDefault();
     runActiveFile();
@@ -499,6 +596,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.getElementById('terminal-new').addEventListener('click', () => newTerminal());
+document.getElementById('terminal-split').addEventListener('click', () => splitTerminal());
 document.getElementById('terminal-hide').addEventListener('click', hide);
 document.getElementById('btn-terminal').addEventListener('click', toggle);
 document.getElementById('btn-run-file').addEventListener('click', runActiveFile);
@@ -541,6 +639,6 @@ new MutationObserver(() => {
   if (config.terminalHeight) panel.style.height = `${config.terminalHeight}px`;
 })();
 
-window.mdTerminal = { AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
+window.mdTerminal = { AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, splitTerminal, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
 
 })();
