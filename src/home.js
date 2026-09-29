@@ -7,6 +7,13 @@
 // Home funciona aunque no haya carpeta abierta. Si SÍ hay carpeta, además
 // muestra (solo lectura) las filas de las bases de datos que tengan una
 // columna de tipo Fecha — clic en una lleva a esa base (ver database.js).
+//
+// Tareas recurrentes: una sola tarea "serie" con task.repeat; las
+// repeticiones se calculan al vuelo por día (occursOn) en vez de guardarse
+// una por una. Qué días se completaron va en task.doneDates y los días
+// borrados/movidos sueltos en task.skipDates. Recordatorios: task.time
+// (HH:MM) + task.remind (minutos antes, null = sin aviso), revisados cada
+// 30 s desde que arranca la app aunque el Home esté cerrado.
 
 const overlay = document.getElementById('home-panel');
 const sideEl = document.getElementById('home-side');
@@ -24,9 +31,25 @@ const PRIORITIES = [
   { value: 'baja', label: 'Baja', color: '#81b29a' }
 ];
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const REPEAT_OPTIONS = [
+  { value: '', label: 'No se repite' },
+  { value: 'daily', label: 'Todos los días' },
+  { value: 'weekdays', label: 'Días hábiles (lun–vie)' },
+  { value: 'weekly', label: 'Semanal' },
+  { value: 'monthly', label: 'Mensual (mismo día del mes)' },
+  { value: 'yearly', label: 'Anual' }
+];
+const REMIND_OPTIONS = [
+  { value: '', label: 'Sin aviso' },
+  { value: '0', label: 'A la hora' },
+  { value: '5', label: '5 min antes' },
+  { value: '15', label: '15 min antes' },
+  { value: '30', label: '30 min antes' },
+  { value: '60', label: '1 hora antes' }
+];
+const REMINDER_GRACE_MS = 10 * 60 * 1000; // avisos atrasados más que esto (app cerrada) se descartan
 
-let data = { tasks: [], goals: {}, notes: {}, showDatabases: true };
-let loaded = false;
+let data = { tasks: [], goals: {}, notes: {}, showDatabases: true, notified: {} };
 let saveTimer = null;
 let mode = 'week'; // 'week' | 'month'
 let cursor = new Date(); // cualquier día dentro de la semana/mes visible
@@ -87,19 +110,26 @@ function formatLong(d) {
 
 // ---- persistencia ----
 
-async function load() {
-  if (loaded) return;
+async function readStored() {
   const stored = await window.mdEditor.homeLoad();
   if (stored && typeof stored === 'object') {
     data = {
       tasks: Array.isArray(stored.tasks) ? stored.tasks : [],
       goals: stored.goals && typeof stored.goals === 'object' ? stored.goals : {},
       notes: stored.notes && typeof stored.notes === 'object' ? stored.notes : {},
-      showDatabases: stored.showDatabases !== false
+      showDatabases: stored.showDatabases !== false,
+      notified: stored.notified && typeof stored.notified === 'object' ? stored.notified : {}
     };
   }
   showDbToggle.checked = data.showDatabases;
-  loaded = true;
+}
+
+// Una sola lectura compartida: el arranque (recordatorios) y open() pueden
+// pedirla a la vez.
+let loadPromise = null;
+function load() {
+  if (!loadPromise) loadPromise = readStored();
+  return loadPromise;
 }
 
 function save() {
@@ -113,10 +143,51 @@ function newId() {
 
 // ---- tareas ----
 
-function tasksOn(dateIso) {
-  return data.tasks
-    .filter((t) => t.date === dateIso)
-    .sort((a, b) => Number(a.done) - Number(b.done) || priorityRank(a) - priorityRank(b));
+// Lunes = 0 ... domingo = 6 (igual que DAY_NAMES).
+function weekdayIdx(d) {
+  return (d.getDay() + 6) % 7;
+}
+
+function occursOn(task, dateIso) {
+  const rep = task.repeat;
+  if (!rep || !rep.freq || !task.date) return false;
+  if (dateIso < task.date) return false;
+  if (rep.until && dateIso > rep.until) return false;
+  if ((task.skipDates || []).includes(dateIso)) return false;
+  const d = parseIso(dateIso);
+  const start = parseIso(task.date);
+  switch (rep.freq) {
+    case 'daily': return true;
+    case 'weekdays': return weekdayIdx(d) < 5;
+    case 'weekly': {
+      const days = Array.isArray(rep.days) && rep.days.length ? rep.days : [weekdayIdx(start)];
+      return days.includes(weekdayIdx(d));
+    }
+    case 'monthly': return d.getDate() === start.getDate();
+    case 'yearly': return d.getDate() === start.getDate() && d.getMonth() === start.getMonth();
+    default: return false;
+  }
+}
+
+// Lo que se dibuja en un día: una tarea común con esa fecha, o una
+// repetición de una tarea recurrente. { task, date, done, recurring }.
+function occurrencesOn(dateIso) {
+  const items = [];
+  data.tasks.forEach((task) => {
+    if (task.repeat && task.repeat.freq) {
+      if (occursOn(task, dateIso)) items.push({ task, date: dateIso, done: (task.doneDates || []).includes(dateIso), recurring: true });
+    } else if (task.date === dateIso) {
+      items.push({ task, date: dateIso, done: !!task.done, recurring: false });
+    }
+  });
+  return items.sort((a, b) =>
+    Number(a.done) - Number(b.done) ||
+    (a.task.time || '99:99').localeCompare(b.task.time || '99:99') ||
+    priorityRank(a.task) - priorityRank(b.task));
+}
+
+function itemFor(task) {
+  return { task, date: task.date, done: !!task.done, recurring: false };
 }
 
 function priorityRank(task) {
@@ -151,14 +222,95 @@ function deleteTask(id) {
   render();
 }
 
-// Tareas sin terminar con fecha anterior a hoy.
-function overdueTasks() {
-  const today = todayIso();
-  return data.tasks.filter((t) => t.date && t.date < today && !t.done);
+function setItemDone(item, done) {
+  if (item.recurring) {
+    const dates = new Set(item.task.doneDates || []);
+    if (done) dates.add(item.date); else dates.delete(item.date);
+    updateTask(item.task.id, { doneDates: Array.from(dates) });
+  } else {
+    updateTask(item.task.id, { done });
+  }
 }
 
-function tasksInRange(fromIso, toIso) {
-  return data.tasks.filter((t) => t.date && t.date >= fromIso && t.date <= toIso);
+// Saca una sola repetición de la serie (la agrega a skipDates).
+function skipOccurrence(item) {
+  const skips = new Set(item.task.skipDates || []);
+  skips.add(item.date);
+  const doneDates = (item.task.doneDates || []).filter((d) => d !== item.date);
+  updateTask(item.task.id, { skipDates: Array.from(skips), doneDates });
+}
+
+// Mover una tarea de día. Si es una repetición, se "desprende" de la serie:
+// se saca ese día de la serie y se crea una tarea común en el día nuevo.
+function moveItem(item, newDate) {
+  if (!item.recurring) {
+    updateTask(item.task.id, { date: newDate });
+    return;
+  }
+  if (newDate === item.date) return;
+  const t = item.task;
+  data.tasks.push({
+    id: newId(), title: t.title, date: newDate, done: item.done, priority: t.priority,
+    notes: t.notes || '', time: t.time || null, remind: t.remind != null ? t.remind : null
+  });
+  skipOccurrence(item);
+}
+
+function findItem(taskId, dateIso) {
+  const task = data.tasks.find((t) => t.id === taskId);
+  if (!task) return null;
+  if (task.repeat && task.repeat.freq) return { task, date: dateIso, done: (task.doneDates || []).includes(dateIso), recurring: true };
+  return itemFor(task);
+}
+
+// Tareas comunes sin terminar con fecha anterior a hoy (las repeticiones
+// pasadas no cuentan: una tarea diaria llenaría la lista sola).
+function overdueTasks() {
+  const today = todayIso();
+  return data.tasks.filter((t) => !(t.repeat && t.repeat.freq) && t.date && t.date < today && !t.done);
+}
+
+function itemsInRange(fromIso, toIso) {
+  const items = [];
+  for (let d = parseIso(fromIso); iso(d) <= toIso; d = addDays(d, 1)) items.push(...occurrencesOn(iso(d)));
+  return items;
+}
+
+// ---- recordatorios ----
+
+function reminderKey(item) {
+  return `${item.task.id}|${item.date}|${item.task.time}|${item.task.remind}`;
+}
+
+function checkReminders() {
+  const now = Date.now();
+  const today = todayIso();
+  let changed = false;
+  occurrencesOn(today).forEach((item) => {
+    const t = item.task;
+    if (item.done || !t.time || t.remind == null) return;
+    const [h, m] = t.time.split(':').map(Number);
+    const d = parseIso(today);
+    d.setHours(h, m - Number(t.remind), 0, 0);
+    const at = d.getTime();
+    const key = reminderKey(item);
+    if (now < at || data.notified[key]) return;
+    data.notified[key] = true;
+    changed = true;
+    if (now - at > REMINDER_GRACE_MS) return;
+    try {
+      const body = (Number(t.remind) ? `En ${t.remind} min · ` : '') + `${t.time}` + (t.notes ? `\n${t.notes}` : '');
+      const n = new Notification(`🗓 ${t.title}`, { body });
+      n.onclick = () => open();
+    } catch (e) {
+      // Notification puede no estar disponible en algunos entornos
+    }
+  });
+  // Solo se guardan los avisos de hoy: los viejos ya no pueden volver a sonar.
+  Object.keys(data.notified).forEach((key) => {
+    if (key.split('|')[1] !== today) { delete data.notified[key]; changed = true; }
+  });
+  if (changed) save();
 }
 
 // ---- filas de bases de datos con fecha (solo lectura) ----
@@ -225,7 +377,9 @@ function makeDropTarget(node, getDate) {
     e.preventDefault();
     e.stopPropagation();
     node.classList.remove('drag-over');
-    updateTask(e.dataTransfer.getData(DRAG_MIME), { date: getDate() });
+    const [taskId, fromDate] = e.dataTransfer.getData(DRAG_MIME).split('|');
+    const item = findItem(taskId, fromDate || null);
+    if (item) moveItem(item, getDate());
   });
 }
 
@@ -252,26 +406,36 @@ function quickAddInput(date, placeholder) {
   return input;
 }
 
-function taskCard(task, compact) {
-  const card = el('div', 'home-task' + (task.done ? ' home-task-done' : '') + (compact ? ' home-task-compact' : ''));
+function taskCard(item, compact) {
+  const task = item.task;
+  const card = el('div', 'home-task' + (item.done ? ' home-task-done' : '') + (compact ? ' home-task-compact' : ''));
   card.style.borderLeftColor = priorityColor(task);
   card.draggable = true;
-  card.title = task.notes ? `${task.title}\n\n${task.notes}` : task.title;
+  const details = [
+    task.time ? `Hora: ${task.time}` : '',
+    item.recurring ? `Se repite: ${(REPEAT_OPTIONS.find((o) => o.value === task.repeat.freq) || {}).label}` : '',
+    task.remind != null && task.time ? `Aviso: ${(REMIND_OPTIONS.find((o) => o.value === String(task.remind)) || {}).label}` : '',
+    task.notes || ''
+  ].filter(Boolean).join('\n');
+  card.title = details ? `${task.title}\n\n${details}` : task.title;
   card.addEventListener('dragstart', (e) => {
     e.stopPropagation();
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData(DRAG_MIME, task.id);
+    e.dataTransfer.setData(DRAG_MIME, `${task.id}|${item.date || ''}`);
   });
 
   const box = el('input');
   box.type = 'checkbox';
-  box.checked = !!task.done;
+  box.checked = item.done;
   box.addEventListener('click', (e) => e.stopPropagation());
-  box.addEventListener('change', () => updateTask(task.id, { done: box.checked }));
+  box.addEventListener('change', () => setItemDone(item, box.checked));
   card.appendChild(box);
 
+  if (task.time) card.appendChild(el('span', 'home-task-time', task.time));
   card.appendChild(el('span', 'home-task-title', task.title));
-  card.addEventListener('click', () => openTaskEditor(task));
+  const badges = (item.recurring ? '🔁' : '') + (task.remind != null && task.time ? '🔔' : '');
+  if (badges) card.appendChild(el('span', 'home-task-badges', badges));
+  card.addEventListener('click', () => openTaskEditor(item));
   return card;
 }
 
@@ -374,7 +538,7 @@ function renderSide(periodTasks) {
     sideEl.appendChild(titleRow);
     const list = el('div', 'home-task-list');
     overdue.sort((a, b) => a.date.localeCompare(b.date)).forEach((t) => {
-      const card = taskCard(t);
+      const card = taskCard(itemFor(t));
       card.appendChild(el('span', 'home-task-date', parseIso(t.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })));
       list.appendChild(card);
     });
@@ -384,7 +548,7 @@ function renderSide(periodTasks) {
   // Sin fecha (backlog): se puede arrastrar desde/hacia los días
   sideEl.appendChild(el('div', 'home-side-title', 'Sin fecha'));
   const backlog = el('div', 'home-task-list home-backlog');
-  data.tasks.filter((t) => !t.date).forEach((t) => backlog.appendChild(taskCard(t)));
+  data.tasks.filter((t) => !t.date).forEach((t) => backlog.appendChild(taskCard(itemFor(t))));
   makeDropTarget(backlog, () => null);
   sideEl.appendChild(backlog);
   sideEl.appendChild(quickAddInput(null, '+ Tarea sin fecha'));
@@ -400,7 +564,7 @@ function renderWeek() {
     `${monday.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ` +
     `${sunday.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
-  renderSide(tasksInRange(iso(monday), iso(sunday)));
+  renderSide(itemsInRange(iso(monday), iso(sunday)));
 
   mainEl.innerHTML = '';
   const grid = el('div', 'home-week');
@@ -411,7 +575,7 @@ function renderWeek() {
     const header = el('div', 'home-day-header');
     header.appendChild(el('span', 'home-day-name', DAY_NAMES[i]));
     header.appendChild(el('span', 'home-day-number', String(day.getDate())));
-    const dayTasks = tasksOn(dayIso);
+    const dayTasks = occurrencesOn(dayIso);
     if (dayTasks.length) {
       header.appendChild(el('span', 'home-day-count', `${dayTasks.filter((t) => t.done).length}/${dayTasks.length}`));
     }
@@ -438,7 +602,7 @@ function renderMonth() {
   const label = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   rangeLabel.textContent = label.charAt(0).toUpperCase() + label.slice(1);
 
-  renderSide(tasksInRange(iso(first), iso(last)));
+  renderSide(itemsInRange(iso(first), iso(last)));
 
   mainEl.innerHTML = '';
   const cal = el('div', 'home-calendar');
@@ -463,7 +627,7 @@ function renderMonth() {
     cell.appendChild(num);
 
     const items = [
-      ...tasksOn(dayIso).map((t) => taskCard(t, true)),
+      ...occurrencesOn(dayIso).map((it) => taskCard(it, true)),
       ...dbItemsOn(dayIso).map((it) => dbChip(it))
     ];
     items.slice(0, MAX_VISIBLE).forEach((node) => cell.appendChild(node));
@@ -501,62 +665,133 @@ function closeTaskEditor() {
   }
 }
 
-function openTaskEditor(task) {
+function openTaskEditor(item) {
+  const task = item.task;
   closeTaskEditor();
   const modal = el('div', 'modal-overlay palette-overlay');
   const box = el('div', 'command-palette home-editor');
   modal.appendChild(box);
 
-  box.appendChild(el('div', 'backlinks-title', 'Editar tarea'));
+  box.appendChild(el('div', 'backlinks-title', item.recurring ? 'Editar tarea recurrente' : 'Editar tarea'));
+  if (item.recurring) {
+    box.appendChild(el('div', 'home-editor-hint', 'Los cambios se aplican a todas las repeticiones.'));
+  }
 
-  const field = (labelText, input) => {
+  const field = (labelText, input, parent) => {
     const wrap = el('label', 'home-editor-field');
     wrap.appendChild(el('span', null, labelText));
     wrap.appendChild(input);
-    box.appendChild(wrap);
+    (parent || box).appendChild(wrap);
     return input;
+  };
+  const selectOf = (options, value) => {
+    const sel = el('select', 'home-editor-input');
+    options.forEach((o) => {
+      const opt = el('option', null, o.label);
+      opt.value = o.value;
+      sel.appendChild(opt);
+    });
+    sel.value = value;
+    return sel;
   };
 
   const titleInput = field('Título', el('input', 'home-editor-input'));
   titleInput.value = task.title;
 
-  const dateInput = field('Fecha', el('input', 'home-editor-input'));
+  const row1 = el('div', 'home-editor-row');
+  box.appendChild(row1);
+  const dateInput = field(item.recurring ? 'Empieza' : 'Fecha', el('input', 'home-editor-input'), row1);
   dateInput.type = 'date';
   dateInput.value = task.date || '';
+  const timeInput = field('Hora', el('input', 'home-editor-input'), row1);
+  timeInput.type = 'time';
+  timeInput.value = task.time || '';
+  const remindSelect = field('Aviso', selectOf(REMIND_OPTIONS, task.remind != null ? String(task.remind) : ''), row1);
 
-  const prioSelect = field('Prioridad', el('select', 'home-editor-input'));
-  PRIORITIES.forEach((p) => {
-    const opt = el('option', null, p.label);
-    opt.value = p.value;
-    prioSelect.appendChild(opt);
+  // Repetición
+  const rep = task.repeat || {};
+  const row2 = el('div', 'home-editor-row');
+  box.appendChild(row2);
+  const repeatSelect = field('Repetir', selectOf(REPEAT_OPTIONS, rep.freq || ''), row2);
+  const untilInput = field('Hasta (opcional)', el('input', 'home-editor-input'), row2);
+  untilInput.type = 'date';
+  untilInput.value = rep.until || '';
+
+  const daysWrap = el('div', 'home-editor-days');
+  const startWeekday = task.date ? (parseIso(task.date).getDay() + 6) % 7 : 0;
+  const selectedDays = new Set(Array.isArray(rep.days) && rep.days.length ? rep.days : [startWeekday]);
+  const dayBoxes = DAY_NAMES.map((name, idx) => {
+    const lbl = el('label', 'home-editor-day');
+    const cb = el('input');
+    cb.type = 'checkbox';
+    cb.checked = selectedDays.has(idx);
+    lbl.append(cb, document.createTextNode(name));
+    daysWrap.appendChild(lbl);
+    return cb;
   });
-  prioSelect.value = task.priority || 'media';
+  box.appendChild(daysWrap);
+
+  const syncRepeatUi = () => {
+    const freq = repeatSelect.value;
+    untilInput.closest('.home-editor-field').hidden = !freq;
+    daysWrap.hidden = freq !== 'weekly';
+    remindSelect.disabled = !timeInput.value;
+    if (!timeInput.value) remindSelect.value = '';
+  };
+  repeatSelect.addEventListener('change', syncRepeatUi);
+  timeInput.addEventListener('input', syncRepeatUi);
+  syncRepeatUi();
+
+  const prioSelect = field('Prioridad', selectOf(PRIORITIES, task.priority || 'media'));
 
   const notesInput = field('Notas', el('textarea', 'home-editor-input home-editor-notes'));
   notesInput.value = task.notes || '';
 
   const actions = el('div', 'home-editor-actions');
-  const del = el('button', 'toolbar-button home-danger', 'Eliminar');
-  del.addEventListener('click', () => {
-    if (!confirm(`¿Eliminar la tarea "${task.title}"?`)) return;
-    closeTaskEditor();
-    deleteTask(task.id);
-  });
+  if (item.recurring) {
+    const delOne = el('button', 'toolbar-button home-danger', 'Eliminar este día');
+    delOne.addEventListener('click', () => {
+      closeTaskEditor();
+      skipOccurrence(item);
+    });
+    const delAll = el('button', 'toolbar-button home-danger', 'Eliminar serie');
+    delAll.addEventListener('click', () => {
+      if (!confirm(`¿Eliminar "${task.title}" y todas sus repeticiones?`)) return;
+      closeTaskEditor();
+      deleteTask(task.id);
+    });
+    actions.append(delOne, delAll);
+  } else {
+    const del = el('button', 'toolbar-button home-danger', 'Eliminar');
+    del.addEventListener('click', () => {
+      if (!confirm(`¿Eliminar la tarea "${task.title}"?`)) return;
+      closeTaskEditor();
+      deleteTask(task.id);
+    });
+    actions.append(del);
+  }
   const cancel = el('button', 'toolbar-button', 'Cancelar');
   cancel.addEventListener('click', closeTaskEditor);
   const ok = el('button', 'toolbar-button home-primary', 'Guardar');
   const commit = () => {
+    const freq = repeatSelect.value;
+    // Una serie necesita fecha de inicio: si no hay, arranca hoy.
+    const date = dateInput.value || (freq ? (item.date || todayIso()) : null);
+    const days = dayBoxes.map((cb, idx) => (cb.checked ? idx : -1)).filter((i) => i >= 0);
     closeTaskEditor();
     updateTask(task.id, {
       title: titleInput.value.trim() || task.title,
-      date: dateInput.value || null,
+      date,
+      time: timeInput.value || null,
+      remind: timeInput.value && remindSelect.value !== '' ? Number(remindSelect.value) : null,
+      repeat: freq ? { freq, until: untilInput.value || null, days: freq === 'weekly' ? days : undefined } : null,
       priority: prioSelect.value,
       notes: notesInput.value
     });
   };
   ok.addEventListener('click', commit);
   titleInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
-  actions.append(del, el('span', 'toolbar-spacer'), cancel, ok);
+  actions.append(el('span', 'toolbar-spacer'), cancel, ok);
   box.appendChild(actions);
 
   modal.addEventListener('mousedown', (e) => { if (e.target === modal) closeTaskEditor(); });
@@ -632,11 +867,16 @@ document.addEventListener('keydown', (e) => {
   const config = await window.mdEditor.getConfig();
   startupToggle.checked = !!config.homeOnStartup;
   if (config.homeOnStartup) open();
+  // Recordatorios: cargar las tareas ya al arrancar (aunque el Home no se
+  // abra) y revisar cada 30 s.
+  await load();
+  checkReminders();
+  setInterval(checkReminders, 30000);
 })();
 startupToggle.addEventListener('change', () => {
   window.mdEditor.setConfig({ homeOnStartup: startupToggle.checked });
 });
 
-window.mdHome = { open, close, setMode };
+window.mdHome = { open, close, setMode, checkReminders };
 
 })();

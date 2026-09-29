@@ -2147,6 +2147,108 @@
   }
   check('Subrayar texto en PDF: agrega un rectángulo y lo hornea al guardar', pdfHighlightOk, pdfHighlightDetail);
 
+  // Bases de datos: ordenar por columna (menú del encabezado) y filtrar por
+  // campo (popover "Filtros"), ambos guardados en la config de la vista.
+  let dbSortFilterOk = false;
+  let dbSortFilterDetail = 'sin fixturesDir';
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    const sfDb = await window.mdEditor.db.createDatabase(fixturesDir, 'OrdenFiltro');
+    const [nameCol] = await window.mdEditor.db.listColumns(fixturesDir, sfDb.id);
+    const priceCol = await window.mdEditor.db.createColumn(fixturesDir, sfDb.id, { name: 'Precio', type: 'number' });
+    for (const [n, p] of [['A', 3], ['B', 10], ['C', 7]]) {
+      await window.mdEditor.db.createRow(fixturesDir, sfDb.id, { [nameCol.id]: n, [priceCol.id]: p });
+    }
+    await window.mdDatabase.open(sfDb.id);
+    const names = () => Array.from(document.querySelectorAll('.database-table tbody tr td:first-child input')).map((i) => i.value).join('');
+    await waitFor(() => names() === 'ABC');
+
+    const priceTh = Array.from(document.querySelectorAll('.database-th')).find((th) => th.textContent === 'Precio');
+    priceTh.click();
+    await waitFor(() => document.querySelector('.database-view-popover'));
+    Array.from(document.querySelectorAll('.database-view-popover button')).find((b) => b.textContent.includes('descendente')).click();
+    await waitFor(() => names() === 'BCA');
+    const sortOk = names() === 'BCA';
+    const views = await window.mdEditor.db.listViews(fixturesDir, sfDb.id);
+    const sortSaved = JSON.parse(views[0].config || '{}').sort?.dir === 'desc';
+
+    document.getElementById('database-filters-btn').click();
+    await waitFor(() => document.querySelector('.database-filters-popover'));
+    Array.from(document.querySelectorAll('.database-filters-popover button')).find((b) => b.textContent === '+ Agregar filtro').click();
+    await waitFor(() => document.querySelector('.database-filter-row'));
+    const colSel = document.querySelector('.database-filter-row select');
+    colSel.value = priceCol.id;
+    colSel.dispatchEvent(new Event('change'));
+    await waitFor(() => document.querySelector('.database-filter-row select:nth-child(2)') &&
+      Array.from(document.querySelector('.database-filter-row select:nth-child(2)').options).some((o) => o.value === 'gt'));
+    const opSel = document.querySelector('.database-filter-row select:nth-child(2)');
+    opSel.value = 'gt';
+    opSel.dispatchEvent(new Event('change'));
+    await waitFor(() => document.querySelector('.database-filter-row input'));
+    const valInput = document.querySelector('.database-filter-row input');
+    valInput.value = '5';
+    valInput.dispatchEvent(new Event('change'));
+    await waitFor(() => names() === 'BC');
+    const filterOk = names() === 'BC' && document.getElementById('database-filters-btn').textContent === 'Filtros (1)';
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    window.mdDatabase.close();
+    await window.mdEditor.db.deleteDatabase(fixturesDir, sfDb.id);
+    dbSortFilterOk = sortOk && sortSaved && filterOk;
+    dbSortFilterDetail = `orden=${names() || sortOk} ordenGuardado=${sortSaved} filtro=${filterOk}`;
+  }
+  check('Bases de datos: ordenar por columna y filtrar por campo (guardado en la vista)', dbSortFilterOk, dbSortFilterDetail);
+
+  // Home: tarea recurrente diaria (aparece los 7 días de la semana siguiente,
+  // tildar una repetición no tilda las demás) y recordatorio con hora.
+  {
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const title = 'Recurrente ' + Date.now();
+    const input = document.querySelector('#home-main .home-day.home-today .home-quick-add');
+    input.value = title;
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const cardsOf = () => Array.from(document.querySelectorAll('#home-main .home-task')).filter((c) => c.textContent.includes(title));
+    cardsOf()[0].click();
+    const editor = document.querySelector('.home-editor');
+    const repeatSel = Array.from(editor.querySelectorAll('select')).find((s) => Array.from(s.options).some((o) => o.value === 'daily'));
+    repeatSel.value = 'daily';
+    repeatSel.dispatchEvent(new Event('change'));
+    const now = new Date();
+    const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const timeInput = editor.querySelector('input[type="time"]');
+    timeInput.value = hhmm;
+    timeInput.dispatchEvent(new Event('input'));
+    const remindSel = Array.from(editor.querySelectorAll('select')).find((s) => Array.from(s.options).some((o) => o.value === '15'));
+    remindSel.value = '0';
+    Array.from(editor.querySelectorAll('button')).find((b) => b.textContent === 'Guardar').click();
+
+    document.getElementById('home-next').click();
+    const nextWeekCount = cardsOf().length;
+    cardsOf()[0].querySelector('input[type="checkbox"]').click();
+    const doneCount = cardsOf().filter((c) => c.classList.contains('home-task-done')).length;
+    document.getElementById('home-today').click();
+
+    const OriginalNotification = window.Notification;
+    let notifiedTitle = null;
+    window.Notification = function (t) { notifiedTitle = t; };
+    window.mdHome.checkReminders();
+    window.Notification = OriginalNotification;
+
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    cardsOf()[0].click();
+    Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar serie').click();
+    window.confirm = originalConfirm;
+    const deleted = cardsOf().length === 0;
+    window.mdHome.close();
+    check(
+      'Home: tarea recurrente diaria, tildar una sola repetición y recordatorio a la hora',
+      nextWeekCount === 7 && doneCount === 1 && notifiedTitle && notifiedTitle.includes(title) && deleted,
+      `semanaSiguiente=${nextWeekCount} tildadas=${doneCount} aviso=${notifiedTitle} borrada=${deleted}`
+    );
+  }
+
   // Home: agregar una tarea desde la columna de hoy (vista semana), verla
   // en el calendario (vista mes) y borrarla — deja home.json como estaba.
   {

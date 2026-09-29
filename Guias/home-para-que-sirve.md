@@ -37,6 +37,7 @@ Un ritmo que funciona bien:
 - Trámites, compras, turnos médicos, cumpleaños.
 - "Sin fecha" como lista de *algún día*: cosas que querés hacer sin fecha fija.
 - Objetivos del mes tipo hábitos: *"Correr 3 veces por semana"*.
+- Hábitos como **tareas recurrentes** 🔁 (*"Correr"* semanal lun/mié/vie) y turnos con **aviso** 🔔 15 min antes.
 
 ## Home vs. otras funciones de MK
 
@@ -60,7 +61,6 @@ Se complementan: la base de datos *Proyectos* pone las fechas grandes en el cale
 
 ## Límites actuales
 
-- Las tareas no se repiten solas (no hay tareas recurrentes).
-- No hay recordatorios / notificaciones por fecha.
+- Los recordatorios solo suenan con MK abierto (no hay servicio en segundo plano).
 - Las filas de bases de datos se ven en el calendario pero se editan en el panel de Bases de datos.
 - Las tareas del Home no son archivos `.md`: no aparecen en la búsqueda global ni en el Kanban.

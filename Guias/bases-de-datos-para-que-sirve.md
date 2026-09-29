@@ -18,7 +18,7 @@ Regla práctica: si te encontrás haciendo una tabla Markdown que crece y queré
 - **Tipos**: una fecha es una fecha (aparece en el calendario), un número se puede sumar, una casilla se tilda.
 - **Relaciones de dos vías**: enlazás una tarea a un proyecto y el proyecto "sabe" qué tareas tiene.
 - **Cálculos automáticos**: fórmulas por fila y rollups entre bases (totales, promedios, conteos).
-- **Varias vistas** de los mismos datos: tabla para cargar, tablero para el flujo, galería para hojear.
+- **Varias vistas** de los mismos datos: tabla para cargar, tablero para el flujo, galería para hojear — cada una con su propio **orden** y **filtros** (ej. "Vencidas", "Esta semana", "Alta prioridad").
 - **Integración con el Home**: toda columna Fecha pone la fila en tu calendario.
 
 ## Ideas de bases (con sus columnas)
@@ -73,6 +73,5 @@ Regla práctica: si te encontrás haciendo una tabla Markdown que crece y queré
 ## Límites actuales
 
 - Las filas no son notas `.md`: no aparecen en la búsqueda global ni en el grafo.
-- No hay ordenar por columna ni filtros por campo (el filtro busca texto en todas las columnas).
 - No hay importar/exportar CSV todavía.
 - Viven en una carpeta: bases de carpetas distintas no se pueden relacionar entre sí.

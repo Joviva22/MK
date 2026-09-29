@@ -19,6 +19,7 @@ const filterInput = document.getElementById('database-filter-input');
 const addColumnBtn = document.getElementById('database-add-column-btn');
 const addRowBtn = document.getElementById('database-add-row-btn');
 const viewBodyEl = document.getElementById('database-view-body');
+const filtersBtn = document.getElementById('database-filters-btn');
 
 const COLUMN_TYPES = [
   { value: 'text', label: 'Texto' },
@@ -450,19 +451,316 @@ function openViewMenu(anchorEl, view) {
   });
 }
 
+// ---- filtros por campo y orden (guardados en la config de cada vista) ----
+
+// Tipo "de comparación" de una columna: define qué operadores de filtro
+// ofrece y cómo se ordena. Fórmula puede devolver cualquier cosa, así que se
+// compara como texto; rollup siempre es numérico.
+function columnKind(col) {
+  switch (col.type) {
+    case 'number':
+    case 'rollup':
+      return 'number';
+    case 'date':
+    case 'created_time':
+      return 'date';
+    case 'checkbox':
+    case 'select':
+    case 'multiselect':
+      return col.type;
+    default:
+      return 'text';
+  }
+}
+
+const FILTER_OPS = {
+  text: [['contains', 'contiene'], ['not_contains', 'no contiene'], ['eq', 'es igual a'], ['empty', 'está vacío'], ['not_empty', 'no está vacío']],
+  number: [['eq', '='], ['neq', '≠'], ['gt', '>'], ['lt', '<'], ['gte', '≥'], ['lte', '≤'], ['empty', 'está vacío'], ['not_empty', 'no está vacío']],
+  date: [['eq', 'es'], ['before', 'antes de'], ['after', 'después de'], ['today', 'es hoy'], ['overdue', 'antes de hoy (vencida)'], ['upcoming', 'hoy o después'], ['this_week', 'esta semana'], ['empty', 'está vacía'], ['not_empty', 'no está vacía']],
+  checkbox: [['checked', 'está marcada'], ['unchecked', 'no está marcada']],
+  select: [['is', 'es'], ['is_not', 'no es'], ['empty', 'está vacía'], ['not_empty', 'no está vacía']],
+  multiselect: [['has', 'contiene'], ['not_has', 'no contiene'], ['empty', 'está vacía'], ['not_empty', 'no está vacía']]
+};
+const OPS_WITH_VALUE = new Set(['contains', 'not_contains', 'eq', 'neq', 'gt', 'lt', 'gte', 'lte', 'before', 'after', 'is', 'is_not', 'has', 'not_has']);
+
+function isoDay(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Valor "comparable" de una celda según su kind: string YYYY-MM-DD para
+// fechas, id de opción para select, array de ids para multiselect, número o
+// null, boolean, o texto.
+function comparableValue(col, row) {
+  switch (col.type) {
+    case 'select':
+      return row.cells[col.id] || null;
+    case 'multiselect':
+      return parseJsonArray(row.cells[col.id]);
+    case 'created_time':
+      return row.createdAt ? isoDay(new Date(row.createdAt)) : null;
+    default: {
+      const v = cellDisplayValue(col, row, state.columns);
+      const kind = columnKind(col);
+      if (kind === 'number') return v == null || v === '' || Number.isNaN(Number(v)) ? null : Number(v);
+      if (kind === 'checkbox') return !!v;
+      if (kind === 'date') return v || null;
+      return displayText(v);
+    }
+  }
+}
+
+function isEmptyValue(v) {
+  return v == null || v === '' || (Array.isArray(v) && v.length === 0);
+}
+
+function matchesFilter(filter, row) {
+  const col = findColumn(state.columns, filter.columnId);
+  if (!col) return true;
+  const op = filter.op;
+  if (OPS_WITH_VALUE.has(op) && (filter.value == null || filter.value === '')) return true; // filtro a medio armar: no filtra
+  const v = comparableValue(col, row);
+  if (op === 'empty') return isEmptyValue(v);
+  if (op === 'not_empty') return !isEmptyValue(v);
+  const today = isoDay(new Date());
+  switch (op) {
+    case 'contains': return String(v).toLowerCase().includes(String(filter.value).toLowerCase());
+    case 'not_contains': return !String(v).toLowerCase().includes(String(filter.value).toLowerCase());
+    case 'eq':
+      if (columnKind(col) === 'number') return v != null && v === Number(filter.value);
+      if (columnKind(col) === 'date') return v === filter.value;
+      return String(v).toLowerCase() === String(filter.value).toLowerCase();
+    case 'neq': return v == null || v !== Number(filter.value);
+    case 'gt': return v != null && v > Number(filter.value);
+    case 'lt': return v != null && v < Number(filter.value);
+    case 'gte': return v != null && v >= Number(filter.value);
+    case 'lte': return v != null && v <= Number(filter.value);
+    case 'before': return !!v && v < filter.value;
+    case 'after': return !!v && v > filter.value;
+    case 'today': return v === today;
+    case 'overdue': return !!v && v < today;
+    case 'upcoming': return !!v && v >= today;
+    case 'this_week': {
+      const now = new Date();
+      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+      const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+      return !!v && v >= isoDay(monday) && v <= isoDay(sunday);
+    }
+    case 'checked': return v === true;
+    case 'unchecked': return v !== true;
+    case 'is': return v === filter.value;
+    case 'is_not': return v !== filter.value;
+    case 'has': return v.includes(filter.value);
+    case 'not_has': return !v.includes(filter.value);
+    default: return true;
+  }
+}
+
+function compareRows(col, a, b) {
+  const kind = columnKind(col);
+  const va = comparableValue(col, a);
+  const vb = comparableValue(col, b);
+  // Vacíos siempre al final, sin importar la dirección (lo hace sortRows).
+  if (kind === 'number') return va - vb;
+  if (kind === 'checkbox') return Number(va) - Number(vb);
+  if (kind === 'select' || kind === 'multiselect') {
+    const choices = parseOptions(col).choices || [];
+    const idx = (id) => choices.findIndex((c) => c.id === id);
+    if (kind === 'select') return idx(va) - idx(vb);
+    return displayText(cellDisplayValue(col, a, state.columns)).localeCompare(displayText(cellDisplayValue(col, b, state.columns)));
+  }
+  return String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' });
+}
+
+function sortRows(rows, sort) {
+  const col = sort && findColumn(state.columns, sort.columnId);
+  if (!col) return rows;
+  const dir = sort.dir === 'desc' ? -1 : 1;
+  const kind = columnKind(col);
+  const empty = (row) => kind !== 'checkbox' && isEmptyValue(comparableValue(col, row));
+  return rows.slice().sort((a, b) => {
+    const ea = empty(a);
+    const eb = empty(b);
+    if (ea || eb) return Number(ea) - Number(eb);
+    return dir * compareRows(col, a, b);
+  });
+}
+
+function currentViewConfig() {
+  return parseView(currentViewObj());
+}
+
+async function saveViewConfig(patch) {
+  const view = currentViewObj();
+  if (!view) return;
+  const cfg = { ...parseView(view), ...patch };
+  view.config = JSON.stringify(cfg);
+  await window.mdEditor.db.updateView(root(), view.id, { config: cfg });
+}
+
 function filteredRows() {
+  const cfg = currentViewConfig();
+  const filters = Array.isArray(cfg.filters) ? cfg.filters : [];
   const q = state.filter.trim().toLowerCase();
-  if (!q) return state.rows;
-  return state.rows.filter((row) => state.columns.some((col) => {
-    const v = cellDisplayValue(col, row, state.columns);
-    return displayText(v).toLowerCase().includes(q);
-  }));
+  let rows = state.rows;
+  if (q) {
+    rows = rows.filter((row) => state.columns.some((col) => {
+      const v = cellDisplayValue(col, row, state.columns);
+      return displayText(v).toLowerCase().includes(q);
+    }));
+  }
+  if (filters.length) rows = rows.filter((row) => filters.every((f) => matchesFilter(f, row)));
+  return sortRows(rows, cfg.sort);
+}
+
+function updateFiltersButton() {
+  const filters = currentViewConfig().filters || [];
+  filtersBtn.textContent = filters.length ? `Filtros (${filters.length})` : 'Filtros';
+  filtersBtn.classList.toggle('database-filters-active', filters.length > 0);
+}
+
+function valueControlFor(col, filter, onChange) {
+  const kind = columnKind(col);
+  let input;
+  if (kind === 'select' || kind === 'multiselect') {
+    input = document.createElement('select');
+    const blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = '(elegí)';
+    input.appendChild(blank);
+    (parseOptions(col).choices || []).forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.label;
+      input.appendChild(opt);
+    });
+  } else {
+    input = document.createElement('input');
+    input.type = kind === 'number' ? 'number' : kind === 'date' ? 'date' : 'text';
+    input.placeholder = 'valor';
+  }
+  input.className = 'database-filter-field';
+  input.value = filter.value != null ? filter.value : '';
+  input.addEventListener('change', () => onChange(input.value));
+  return input;
+}
+
+function openFiltersPopover() {
+  openPopover(filtersBtn, 'database-filters-popover', (pop) => {
+    const rebuild = () => {
+      pop.innerHTML = '';
+      const title = document.createElement('div');
+      title.className = 'database-popover-title';
+      title.textContent = 'Filtros de esta vista (se cumplen todos)';
+      pop.appendChild(title);
+
+      const filters = (currentViewConfig().filters || []).map((f) => ({ ...f }));
+      const commit = async () => {
+        await saveViewConfig({ filters });
+        updateFiltersButton();
+        renderView();
+      };
+
+      filters.forEach((filter, idx) => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'database-filter-row';
+
+        const colSel = document.createElement('select');
+        colSel.className = 'database-filter-field';
+        state.columns.forEach((c) => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.name;
+          colSel.appendChild(opt);
+        });
+        colSel.value = filter.columnId;
+        colSel.addEventListener('change', async () => {
+          const c = findColumn(state.columns, colSel.value);
+          filters[idx] = { columnId: c.id, op: FILTER_OPS[columnKind(c)][0][0], value: '' };
+          await commit();
+          rebuild();
+        });
+        rowEl.appendChild(colSel);
+
+        const col = findColumn(state.columns, filter.columnId);
+        if (col) {
+          const opSel = document.createElement('select');
+          opSel.className = 'database-filter-field';
+          FILTER_OPS[columnKind(col)].forEach(([value, label]) => {
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = label;
+            opSel.appendChild(opt);
+          });
+          opSel.value = filter.op;
+          opSel.addEventListener('change', async () => {
+            filters[idx].op = opSel.value;
+            await commit();
+            rebuild();
+          });
+          rowEl.appendChild(opSel);
+
+          if (OPS_WITH_VALUE.has(filter.op)) {
+            rowEl.appendChild(valueControlFor(col, filter, async (value) => {
+              filters[idx].value = value;
+              await commit();
+            }));
+          }
+        }
+
+        const del = document.createElement('button');
+        del.className = 'database-row-del';
+        del.textContent = '×';
+        del.title = 'Quitar filtro';
+        del.addEventListener('click', async () => {
+          filters.splice(idx, 1);
+          await commit();
+          rebuild();
+        });
+        rowEl.appendChild(del);
+        pop.appendChild(rowEl);
+      });
+
+      const add = document.createElement('button');
+      add.className = 'toolbar-button database-popover-row';
+      add.textContent = '+ Agregar filtro';
+      add.disabled = !state.columns.length;
+      add.addEventListener('click', async () => {
+        const c = state.columns[0];
+        filters.push({ columnId: c.id, op: FILTER_OPS[columnKind(c)][0][0], value: '' });
+        await commit();
+        rebuild();
+      });
+      pop.appendChild(add);
+    };
+    rebuild();
+  });
+}
+
+// Clic en un encabezado de la tabla: ordenar o editar la columna.
+function openColumnMenu(th, col) {
+  const sort = currentViewConfig().sort;
+  openPopover(th, 'database-view-popover', (pop, close) => {
+    const item = (label, fn, extraClass) => {
+      const btn = document.createElement('button');
+      btn.className = 'toolbar-button database-popover-row' + (extraClass ? ' ' + extraClass : '');
+      btn.textContent = label;
+      btn.addEventListener('click', async () => { close(); await fn(); });
+      pop.appendChild(btn);
+    };
+    const setSort = async (value) => { await saveViewConfig({ sort: value }); renderView(); };
+    const active = sort && sort.columnId === col.id;
+    item('↑ Ordenar ascendente', () => setSort({ columnId: col.id, dir: 'asc' }), active && sort.dir === 'asc' ? 'database-popover-row-active' : '');
+    item('↓ Ordenar descendente', () => setSort({ columnId: col.id, dir: 'desc' }), active && sort.dir === 'desc' ? 'database-popover-row-active' : '');
+    if (sort) item('Quitar orden', () => setSort(null));
+    item('✎ Editar columna...', () => openColumnEditor(th, col));
+  });
 }
 
 function renderView() {
   viewBodyEl.innerHTML = '';
   const view = currentViewObj();
   if (!view) return;
+  updateFiltersButton();
   if (view.type === 'board') renderBoardView();
   else if (view.type === 'gallery') renderGalleryView();
   else renderTableView();
@@ -472,6 +770,7 @@ function renderView() {
 
 function renderTableView() {
   const rows = filteredRows();
+  const sort = currentViewConfig().sort;
   const table = document.createElement('table');
   table.className = 'database-table';
 
@@ -481,8 +780,14 @@ function renderTableView() {
     const th = document.createElement('th');
     th.className = 'database-th';
     th.textContent = col.name;
-    th.title = 'Clic: editar columna';
-    th.addEventListener('click', () => openColumnEditor(th, col));
+    if (sort && sort.columnId === col.id) {
+      const arrow = document.createElement('span');
+      arrow.className = 'database-sort-arrow';
+      arrow.textContent = sort.dir === 'desc' ? ' ↓' : ' ↑';
+      th.appendChild(arrow);
+    }
+    th.title = 'Clic: ordenar o editar columna';
+    th.addEventListener('click', () => openColumnMenu(th, col));
     headRow.appendChild(th);
   });
   const thAdd = document.createElement('th');
@@ -497,7 +802,9 @@ function renderTableView() {
   const tbody = document.createElement('tbody');
   rows.forEach((row) => {
     const tr = document.createElement('tr');
-    tr.draggable = true;
+    // Con un orden activo, arrastrar para reordenar a mano no tendría efecto
+    // visible (el orden lo decide la columna), así que se desactiva.
+    tr.draggable = !sort;
     tr.addEventListener('dragstart', (e) => {
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('application/x-mk-db-row', row.id);
@@ -1139,6 +1446,7 @@ addRowBtn.addEventListener('click', async () => {
   state.rows = await window.mdEditor.db.listRows(root(), state.databaseId);
   renderView();
 });
+filtersBtn.addEventListener('click', () => openFiltersPopover());
 filterInput.addEventListener('input', () => { state.filter = filterInput.value; renderView(); });
 nameInput.addEventListener('change', async () => {
   if (!state.databaseId) return;

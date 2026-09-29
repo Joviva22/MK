@@ -58,6 +58,37 @@ Paleta de comandos (`Ctrl+Shift+P`) → **"Bases de datos"**. `Escape` o clic af
 - **×** al final de la fila la borra.
 - **Filtrar filas...**: escribí y quedan solo las filas donde alguna columna contenga ese texto.
 
+## Ordenar y filtrar
+
+Los dos se guardan **en la vista**: una vista "Pendientes" puede tener su filtro y otra "Todo" ninguno.
+
+**Ordenar** — clic en el encabezado de una columna:
+
+- **↑ Ordenar ascendente** / **↓ Ordenar descendente**. El encabezado muestra la flecha.
+- **Quitar orden** vuelve al orden manual.
+- **✎ Editar columna...** abre la configuración de siempre.
+- Números se ordenan como números, fechas por fecha, selección única según el orden de sus opciones. Las celdas vacías van siempre al final.
+- Con un orden activo no se puede arrastrar filas (el orden lo decide la columna).
+
+**Filtros por campo** — botón **Filtros** (junto al buscador):
+
+1. **+ Agregar filtro** → elegí columna, condición y valor.
+2. Podés sumar varios: la fila tiene que cumplir **todos**.
+3. **×** quita un filtro. El botón muestra cuántos hay activos: `Filtros (2)`.
+
+| Tipo de columna | Condiciones |
+|---|---|
+| Texto, fórmula, relación | contiene · no contiene · es igual a · vacío · no vacío |
+| Número, rollup | = · ≠ · > · < · ≥ · ≤ · vacío · no vacío |
+| Fecha, fecha de creación | es · antes de · después de · **es hoy** · **antes de hoy (vencida)** · **hoy o después** · **esta semana** · vacía · no vacía |
+| Casilla | está marcada · no está marcada |
+| Selección única | es · no es · vacía · no vacía |
+| Selección múltiple | contiene · no contiene · vacía · no vacía |
+
+El buscador de texto de al lado sigue funcionando y se combina con los filtros.
+
+**Ejemplo:** vista "Esta semana" = filtro `Fecha límite` *esta semana* + `Hecha` *no está marcada*, ordenada por `Fecha límite` ↑.
+
 ## 4. Relaciones entre bases
 
 Es lo que las hace *relacionales*: conectar filas de una base con filas de otra.

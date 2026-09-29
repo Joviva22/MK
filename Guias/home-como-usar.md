@@ -59,11 +59,42 @@ Clic en cualquier tarea abre un cuadro con:
 | Campo | Para qué |
 |---|---|
 | **Título** | El texto de la tarea (`Enter` guarda) |
-| **Fecha** | Cambiarla a mano; vaciarla la manda a "Sin fecha" |
+| **Fecha** | Cambiarla a mano; vaciarla la manda a "Sin fecha" (en una recurrente se llama **Empieza**) |
+| **Hora** | Opcional. Las tareas con hora se ordenan por hora dentro del día y la muestran en azul |
+| **Aviso** | Notificación del sistema: a la hora, o 5 / 15 / 30 / 60 min antes (necesita hora) |
+| **Repetir** | Todos los días · Días hábiles · Semanal (elegís los días) · Mensual · Anual |
+| **Hasta** | Último día de la repetición (vacío = para siempre) |
 | **Prioridad** | Alta / Media / Baja — define el color y el orden dentro del día |
 | **Notas** | Detalle libre; se ve al pasar el mouse sobre la tarea |
 
 Botones: **Guardar**, **Cancelar** (o `Escape`) y **Eliminar** (pide confirmación).
+
+## Tareas recurrentes 🔁
+
+Para hábitos y tareas fijas (gimnasio lunes y jueves, pagar el alquiler cada mes, repasar todos los días):
+
+1. Creá la tarea en el primer día en que va a ocurrir.
+2. Clic en ella → **Repetir** → elegí la frecuencia. En **Semanal** tildá los días (Lun … Dom).
+3. Opcional: **Hasta** para que termine en una fecha.
+4. **Guardar**. Aparece con 🔁 en todos los días que corresponde, en la semana y en el calendario.
+
+Cómo se comporta:
+
+- **Tildar** marca solo *ese día* como hecho; las demás repeticiones siguen pendientes.
+- **Editar** (título, hora, prioridad, notas, frecuencia) cambia *toda la serie*.
+- **Arrastrar** una repetición a otro día mueve solo ese día: se separa de la serie como tarea común.
+- **Eliminar este día** saca solo esa repetición; **Eliminar serie** borra todas.
+- Las repeticiones pasadas sin tildar no cuentan como **Atrasadas** (si no, una tarea diaria llenaría la lista).
+
+## Recordatorios 🔔
+
+1. Poné una **Hora** en la tarea.
+2. Elegí **Aviso**: a la hora, o unos minutos antes.
+3. A esa hora aparece una notificación del sistema con el título (clic → abre el Home).
+
+- Funcionan con MK abierto, **aunque el Home esté cerrado** (MK revisa cada 30 segundos).
+- Si MK estaba cerrado a la hora del aviso, al abrirlo te avisa solo si pasaron menos de 10 minutos; los más viejos se descartan para no llenarte de notificaciones.
+- Una tarea ya tildada no avisa. En una recurrente, avisa cada día que ocurre.
 
 ## El panel lateral
 
@@ -92,7 +123,7 @@ Con una carpeta abierta y **"Fechas de bases de datos"** tildado, cada fila de u
 | `Enter` en "+ Agregar tarea" | Crear tarea en ese día |
 | Doble clic en día del calendario | Crear tarea ahí |
 | Arrastrar tarea | Cambiar de día / a "Sin fecha" |
-| Clic en tarea | Editar |
+| Clic en tarea | Editar (hora, aviso, repetición, prioridad, notas) |
 | Clic en número del día (Mes) | Ir a esa semana |
 | `Escape` | Cierra el editor de tarea, o el Home |
 
