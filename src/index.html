@@ -257,19 +257,27 @@
           </div>
         </section>
         <section class="set-section" data-section="pet" data-title="Mascota" hidden>
-          <h2 class="set-section-title">Mascota</h2>
-          <div class="set-row" data-keywords="pet mascota criatura pokemon digimon">
-            <div class="set-text"><label class="set-title" for="pet-enabled">Mostrar la mascota</label><div class="set-desc">Gana experiencia con cada tarea tildada (+10) y cada Pomodoro (+25), sube de nivel y evoluciona en los niveles 5 y 10. Clic: detalles · doble clic: pelota.</div></div>
+          <h2 class="set-section-title">Mascotas</h2>
+          <div class="set-row" data-keywords="pet mascota mostrar ocultar esconder">
+            <div class="set-text"><label class="set-title" for="pet-enabled">Mostrar las mascotas</label><div class="set-desc">Ocultas no se pierde nada: conservan su nivel, huevos y logros, y <b>siguen ganando experiencia</b> con tus tareas y Pomodoros.</div></div>
             <div class="set-control"><input type="checkbox" id="pet-enabled" class="set-switch" role="switch" /></div>
           </div>
-          <div class="set-row" data-keywords="especie fuego agua planta">
-            <div class="set-text"><label class="set-title" for="pet-species">Especie</label><div class="set-desc">Criaturas de MK, personajes de un juego de RPG Maker o tus imágenes. Cambiarla conserva el nivel.</div></div>
+          <div class="set-row" data-keywords="coleccion equipo huevos logros legendarios">
+            <div class="set-text"><div class="set-title">Mis mascotas</div><div class="set-desc">Tu colección, el equipo que camina (hasta 3), los huevos que se incuban y los logros que dan legendarios.</div></div>
+            <div class="set-control"><button type="button" id="pet-open-collection" class="toolbar-button set-primary">🐾 Abrir colección</button></div>
+          </div>
+          <div class="set-row" data-keywords="especie apariencia fuego agua planta electrico hielo roca fantasma">
+            <div class="set-text"><label class="set-title" for="pet-species">Apariencia de la líder</label><div class="set-desc">Criatura de MK, un personaje de un juego o tus imágenes. Cambiarla conserva el nivel.</div></div>
             <div class="set-control"><select id="pet-species">
-                <option value="fuego">Fuego · Chispi → Chispón → Brasadrake</option>
-                <option value="agua">Agua · Gotín → Olaquín → Marejón</option>
-                <option value="planta">Planta · Brotito → Hojarín → Robleón</option>
-                <option value="game">De un juego (RPG Maker) · Pokémon Essentials…</option>
-                <option value="custom">Imágenes propias (PNG / GIF)</option>
+                <option value="fuego">🔥 Chispi → Chispón → Brasadrake</option>
+                <option value="agua">💧 Gotín → Olaquín → Marejón</option>
+                <option value="planta">🌱 Brotito → Hojarín → Robleón</option>
+                <option value="electrico">⚡ Voltín → Voltarón → Tronador</option>
+                <option value="hielo">❄ Copito → Escarchín → Glaciarca</option>
+                <option value="roca">🪨 Guijarro → Peñasco → Montarón</option>
+                <option value="fantasma">👻 Sombrín → Espectrín → Umbralord</option>
+                <option value="game">🎮 De un juego (RPG Maker)…</option>
+                <option value="custom">🖼 Imágenes propias (PNG / GIF)</option>
               </select></div>
           </div>
           <div class="set-row set-row-wide" id="pet-game-row" data-keywords="juego rpg maker pokemon essentials characters personajes sprites evolucion">
@@ -291,20 +299,23 @@
               <div id="pet-sprite-status" class="dailynote-example"></div>
             </div>
           </div>
-          <div class="set-row" data-keywords="nombre apodo">
-            <div class="set-text"><label class="set-title" for="pet-name">Nombre</label><div class="set-desc">Vacío = el de su especie.</div></div>
-            <div class="set-control"><input type="text" id="pet-name" class="settings-text-input" maxlength="24" placeholder="Nombre" /></div>
+          <div class="set-row" data-keywords="origen crias huevos nuevas juego">
+            <div class="set-text"><label class="set-title" for="pet-source">Origen de las crías</label><div class="set-desc">De dónde salen las criaturas de los huevos: las de MK, o las del juego (sus legendarios son los marcados así en el juego).</div></div>
+            <div class="set-control"><select id="pet-source">
+                <option value="mk">Criaturas de MK</option>
+                <option value="game">Del juego (RPG Maker)</option>
+              </select></div>
           </div>
           <div class="set-row" data-keywords="lugar posicion donde">
-            <div class="set-text"><label class="set-title" for="pet-position">Dónde camina</label><div class="set-desc">Al pie del sidebar no tapa el texto.</div></div>
+            <div class="set-text"><label class="set-title" for="pet-position">Dónde caminan</label><div class="set-desc">Al pie del sidebar no tapan el texto.</div></div>
             <div class="set-control"><select id="pet-position">
                 <option value="sidebar">Al pie del sidebar</option>
                 <option value="window">Por toda la ventana</option>
               </select></div>
           </div>
-          <div class="set-row" data-keywords="reiniciar resetear">
-            <div class="set-text"><div class="set-title">Reiniciar</div><div class="set-desc">Vuelve al nivel 1 y pierde la experiencia.</div></div>
-            <div class="set-control"><button type="button" id="pet-reset" class="toolbar-button">Reiniciar mascota</button></div>
+          <div class="set-row" data-keywords="reiniciar resetear borrar">
+            <div class="set-text"><div class="set-title">Empezar de cero</div><div class="set-desc">Borra todas las mascotas, huevos y logros.</div></div>
+            <div class="set-control"><button type="button" id="pet-reset" class="toolbar-button">Empezar de cero…</button></div>
           </div>
         </section>
         <section class="set-section" data-section="system" data-title="Sistema" hidden>
@@ -704,6 +715,7 @@
   <script src="mailsettings.js"></script>
   <script src="settingspanel.js"></script>
   <script src="toolbarstyle.js"></script>
+  <script src="petart.js"></script>
   <script src="pet.js"></script>
   <script src="askdialog.js"></script>
   <script src="templates.js"></script>

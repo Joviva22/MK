@@ -3685,78 +3685,101 @@
       `comandos=${cmdsOk} (${rsCmd} | ${mkCmd}) resaltado=${hlOk} ${hlOk === true ? '' : dbg}`);
   }
 
-  // Mascota: XP por tarea (una vez por tarea/día), por Pomodoro, sube de
-  // nivel y evoluciona (nivel 5 → etapa 2), ánimo según atrasadas, imágenes
-  // propias (etapa 1) y tildar una tarea del Home le da experiencia.
+  // Mascotas: equipo, XP (una vez por tarea/día), evolución → huevo → nace
+  // otra criatura; logro → huevo legendario; ocultas siguen ganando;
+  // ánimo; imágenes propias; tildar en el Home; migración de la versión 1.
   {
     const P = window.mdPet;
     const before = P.getState();
-    P.setState({ enabled: true, species: 'agua', xp: 0, awarded: [] });
-    const a = P.gain('task', 'test:t1');
-    const dup = P.gain('task', 'test:t1');
-    const pomo = P.gain('pomodoro', null);
+    await P.setState({ version: 2, enabled: true, source: 'mk', pets: [{ id: 'p1', kind: 'mk', species: 'agua', mkSpecies: 'agua', name: '', xp: 0, legendary: false }], team: ['p1'], eggs: [], awarded: [], achievements: [], stats: { tasks: 0, pomodoros: 0, taskDays: [] }, nextId: 2, fed: {} });
+    const a = await P.gain('task', 'test:t1');
+    const dup = await P.gain('task', 'test:t1');
+    const pomo = await P.gain('pomodoro', null);
     const xpOk = a.xp === 10 && dup.duplicate && pomo.xp === 35;
-    P.setState({ xp: 235 });
-    const evo = P.gain('task', 'test:t2'); // 245 XP → nivel 5 → etapa 2
+
+    // Evoluciona (nivel 5) → aparece un huevo; el huevo nace a los 60 XP.
+    await P.setState({ pets: [{ ...P.getState().pets[0], xp: 235 }] });
+    const evo = await P.gain('task', 'test:t2');
     const petEl = document.querySelector('.pet');
-    const evolveOk = evo.evolved && evo.stage === 2 && petEl.dataset.stage === '2' && evo.name === 'Olaquín';
-    // El Home recalcula las atrasadas reales cada tanto: que no pise el 3.
+    const evolveOk = evo.evolved && evo.stage === 2 && evo.name === 'Olaquín' && petEl && petEl.dataset.stage === '2';
+    const eggOk = P.getState().eggs.length === 1 && P.getState().eggs[0].type === 'normal';
+    for (let i = 3; i <= 8; i++) await P.gain('task', `test:t${i}`); // 60 XP
+    const st1 = P.getState();
+    const hatchOk = st1.eggs.length === 0 && st1.pets.length === 2 && st1.team.length === 2 && st1.pets[1].species !== 'agua' && document.querySelectorAll('.pet').length === 2;
+
+    // Logro (50 Pomodoros) → huevo legendario.
+    await P.setState({ stats: { ...P.getState().stats, pomodoros: 49 } });
+    await P.gain('pomodoro', null);
+    const st2 = P.getState();
+    const legendOk = st2.achievements.includes('concentracion') && st2.eggs.some((e) => e.type === 'legendary' && e.pick.kind === 'mk');
+
+    // Ocultas: siguen ganando experiencia.
+    await P.setState({ enabled: false });
+    const xpHiddenBefore = P.getState().pets[0].xp;
+    await P.gain('task', 'test:hidden');
+    const hiddenOk = P.getState().pets[0].xp === xpHiddenBefore + 10 && document.querySelector('.pet-lane').hidden;
+    await P.setState({ enabled: true });
+
+    // Ánimo (el Home recalcula las atrasadas reales cada tanto: aislado).
     const realSetOverdue = P.setOverdue;
     realSetOverdue(3);
     P.setOverdue = () => {};
-    // Recién ganó XP: festeja ~1,2 s (el festejo le gana al ánimo).
-    const sadOk = !!(await waitFor(() => petEl.dataset.mood === 'sad', 3000));
+    const sadOk = !!(await waitFor(() => document.querySelector('.pet') && document.querySelector('.pet').dataset.mood === 'sad', 3000));
     P.setOverdue = realSetOverdue;
     P.setOverdue(0);
-    petEl.click();
-    await new Promise((r) => setTimeout(r, 350));
-    const card = document.querySelector('.pet-card');
-    const cardOk = !card.hidden && card.textContent.includes('Nivel 5') && card.textContent.includes('Marejón');
-    card.hidden = true;
 
+    // Colección: tarjetas, equipo y logros.
+    P.openCollection();
+    const col = document.querySelector('.pet-collection-overlay');
+    const colOk = !col.hidden && col.querySelectorAll('.pet-col-card[data-pet-id]').length === 2 && col.textContent.includes('Concentración') && col.textContent.includes('Huevo legendario');
+    col.querySelector('.pet-col-card[data-pet-id="p1"] .pet-col-team').click(); // p1 descansa
+    const restOk = !P.getState().team.includes('p1') && document.querySelectorAll('.pet').length === 1;
+    col.hidden = true;
+
+    // Imágenes propias para la líder.
     let customOk = 'sin fixtures';
     if (fixturesDir) {
       const svgPath = window.mdEditor.joinPath(fixturesDir, 'mi-mascota.svg');
       await window.mdEditor.saveFile('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="5" cy="5" r="5" fill="red"/></svg>', svgPath, false);
-      const res = await window.mdEditor.pet.pickSprite(1, svgPath);
-      await P.reloadSprites();
-      P.setState({ species: 'custom', xp: 0 });
+      const leadId = P.getState().team[0];
+      const res = await window.mdEditor.pet.pickSprite(leadId, 1, svgPath);
+      const s3 = P.getState();
+      s3.pets.find((p) => p.id === leadId).kind = 'custom';
+      await P.setState({ pets: s3.pets });
       const img = document.querySelector('.pet .pet-img');
       const loaded = img && await new Promise((r) => { if (img.complete && img.naturalWidth) r(true); img.onload = () => r(true); img.onerror = () => r(false); setTimeout(() => r(false), 2000); });
       customOk = !!(res && res.ok && loaded);
-      await window.mdEditor.pet.clearSprites();
+      await window.mdEditor.pet.clearSprites(leadId);
     }
 
-    // Home: tildar una tarea le da XP.
-    P.setState({ species: 'fuego', xp: 0, awarded: [] });
+    // Home: tildar una tarea da XP a la líder; destildar y tildar no suma.
+    await P.setState({ pets: [{ id: 'p1', kind: 'mk', species: 'fuego', name: '', xp: 0, legendary: false }], team: ['p1'], eggs: [], awarded: [] });
     await window.mdHome.open();
     window.mdHome.setMode('week');
     const title = 'Mascota ' + Date.now();
     const qa = await waitFor(() => document.querySelector('#home-main .home-day.home-today .home-quick-add'));
     qa.value = title;
     qa.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    const card2 = await waitFor(() => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title)));
-    card2.querySelector('input[type="checkbox"]').click();
+    const findCard = () => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
+    (await waitFor(findCard)).querySelector('input[type="checkbox"]').click();
     await new Promise((r) => setTimeout(r, 200));
     const homeXp = P.info().xp === 10;
-    const again = Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
-    again.querySelector('input[type="checkbox"]').click(); // destildar
-    const again2 = Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
-    again2.querySelector('input[type="checkbox"]').click(); // tildar de nuevo: no suma
+    findCard().querySelector('input[type="checkbox"]').click();
+    findCard().querySelector('input[type="checkbox"]').click();
     await new Promise((r) => setTimeout(r, 200));
     const noFarm = P.info().xp === 10;
     const originalConfirm = window.confirm;
     window.confirm = () => true;
-    Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title)).click();
+    findCard().click();
     await waitFor(() => document.querySelector('.home-editor'));
     Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
     window.confirm = originalConfirm;
     window.mdHome.close();
 
-    P.setState({ ...before, enabled: false });
-    check('Mascota: XP por tarea/Pomodoro sin duplicar, evoluciona en nivel 5, ánimo, tarjeta, imágenes propias y tildar en el Home',
-      xpOk && evolveOk && sadOk && cardOk && customOk === true && homeXp && noFarm,
-      `xp=${xpOk} evoluciona=${evolveOk}(${evo.name}) triste=${sadOk} tarjeta=${cardOk} propia=${customOk} home=${homeXp} sinTrampa=${noFarm}`);
+    await P.setState({ ...before, enabled: false });
+    check('Mascotas: XP sin duplicar, evoluciona → huevo → nace otra, logro → huevo legendario, ocultas siguen ganando, ánimo, colección y equipo, imágenes propias, Home',
+      xpOk && evolveOk && eggOk && hatchOk && legendOk && hiddenOk && sadOk && colOk && restOk && customOk === true && homeXp && noFarm,
+      `xp=${xpOk} evoluciona=${evolveOk} huevo=${eggOk} nace=${hatchOk} legendario=${legendOk} ocultaGana=${hiddenOk} triste=${sadOk} colección=${colOk} descansa=${restOk} propia=${customOk} home=${homeXp} sinTrampa=${noFarm}`);
   }
 
   // Correo: dirección + contraseña (nunca vuelve al renderer), prueba, aviso

@@ -34,7 +34,7 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 26. [Bases de datos relacionales](#26-bases-de-datos-relacionales)
 27. [Terminal integrada](#27-terminal-integrada)
 28. [Seguridad, privacidad y errores](#28-seguridad-privacidad-y-errores)
-29. [Mascota](#29-mascota)
+29. [Mascotas](#29-mascotas)
 
 > Guías especializadas por función (cómo usar / para qué sirve): carpeta [`Guias/`](./Guias/README.md).
 
@@ -602,6 +602,6 @@ Todo es local: sin cuenta, sin nube, sin telemetría. Al abrir un `.md` ajeno, M
 
 **Si algo falla al guardar** (disco lleno, sin permiso), aparece un aviso rojo abajo a la izquierda y la pestaña conserva tus cambios (el autoguardado reintenta). Bases de datos, Home, configuración y sesión se guardan de forma **atómica** (temporal + reemplazo), y un JSON que ya estuviera dañado se aparta como `….corrupt-<fecha>` en vez de pisarse. Los errores quedan en `~/.config/md-editor-local/logs/mk.log` (rota a 1 MB). Guía: [`Guias/seguridad-y-errores.md`](./Guias/seguridad-y-errores.md).
 
-## 29. Mascota
+## 29. Mascotas
 
-Un compañero que camina al pie del sidebar (o por toda la ventana) y **evoluciona con tu trabajo**: +10 XP por cada tarea tildada (Home o `📅` de notas; una vez por tarea y día), +25 por cada Pomodoro de foco, +2 al darle de comer (una vez por día). Nivel = 1 + √(XP÷15); evoluciona en el **nivel 5** y en el **10**. Tres especies propias —Fuego (Chispi → Chispón → Brasadrake), Agua (Gotín → Olaquín → Marejón), Planta (Brotito → Hojarín → Robleón)— o **Personalizada** con tus imágenes (PNG/GIF/WebP/SVG, una por etapa, guardadas en `~/.config/md-editor-local/pet/`), o **personajes de un juego de RPG Maker / Pokémon Essentials**: elegís la carpeta `Graphics/Characters` (se detecta sola en Descargas), buscás una criatura y MK arma su línea evolutiva desde `PBS/pokemon.txt` y la hace caminar con la animación del juego. Clic: tarjeta con nivel y experiencia; doble clic: le tirás la pelota; se duerme si no la tocás un rato y se pone triste si hay tareas atrasadas. ⚙ Ajustes → **Mascota**. Guía: [`Guias/mascota.md`](./Guias/mascota.md).
+Un **equipo de hasta 3 criaturas** que camina al pie del sidebar (o por toda la ventana) y crece con tu trabajo: cada tarea tildada (+10, una vez por tarea y día) y cada Pomodoro (+25) dan experiencia a todo el equipo; evolucionan en el **nivel 5** y en el **10**. **Cada evolución deja un huevo** 🥚 con una criatura nueva (nace a los 60 XP) y los **logros** —7 días seguidos con tareas, 50 Pomodoros, 200 tareas, 3 mascotas en etapa final— dan **huevos legendarios** 🌟 (150 XP). **🐾 Mis mascotas** muestra la colección, el equipo (líder, al equipo / descansar, nombre), los huevos y el progreso de cada logro. Criaturas de MK: 7 líneas (Fuego, Agua, Planta, Eléctrico, Hielo, Roca, Fantasma) y 4 legendarias; o personajes de un **juego de RPG Maker / Pokémon Essentials** (líneas evolutivas y legendarios desde su `PBS/pokemon.txt`), o **imágenes propias**. Ocultarlas (Ajustes → Mascota) no pierde nada: **siguen ganando** experiencia. Guía: [`Guias/mascota.md`](./Guias/mascota.md).

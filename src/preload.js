@@ -156,13 +156,13 @@ contextBridge.exposeInMainWorld('mdEditor', {
   // Correo (ver ipc-mail.js): la contraseña va de acá al proceso principal
   // y nunca vuelve; los correos van siempre a tu propia dirección.
   pet: {
-    sprites: () => ipcRenderer.invoke('pet:sprites'),
-    pickSprite: (stage, testPath) => ipcRenderer.invoke('pet:pickSprite', stage, testPath),
-    clearSprites: () => ipcRenderer.invoke('pet:clearSprites'),
+    sprites: (petId) => ipcRenderer.invoke('pet:sprites', petId),
+    pickSprite: (petId, stage, testPath) => ipcRenderer.invoke('pet:pickSprite', petId, stage, testPath),
+    clearSprites: (petId) => ipcRenderer.invoke('pet:clearSprites', petId),
     findCharDirs: () => ipcRenderer.invoke('pet:findCharDirs'),
     pickCharDir: () => ipcRenderer.invoke('pet:pickCharDir'),
     charCatalog: (dir) => ipcRenderer.invoke('pet:charCatalog', dir),
-    useChars: (dir, ids, names) => ipcRenderer.invoke('pet:useChars', dir, ids, names)
+    useChars: (petId, dir, ids, names) => ipcRenderer.invoke('pet:useChars', petId, dir, ids, names)
   },
   mail: {
     status: () => ipcRenderer.invoke('mail:status'),
