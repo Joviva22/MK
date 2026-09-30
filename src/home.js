@@ -511,6 +511,7 @@ async function markSourceDone(source) {
   } else if (source.kind === 'note') {
     if (!source.item.done) await toggleNoteItem(source.item);
   } else if (source.kind === 'db' && source.doneColumnId && window.mdState.rootFolder) {
+    if (window.mdPet) window.mdPet.gain('task', `db:${source.rowId}:${source.doneColumnId}|${todayIso()}`);
     await window.mdEditor.db.setCell(window.mdState.rootFolder, source.rowId, source.doneColumnId, '1');
     await loadDbReminders();
   }

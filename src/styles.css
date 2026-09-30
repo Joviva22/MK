@@ -5087,3 +5087,17 @@ textarea:focus-visible,
 /* Módulos apagados (modules.js) */
 [data-module-off] { display: none !important; }
 .set-section-intro { margin: 0 0 var(--space-2); }
+
+/* Bloque database editable (database.js: embedCell) */
+.db-embed-editable { cursor: text; }
+.db-embed-editable:hover { background: var(--surface-2); }
+.db-embed-input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 2px 4px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+}

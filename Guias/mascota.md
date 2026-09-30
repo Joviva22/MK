@@ -9,7 +9,7 @@
 
 | Qué hacés | XP |
 |---|---|
-| Tildar una tarea del Home o una tarea `📅` de una nota | +10 a cada mascota del equipo (una vez por tarea y día: tildar y destildar no suma de nuevo) |
+| Tildar una tarea del Home, una tarea `📅` de una nota o una **casilla de una fila de base de datos** | +10 a cada mascota del equipo (una vez por tarea/fila y día: tildar y destildar no suma de nuevo) |
 | Terminar un Pomodoro de foco | +25 a cada mascota del equipo |
 | Darle de comer (🍖 en su tarjeta) | +2, una vez por día y mascota |
 

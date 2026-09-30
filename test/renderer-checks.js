@@ -3400,6 +3400,22 @@
     const moreText = embeds[0] && embeds[0].querySelector('.db-embed-more') ? embeds[0].querySelector('.db-embed-more').textContent : '';
     const chartOk = !!(embeds[1] && embeds[1].querySelector('svg .chart-mark'));
     const errOk = !!(embeds[2] && embeds[2].textContent.includes('Libros Embed'));
+    // Editar en el lugar: renombrar la primera fila y tildarla como leída
+    // (sale de la vista "Pendientes" al redibujarse).
+    const firstName = embeds[0].querySelector('table.db-embed-table tr:nth-child(2) td.db-embed-editable');
+    firstName.click();
+    const nameInput = firstName.querySelector('input');
+    nameInput.value = 'Ficciones (ed. 1944)';
+    nameInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await waitFor(async () => (await window.mdEditor.db.listRows(fixturesDir, edb.id)).some((row) => row.cells[eName.id] === 'Ficciones (ed. 1944)'));
+    const renamedOk = (await window.mdEditor.db.listRows(fixturesDir, edb.id)).some((row) => row.cells[eName.id] === 'Ficciones (ed. 1944)');
+    const box = await waitFor(() => embeds[0].querySelector('table.db-embed-table tr:nth-child(2) input[type="checkbox"]'));
+    const xpBefore = window.mdPet.info().xp;
+    box.checked = true;
+    box.dispatchEvent(new Event('change'));
+    const leftView = await waitFor(() => !embeds[0].textContent.includes('Ficciones') && embeds[0].querySelectorAll('table.db-embed-table tr').length - 1 === 2, 3000);
+    const petOk = window.mdPet.info().xp === xpBefore + 10; // tildar una fila da XP a la mascota
+    const editOk = renamedOk && !!leftView && petOk;
     embeds[0].querySelector('.db-embed-open').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
     const opened = await waitFor(() => !document.getElementById('database-panel').hidden && document.getElementById('database-name-input').value === 'Libros Embed');
     window.mdDatabase.close();
@@ -3413,10 +3429,10 @@
     document.querySelector('#tabbar .tab.active .tab-close').click();
     window.confirm = originalConfirm;
     await window.mdEditor.db.deleteDatabase(fixturesDir, edb.id);
-    embedOk = bodyRows === 2 && moreText.includes('1 fila') && chartOk && errOk && !!opened && liveOk;
-    embedDetail = `filas=${bodyRows} "${moreText}" grafico=${chartOk} error=${errOk} abrir=${!!opened} live=${liveOk}`;
+    embedOk = bodyRows === 2 && moreText.includes('1 fila') && chartOk && errOk && editOk && !!opened && liveOk;
+    embedDetail = `filas=${bodyRows} "${moreText}" grafico=${chartOk} error=${errOk} editar=${editOk}(mascota=${typeof petOk === 'undefined' ? '-' : petOk}) abrir=${!!opened} live=${liveOk}`;
   }
-  check('Base de datos dentro de una nota: vista con filtros, gráfico, límite de filas, error claro, Abrir y Live Preview', embedOk, embedDetail);
+  check('Base de datos dentro de una nota: vista con filtros, gráfico, límite de filas, error claro, editar en el lugar, Abrir y Live Preview', embedOk, embedDetail);
 
   // Vigilar la carpeta: lo que cambia afuera de MK (acá, escrito por el
   // proceso principal sin pasar por las pestañas) aparece solo — archivo

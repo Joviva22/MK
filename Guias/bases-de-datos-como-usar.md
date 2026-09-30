@@ -189,7 +189,7 @@ filas: 10
 - `base:` nombre de la base (también sirve escribir solo el nombre en la primera línea).
 - `vista:` qué vista mostrar (por defecto, la primera). Respeta sus **filtros y orden**; si es una vista **Gráfico**, dibuja el gráfico. Las vistas Tablero, Calendario y Galería se muestran como tabla.
 - `filas:` cuántas filas como máximo (por defecto 20).
-- Es de solo lectura y se actualiza sola; el botón **Abrir** abre la base para editarla.
+- **Se edita ahí mismo**: clic en una celda de texto, número, fecha o selección (o `Tab` hasta ella y `Enter`) para cambiarla; `Enter` guarda, `Esc` cancela; las casillas se tildan directo. Fórmulas, rollups y relaciones son de solo lectura. Tras guardar se redibuja (si una fila deja de cumplir los filtros de la vista, sale). El botón **Abrir** abre la base completa.
 - Se ve en el preview y en Live Preview. Si el nombre no existe, te dice cuáles hay.
 
 Ideal para una nota de proyecto que muestre sus tareas pendientes, o un resumen mensual con el gráfico de gastos.

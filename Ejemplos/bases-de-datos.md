@@ -18,7 +18,7 @@ Abrí la paleta de comandos (`Ctrl+Shift+P`) → **"Bases de datos"**.
 
 ## La base, dentro de esta nota
 
-Un bloque `database` muestra la base acá mismo (en el preview o en Live Preview). Es de solo lectura: marcá una tarea como "Hecha" en la base y esta tabla se actualiza.
+Un bloque `database` muestra la base acá mismo (en el preview o en Live Preview) y **se edita ahí**: clic en una celda para cambiarla, o tildá "Hecha" directamente.
 
 ```database
 base: Tareas

@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 95 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 97 de 136 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -124,7 +124,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Mascota con personajes de un juego RPG Maker**~~ (carpeta `Graphics/Characters` detectada sola, líneas evolutivas desde `PBS/pokemon.txt` con ramas, caminata animada por dirección; se copian solo 3 sprites a la config local) (2026-09-30)
 - [x] ~~**Varias mascotas: equipo, huevos y legendarias**~~ (equipo de 3, colección, huevo por cada evolución, 4 logros → huevos legendarios, 7 líneas + 4 legendarias de MK o criaturas y legendarios del juego, ocultas siguen ganando, migración de la mascota anterior) (2026-09-30)
 - [x] ~~**Más lenguajes: F5 y resaltado**~~ (F5 para TS, Rust, PHP, Perl, Lua, R, Julia, Haskell, Dart, Swift, Kotlin, zsh, fish, PowerShell, SQL, HTML y Makefile; resaltado de ~25 lenguajes más cargado al abrir) (2026-09-30)
-- [ ] **Mascota: XP por filas de bases de datos marcadas como hechas** (la casilla "Hecha" de una fila con fecha)
+- [x] ~~**Mascota: XP por filas de bases de datos marcadas como hechas**~~ (cualquier casilla tildada, en la base, en el bloque o desde el aviso; una vez por fila y día) (2026-09-30)
 - [x] ~~**Categorías en tareas del Home**~~ (`@categoría` al agregar, chip de color, filtro que heredan las nuevas, administrador con color) (2026-09-30) — *las estadísticas por categoría y el vínculo con las mascotas se probaron y se quitaron a pedido: más simple*
 
 ## Ideas de `MEJORAS_PROPUESTAS.md` (Gemini)
@@ -141,7 +141,7 @@ Revisado el 2026-09-30. Lo que ya estaba hecho o repetido queda anotado; lo nuev
 - [x] ~~**Contraste suficiente en todos los temas**~~ (13 temas corregidos en el texto secundario y ayu-light en el acento; prueba automática WCAG AA) (2026-09-30)
 
 **Funciones**
-- [ ] **Bloque `database` editable** desde la nota (hoy es de solo lectura con botón Abrir)
+- [x] ~~**Bloque `database` editable**~~ (texto, número, fecha, selección y casillas en el lugar, con teclado; se redibuja respetando filtros) (2026-09-30)
 - [ ] **Grafo interactivo**: clic derecho en un nodo → abrir en panel secundario / ver backlinks; filtros por etiqueta o fecha
 - [x] ~~**Desactivar módulos que no uses**~~ (Ajustes → Módulos: 9 módulos; se ocultan de la barra, la paleta y los menús y sus atajos se frenan, sin borrar datos) (2026-09-30)
 - [ ] **Dashboards / widgets en notas**: bloques que resumen datos vivos (progreso de Kanbans, totales de una base, tareas de la semana) — extiende los bloques `chart` y `database`

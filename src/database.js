@@ -1615,11 +1615,19 @@ function renderDateCell(host, column, row, refresh) {
   host.appendChild(input);
 }
 
+// Tildar una casilla de una fila le da experiencia a las mascotas, como una
+// tarea del Home (una vez por fila, columna y día: destildar y tildar no suma).
+function petXpForCheck(row, column, checked) {
+  if (!checked || !window.mdPet) return;
+  window.mdPet.gain('task', `db:${row.id}:${column.id}|${new Date().toISOString().slice(0, 10)}`);
+}
+
 function renderCheckboxCell(host, column, row, refresh) {
   const input = document.createElement('input');
   input.type = 'checkbox';
   input.checked = row.cells[column.id] === '1';
   input.addEventListener('change', async () => {
+    petXpForCheck(row, column, input.checked);
     await window.mdEditor.db.setCell(root(), row.id, column.id, input.checked ? '1' : '0');
     await refresh();
   });
@@ -2080,6 +2088,92 @@ function withTemporaryState(temp, fn) {
   }
 }
 
+const EMBED_EDITABLE = new Set(['text', 'number', 'date', 'checkbox', 'select']);
+
+// Una celda del bloque ```database```: editable si el tipo lo permite. Los
+// eventos no llegan al editor (en Live Preview, un clic no mueve el cursor
+// adentro del bloque).
+function embedCell(column, row, shown, r, onSaved) {
+  const td = document.createElement('td');
+  const stop = (e) => e.stopPropagation();
+  td.addEventListener('mousedown', stop);
+  if (!EMBED_EDITABLE.has(column.type)) {
+    td.textContent = shown;
+    return td;
+  }
+  const save = async (value) => {
+    await window.mdEditor.db.setCell(r, row.id, column.id, value);
+    onSaved();
+  };
+  if (column.type === 'checkbox') {
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = row.cells[column.id] === '1';
+    box.setAttribute('aria-label', column.name);
+    box.addEventListener('mousedown', stop);
+    box.addEventListener('change', () => {
+      petXpForCheck(row, column, box.checked);
+      save(box.checked ? '1' : '0');
+    });
+    td.appendChild(box);
+    return td;
+  }
+  td.textContent = shown;
+  td.className = 'db-embed-editable';
+  td.tabIndex = 0;
+  td.title = 'Clic para editar';
+  const startEdit = () => {
+    if (td.querySelector('input, select')) return;
+    let input;
+    if (column.type === 'select') {
+      input = document.createElement('select');
+      const none = document.createElement('option');
+      none.value = '';
+      none.textContent = '—';
+      input.appendChild(none);
+      (parseOptions(column).choices || []).forEach((c) => {
+        const o = document.createElement('option');
+        o.value = c.id;
+        o.textContent = c.label;
+        input.appendChild(o);
+      });
+      input.value = row.cells[column.id] || '';
+      input.addEventListener('change', () => save(input.value || null));
+    } else {
+      input = document.createElement('input');
+      input.type = column.type === 'number' ? 'number' : column.type === 'date' ? 'date' : 'text';
+      input.value = row.cells[column.id] || '';
+      let done = false;
+      const commit = () => {
+        if (done) return;
+        done = true;
+        const v = input.value;
+        if (column.type === 'text') save(v);
+        else save(v === '' ? null : v);
+      };
+      input.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Escape') { done = true; onSaved(); }
+      });
+      input.addEventListener('blur', commit);
+      if (column.type === 'date') input.addEventListener('change', commit);
+    }
+    input.className = 'db-embed-input';
+    input.setAttribute('aria-label', column.name);
+    input.addEventListener('mousedown', stop);
+    td.textContent = '';
+    td.appendChild(input);
+    input.focus();
+    if (input.select && column.type !== 'select') input.select();
+  };
+  td.addEventListener('click', (e) => { e.stopPropagation(); startEdit(); });
+  td.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target === td) { e.preventDefault(); startEdit(); }
+  });
+  return td;
+}
+
 async function renderEmbed(host, text) {
   const spec = parseEmbedSpec(text);
   host.innerHTML = '';
@@ -2122,7 +2216,7 @@ async function renderEmbed(host, text) {
     const list = filteredRows();
     return {
       total: list.length,
-      rows: list.slice(0, spec.filas).map((row) => columns.map((c) => displayText(cellDisplayValue(c, row, columns))))
+      rows: list.slice(0, spec.filas).map((row) => ({ row, cells: columns.map((c) => displayText(cellDisplayValue(c, row, columns))) }))
     };
   });
 
@@ -2149,10 +2243,13 @@ async function renderEmbed(host, text) {
   const tr = document.createElement('tr');
   columns.forEach((c) => { const th = document.createElement('th'); th.textContent = c.name; tr.appendChild(th); });
   table.appendChild(tr);
-  computed.rows.forEach((cells) => {
-    const row = document.createElement('tr');
-    cells.forEach((v) => { const td = document.createElement('td'); td.textContent = v; row.appendChild(td); });
-    table.appendChild(row);
+  // Editable en el lugar: texto, número, fecha, casilla y selección (clic o
+  // Enter). Fórmulas, rollups, relaciones y fechas de creación: solo lectura.
+  const rerender = () => renderEmbed(host, text);
+  computed.rows.forEach(({ row, cells }) => {
+    const tr2 = document.createElement('tr');
+    cells.forEach((v, i) => tr2.appendChild(embedCell(columns[i], row, v, r, rerender)));
+    table.appendChild(tr2);
   });
   host.appendChild(table);
   if (computed.total > computed.rows.length) {
