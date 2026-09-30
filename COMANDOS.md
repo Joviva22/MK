@@ -11,6 +11,7 @@ Referencia rápida y resumida. Para la explicación completa de cada función, v
 | `Ctrl+S` | Guardar |
 | `Ctrl+Shift+S` | Guardar como |
 | `Ctrl+W` | Cerrar pestaña activa |
+| `Ctrl+Alt+W` | Reabrir la última pestaña cerrada (hasta 20; con el cursor donde estaba) |
 | `Ctrl+Q` | Salir de MK de verdad (cerrar la ventana la deja en la bandeja para que suenen los recordatorios) |
 | `Ctrl+Tab` / `Ctrl+Shift+Tab` | Pestaña siguiente / anterior |
 

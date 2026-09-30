@@ -27,6 +27,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ### Interfaz
 
+- **Reabrir la pestaña cerrada** con `Ctrl+Alt+W` (también los borradores sin título, con su texto).
+
 - **Bienvenida** en el primer arranque: elegir qué usar (Escribir / Escribir y planificar / Todo), crear o elegir la carpeta de notas y los atajos clave.
 - **Ajustes** rediseñado (secciones, buscador), barra superior solo íconos / con texto / oculta, **Módulos** para apagar lo que no uses, barra de estado (guardado, rama de git, palabras), grafo interactivo, tokens de diseño y animaciones suaves.
 - **Accesibilidad**: contraste WCAG AA en los 26 temas, navegación con teclado, ARIA.

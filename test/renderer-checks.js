@@ -4024,6 +4024,36 @@
       `v=${version} desc="${desc.textContent}" aviso=${!!cfg.updateCheck}`);
   }
 
+  // Reabrir pestaña cerrada: Ctrl+Alt+W vuelve a abrir la última (con el
+  // cursor donde estaba); una "Sin título" con texto vuelve con su texto.
+  {
+    const cm = window.mdCodeMirror;
+    const p = window.mdEditor.joinPath(fixturesDir, 'externo.md');
+    await window.mdEditor.saveFile('uno\ndos\ntres\n', p, false);
+    await window.mdTabs.openTab(p);
+    cm.setCursor({ line: 2, ch: 1 });
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    const closedOk = !window.mdTabs.getActiveTabInfo() || window.mdTabs.getActiveTabInfo().filePath !== p;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'w', ctrlKey: true, altKey: true, bubbles: true }));
+    await new Promise((r) => setTimeout(r, 300));
+    const info = window.mdTabs.getActiveTabInfo();
+    const reopened = info && info.filePath === p && cm.getCursor().line === 2 && cm.getCursor().ch === 1;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+
+    window.mdTabs.newTab('borrador que no quiero perder\n');
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    window.confirm = originalConfirm;
+    await window.mdTabs.reopenClosed();
+    const draftBack = cm.getValue() === 'borrador que no quiero perder\n' && window.mdTabs.getActiveTabInfo().modified;
+    window.confirm = () => true;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    window.confirm = originalConfirm;
+    check('Reabrir pestaña cerrada (Ctrl+Alt+W): archivo con cursor y borrador con su texto',
+      closedOk && reopened && draftBack, `cerro=${closedOk} reabre=${reopened} borrador=${draftBack}`);
+  }
+
   // Pegar una imagen (Ctrl+V con una captura): se guarda en assets/ junto a
   // la nota y se inserta ![](assets/…). Con texto en el portapapeles, se
   // pega el texto como siempre. En un temporal aparte (no los fixtures).

@@ -345,6 +345,42 @@ async function saveActive(forceDialog = false) {
   }
 }
 
+// Pestañas cerradas, para reabrirlas (Ctrl+Alt+W, menú de pestañas,
+// paleta): la ruta y dónde estaba el cursor; las "Sin título" con texto
+// guardan el texto (si no, se perdería al cerrarlas).
+const CLOSED_MAX = 20;
+const DEFAULT_NEW_TEXT = '# Nuevo documento\n\nEscribe aquí tu Markdown...\n';
+let closedTabs = [];
+
+function rememberClosed(tab) {
+  const content = tab.filePath ? null : tab.doc.getValue();
+  if (!tab.filePath && (!content.trim() || content === DEFAULT_NEW_TEXT)) return;
+  closedTabs = closedTabs.filter((c) => !c.filePath || c.filePath !== tab.filePath);
+  closedTabs.push({ filePath: tab.filePath, content, cursor: tab.doc.getCursor() });
+  if (closedTabs.length > CLOSED_MAX) closedTabs.shift();
+}
+
+async function reopenClosed() {
+  while (closedTabs.length) {
+    const c = closedTabs.pop();
+    if (c.filePath) {
+      if (findTabByPath(c.filePath)) continue;
+      await openTab(c.filePath);
+      const tab = findTabByPath(c.filePath);
+      if (!tab) continue; // ya no existe: la anterior
+      tab.doc.setCursor(c.cursor);
+      tabCm.scrollIntoView(null, 120);
+    } else {
+      const tab = createTab(null, c.content);
+      tab.doc.setCursor(c.cursor);
+      markModified(tab.id, true);
+      activateTab(tab.id);
+    }
+    return true;
+  }
+  return false;
+}
+
 function closeTab(id) {
   const idx = tabs.findIndex((t) => t.id === id);
   if (idx === -1) return;
@@ -353,6 +389,7 @@ function closeTab(id) {
     return;
   }
   clearTimeout(tab.autosaveTimer);
+  rememberClosed(tab);
   tabs.splice(idx, 1);
   if (tabs.length === 0) {
     createTab(null, '');
@@ -376,7 +413,7 @@ function closeTabs(ids) {
     const names = unsaved.slice(0, 5).map((t) => `• ${labelFor(t)}`).join('\n') + (unsaved.length > 5 ? '\n…' : '');
     if (!confirm(`${unsaved.length} pestaña(s) tienen cambios sin guardar:\n${names}\n\n¿Cerrarlas igual (se pierden esos cambios)?`)) return;
   }
-  targets.forEach((t) => clearTimeout(t.autosaveTimer));
+  targets.forEach((t) => { clearTimeout(t.autosaveTimer); rememberClosed(t); });
   const activeClosing = ids.includes(activeId);
   const activeIdx = tabs.findIndex((t) => t.id === activeId);
   tabs = tabs.filter((t) => !ids.includes(t.id));
@@ -419,6 +456,7 @@ function showTabMenu(x, y, tab) {
   add('Cerrar las de la derecha', () => closeTabs(tabs.slice(idx + 1).map((t) => t.id)), idx === tabs.length - 1);
   add('Cerrar las guardadas', () => closeTabs(tabs.filter((t) => !t.modified).map((t) => t.id)), !tabs.some((t) => !t.modified));
   add('Cerrar todas', () => closeTabs(tabs.map((t) => t.id)));
+  add('Reabrir la cerrada  (Ctrl+Alt+W)', () => reopenClosed(), !closedTabs.length);
   if (tab.filePath) add('Copiar ruta', () => window.mdEditor.clipboardWriteText(tab.filePath));
   tabMenuEl.hidden = false;
   const rect = tabMenuEl.getBoundingClientRect();
@@ -496,7 +534,10 @@ tabCm.on('change', () => {
 document.addEventListener('keydown', (e) => {
   const ctrl = e.ctrlKey || e.metaKey;
   if (!ctrl) return;
-  if (e.key.toLowerCase() === 'w') {
+  if (e.altKey && e.key.toLowerCase() === 'w') {
+    e.preventDefault();
+    reopenClosed();
+  } else if (e.key.toLowerCase() === 'w') {
     e.preventDefault();
     if (activeId != null) closeTab(activeId);
   } else if (e.key === 'Tab') {
@@ -588,7 +629,7 @@ function syncPaths(paths) {
   tabs.filter((t) => t.filePath && changed.has(t.filePath)).forEach((t) => syncWithDisk(t));
 }
 
-window.mdTabs = { getActiveState, getModifiedPaths, syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
+window.mdTabs = { reopenClosed, closedCount: () => closedTabs.length, getActiveState, getModifiedPaths, syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
 window.openFileAtPath = openTab;
 
 window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));

@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 107 de 141 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 108 de 141 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -130,7 +130,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 ## Propuestos por Claude (2026-09-30, segunda tanda)
 
 - [x] ~~**Pegar imágenes del portapapeles** (`Ctrl+V` con una captura): se guarda junto a la nota y se inserta el enlace; también arrastrar imágenes desde el navegador~~ (2026-09-30: en `assets/`, como al arrastrar)
-- [ ] **Reabrir pestaña cerrada** (`Ctrl+Alt+T`, menú de pestañas y paleta)
+- [x] ~~**Reabrir pestaña cerrada**~~ (2026-09-30: `Ctrl+Alt+W` —`Ctrl+Alt+T` abre Konsole en KDE—, menú de pestañas y paleta; 20 recordadas, cursor, borradores con su texto)
 - [ ] **Buscar y reemplazar en toda la carpeta**, con vista previa por archivo, confirmación y copia en el historial local
 - [ ] **Modo máquina de escribir**: cursor siempre centrado y párrafos que no se escriben atenuados
 - [ ] **Atajos de teclado personalizables** (Ajustes → Atajos: cambiar, detectar choques, restaurar)

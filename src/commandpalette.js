@@ -72,6 +72,7 @@ function buildCommands() {
 
   if (window.mdTabs) {
     cmds.push({ label: 'Nueva pestaña', run: () => window.mdTabs.newTab() });
+    cmds.push({ label: 'Pestaña: reabrir la última cerrada', run: () => window.mdTabs.reopenClosed() });
     cmds.push({ label: 'Pestaña siguiente', run: () => window.mdTabs.cycleTab(1) });
     cmds.push({ label: 'Pestaña anterior', run: () => window.mdTabs.cycleTab(-1) });
   }
