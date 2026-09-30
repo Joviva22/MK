@@ -5402,3 +5402,42 @@ body.mk-dim-paragraphs #editor-pane .CodeMirror-code > div.mk-current-para { opa
 .tg-custom .tg-mini { background: conic-gradient(from 90deg, #e8c45e, #58a6ff, #bd93f9, #50fa7b, #e8c45e); }
 .tg-custom .tg-mini i, .tg-custom .tg-mini div { display: none; }
 @media (max-width: 640px) { .tg-preview-body { grid-template-columns: 1fr; } .tg-preview-side, .tg-preview-edit { display: none; } }
+
+/* Home → Horario: semana por horas (home.js, renderHours). */
+.home-hours { display: grid; grid-template-rows: auto auto 1fr; height: 100%; min-height: 0; border: 1px solid var(--border); border-radius: var(--radius, 8px); overflow: hidden; background: var(--bg); }
+.home-hours-head, .home-hours-allday { display: grid; grid-template-columns: 52px repeat(7, minmax(0, 1fr)); border-bottom: 1px solid var(--border); background: var(--surface); overflow: hidden; scrollbar-gutter: stable; }
+.home-hours-dayhead { display: flex; align-items: baseline; justify-content: center; gap: 6px; padding: 6px 4px; border-left: 1px solid var(--border); }
+.home-hours-dayhead.home-today .home-day-number { background: var(--accent); color: var(--bg); border-radius: 999px; padding: 0 7px; }
+.home-hours-allday-label { font-size: 10.5px; color: var(--text-muted); padding: 6px 4px; text-align: right; }
+.home-hours-allday-cell { border-left: 1px solid var(--border); padding: 3px; display: flex; flex-direction: column; gap: 3px; min-height: 30px; max-height: 120px; overflow-y: auto; }
+.home-hours-allday-cell .home-quick-add { font-size: 11px; padding: 2px 4px; opacity: 0.7; }
+.home-hours-allday-cell .home-quick-add:focus { opacity: 1; }
+.home-hours-scroll { overflow-y: auto; min-height: 0; scrollbar-gutter: stable; }
+.home-hours-body { position: relative; display: grid; grid-template-columns: 52px 1fr; }
+.home-hours-gutter { position: relative; }
+.home-hours-label { position: absolute; right: 6px; transform: translateY(-50%); font-size: 10.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.home-hours-cols { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); position: relative;
+  background-image: repeating-linear-gradient(to bottom, var(--border) 0 1px, transparent 1px 48px); }
+.home-hour-col { position: relative; border-left: 1px solid var(--border); cursor: cell;
+  background-image: repeating-linear-gradient(to bottom, transparent 0 24px, color-mix(in srgb, var(--border) 45%, transparent) 24px 25px, transparent 25px 48px); }
+.home-hour-col.home-weekend { background-color: color-mix(in srgb, var(--surface) 55%, transparent); }
+.home-hour-col.home-today { background-color: color-mix(in srgb, var(--accent) 6%, transparent); }
+.home-hour-event {
+  position: absolute; box-sizing: border-box; overflow: hidden; cursor: grab; user-select: none; touch-action: none;
+  padding: 2px 6px 2px 20px; border-radius: 6px; font-size: 12px; line-height: 1.25;
+  background: color-mix(in srgb, var(--ev) 22%, var(--surface)); border-left: 3px solid var(--ev); color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column;
+}
+.home-hour-event:hover, .home-hour-event:focus-visible { box-shadow: 0 0 0 1px var(--ev), 0 2px 6px rgba(0, 0, 0, 0.2); z-index: 2; }
+.home-hour-event input[type="checkbox"] { position: absolute; left: 4px; top: 4px; margin: 0; width: 12px; height: 12px; cursor: pointer; }
+.home-hour-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-hour-time { color: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.home-hour-event.home-task-done .home-hour-title { text-decoration: line-through; opacity: 0.65; }
+.home-hour-resize { position: absolute; left: 0; right: 0; bottom: 0; height: 7px; cursor: ns-resize; }
+.home-hour-dragging { opacity: 0.85; cursor: grabbing; z-index: 5; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); }
+.home-hour-new { position: absolute; left: 2px; right: 2px; z-index: 4; border-radius: 6px; background: color-mix(in srgb, var(--accent) 18%, var(--surface)); border: 1px dashed var(--accent); padding: 2px; }
+.home-hour-new .home-quick-add { width: 100%; box-sizing: border-box; font-size: 12px; }
+.home-hour-ghost { pointer-events: none; }
+.home-hours-now { position: absolute; left: 0; right: 0; height: 2px; background: #e5484d; z-index: 3; pointer-events: none; }
+.home-hours-now::before { content: ''; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #e5484d; }
+@media (max-width: 720px) { .home-hours-head, .home-hours-allday { grid-template-columns: 40px repeat(7, minmax(0, 1fr)); } .home-hours-body { grid-template-columns: 40px 1fr; } }

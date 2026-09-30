@@ -44,6 +44,18 @@ Para que aparezca solo al abrir MK: ⚙ **Ajustes** → tildá **"Abrir Home al 
 6. **Editarla**: clic en la tarea → se abre el editor (ver abajo).
 7. **Renombrarla rápido**: doble clic en el título → escribí → `Enter` (`Escape` cancela).
 
+## Vista Horario (por horas)
+
+El botón **Horario** muestra la semana como un calendario por horas (al estilo de Google Calendar): una columna por día y las horas hacia abajo.
+
+- Cada tarea **con hora** aparece en su franja; el alto del bloque es su **duración** (en el editor de la tarea: *Duración*, de 15 min a 8 h; 1 h si no elegiste). Si dos se pisan, van lado a lado.
+- **Clic en un hueco**: nueva tarea de 1 h en esa media hora. **Arrastrar en un hueco**: elegís el rango (de 9:00 a 11:30, por ejemplo). Escribís el título y `Enter` (`Esc` cancela). Sirve `@categoría` como en el alta rápida.
+- **Arrastrar un bloque**: a otra hora u otro día (de a 15 min). **Tirar del borde de abajo**: cambia la duración. **Clic**: abre el editor. La casilla del bloque la marca hecha.
+- Arriba, **Todo el día**: las tareas sin hora y las fechas de notas y bases de datos (se pueden arrastrar entre días como en Semana).
+- La **línea roja** es la hora actual (en el día de hoy). Al abrir se muestra desde las 7, o desde una hora antes de ahora.
+
+Una repetición de una tarea recurrente que movés a **otro día** se separa de la serie (igual que en Semana); si solo cambiás la hora, cambia para toda la serie.
+
 ## Vista Mes (calendario)
 
 1. Una grilla con todas las semanas del mes. Los días de otros meses aparecen atenuados.

@@ -3534,7 +3534,7 @@
     const timeInput = editor.querySelector('input[type="time"]');
     timeInput.value = hhmm;
     timeInput.dispatchEvent(new Event('input'));
-    const remindSel = Array.from(editor.querySelectorAll('select')).find((s) => Array.from(s.options).some((o) => o.value === '15'));
+    const remindSel = Array.from(editor.querySelectorAll('select')).find((s) => s.dataset.field !== 'duration' && Array.from(s.options).some((o) => o.value === '15'));
     remindSel.value = '0';
     Array.from(editor.querySelectorAll('button')).find((b) => b.textContent === 'Guardar').click();
 
@@ -4083,6 +4083,41 @@
       names.length > 20 && !differ.length, `distintas=${differ.join(', ') || 'ninguna'} conHTMLcrudo=${wholeOnly}`);
     check('Preview incremental: mismo HTML que el completo, HTML crudo usa el completo, se actualiza al editar',
       same && withHtml && modeOk && !!firstP && updated, `igual=${same} htmlCrudo=${withHtml} modo=${P.mode()} actualiza=${updated}`);
+  }
+
+  // Home → Horario: tareas con hora en su franja (alto = duración), las que
+  // se pisan lado a lado, sin hora en "todo el día"; crear en un hueco y
+  // mover / cambiar duración.
+  {
+    const H = window.mdHome;
+    await H.open();
+    const d = H.getData();
+    const day = new Date().toISOString().slice(0, 10);
+    d.tasks.push({ id: 'hr-a', title: 'Clase hr', date: day, time: '09:00', duration: 120, done: false, priority: 'media' });
+    d.tasks.push({ id: 'hr-b', title: 'Reunión hr', date: day, time: '10:00', duration: 60, done: false, priority: 'media' });
+    d.tasks.push({ id: 'hr-c', title: 'Sin hora hr', date: day, done: false, priority: 'media' });
+    H.setMode('hours');
+    const evA = document.querySelector('.home-hour-event[data-task-id="hr-a"]');
+    const evB = document.querySelector('.home-hour-event[data-task-id="hr-b"]');
+    const placed = !!evA && !!evB && parseFloat(evA.style.top) === 9 * 48 && Math.round(parseFloat(evA.style.height)) === 2 * 48 - 2;
+    const sideBySide = evA && evB && evA.style.left !== evB.style.left;
+    const allDay = Array.from(document.querySelectorAll('.home-hours-allday-cell .home-task')).some((c) => c.textContent.includes('Sin hora hr'));
+    const col = document.querySelector(`.home-hour-col[data-date="${day}"]`);
+    const input = H.hoursApi.promptNewAt(col, day, 14 * 60, 15 * 60 + 30);
+    input.value = 'Nueva hr';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const created = H.getData().tasks.find((t) => t.title === 'Nueva hr');
+    const createdOk = !!created && created.time === '14:00' && created.duration === 90 && created.date === day;
+    H.hoursApi.retime({ task: H.getData().tasks.find((t) => t.id === 'hr-b'), date: day, recurring: false }, day, 16 * 60 + 15, 45);
+    const moved = H.getData().tasks.find((t) => t.id === 'hr-b');
+    const movedOk = moved.time === '16:15' && moved.duration === 45;
+    H.getData().tasks = H.getData().tasks.filter((t) => !/ hr$/.test(t.title));
+    await window.mdEditor.homeSave(H.getData(), H.dataLocation());
+    H.setMode('week');
+    H.close();
+    check('Home → Horario: franjas por hora con duración, solapadas lado a lado, crear y mover',
+      placed && sideBySide && allDay && createdOk && movedOk,
+      `ubica=${placed} ladoAlado=${sideBySide} todoElDía=${allDay} crea=${createdOk} mueve=${movedOk}`);
   }
 
   // Home: las tareas hechas hace más de N días pasan al archivo; siguen en

@@ -7,6 +7,7 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 ## [2.0.0] — 2026-09-30
 
 ### Planificar
+- **Home → Horario**: la semana por horas, estilo calendario: tareas en su franja con duración, crear en un hueco, arrastrar para mover o cambiar la duración, línea de ahora.
 - **Archivo del Home**: las tareas terminadas hace más de 3 meses (ajustable) pasan a un archivo; siguen en la búsqueda y en la racha.
 - **Home**: planificador semanal y mensual con calendario, tareas con hora, prioridad y repetición (hábitos), arrastrar tareas de día, tareas `📅` escritas en notas, estadísticas 📈, **categorías** con color (`@categoría` al agregar, filtro).
 - **Recordatorios**: a la hora, días antes y **1 semana antes automático**; posponer y ✓ Hecho desde la tarjeta; siguen sonando con MK en la **bandeja**; también **por correo (Gmail)** con resumen diario opcional.
