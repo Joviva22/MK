@@ -423,7 +423,16 @@ function decorateUnit(u, active) {
     const div = el('div', 'mk-live-chart');
     replaceWith({ line: u.from, ch: 0 }, blockEnd(u), div, true);
     // Dibujar cuando ya está en el documento (necesita el ancho real).
-    requestAnimationFrame(() => window.mdCharts.renderChartBlock(div, code));
+    // En el próximo frame (ya con ancho real); si la ventana no se está
+    // pintando (oculta en la bandeja), rAF no corre: respaldo con timeout.
+    let drawn = false;
+    const draw = () => {
+      if (drawn) return;
+      drawn = true;
+      window.mdCharts.renderChartBlock(div, code);
+    };
+    requestAnimationFrame(draw);
+    setTimeout(draw, 120);
   } else if (u.kind === 'fence') {
     for (let k = u.from; k <= u.to; k++) addLineClass(k, 'wrap', k === u.from || k === u.to ? 'mk-live-fence mk-live-fence-edge' : 'mk-live-fence');
   } else if (u.kind === 'callout') {

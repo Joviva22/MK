@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 77 de 131 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 79 de 132 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -24,8 +24,8 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 8. ~~**Barra superior más limpia**~~ ✅ hecho (2026-09-30): opción en ⚙ Ajustes para mostrar los botones de la toolbar **solo con ícono** o **con texto** (hoy unos tienen texto y otros no), y ocultar la barra entera (se vuelve a mostrar con un atajo o al acercar el mouse arriba).
 9. ~~**Rediseño de ⚙ Ajustes**~~ ✅ hecho (2026-09-30): hoy es un menú desplegable largo que se armó al principio y creció a los tumbos. Pasarlo a un **panel propio con secciones** (Editor, Apariencia, Nota diaria, Terminal, Home y recordatorios, Correo, Archivos y git, Toolbar), con buscador de ajustes y descripciones cortas.
 10. ~~**El botón de modo muestra en qué modo estás**~~ ✅ hecho (2026-09-30): el botón de vista cambia de ícono y texto según el modo actual (Normal · Enfoque · Lectura · Live Preview), no solo el tooltip.
-11. **Mascota virtual** (como *vscode-pets* / *vscode-pokemon*): un compañero animado en una esquina (o en el panel de la terminal) que camina, se puede alimentar/tirar la pelota; varias especies y temas.
-12. **Mascota ligada a tus tareas y Pomodoros** (estilo *Digimon/Pokémon*): gana experiencia con cada tarea tildada y cada Pomodoro terminado, sube de nivel y **evoluciona**; se pone triste si hay tareas atrasadas. Depende del 11 y del 13.
+11. ~~**Mascota virtual**~~ ✅ hecho (2026-09-30) (como *vscode-pets* / *vscode-pokemon*): un compañero animado en una esquina (o en el panel de la terminal) que camina, se puede alimentar/tirar la pelota; varias especies y temas.
+12. ~~**Mascota ligada a tus tareas y Pomodoros**~~ ✅ hecho (2026-09-30) (estilo *Digimon/Pokémon*): gana experiencia con cada tarea tildada y cada Pomodoro terminado, sube de nivel y **evoluciona**; se pone triste si hay tareas atrasadas. Depende del 11 y del 13.
 13. **Categorías en las tareas del Home** (Universidad, Casa, Economía… editables, con color): filtro por categoría en el Home y **estadísticas por categoría** (qué hiciste más esta semana/mes). Se puede ligar a la mascota (cada categoría le da un tipo de experiencia).
 
 **P3 — Comodidad**
@@ -119,8 +119,9 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Toolbar: botones solo ícono / con texto** y ocultar la barra superior~~ (Ajustes → Apariencia; `Ctrl+Shift+M`) (2026-09-30)
 - [x] ~~**Rediseño de ⚙ Ajustes** en un panel con secciones y buscador~~ (`Ctrl+,`; 7 secciones, búsqueda sin tildes, interruptores, teclado) (2026-09-30)
 - [x] ~~**Botón de modo que muestra el modo actual**~~ (ícono + nombre) (2026-09-30)
-- [ ] **Mascota virtual** estilo vscode-pets / vscode-pokemon (P2 · 11)
-- [ ] **Mascota que evoluciona con tareas y Pomodoros** estilo Digimon/Pokémon (P2 · 12)
+- [x] ~~**Mascota virtual**~~ (3 especies propias × 3 etapas en SVG, camina, pelota, comida, se duerme; o **imágenes propias** por etapa) (2026-09-30)
+- [x] ~~**Mascota que evoluciona con tareas y Pomodoros**~~ (+10 por tarea sin duplicar, +25 por Pomodoro, evoluciona en nivel 5 y 10, triste con atrasadas) (2026-09-30)
+- [ ] **Mascota: XP por categoría** (cuando existan las categorías del Home, P2 · 13) y por filas de bases de datos marcadas como hechas
 - [ ] **Categorías en tareas del Home + estadísticas por categoría** (P2 · 13)
 
 ## Ideas de `MEJORAS_PROPUESTAS.md` (Gemini)

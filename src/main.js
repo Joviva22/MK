@@ -310,6 +310,7 @@ require('./ipc-notes'); // búsqueda, etiquetas, wikilinks, backlinks, grafo, Ka
 require('./ipc-export'); // CSV, PDF, docx, HTML, EPUB, Anki
 require('./ipc-system'); // git y reproductor del sistema (playerctl)
 require('./ipc-mail'); // recordatorios por correo (Gmail)
+require('./ipc-pet'); // imágenes propias de la mascota
 registerDatabaseIpc(ipcMain, (root) => guard.check(root, 'db'), (channel, e) => ctx.reportError(channel, e, 'Error en la base de datos: el último cambio pudo no guardarse.'));
 registerTerminalIpc(ipcMain, () => mainWindow);
 

@@ -16,6 +16,7 @@ Una guía especializada por cada función del sistema. Cada una empieza con **pa
 | **Una base dentro de una nota** — bloque `database` | [bases-de-datos-como-usar.md](bases-de-datos-como-usar.md#mostrar-una-base-dentro-de-una-nota) | ↑ |
 | **Kanban** — tablero desde una nota | [kanban.md](kanban.md) | ↑ misma guía |
 | **Nota diaria** — carpeta, formato y plantilla configurables | [nota-diaria.md](nota-diaria.md) | ↑ |
+| **Mascota** — crece y evoluciona con tus tareas y Pomodoros | [mascota.md](mascota.md) | ↑ |
 | **Pomodoro y reproductor** | [pomodoro-y-reproductor.md](pomodoro-y-reproductor.md) | ↑ |
 
 ## Escribir
@@ -70,4 +71,5 @@ Una guía especializada por cada función del sistema. Cada una empieza con **pa
 | Un servidor y comandos a la vez en la terminal | [Pantalla dividida](terminal.md) |
 | Pedirle a una IA que trabaje sobre una nota | [IA en la terminal](ia-en-la-terminal.md) |
 | Saber si abrir un `.md` descargado es seguro, o por qué falló algo | [Seguridad y errores](seguridad-y-errores.md) |
+| Que hacer tareas sea más divertido | [Mascota](mascota.md) |
 | Concentrarme | [Pomodoro](pomodoro-y-reproductor.md) + [modo enfoque](modos-de-vista.md) |

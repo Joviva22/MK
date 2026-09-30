@@ -188,6 +188,7 @@ async function switchLocation(want, previous) {
 }
 
 function save() {
+  updatePetMood();
   clearTimeout(saveTimer);
   const root = dataRoot;
   saveTimer = setTimeout(() => window.mdEditor.homeSave(data, root), 300);
@@ -288,6 +289,8 @@ function deleteTask(id) {
 }
 
 function setItemDone(item, done) {
+  // La mascota gana experiencia (una vez por tarea y día, ver pet.js).
+  if (done && !item.done && window.mdPet) window.mdPet.gain('task', `home:${item.task.id}|${item.date}`);
   if (item.recurring) {
     const dates = new Set(item.task.doneDates || []);
     if (done) dates.add(item.date); else dates.delete(item.date);
@@ -334,6 +337,17 @@ function findItem(taskId, dateIso) {
 function overdueTasks() {
   const today = todayIso();
   return data.tasks.filter((t) => !(t.repeat && t.repeat.freq) && t.date && t.date < today && !t.done);
+}
+
+// Ánimo de la mascota: preocupada si hay atrasadas (Home + tareas de notas).
+function overdueCount() {
+  const today = todayIso();
+  const notes = noteItems.filter((it) => !it.done && it.date < today).length;
+  return overdueTasks().length + notes;
+}
+
+function updatePetMood() {
+  if (window.mdPet) window.mdPet.setOverdue(overdueCount());
 }
 
 function itemsInRange(fromIso, toIso) {
@@ -829,6 +843,7 @@ async function editNoteItem(item, fn) {
 }
 
 function toggleNoteItem(item) {
+  if (!item.done && window.mdPet) window.mdPet.gain('task', `note:${item.filePath}|${item.title}|${item.date}`);
   return editNoteItem(item, ([, pre, mark, post, rest1, date, rest2]) =>
     `${pre}${mark.trim() ? ' ' : 'x'}${post}${rest1} 📅 ${date}${rest2}`);
 }
@@ -1626,7 +1641,7 @@ document.addEventListener('keydown', (e) => {
   await load();
   await loadDbReminders();
   checkReminders();
-  setInterval(() => { rootChanged().then(checkReminders); }, 30000);
+  setInterval(() => { rootChanged().then(checkReminders).then(updatePetMood); }, 30000);
   // Las bases de datos pueden cambiar desde su panel: releer cada 2 min.
   setInterval(loadDbReminders, 120000);
 })();
@@ -1824,6 +1839,6 @@ async function revealTask(id) {
   openTaskEditor(task.date ? findItem(task.id, task.date) : itemFor(task));
 }
 
-window.mdHome = { dailySummaryText, weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
+window.mdHome = { overdueCount, updatePetMood, dailySummaryText, weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
 
 })();

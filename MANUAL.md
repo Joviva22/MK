@@ -34,6 +34,7 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 26. [Bases de datos relacionales](#26-bases-de-datos-relacionales)
 27. [Terminal integrada](#27-terminal-integrada)
 28. [Seguridad, privacidad y errores](#28-seguridad-privacidad-y-errores)
+29. [Mascota](#29-mascota)
 
 > Guías especializadas por función (cómo usar / para qué sirve): carpeta [`Guias/`](./Guias/README.md).
 
@@ -600,3 +601,7 @@ Por debajo: [xterm.js](https://xtermjs.org) dibuja la terminal y [node-pty](http
 Todo es local: sin cuenta, sin nube, sin telemetría. Al abrir un `.md` ajeno, MK lo protege en capas: **DOMPurify** limpia el HTML del preview; una **Content Security Policy** impide ejecutar scripts que no sean los de MK o mandar datos a internet; la ventana corre con **sandbox**; y el proceso principal solo deja leer, escribir o borrar dentro de **lo que abriste** (la carpeta, archivos elegidos en "Abrir", arrastrados desde el explorador, pasados con "Abrir con MK" o de tu sesión). Por eso una imagen de **fuera** de la carpeta abierta no se muestra: arrastrala al editor y se copia a `assets/`. Límite: la terminal integrada ejecuta lo que escribas con tus permisos.
 
 **Si algo falla al guardar** (disco lleno, sin permiso), aparece un aviso rojo abajo a la izquierda y la pestaña conserva tus cambios (el autoguardado reintenta). Bases de datos, Home, configuración y sesión se guardan de forma **atómica** (temporal + reemplazo), y un JSON que ya estuviera dañado se aparta como `….corrupt-<fecha>` en vez de pisarse. Los errores quedan en `~/.config/md-editor-local/logs/mk.log` (rota a 1 MB). Guía: [`Guias/seguridad-y-errores.md`](./Guias/seguridad-y-errores.md).
+
+## 29. Mascota
+
+Un compañero que camina al pie del sidebar (o por toda la ventana) y **evoluciona con tu trabajo**: +10 XP por cada tarea tildada (Home o `📅` de notas; una vez por tarea y día), +25 por cada Pomodoro de foco, +2 al darle de comer (una vez por día). Nivel = 1 + √(XP÷15); evoluciona en el **nivel 5** y en el **10**. Tres especies propias —Fuego (Chispi → Chispón → Brasadrake), Agua (Gotín → Olaquín → Marejón), Planta (Brotito → Hojarín → Robleón)— o **Personalizada** con tus imágenes (PNG/GIF/WebP/SVG, una por etapa, guardadas en `~/.config/md-editor-local/pet/`). Clic: tarjeta con nivel y experiencia; doble clic: le tirás la pelota; se duerme si no la tocás un rato y se pone triste si hay tareas atrasadas. ⚙ Ajustes → **Mascota**. Guía: [`Guias/mascota.md`](./Guias/mascota.md).

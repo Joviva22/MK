@@ -155,6 +155,11 @@ contextBridge.exposeInMainWorld('mdEditor', {
   onAppError: (callback) => ipcRenderer.on('app:error', (event, info) => callback(info)),
   // Correo (ver ipc-mail.js): la contraseña va de acá al proceso principal
   // y nunca vuelve; los correos van siempre a tu propia dirección.
+  pet: {
+    sprites: () => ipcRenderer.invoke('pet:sprites'),
+    pickSprite: (stage, testPath) => ipcRenderer.invoke('pet:pickSprite', stage, testPath),
+    clearSprites: () => ipcRenderer.invoke('pet:clearSprites')
+  },
   mail: {
     status: () => ipcRenderer.invoke('mail:status'),
     setSettings: (s) => ipcRenderer.invoke('mail:setSettings', s),

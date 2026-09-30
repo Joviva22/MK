@@ -21,6 +21,9 @@ También se pueden abrir y editar archivos de código (`.py`, `.c`/`.cpp`, `.jav
 - **Bases de datos** relacionales tipo Notion (tabla, tablero, calendario, galería y **Gráfico**), guardadas en `.mk/` dentro de tu carpeta, con importar/exportar CSV.
 - **Gráficos**: vista Gráfico de una base, bloque ```` ```chart ```` que dibuja una tabla Markdown, y bloque ```` ```database ```` que muestra una vista de una base **dentro de una nota**.
 
+### Mascota
+Una criatura que camina al pie de la ventana y **evoluciona en 3 etapas** con cada tarea que tildás y cada Pomodoro que terminás (o con tus propias imágenes). Se pone triste si hay tareas atrasadas.
+
 ### Terminal e IA
 Terminal real integrada (`` Ctrl+` ``) con el shell que elijas (bash, zsh, fish…), pestañas, **pantalla dividida** (`Ctrl+Shift+5`), búsqueda en la salida y **F5** para ejecutar el archivo actual (`.py`, `.c`, `.js`, `.sh`…). **Abrir con IA**: Claude Code, Gemini CLI o Codex arrancan en la terminal con el archivo como contexto.
 

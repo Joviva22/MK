@@ -3658,6 +3658,76 @@
       `abre=${opened} sección=${sectionOk} buscar=${searchOk} vacío=${emptyOk} esc=${closedOk} ctrl,=${ctrlCommaOk} íconos=${iconsOk} texto=${textOk} mixto=${mixedOk} ocultar=${hiddenOk} modo=${modeOk} nombreCorto=${shortOk} punto=${dotOk}`);
   }
 
+  // Mascota: XP por tarea (una vez por tarea/día), por Pomodoro, sube de
+  // nivel y evoluciona (nivel 5 → etapa 2), ánimo según atrasadas, imágenes
+  // propias (etapa 1) y tildar una tarea del Home le da experiencia.
+  {
+    const P = window.mdPet;
+    const before = P.getState();
+    P.setState({ enabled: true, species: 'agua', xp: 0, awarded: [] });
+    const a = P.gain('task', 'test:t1');
+    const dup = P.gain('task', 'test:t1');
+    const pomo = P.gain('pomodoro', null);
+    const xpOk = a.xp === 10 && dup.duplicate && pomo.xp === 35;
+    P.setState({ xp: 235 });
+    const evo = P.gain('task', 'test:t2'); // 245 XP → nivel 5 → etapa 2
+    const petEl = document.querySelector('.pet');
+    const evolveOk = evo.evolved && evo.stage === 2 && petEl.dataset.stage === '2' && evo.name === 'Olaquín';
+    P.setOverdue(3);
+    // Recién ganó XP: festeja ~1,2 s (el festejo le gana al ánimo).
+    const sadOk = !!(await waitFor(() => petEl.dataset.mood === 'sad', 3000));
+    P.setOverdue(0);
+    petEl.click();
+    await new Promise((r) => setTimeout(r, 350));
+    const card = document.querySelector('.pet-card');
+    const cardOk = !card.hidden && card.textContent.includes('Nivel 5') && card.textContent.includes('Marejón');
+    card.hidden = true;
+
+    let customOk = 'sin fixtures';
+    if (fixturesDir) {
+      const svgPath = window.mdEditor.joinPath(fixturesDir, 'mi-mascota.svg');
+      await window.mdEditor.saveFile('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="5" cy="5" r="5" fill="red"/></svg>', svgPath, false);
+      const res = await window.mdEditor.pet.pickSprite(1, svgPath);
+      await P.reloadSprites();
+      P.setState({ species: 'custom', xp: 0 });
+      const img = document.querySelector('.pet .pet-img');
+      const loaded = img && await new Promise((r) => { if (img.complete && img.naturalWidth) r(true); img.onload = () => r(true); img.onerror = () => r(false); setTimeout(() => r(false), 2000); });
+      customOk = !!(res && res.ok && loaded);
+      await window.mdEditor.pet.clearSprites();
+    }
+
+    // Home: tildar una tarea le da XP.
+    P.setState({ species: 'fuego', xp: 0, awarded: [] });
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const title = 'Mascota ' + Date.now();
+    const qa = await waitFor(() => document.querySelector('#home-main .home-day.home-today .home-quick-add'));
+    qa.value = title;
+    qa.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const card2 = await waitFor(() => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title)));
+    card2.querySelector('input[type="checkbox"]').click();
+    await new Promise((r) => setTimeout(r, 200));
+    const homeXp = P.info().xp === 10;
+    const again = Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
+    again.querySelector('input[type="checkbox"]').click(); // destildar
+    const again2 = Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title));
+    again2.querySelector('input[type="checkbox"]').click(); // tildar de nuevo: no suma
+    await new Promise((r) => setTimeout(r, 200));
+    const noFarm = P.info().xp === 10;
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(title)).click();
+    await waitFor(() => document.querySelector('.home-editor'));
+    Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
+    window.confirm = originalConfirm;
+    window.mdHome.close();
+
+    P.setState({ ...before, enabled: false });
+    check('Mascota: XP por tarea/Pomodoro sin duplicar, evoluciona en nivel 5, ánimo, tarjeta, imágenes propias y tildar en el Home',
+      xpOk && evolveOk && sadOk && cardOk && customOk === true && homeXp && noFarm,
+      `xp=${xpOk} evoluciona=${evolveOk}(${evo.name}) triste=${sadOk} tarjeta=${cardOk} propia=${customOk} home=${homeXp} sinTrampa=${noFarm}`);
+  }
+
   // Correo: dirección + contraseña (nunca vuelve al renderer), prueba, aviso
   // del Home por correo y resumen diario; siempre a la propia dirección.
   {

@@ -79,6 +79,7 @@ async function switchPhase() {
   notifyPhaseEnd(endedPhase, nextMinutes);
   updateUI();
   if (running) startInterval();
+  if (endedPhase === 'focus' && window.mdPet) window.mdPet.gain('pomodoro', null);
   if (endedPhase === 'focus' && linked) {
     const keep = linked.onFocusEnd();
     if (keep === false) linked = null;

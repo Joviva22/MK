@@ -95,6 +95,7 @@
         <button type="button" class="set-nav-btn" data-section="home"><i data-lucide="calendar-check"></i><span>Home y avisos</span></button>
         <button type="button" class="set-nav-btn" data-section="mail"><i data-lucide="mail"></i><span>Correo</span></button>
         <button type="button" class="set-nav-btn" data-section="terminal"><i data-lucide="square-terminal"></i><span>Terminal</span></button>
+        <button type="button" class="set-nav-btn" data-section="pet"><i data-lucide="paw-print"></i><span>Mascota</span></button>
         <button type="button" class="set-nav-btn" data-section="system"><i data-lucide="monitor-cog"></i><span>Sistema</span></button>
       </nav>
       <div class="set-main">
@@ -253,6 +254,47 @@
           <div class="set-row" data-keywords="bash zsh fish consola">
             <div class="set-text"><label class="set-title" for="terminal-shell-select">Shell</label><div class="set-desc">El que abre <b>+</b> y <code>Ctrl+`</code>. El ▾ del panel abre otro sin cambiar este.</div></div>
             <div class="set-control"><select id="terminal-shell-select"></select></div>
+          </div>
+        </section>
+        <section class="set-section" data-section="pet" data-title="Mascota" hidden>
+          <h2 class="set-section-title">Mascota</h2>
+          <div class="set-row" data-keywords="pet mascota criatura pokemon digimon">
+            <div class="set-text"><label class="set-title" for="pet-enabled">Mostrar la mascota</label><div class="set-desc">Gana experiencia con cada tarea tildada (+10) y cada Pomodoro (+25), sube de nivel y evoluciona en los niveles 5 y 10. Clic: detalles · doble clic: pelota.</div></div>
+            <div class="set-control"><input type="checkbox" id="pet-enabled" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row" data-keywords="especie fuego agua planta">
+            <div class="set-text"><label class="set-title" for="pet-species">Especie</label><div class="set-desc">Criaturas propias de MK. Cambiarla conserva el nivel.</div></div>
+            <div class="set-control"><select id="pet-species">
+                <option value="fuego">Fuego · Chispi → Chispón → Brasadrake</option>
+                <option value="agua">Agua · Gotín → Olaquín → Marejón</option>
+                <option value="planta">Planta · Brotito → Hojarín → Robleón</option>
+                <option value="custom">Personalizada · tus imágenes</option>
+              </select></div>
+          </div>
+          <div class="set-row set-row-wide" id="pet-custom-row" data-keywords="personalizada imagen sprite gif png propia">
+            <div class="set-text"><div class="set-title">Imágenes propias</div><div class="set-desc">Una por etapa (PNG, GIF animado, WebP, SVG; hasta 5 MB). Se copian a tu carpeta de configuración, no a tus notas. Si falta una etapa, usa la anterior. Mirando a la derecha queda mejor.</div></div>
+            <div class="set-control pet-sprite-picks">
+              <button type="button" class="toolbar-button" data-stage="1">Etapa 1…</button>
+              <button type="button" class="toolbar-button" data-stage="2">Etapa 2…</button>
+              <button type="button" class="toolbar-button" data-stage="3">Etapa 3…</button>
+              <button type="button" class="toolbar-button" id="pet-clear-sprites">Quitar imágenes</button>
+              <div id="pet-sprite-status" class="dailynote-example"></div>
+            </div>
+          </div>
+          <div class="set-row" data-keywords="nombre apodo">
+            <div class="set-text"><label class="set-title" for="pet-name">Nombre</label><div class="set-desc">Vacío = el de su especie.</div></div>
+            <div class="set-control"><input type="text" id="pet-name" class="settings-text-input" maxlength="24" placeholder="Nombre" /></div>
+          </div>
+          <div class="set-row" data-keywords="lugar posicion donde">
+            <div class="set-text"><label class="set-title" for="pet-position">Dónde camina</label><div class="set-desc">Al pie del sidebar no tapa el texto.</div></div>
+            <div class="set-control"><select id="pet-position">
+                <option value="sidebar">Al pie del sidebar</option>
+                <option value="window">Por toda la ventana</option>
+              </select></div>
+          </div>
+          <div class="set-row" data-keywords="reiniciar resetear">
+            <div class="set-text"><div class="set-title">Reiniciar</div><div class="set-desc">Vuelve al nivel 1 y pierde la experiencia.</div></div>
+            <div class="set-control"><button type="button" id="pet-reset" class="toolbar-button">Reiniciar mascota</button></div>
           </div>
         </section>
         <section class="set-section" data-section="system" data-title="Sistema" hidden>
@@ -652,6 +694,7 @@
   <script src="mailsettings.js"></script>
   <script src="settingspanel.js"></script>
   <script src="toolbarstyle.js"></script>
+  <script src="pet.js"></script>
   <script src="askdialog.js"></script>
   <script src="templates.js"></script>
   <script src="settings.js"></script>
