@@ -171,9 +171,7 @@ Cada tarea puede tener una **categoría** (Universidad, Trabajo, Casa, Economía
 | Escribir `@uni repasar parcial` en "+ Agregar tarea" | Crea la tarea en **Universidad** (alcanza con el comienzo del nombre, sin tildes) |
 | Editor de la tarea → **Categoría** | Cambiarla o quitarla |
 | Selector **🏷 Todas** en la cabecera | Muestra **solo esa categoría** (o "Sin categoría"); las tareas nuevas que agregues **la heredan** |
-| Botón **🏷** | Administrar: nombre, **color**, y qué **mascota** gana experiencia extra (+5 XP) con esas tareas; agregar o quitar (sus tareas quedan sin categoría) |
-
-En **📈 Estadísticas** aparecen *Hechas este mes por categoría* (qué hiciste más) y *Pendientes por categoría*, con sus colores.
+| Botón **🏷** | Administrar: nombre y **color**; agregar o quitar (sus tareas quedan sin categoría) |
 
 ## Plan de hoy → nota diaria 📝
 

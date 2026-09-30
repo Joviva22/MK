@@ -13,8 +13,6 @@
 | Terminar un Pomodoro de foco | +25 a cada mascota del equipo |
 | Darle de comer (🍖 en su tarjeta) | +2, una vez por día y mascota |
 
-Las tareas de una **categoría** del Home dan **+5 XP extra** a las mascotas de su tipo (por defecto Universidad → ⚡, Trabajo → 👻, Casa → 🪨, Economía → 🌱, Salud → 🔥, Personal → 💧; se cambia en el Home → 🏷).
-
 Los **huevos** que tengas se incuban con esa misma experiencia. **Ocultas** (Ajustes → *Mostrar las mascotas* apagado) no pierden nada: **siguen ganando** experiencia, incubando y sumando logros.
 
 Nivel = 1 + √(XP ÷ 15): el nivel 5 llega con unas 24 tareas; el 10, con unas 120. Evolucionan en el **nivel 5** y en el **10**.

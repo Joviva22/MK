@@ -411,6 +411,9 @@
 
   <div class="statusbar">
     <span id="status-mode">Markdown</span>
+    <span id="status-save" class="status-save" role="status" aria-live="polite"></span>
+    <button type="button" id="status-git" class="status-git" hidden title="Rama de git actual — clic: control fino de commits"></button>
+    <span id="status-words" class="status-words" title="Palabras y caracteres (de la selección si hay una)"></span>
     <span id="status-cursor">Ln 1, Col 1</span>
     <span id="status-encoding">UTF-8</span>
     <span id="status-pomodoro" class="status-pomodoro" hidden title="Clic para cancelar"></span>
@@ -554,8 +557,8 @@
           <input type="checkbox" id="home-show-db" /> Fechas de bases de datos
         </label>
         <select id="home-cat-filter" class="home-cat-filter" title="Mostrar solo una categoría (las tareas nuevas la heredan)" aria-label="Filtrar por categoría"></select>
-        <button id="home-cats-btn" class="toolbar-button" title="Categorías: nombres, colores y qué mascota ganan experiencia extra">🏷</button>
-        <button id="home-stats-btn" class="toolbar-button" title="Estadísticas: semana, mes, racha, hábitos, categorías">📈</button>
+        <button id="home-cats-btn" class="toolbar-button" title="Categorías: nombres y colores">🏷</button>
+        <button id="home-stats-btn" class="toolbar-button" title="Estadísticas: semana, mes, racha, hábitos">📈</button>
         <button id="home-close" class="toolbar-button" title="Cerrar (Esc)">×</button>
       </div>
       <div class="home-layout">
@@ -719,6 +722,7 @@
   <script src="toolbarstyle.js"></script>
   <script src="petart.js"></script>
   <script src="pet.js"></script>
+  <script src="statusbar.js"></script>
   <script src="askdialog.js"></script>
   <script src="templates.js"></script>
   <script src="settings.js"></script>

@@ -15,6 +15,9 @@ Un panel con **secciones a la izquierda** y un **buscador** arriba: escribí "ta
 | **Terminal** | Shell (del sistema, bash, zsh, fish…). Ver [terminal.md](terminal.md) |
 | **Sistema** | Git al guardar ([historial-y-git.md](historial-y-git.md)), seguir en la bandeja al cerrar (salir: `Ctrl+Q`), iniciar MK con el sistema |
 
+## La barra de estado (abajo)
+De izquierda a derecha: el tipo de archivo, **✓ Guardado / ● Sin guardar** (o ⚠ si cambió afuera), la **rama de git** de la carpeta (clic: commits eligiendo archivos), **palabras y caracteres** (de la selección si seleccionaste algo) y la posición del cursor.
+
 ## La barra superior
 - El botón de **modo de vista** muestra en qué modo estás (ícono y nombre: Normal, Enfoque, Lectura, Live); clic pasa al siguiente.
 - Un **punto de color** junto a un archivo del sidebar = tiene cambios sin guardar.

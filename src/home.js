@@ -35,15 +35,14 @@ const PRIORITIES = [
   { value: 'media', label: 'Media', color: '#f2cc8f' },
   { value: 'baja', label: 'Baja', color: '#81b29a' }
 ];
-// Categorías de las tareas (editables en el Home → 🏷 Categorías). pet: tipo
-// de criatura que gana experiencia extra con las tareas de esa categoría.
+// Categorías de las tareas (editables en el Home → 🏷 Categorías).
 const DEFAULT_CATEGORIES = [
-  { id: 'universidad', name: 'Universidad', color: '#3b82f6', pet: 'electrico' },
-  { id: 'trabajo', name: 'Trabajo', color: '#8b5cf6', pet: 'fantasma' },
-  { id: 'casa', name: 'Casa', color: '#f59e0b', pet: 'roca' },
-  { id: 'economia', name: 'Economía', color: '#10b981', pet: 'planta' },
-  { id: 'salud', name: 'Salud', color: '#ef4444', pet: 'fuego' },
-  { id: 'personal', name: 'Personal', color: '#06b6d4', pet: 'agua' }
+  { id: 'universidad', name: 'Universidad', color: '#3b82f6' },
+  { id: 'trabajo', name: 'Trabajo', color: '#8b5cf6' },
+  { id: 'casa', name: 'Casa', color: '#f59e0b' },
+  { id: 'economia', name: 'Economía', color: '#10b981' },
+  { id: 'salud', name: 'Salud', color: '#ef4444' },
+  { id: 'personal', name: 'Personal', color: '#06b6d4' }
 ];
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const REPEAT_OPTIONS = [
@@ -335,7 +334,7 @@ function deleteTask(id) {
 
 function setItemDone(item, done) {
   // La mascota gana experiencia (una vez por tarea y día, ver pet.js).
-  if (done && !item.done && window.mdPet) window.mdPet.gain('task', `home:${item.task.id}|${item.date}`, { category: categoryById(item.task.category) });
+  if (done && !item.done && window.mdPet) window.mdPet.gain('task', `home:${item.task.id}|${item.date}`);
   if (item.recurring) {
     const dates = new Set(item.task.doneDates || []);
     if (done) dates.add(item.date); else dates.delete(item.date);
@@ -1672,12 +1671,6 @@ if (catFilterEl) {
   });
 }
 
-const PET_TYPES = [
-  { value: '', label: '— ninguna —' },
-  { value: 'fuego', label: '🔥 Fuego' }, { value: 'agua', label: '💧 Agua' }, { value: 'planta', label: '🌱 Planta' },
-  { value: 'electrico', label: '⚡ Eléctrico' }, { value: 'hielo', label: '❄ Hielo' }, { value: 'roca', label: '🪨 Roca' },
-  { value: 'fantasma', label: '👻 Fantasma' }
-];
 
 let catsModal = null;
 
@@ -1692,7 +1685,7 @@ function openCategories() {
   const box = el('div', 'command-palette home-cats');
   modal.appendChild(box);
   box.appendChild(el('div', 'backlinks-title', '🏷 Categorías'));
-  box.appendChild(el('div', 'home-editor-hint', 'Con @nombre en "+ Agregar tarea" se asigna sola (ej. "@uni repasar"). Las tareas de una categoría dan +5 XP extra a las mascotas de su tipo.'));
+  box.appendChild(el('div', 'home-editor-hint', 'Con @nombre en "+ Agregar tarea" se asigna sola (ej. "@uni repasar").'));
   const list = el('div', 'home-cats-list');
   box.appendChild(list);
   const drawRows = () => {
@@ -1708,22 +1701,17 @@ function openCategories() {
       name.value = c.name;
       name.setAttribute('aria-label', 'Nombre');
       name.addEventListener('input', () => { c.name = name.value; });
-      const pet = el('select', 'home-editor-input');
-      pet.setAttribute('aria-label', 'Mascota que gana experiencia extra');
-      PET_TYPES.forEach((o) => { const opt = el('option', null, o.label); opt.value = o.value; pet.appendChild(opt); });
-      pet.value = c.pet || '';
-      pet.addEventListener('change', () => { c.pet = pet.value || null; });
       const del = el('button', 'home-icon-button', '×');
       del.title = 'Quitar categoría (sus tareas quedan sin categoría)';
       del.addEventListener('click', () => { draft.splice(i, 1); drawRows(); });
-      row.append(color, name, pet, del);
+      row.append(color, name, del);
       list.appendChild(row);
     });
   };
   drawRows();
   const add = el('button', 'toolbar-button', '+ Categoría');
   add.addEventListener('click', () => {
-    draft.push({ id: newId(), name: 'Nueva', color: '#64748b', pet: null });
+    draft.push({ id: newId(), name: 'Nueva', color: '#64748b' });
     drawRows();
     const inputs = list.querySelectorAll('.home-cats-row input.home-editor-input');
     if (inputs.length) inputs[inputs.length - 1].select();
@@ -1890,19 +1878,7 @@ function computeStats() {
     };
   });
 
-  // Por categoría: hechas este mes y pendientes (con su color).
-  const cats = [...(data.categories || []), { id: null, name: 'Sin categoría', color: '#94a3b8' }];
-  const catOf = (t) => (categoryById(t.category) ? t.category : null);
-  const byCategory = cats.map((c) => ({
-    label: c.name,
-    color: c.color,
-    doneMonth: monthItems.filter((i) => i.done && catOf(i.task) === c.id).length,
-    doneWeek: weekItems.filter((i) => i.done && catOf(i.task) === c.id).length,
-    pending: data.tasks.filter((t) => !(t.repeat && t.repeat.freq) && !t.done && catOf(t) === c.id).length
-  }));
-
   return {
-    byCategory,
     week: { done: weekItems.filter((i) => i.done).length, total: weekItems.length },
     month: { done: monthItems.filter((i) => i.done).length, total: monthItems.length },
     overdue: overdueTasks().length,
@@ -1959,18 +1935,6 @@ function openStats() {
   charts.append(weekBlock, prioBlock);
   box.appendChild(charts);
 
-  // Qué hiciste más: hechas este mes por categoría + pendientes.
-  const catCharts = el('div', 'home-stats-charts');
-  const catDoneBlock = el('div', 'home-stats-block');
-  catDoneBlock.appendChild(el('div', 'home-stats-subtitle', 'Hechas este mes por categoría'));
-  const catDoneHost = el('div');
-  catDoneBlock.appendChild(catDoneHost);
-  const catPendBlock = el('div', 'home-stats-block');
-  catPendBlock.appendChild(el('div', 'home-stats-subtitle', 'Pendientes por categoría'));
-  const catPendHost = el('div');
-  catPendBlock.appendChild(catPendHost);
-  catCharts.append(catDoneBlock, catPendBlock);
-  box.appendChild(catCharts);
 
   if (s.habits.length) {
     const habitsBlock = el('div', 'home-stats-block');
@@ -2001,8 +1965,6 @@ function openStats() {
   // Recién ahora (con el ancho real) se dibujan los gráficos.
   window.mdCharts.render(weekHost, { type: 'bar', time: true, data: s.weeks.map((w) => ({ label: w.label, value: w.done })), valueLabel: 'hechas', labelTitle: 'Semana del', emptyText: 'Todavía no hay tareas.' });
   window.mdCharts.render(prioHost, { type: 'pie', data: s.pendingByPriority.filter((p) => p.value > 0), valueLabel: 'pendientes', labelTitle: 'Prioridad', emptyText: 'No hay tareas pendientes.' });
-  window.mdCharts.render(catDoneHost, { type: 'bar', data: s.byCategory.filter((c) => c.doneMonth > 0).map((c) => ({ label: c.label, value: c.doneMonth, color: c.color })), valueLabel: 'hechas', labelTitle: 'Categoría', emptyText: 'Todavía no hiciste tareas este mes.' });
-  window.mdCharts.render(catPendHost, { type: 'pie', data: s.byCategory.filter((c) => c.pending > 0).map((c) => ({ label: c.label, value: c.pending, color: c.color })), valueLabel: 'pendientes', labelTitle: 'Categoría', emptyText: 'No hay tareas pendientes.' });
 }
 
 // Búsqueda global (search.js): tareas del Home por título y notas.

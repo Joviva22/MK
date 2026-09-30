@@ -474,6 +474,12 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// Estado liviano de la pestaña activa (barra de estado): sin copiar el texto.
+function getActiveState() {
+  const tab = tabs.find((t) => t.id === activeId);
+  return tab ? { filePath: tab.filePath, modified: tab.modified, conflict: !!tab.conflict } : null;
+}
+
 function getActiveTabInfo() {
   const tab = tabs.find((t) => t.id === activeId);
   if (!tab) return null;
@@ -551,7 +557,7 @@ function syncPaths(paths) {
   tabs.filter((t) => t.filePath && changed.has(t.filePath)).forEach((t) => syncWithDisk(t));
 }
 
-window.mdTabs = { getModifiedPaths, syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
+window.mdTabs = { getActiveState, getModifiedPaths, syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
 window.openFileAtPath = openTab;
 
 window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));

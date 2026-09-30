@@ -40,6 +40,16 @@ async function runGit(args, cwd) {
   return result;
 }
 
+// Rama actual (barra de estado). null si no es un repo.
+ipcMain.handle('git:branch', async (event, root) => {
+  const { error, stdout } = await runGit(['rev-parse', '--abbrev-ref', 'HEAD'], root);
+  if (error) return null;
+  const branch = stdout.trim();
+  if (branch !== 'HEAD') return branch;
+  const sha = await runGit(['rev-parse', '--short', 'HEAD'], root);
+  return sha.error ? null : `(${sha.stdout.trim()})`;
+});
+
 ipcMain.handle('git:isRepo', async (event, root) => {
   const { error } = await runGit(['rev-parse', '--is-inside-work-tree'], root);
   return !error;

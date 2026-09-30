@@ -3703,6 +3703,36 @@
       `filas=${rowsNow} pendiente=${pendingOk} escrituras=${w1 - w0}`);
   }
 
+  // Barra de estado: palabras (y de la selección), estado de guardado y rama
+  // de git de la carpeta abierta.
+  {
+    const cm = window.mdCodeMirror;
+    window.mdTabs.newTab('Hola mundo, esto son seis palabras');
+    await new Promise((r) => setTimeout(r, 250));
+    const words = document.getElementById('status-words').textContent;
+    cm.setSelection({ line: 0, ch: 0 }, { line: 0, ch: 10 });
+    await new Promise((r) => setTimeout(r, 250));
+    const selWords = document.getElementById('status-words').textContent;
+    const wordsOk = words.startsWith('6 palabras') && selWords.startsWith('Selección: 2 palabras') && window.mdStatusBar.countWords("l'agua va-y-viene") === 2;
+    cm.replaceRange('x', { line: 0, ch: 0 });
+    window.mdStatusBar.updateSave();
+    const saveOk = document.getElementById('status-save').textContent.includes('Sin guardar');
+    let gitOk = 'sin repo';
+    if (gitRepoDir) {
+      window.mdSidebar.renderFolder(await window.mdEditor.readFolder(gitRepoDir));
+      await window.mdStatusBar.updateGit();
+      const g = document.getElementById('status-git');
+      gitOk = !g.hidden && /^⎇ \S+/.test(g.textContent);
+    }
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    const active = document.querySelector('#tabbar .tab.active .tab-close');
+    if (active) active.click();
+    window.confirm = originalConfirm;
+    check('Barra de estado: palabras (y de la selección), estado de guardado y rama de git', wordsOk && saveOk && gitOk === true,
+      `palabras="${words}" selección="${selWords}" guardado=${saveOk} git=${gitOk}`);
+  }
+
   // Exportar que falla (carpeta inexistente): devuelve null y avisa, en vez
   // de que el botón no haga nada.
   {
@@ -3713,9 +3743,8 @@
     check('Exportar: si falla la escritura, devuelve null y avisa (con el log)', res === null && !!toast, `resultado=${res} aviso=${!!toast}`);
   }
 
-  // Categorías del Home: @categoría en el alta rápida, chip en la tarjeta,
-  // filtro (las nuevas heredan la categoría filtrada), estadísticas por
-  // categoría y +5 XP a la mascota afín.
+  // Categorías del Home: @categoría en el alta rápida, chip en la tarjeta y
+  // filtro (las nuevas heredan la categoría filtrada).
   {
     const parsed = window.mdHome.parseCategoryToken('@uni repasar parcial');
     const parseOk = parsed.category === 'universidad' && parsed.title === 'repasar parcial';
@@ -3738,18 +3767,6 @@
     const inheritOk = !!c2 && c2.dataset.category === 'casa';
     window.mdHome.setCategoryFilter('');
 
-    // Mascota afín: Universidad → Eléctrico (+5 XP extra).
-    const P = window.mdPet;
-    const before = P.getState();
-    await P.setState({ enabled: false, pets: [{ id: 'p1', kind: 'mk', species: 'electrico', name: '', xp: 0, legendary: false }], team: ['p1'], eggs: [], awarded: [] });
-    card().querySelector('input[type="checkbox"]').click();
-    await new Promise((r) => setTimeout(r, 250));
-    const bonusOk = P.info().xp === 15;
-    const stats = window.mdHome.computeStats();
-    const uni = stats.byCategory.find((c) => c.label === 'Universidad');
-    const statsOk = !!uni && uni.doneWeek >= 1 && uni.color === '#3b82f6';
-    await P.setState(before);
-
     // Limpieza
     const originalConfirm = window.confirm;
     window.confirm = () => true;
@@ -3763,9 +3780,9 @@
     }
     window.confirm = originalConfirm;
     window.mdHome.close();
-    check('Categorías del Home: @categoría, chip, filtro (las nuevas heredan), estadísticas por categoría y +5 XP a la mascota afín',
-      parseOk && chipOk && hiddenOk && inheritOk && bonusOk && statsOk,
-      `@=${parseOk} chip=${chipOk} filtra=${hiddenOk} hereda=${inheritOk} mascota=${bonusOk}(${P.info().xp}) estadísticas=${statsOk}`);
+    check('Categorías del Home: @categoría, chip y filtro (las nuevas heredan)',
+      parseOk && chipOk && hiddenOk && inheritOk,
+      `@=${parseOk} chip=${chipOk} filtra=${hiddenOk} hereda=${inheritOk}`);
   }
 
   // Mascotas: equipo, XP (una vez por tarea/día), evolución → huevo → nace

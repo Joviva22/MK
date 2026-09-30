@@ -114,6 +114,7 @@ contextBridge.exposeInMainWorld('mdEditor', {
   assetReadBytes: (filePath) => ipcRenderer.invoke('asset:readBytes', filePath),
   exportDocx: (base64, defaultName) => ipcRenderer.invoke('export:docx', { base64, defaultName }),
   isGitRepo: (root) => ipcRenderer.invoke('git:isRepo', root),
+  gitBranch: (root) => ipcRenderer.invoke('git:branch', root),
   gitSync: (root) => ipcRenderer.invoke('git:sync', root),
   gitStatus: (root) => ipcRenderer.invoke('git:status', root),
   gitDiffFile: (root, file) => ipcRenderer.invoke('git:diffFile', { root, file }),
