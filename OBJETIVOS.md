@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 84 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 88 de 137 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -202,19 +202,20 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 
 ### Arquitectura
 - [ ] **Migrar a módulos ES** (ver Mediano/Largo plazo; `main.js` ya está separado)
-- [ ] **Una sola capa de acceso a archivos** con validación de rutas centralizada (hoy cada IPC valida por su cuenta)
+- [x] ~~**Una sola capa de acceso a archivos** con validación de rutas centralizada~~ (`pathguard.js`, 2026-09-29)
 - [ ] **Tareas pesadas fuera de la ventana** (Web Workers / proceso aparte): parseo de la carpeta, grafo, CSV grandes, PDFs grandes
 - [ ] **Traducciones (i18n)**: los textos están escritos en el código; sacarlos a archivos para poder tener MK en inglés u otros idiomas
 - [ ] **Accesibilidad**: navegación completa con teclado, roles ARIA en paneles y menús, probado con lector de pantalla
 
 ### Calidad
 - [ ] **Tests unitarios rápidos** (node:test) para la lógica pura (fechas del Home, CSV, filtros, fórmulas, parseo de tareas), además de la suite de la app completa (hoy 106 checks, ~25 s)
-- [ ] **Registro de errores local** (`~/.config/md-editor-local/logs`) y botón "Reportar un problema" que arme el informe sin datos personales
+- [x] ~~**Registro de errores local**~~ (`logs/mk.log`, 2026-09-29)
+- [ ] **Botón "Reportar un problema"** que arme el informe (versión, últimas líneas del log) sin datos personales
 - [ ] **Pruebas visuales**: capturas de referencia de los paneles principales en claro/oscuro, para detectar diseño roto
 
 ### Seguridad
-- [ ] **Content-Security-Policy** en la ventana (hoy no hay): solo scripts propios, sin `eval` remoto
-- [ ] **`sandbox: true` en el renderer**: hoy está desactivado porque el `preload` usa módulos de Node; mover eso al proceso principal
+- [x] ~~**Content-Security-Policy** en la ventana~~ (2026-09-29)
+- [x] ~~**`sandbox: true` en el renderer**~~ (2026-09-29)
 - [ ] **Permisos de la terminal e IAs** documentados y visibles (qué carpeta ve cada una)
 
 ### Distribución
