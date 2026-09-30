@@ -40,6 +40,7 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ### Seguridad y solidez
 
+- **Versión de formato** en `config.json`, `home.json` y las bases SQLite, con migraciones automáticas (y copia antes de cada una).
 - **Reportar un problema** (Ajustes → Sistema): informe con versión, sistema y últimos errores, sin datos personales, para copiar o abrir en GitHub.
 - Corregido: borrar una vista de una base de datos podía dar error si las vistas se habían cambiado desde un bloque en una nota.
 

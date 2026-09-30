@@ -31,6 +31,10 @@ Un documento descargado podría traer HTML escondido. MK lo frena en varias capa
 - Si un archivo de configuración o del Home **ya estaba dañado**, MK no lo pisa: lo aparta como `…json.corrupt-<fecha>` (podés recuperarlo a mano) y arranca con uno limpio.
 - Cada nota guardada deja antes una copia en el [historial de versiones](historial-y-git.md).
 
+## Tus datos entre versiones
+
+`config.json`, `home.json` y cada base de datos (`.mk/databases.sqlite3`) guardan la **versión de su formato**. Si una versión nueva de MK cambia un formato, al abrirlos los pasa sola al nuevo, y antes deja una copia (`config.json.v1.bak`, `databases.sqlite3.v1.bak`…) por si algo sale mal. Si abrís tus datos con una versión **más vieja** de MK que la que los guardó, no se tocan: se usan como están y queda una nota en el registro.
+
 ## El registro de errores
 
 `~/.config/md-editor-local/logs/mk.log`: una línea por error, con fecha y dónde pasó (guardar, base de datos, rutas rechazadas, errores internos). Rota solo al pasar 1 MB (`mk.log.1`).

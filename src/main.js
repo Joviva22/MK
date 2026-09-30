@@ -8,6 +8,7 @@ const { registerTerminalIpc, killAllTerminals } = require('./ptyhost');
 const trayMode = require('./traymode');
 const ctx = require('./mainctx');
 const errlog = require('./errlog');
+const datamigrate = require('./datamigrate');
 const guard = require('./pathguard');
 
 const APP_ICON = path.join(__dirname, '..', 'build', 'icon.png');
@@ -88,13 +89,33 @@ if (!gotLock) {
 
 // Config, sesión y Home: lectura que aparta un JSON dañado (en vez de que
 // el próximo guardado lo pise con {}) y escritura atómica (ver errlog.js).
+// Versión del formato + migraciones (datamigrate.js). Antes de un paso
+// real (no el de marcar la versión) queda una copia config.json.v<N>.bak.
+function migrateFile(file, data, migrate, what) {
+  const r = migrate(data);
+  if (r.tooNew) {
+    errlog.logError(`datos:${what}`, `${path.basename(file)} es de una versión más nueva de MK (formato ${r.from}); se usa sin migrar`);
+  } else if (r.changed) {
+    try {
+      if (r.from > 0) fs.copyFileSync(file, `${file}.v${r.from}.bak`);
+      errlog.writeJsonAtomic(file, r.data);
+    } catch (e) {
+      errlog.logError(`datos:${what}`, e);
+    }
+  }
+  return r.data;
+}
+
 function loadConfig() {
   const config = errlog.readJsonSafe(configPath, {});
-  return config && typeof config === 'object' ? config : {};
+  if (!config || typeof config !== 'object') return {};
+  if (config.schemaVersion === datamigrate.CONFIG_VERSION) return config;
+  if (!fs.existsSync(configPath)) return config; // primera vez: se marca al guardar
+  return migrateFile(configPath, config, datamigrate.migrateConfig, 'config');
 }
 
 function saveConfig(config) {
-  errlog.writeJsonAtomic(configPath, config);
+  errlog.writeJsonAtomic(configPath, { ...config, schemaVersion: Math.max(config.schemaVersion || 0, datamigrate.CONFIG_VERSION) });
 }
 
 ctx.loadConfig = loadConfig;
@@ -259,7 +280,10 @@ function homeFileFor(root) {
 
 ipcMain.handle('home:load', (event, root) => {
   if (root && !guard.check(root, 'home:load')) return null;
-  return errlog.readJsonSafe(homeFileFor(root), null);
+  const file = homeFileFor(root);
+  const data = errlog.readJsonSafe(file, null);
+  if (!data || data.schemaVersion === datamigrate.HOME_VERSION) return data;
+  return migrateFile(file, data, datamigrate.migrateHome, 'home');
 });
 
 ipcMain.handle('home:save', (event, data, root) => {
@@ -269,7 +293,7 @@ ipcMain.handle('home:save', (event, data, root) => {
   try {
     // Atómico: si se corta a mitad (apagón, cierre forzado) no queda un
     // home.json roto con todas las tareas.
-    errlog.writeJsonAtomic(file, data);
+    errlog.writeJsonAtomic(file, data && typeof data === 'object' ? { ...data, schemaVersion: Math.max(data.schemaVersion || 0, datamigrate.HOME_VERSION) } : data);
     return true;
   } catch (e) {
     ctx.reportError('home:save', e, 'No se pudieron guardar las tareas del Home.');

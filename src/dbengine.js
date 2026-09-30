@@ -89,6 +89,25 @@ function getSqlModule() {
 
 const DB_CACHE = new Map(); // root -> sql.js Database instance
 
+// Versión del esquema en PRAGMA user_version (misma idea que
+// datamigrate.js). Para cambiar el esquema: subir DB_VERSION y agregar en
+// DB_STEPS[N] el SQL que lleva de N-1 a N (p. ej. ALTER TABLE … ADD COLUMN).
+// Antes de un paso real queda una copia databases.sqlite3.v<N>.bak.
+const DB_VERSION = 1;
+const DB_STEPS = { 1: '' }; // 0 → 1: solo marca la versión
+
+function migrateSchema(db, file) {
+  const res = db.exec('PRAGMA user_version');
+  const from = res.length ? Number(res[0].values[0][0]) : 0;
+  if (from >= DB_VERSION) return from;
+  if (from > 0 && fs.existsSync(file)) fs.copyFileSync(file, `${file}.v${from}.bak`);
+  for (let v = from + 1; v <= DB_VERSION; v++) {
+    if (DB_STEPS[v]) db.exec(DB_STEPS[v]);
+    db.run(`PRAGMA user_version = ${v}`);
+  }
+  return DB_VERSION;
+}
+
 function dbPathFor(root) {
   return path.join(root, '.mk', 'databases.sqlite3');
 }
@@ -104,6 +123,7 @@ async function getDb(root) {
   const db = fs.existsSync(file) ? new SQL.Database(fs.readFileSync(file)) : new SQL.Database();
   db.run('PRAGMA foreign_keys = ON;');
   db.exec(SCHEMA_SQL);
+  migrateSchema(db, file);
   DB_CACHE.set(root, db);
   writeNow(root, db); // la primera vez, ya (crea el archivo)
   return db;
@@ -543,4 +563,4 @@ function registerDatabaseIpc(realIpcMain, allowRoot, onError) {
   ipcMain.handle('db:reorderViews', (e, { root, databaseId, orderedIds }) => reorderViews(root, databaseId, orderedIds));
 }
 
-module.exports = { registerDatabaseIpc, flushAll, stats: () => ({ writes: writeCount, pending: pendingWrites.size }) };
+module.exports = { registerDatabaseIpc, flushAll, DB_VERSION, stats: () => ({ writes: writeCount, pending: pendingWrites.size }) };

@@ -3970,6 +3970,17 @@
     check('Exportar: si falla la escritura, devuelve null y avisa (con el log)', res === null && !!toast, `resultado=${res} aviso=${!!toast}`);
   }
 
+  // Versión del formato: config y Home quedan marcados (schemaVersion) al
+  // guardar, y un setConfig parcial no la borra.
+  {
+    await window.mdEditor.setConfig({ probeVersion: 1 });
+    const cfg = await window.mdEditor.getConfig();
+    const home = await window.mdEditor.homeLoad(null);
+    check('Datos con versión de formato (config y Home) para migrar sin romper',
+      cfg.schemaVersion === 1 && (!home || home.schemaVersion === 1),
+      `config=${cfg.schemaVersion} home=${home && home.schemaVersion}`);
+  }
+
   // Reportar un problema: informe con versión y registro, sin la carpeta
   // personal; la URL del issue lleva título y cuerpo.
   {
