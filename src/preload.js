@@ -158,7 +158,11 @@ contextBridge.exposeInMainWorld('mdEditor', {
   pet: {
     sprites: () => ipcRenderer.invoke('pet:sprites'),
     pickSprite: (stage, testPath) => ipcRenderer.invoke('pet:pickSprite', stage, testPath),
-    clearSprites: () => ipcRenderer.invoke('pet:clearSprites')
+    clearSprites: () => ipcRenderer.invoke('pet:clearSprites'),
+    findCharDirs: () => ipcRenderer.invoke('pet:findCharDirs'),
+    pickCharDir: () => ipcRenderer.invoke('pet:pickCharDir'),
+    charCatalog: (dir) => ipcRenderer.invoke('pet:charCatalog', dir),
+    useChars: (dir, ids, names) => ipcRenderer.invoke('pet:useChars', dir, ids, names)
   },
   mail: {
     status: () => ipcRenderer.invoke('mail:status'),

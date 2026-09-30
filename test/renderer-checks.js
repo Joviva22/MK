@@ -3673,9 +3673,13 @@
     const evo = P.gain('task', 'test:t2'); // 245 XP → nivel 5 → etapa 2
     const petEl = document.querySelector('.pet');
     const evolveOk = evo.evolved && evo.stage === 2 && petEl.dataset.stage === '2' && evo.name === 'Olaquín';
-    P.setOverdue(3);
+    // El Home recalcula las atrasadas reales cada tanto: que no pise el 3.
+    const realSetOverdue = P.setOverdue;
+    realSetOverdue(3);
+    P.setOverdue = () => {};
     // Recién ganó XP: festeja ~1,2 s (el festejo le gana al ánimo).
     const sadOk = !!(await waitFor(() => petEl.dataset.mood === 'sad', 3000));
+    P.setOverdue = realSetOverdue;
     P.setOverdue(0);
     petEl.click();
     await new Promise((r) => setTimeout(r, 350));

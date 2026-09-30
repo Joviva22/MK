@@ -33,17 +33,22 @@ const SPECIES = {
   }
 };
 
-// { 1: url|null, 2: ..., 3: ... } de las imágenes propias.
+// { 1: { url, sheet, label } | null, 2: ..., 3: ... } de las imágenes
+// propias. sheet: hoja de caminata 4×4 de RPG Maker (filas: abajo,
+// izquierda, derecha, arriba; 4 pasos cada una).
 let customSprites = { 1: null, 2: null, 3: null };
 
 async function loadCustomSprites() {
-  const paths = await window.mdEditor.pet.sprites();
+  const sprites = await window.mdEditor.pet.sprites();
   const v = Date.now();
   customSprites = {};
-  [1, 2, 3].forEach((n) => { customSprites[n] = paths[n] ? `${window.mdEditor.toLocalUrl(paths[n])}?v=${v}` : null; });
+  [1, 2, 3].forEach((n) => {
+    const sp = sprites[n];
+    customSprites[n] = sp ? { url: `${window.mdEditor.toLocalUrl(sp.path)}?v=${v}`, sheet: sp.sheet, label: sp.label } : null;
+  });
 }
 
-function customUrl(stage) {
+function customSprite(stage) {
   for (let s = stage; s >= 1; s--) if (customSprites[s]) return customSprites[s];
   return customSprites[2] || customSprites[3] || null;
 }
@@ -71,7 +76,20 @@ function stageFor(level) {
 }
 
 function speciesName(st) {
-  return SPECIES[st.species].names[stageFor(levelFor(st.xp)) - 1];
+  const stage = stageFor(levelFor(st.xp));
+  if (st.species === 'custom') {
+    const sp = customSprite(stage);
+    if (sp && sp.label) return sp.label;
+  }
+  return SPECIES[st.species].names[stage - 1];
+}
+
+function stageName(species, stage) {
+  if (species === 'custom') {
+    const sp = customSprites[stage] || customSprite(stage);
+    if (sp && sp.label) return sp.label;
+  }
+  return SPECIES[species].names[stage - 1];
 }
 
 function displayName() {
@@ -182,9 +200,11 @@ function drawPlanta(stage, mood, c) {
 
 function drawPet(species, stage, mood) {
   if (species === 'custom') {
-    const url = customUrl(stage);
+    const sp = customSprite(stage);
     const badge = mood === 'sad' ? '😟' : mood === 'sleep' ? '💤' : mood === 'happy' ? '✨' : '';
-    if (url) return `<img class="pet-img" src="${url}" alt="" draggable="false"/>${badge ? `<span class="pet-mood-badge">${badge}</span>` : ''}`;
+    const b = badge ? `<span class="pet-mood-badge">${badge}</span>` : '';
+    if (sp && sp.sheet) return `<div class="pet-sheet" style="background-image:url('${sp.url}')"></div>${b}`;
+    if (sp) return `<img class="pet-img" src="${sp.url}" alt="" draggable="false"/>${b}`;
     species = 'fuego'; // sin imágenes todavía: la de fuego
   }
   const c = SPECIES[species] || SPECIES.fuego;
@@ -232,7 +252,10 @@ let currentMood = null;
 let currentStage = null;
 
 function size() {
-  return [0, 42, 52, 62][stageFor(levelFor(state.xp))];
+  const stage = stageFor(levelFor(state.xp));
+  // Sprites pixelados de juego: un poco más grandes (el cuadro trae aire).
+  if (state.species === 'custom' && customSprite(stage) && customSprite(stage).sheet) return [0, 60, 66, 72][stage];
+  return [0, 42, 52, 62][stage];
 }
 
 function mood() {
@@ -258,7 +281,18 @@ function render(force) {
   petEl.style.width = `${s}px`;
   petEl.style.height = `${s}px`;
   petEl.style.transform = `translateX(${x}px)`;
-  sprite.style.transform = `scaleX(${dir})`;
+  const sheet = sprite.querySelector('.pet-sheet');
+  if (sheet) {
+    // Hoja de RPG Maker: fila según la dirección (1 izquierda, 2 derecha,
+    // 0 de frente quieta/durmiendo), columna = paso de la caminata.
+    const moving = mode === 'walk' || mode === 'chase';
+    const row = moving ? (dir < 0 ? 1 : 2) : 0;
+    const col = moving ? Math.floor(Date.now() / 160) % 4 : 0;
+    sheet.style.backgroundPosition = `${col * (100 / 3)}% ${row * (100 / 3)}%`;
+    sprite.style.transform = 'none';
+  } else {
+    sprite.style.transform = `scaleX(${dir})`;
+  }
   petEl.classList.toggle('pet-walking', mode === 'walk' || mode === 'chase');
   petEl.setAttribute('aria-label', `${displayName()}, nivel ${levelFor(state.xp)}. Clic: ver detalles. Doble clic: tirar la pelota.`);
 }
@@ -287,7 +321,11 @@ function hearts() {
 }
 
 function step() {
-  if (document.hidden || lane.hidden) return;
+  if (lane.hidden) return;
+  if (document.hidden) { // oculta: no camina, pero el ánimo se actualiza
+    render();
+    return;
+  }
   const now = Date.now();
   const max = Math.max(0, laneWidth() - size());
   const speed = [0, 0.9, 1.1, 1.3][stageFor(levelFor(state.xp))];
@@ -430,7 +468,8 @@ function renderCard() {
   const from = xpForLevel(level);
   const to = xpForLevel(level + 1);
   const pct = Math.round(((state.xp - from) / (to - from)) * 100);
-  const next = stage < 3 ? `Evoluciona a <b>${SPECIES[state.species].names[stage]}</b> en el nivel ${EVOLVE_AT[stage - 1]}` : 'Etapa final alcanzada ✨';
+  const nextName = stage < 3 ? stageName(state.species, stage + 1) : '';
+  const next = stage < 3 ? `Evoluciona a <b class="pet-next-name"></b> en el nivel ${EVOLVE_AT[stage - 1]}` : 'Etapa final alcanzada ✨';
   const moodText = overdue > 0 ? `😟 Preocupada: ${overdue} tarea${overdue === 1 ? '' : 's'} atrasada${overdue === 1 ? '' : 's'}` : '😊 Contenta';
   card.innerHTML = `
     <div class="pet-card-head"><div class="pet-card-art">${drawPet(state.species, stage, overdue > 0 ? 'sad' : 'happy')}</div>
@@ -446,6 +485,8 @@ function renderCard() {
       <button type="button" class="toolbar-button" data-act="settings" title="Ajustes → Mascota">⚙</button>
     </div>`;
   card.querySelector('.pet-card-name').textContent = displayName(); // nombre elegido: como texto
+  const nn = card.querySelector('.pet-next-name');
+  if (nn) nn.textContent = nextName;
   card.querySelector('[data-act="feed"]').addEventListener('click', () => { feed(); renderCard(); });
   card.querySelector('[data-act="ball"]').addEventListener('click', () => { card.hidden = true; throwBall(); });
   card.querySelector('[data-act="settings"]').addEventListener('click', () => {
@@ -547,6 +588,81 @@ document.querySelectorAll('.pet-sprite-picks [data-stage]').forEach((b) => {
     render(true);
   });
 });
+// ---- personajes de un juego (RPG Maker / Pokémon Essentials) ----
+const charDirEl = document.getElementById('pet-char-dir');
+const charSearch = document.getElementById('pet-char-search');
+const charList = document.getElementById('pet-char-list');
+const charStatus = document.getElementById('pet-char-status');
+let catalog = null;
+
+async function loadCatalog(dir) {
+  if (!dir) return;
+  if (charStatus) charStatus.textContent = 'Leyendo…';
+  const res = await window.mdEditor.pet.charCatalog(dir);
+  if (res.error) {
+    catalog = null;
+    if (charStatus) charStatus.textContent = '⚠ ' + res.error;
+    renderCharList();
+    return;
+  }
+  catalog = res;
+  if (charDirEl) charDirEl.textContent = dir;
+  if (charStatus) charStatus.textContent = `${res.lines.length} ${res.withEvolutions ? 'líneas evolutivas' : 'personajes'} (${res.total} sprites).`;
+  renderCharList();
+}
+
+function renderCharList() {
+  if (!charList) return;
+  charList.innerHTML = '';
+  if (!catalog) return;
+  const q = (charSearch && charSearch.value.trim().toLowerCase()) || '';
+  const matches = catalog.lines.filter((l) => !q || l.names.join(' ').toLowerCase().includes(q) || l.ids.join(' ').toLowerCase().includes(q)).slice(0, 60);
+  matches.forEach((l) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pet-char-option';
+    b.textContent = l.names.join(' → ');
+    b.title = 'Usar esta línea como mascota';
+    b.addEventListener('click', async () => {
+      if (charStatus) charStatus.textContent = 'Copiando…';
+      const res = await window.mdEditor.pet.useChars(catalog.dir, l.ids, l.names);
+      if (res.error) { if (charStatus) charStatus.textContent = '⚠ ' + res.error; return; }
+      state.species = 'custom';
+      state.charDir = catalog.dir;
+      await loadCustomSprites();
+      updateSpriteStatus();
+      apply();
+      render(true);
+      save();
+      if (charStatus) charStatus.textContent = `✔ Ahora tu mascota es ${l.names[0]}${l.names.length > 1 ? ` (evoluciona a ${l.names.slice(1).join(' y ')})` : ''}.`;
+    });
+    charList.appendChild(b);
+  });
+  if (!matches.length) charList.textContent = 'Nada coincide.';
+}
+
+if (charSearch) charSearch.addEventListener('input', renderCharList);
+const pickDirBtn = document.getElementById('pet-char-pick');
+if (pickDirBtn) {
+  pickDirBtn.addEventListener('click', async () => {
+    const dir = await window.mdEditor.pet.pickCharDir();
+    if (!dir) return;
+    state.charDir = dir;
+    save();
+    loadCatalog(dir);
+  });
+}
+
+async function initCharDir() {
+  let dir = state.charDir;
+  if (!dir) {
+    const found = await window.mdEditor.pet.findCharDirs();
+    dir = found[0] || '';
+  }
+  if (dir) loadCatalog(dir);
+  else if (charStatus) charStatus.textContent = 'Elegí la carpeta Graphics/Characters de tu juego.';
+}
+
 const clearBtn = document.getElementById('pet-clear-sprites');
 if (clearBtn) {
   clearBtn.addEventListener('click', async () => {
@@ -605,6 +721,7 @@ if (resetEl) {
   };
   await loadCustomSprites();
   updateSpriteStatus();
+  initCharDir();
   // En la suite de tests arranca apagada (no se mueve entre los checks).
   if (window.location.search.includes('mkTestFixtures') && !('pet' in config)) state.enabled = false;
   apply();
@@ -617,6 +734,7 @@ window.mdPet = {
   throwBall,
   feed,
   drawPet,
+  loadCatalog,
   reloadSprites: async () => { await loadCustomSprites(); updateSpriteStatus(); render(true); },
   levelFor,
   stageFor,

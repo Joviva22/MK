@@ -4954,3 +4954,22 @@ body.pet-on.pet-on-sidebar #sidebar-pane { padding-bottom: 80px; }
 .pet-card-actions .toolbar-button { height: 28px; padding: 0 8px; font-size: var(--font-sm); }
 .pet-sprite-picks { display: flex !important; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 #pet-custom-row[hidden] { display: none; }
+
+.pet-sheet {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: 400% 400%;
+  background-position: 0 0;
+  image-rendering: pixelated;
+}
+
+.pet-char-picker { display: flex !important; flex-direction: column; align-items: stretch; gap: var(--space-2); }
+.pet-char-picker .settings-text-input { width: 100%; box-sizing: border-box; }
+.pet-char-picker .dailynote-example { text-align: left; }
+.pet-char-dir-row { display: flex; gap: var(--space-2); align-items: center; min-width: 0; }
+.pet-char-dir { flex: 1; min-width: 0; font-size: var(--font-sm); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.pet-char-list { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-1); font-size: var(--font-sm); color: var(--text-muted); }
+.pet-char-list:empty { display: none; }
+.pet-char-option { text-align: left; border: none; background: transparent; color: var(--text); font: inherit; font-size: var(--font-md); padding: 5px 8px; border-radius: var(--radius-sm); cursor: pointer; }
+.pet-char-option:hover, .pet-char-option:focus-visible { background: var(--surface-2); outline: none; }

@@ -271,6 +271,15 @@
                 <option value="custom">Personalizada · tus imágenes</option>
               </select></div>
           </div>
+          <div class="set-row set-row-wide" data-keywords="juego rpg maker pokemon essentials characters personajes sprites evolucion">
+            <div class="set-text"><div class="set-title">Personajes de un juego (RPG Maker)</div><div class="set-desc">Elegí la carpeta <code>Graphics/Characters</code> de un juego hecho con RPG Maker / Pokémon Essentials y buscá una criatura: MK arma su línea evolutiva (si el juego trae <code>PBS/pokemon.txt</code>) y la mascota camina con esos sprites. Se copian solo los 3 elegidos a tu configuración local: son para tu uso personal.</div></div>
+            <div class="set-control pet-char-picker">
+              <div class="pet-char-dir-row"><span id="pet-char-dir" class="pet-char-dir">Sin carpeta</span><button type="button" id="pet-char-pick" class="toolbar-button">Elegir carpeta…</button></div>
+              <input type="search" id="pet-char-search" class="settings-text-input" placeholder="Buscar: charmander, pikachu, eevee…" aria-label="Buscar criatura" autocomplete="off" />
+              <div id="pet-char-list" class="pet-char-list" role="list"></div>
+              <div id="pet-char-status" class="dailynote-example" role="status"></div>
+            </div>
+          </div>
           <div class="set-row set-row-wide" id="pet-custom-row" data-keywords="personalizada imagen sprite gif png propia">
             <div class="set-text"><div class="set-title">Imágenes propias</div><div class="set-desc">Una por etapa (PNG, GIF animado, WebP, SVG; hasta 5 MB). Se copian a tu carpeta de configuración, no a tus notas. Si falta una etapa, usa la anterior. Mirando a la derecha queda mejor.</div></div>
             <div class="set-control pet-sprite-picks">

@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 79 de 132 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 80 de 133 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -121,6 +121,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Botón de modo que muestra el modo actual**~~ (ícono + nombre) (2026-09-30)
 - [x] ~~**Mascota virtual**~~ (3 especies propias × 3 etapas en SVG, camina, pelota, comida, se duerme; o **imágenes propias** por etapa) (2026-09-30)
 - [x] ~~**Mascota que evoluciona con tareas y Pomodoros**~~ (+10 por tarea sin duplicar, +25 por Pomodoro, evoluciona en nivel 5 y 10, triste con atrasadas) (2026-09-30)
+- [x] ~~**Mascota con personajes de un juego RPG Maker**~~ (carpeta `Graphics/Characters` detectada sola, líneas evolutivas desde `PBS/pokemon.txt` con ramas, caminata animada por dirección; se copian solo 3 sprites a la config local) (2026-09-30)
 - [ ] **Mascota: XP por categoría** (cuando existan las categorías del Home, P2 · 13) y por filas de bases de datos marcadas como hechas
 - [ ] **Categorías en tareas del Home + estadísticas por categoría** (P2 · 13)
 
