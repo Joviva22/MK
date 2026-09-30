@@ -250,7 +250,8 @@ ipcMain.handle('folder:read', async (event, rootPath) => {
 // la raíz cada vez que la cambia y recibe 'folder:changed'.
 // El índice (folderindex.js) confía en su caché solo para la carpeta
 // vigilada entera (si se llegó al tope de carpetas, compara fechas).
-const folderIndex = createFolderIndex();
+const folderIndex = createFolderIndex({ cacheDir: path.join(app.getPath('userData'), 'cache') });
+app.on('before-quit', () => folderIndex.saveCache()); // lo pendiente (mejor esfuerzo)
 
 const folderWatcher = createFolderWatcher((payload) => {
   folderIndex.onFolderChanged(payload);

@@ -16,14 +16,24 @@
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
+const crypto = require('crypto');
 
 const TEXT_EXT = /\.(md|markdown|txt|tex)$/i;
 const READ_BATCH = 16;
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 200 * 1024 * 1024;
+// Índice guardado en disco (opts.cacheDir, en userData — NO en la carpeta de
+// notas, para no meter una copia del texto en git/respaldos): al abrir MK,
+// la primera consulta solo verifica fecha y tamaño de cada archivo en vez de
+// leerlos todos. Solo archivos chicos, con tope total.
+const CACHE_VERSION = 1;
+const CACHE_MAX_FILE = 512 * 1024;
+const CACHE_MAX_TOTAL = 64 * 1024 * 1024;
+const SAVE_DELAY_MS = 3000;
 
-function createFolderIndex() {
-  const contents = new Map(); // ruta -> { mtimeMs, size, content }
+function createFolderIndex(opts) {
+  const cacheDir = opts && opts.cacheDir;
+  const contents = new Map(); // ruta -> { mtimeMs, size, content, unverified? }
   let totalBytes = 0;
   let watchedRoot = null; // carpeta que folderwatch.js está vigilando
   let listCache = null; // { root, files } — válido mientras nada estructural cambie
@@ -76,7 +86,8 @@ function createFolderIndex() {
 
   async function read(filePath, trusted) {
     const cached = contents.get(filePath);
-    if (cached && trusted && !dirty.has(filePath)) {
+    // Lo que vino del índice guardado se verifica una vez (fecha y tamaño).
+    if (cached && trusted && !dirty.has(filePath) && !cached.unverified) {
       stats.hits++;
       return cached.content;
     }
@@ -90,6 +101,7 @@ function createFolderIndex() {
     dirty.delete(filePath);
     if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
       stats.hits++;
+      if (cached.unverified) { cached.unverified = false; stats.verified = (stats.verified || 0) + 1; }
       return cached.content;
     }
     let content;
@@ -100,12 +112,82 @@ function createFolderIndex() {
     }
     stats.reads++;
     remember(filePath, stat, content);
+    changedSinceSave = true;
     return content;
+  }
+
+  // ---- índice en disco ----
+  let changedSinceSave = false;
+  let saveTimer = null;
+
+  function cacheFileFor(root) {
+    if (!cacheDir || !root) return null;
+    const h = crypto.createHash('md5').update(root).digest('hex');
+    return path.join(cacheDir, `index-${h}.json`);
+  }
+
+  async function loadCache(root) {
+    const file = cacheFileFor(root);
+    if (!file) return 0;
+    let data;
+    try {
+      data = JSON.parse(await fsp.readFile(file, 'utf-8'));
+    } catch {
+      return 0; // no hay (o está dañado): se arma de cero
+    }
+    if (!data || data.v !== CACHE_VERSION || data.root !== root || !Array.isArray(data.files)) return 0;
+    let n = 0;
+    for (const [rel, mtimeMs, size, content] of data.files) {
+      if (typeof rel !== 'string' || typeof content !== 'string') continue;
+      const full = path.join(root, rel);
+      if (contents.has(full)) continue;
+      if (totalBytes + size > MAX_TOTAL_BYTES) break;
+      contents.set(full, { mtimeMs, size, content, unverified: true });
+      totalBytes += size;
+      n++;
+    }
+    stats.loadedFromDisk = n;
+    return n;
+  }
+
+  async function saveCache() {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    const root = watchedRoot;
+    const file = cacheFileFor(root);
+    if (!file || !changedSinceSave) return false;
+    changedSinceSave = false;
+    const files = [];
+    let total = 0;
+    for (const [full, e] of contents) {
+      // Solo lo confirmado en esta sesión: un archivo borrado con MK cerrado
+      // no se arrastra para siempre.
+      if (e.unverified || !full.startsWith(root + path.sep) || e.size > CACHE_MAX_FILE) continue;
+      if (total + e.size > CACHE_MAX_TOTAL) break;
+      files.push([path.relative(root, full), e.mtimeMs, e.size, e.content]);
+      total += e.size;
+    }
+    try {
+      await fsp.mkdir(cacheDir, { recursive: true });
+      const tmp = `${file}.${process.pid}.tmp`;
+      await fsp.writeFile(tmp, JSON.stringify({ v: CACHE_VERSION, root, saved: Date.now(), files }), 'utf-8');
+      await fsp.rename(tmp, file);
+      stats.saves = (stats.saves || 0) + 1;
+      return true;
+    } catch {
+      return false; // el índice en disco es opcional: sin él, solo arranca más lento
+    }
+  }
+
+  function scheduleSave() {
+    if (!cacheDir || !watchedRoot || !changedSinceSave || saveTimer) return;
+    saveTimer = setTimeout(saveCache, SAVE_DELAY_MS);
   }
 
   // Llama onFile(ruta, contenido) para cada archivo de texto de root, en
   // orden (en profundidad, como siempre). Si onFile devuelve false, corta.
   async function walk(root, onFile) {
+    if (root === watchedRoot && cacheReady) await cacheReady;
     const trusted = root === watchedRoot;
     const list = await files(root);
     for (let i = 0; i < list.length; i += READ_BATCH) {
@@ -113,9 +195,10 @@ function createFolderIndex() {
       const texts = await Promise.all(batch.map((f) => read(f, trusted)));
       for (let j = 0; j < batch.length; j++) {
         if (texts[j] === null) continue;
-        if (onFile(batch[j], texts[j]) === false) return;
+        if (onFile(batch[j], texts[j]) === false) { scheduleSave(); return; }
       }
     }
+    scheduleSave();
   }
 
   // Aviso del vigilante (mismo payload que 'folder:changed').
@@ -125,9 +208,13 @@ function createFolderIndex() {
     payload.changes.forEach((c) => dirty.add(c.path));
   }
 
+  let cacheReady = null;
+
   function setWatchedRoot(root) {
     if (root === watchedRoot) return;
+    if (watchedRoot && changedSinceSave) saveCache(); // guardar lo de la carpeta anterior
     watchedRoot = root || null;
+    cacheReady = watchedRoot ? loadCache(watchedRoot) : null;
     listCache = null;
     dirty.clear();
     // Lo de otras carpetas no sirve más: liberar memoria.
@@ -139,7 +226,7 @@ function createFolderIndex() {
     }
   }
 
-  return { walk, files, onFolderChanged, setWatchedRoot, stats: () => ({ ...stats, cached: contents.size, bytes: totalBytes }) };
+  return { walk, files, onFolderChanged, setWatchedRoot, saveCache, stats: () => ({ ...stats, cached: contents.size, bytes: totalBytes }) };
 }
 
 module.exports = { createFolderIndex, TEXT_EXT };

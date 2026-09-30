@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 101 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 102 de 136 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -112,7 +112,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Índice de la carpeta** (`src/folderindex.js`: lista y contenido en memoria, se relee solo lo que avisa el vigilante o lo que guarda MK; búsqueda/etiquetas/backlinks/grafo/Kanban/tareas del Home sobre 3000 notas: 159 ms la primera vez → 7 ms)~~ (2026-09-29)
 - [x] ~~**Aviso automático "1 semana antes"** (tareas del Home, 📅 de notas y fechas de bases de datos; interruptor y hora en el Home; "+ 1 semana antes" en el editor de avisos)~~ (2026-09-29)
 - [x] ~~**Terminal: elegir el shell** (⚙ Ajustes o menú ▾; lista de /etc/shells + PATH, validada en el proceso principal)~~ (2026-09-29)
-- [ ] **Índice guardado en `.mk/index`** para que la primera consulta tras abrir MK también sea rápida (y etiquetas/enlaces precalculados en el índice, no solo el texto)
+- [x] ~~**Índice guardado en disco**~~ (en `~/.config/md-editor-local/cache/`, no en la carpeta de notas; al reabrir solo verifica fecha y tamaño; lo borrado no se arrastra) (2026-09-30) — *medido: con el disco en caché del sistema no cambia nada (144 → 140 ms en 3000 notas); ayuda en el primer arranque tras reiniciar o con discos lentos. Pendiente: etiquetas y enlaces precalculados*
 
 ## Pedidos nuevos (2026-09-30)
 
