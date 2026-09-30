@@ -477,6 +477,57 @@ function wireTaskCheckboxes(markdownText) {
   });
 }
 
+// ---- preview incremental ----
+// El preview completo de una nota de 5000 líneas tardaba ~190 ms (medido con
+// npm run bench: la mitad era DOMPurify, un cuarto marked) y se rehacía en
+// cada pausa al escribir: se trababa. Ahora el texto se parte en bloques
+// (tokens de primer nivel de marked: párrafo, lista, tabla, código…) y cada
+// bloque se convierte y sanitiza UNA vez; queda en caché por su texto
+// exacto, así que al escribir solo se reprocesa el bloque que cambió.
+// El resultado es el mismo HTML que el camino completo (hay un test que lo
+// compara). Se vuelve al camino completo cuando hay HTML crudo de bloque
+// (<details>…</details> puede quedar repartido en varios tokens y
+// sanitizarlos por separado lo rompería).
+let incremental = true;
+let lastMode = 'completo';
+const BLOCK_CACHE_MAX = 4000;
+let blockCache = new Map(); // raw del bloque -> HTML ya sanitizado
+let blockContext = '';
+
+function renderWhole(text) {
+  let html = marked.parse(text);
+  html = transformCallouts(html);
+  html = resolveAssetPaths(html);
+  // Fórmulas después de sanitizar (ver injectMath).
+  return DOMPurify.sanitize(html, SANITIZE_CONFIG);
+}
+
+function renderBlocks(text) {
+  const tokens = marked.lexer(text);
+  if (tokens.some((t) => t.type === 'html' && t.block)) return null;
+  // Lo que cambia el HTML de TODOS los bloques: dónde está la nota (rutas de
+  // imágenes) y las definiciones de enlaces [x]: url.
+  const context = `${window.mdState.currentFilePath}|${window.mdState.rootFolder}|${JSON.stringify(tokens.links || {})}`;
+  if (context !== blockContext || blockCache.size > BLOCK_CACHE_MAX) {
+    blockCache = new Map();
+    blockContext = context;
+  }
+  const next = new Map();
+  let out = '';
+  for (const tok of tokens) {
+    let html = next.get(tok.raw) || blockCache.get(tok.raw);
+    if (html === undefined) {
+      const one = [tok];
+      one.links = tokens.links;
+      html = DOMPurify.sanitize(resolveAssetPaths(transformCallouts(marked.parser(one))), SANITIZE_CONFIG);
+    }
+    next.set(tok.raw, html);
+    out += html;
+  }
+  blockCache = next; // solo lo que sigue en el documento
+  return out;
+}
+
 function render() {
   const isCode = window.mdTabs && window.mdTabs.isActiveTabCode && window.mdTabs.isActiveTabCode();
   containerEl.classList.toggle('code-file', isCode);
@@ -487,16 +538,25 @@ function render() {
   }
 
   previewPane.classList.remove('pdf-mode');
+  const T = window.performance.now.bind(window.performance);
+  const t0 = T();
   const markdownText = window.mdCodeMirror.getValue();
   const { text: codeProtected, store: codeStore } = extractCode(markdownText);
   const tagged = embedTagSyntax(embedWikilinkSyntax(embedHighlightSyntax(embedMediaSyntax(codeProtected))));
   const preprocessed = restoreCode(tagged, codeStore);
   const { text, store } = extractMath(preprocessed);
-  let html = marked.parse(text);
-  html = transformCallouts(html);
-  html = resolveAssetPaths(html);
-  // Fórmulas después de sanitizar (ver injectMath).
-  previewPane.replaceChildren(injectMath(DOMPurify.sanitize(html, SANITIZE_CONFIG), store));
+  const t1 = T();
+  let clean = incremental ? renderBlocks(text) : null;
+  const t2 = T();
+  if (clean === null) {
+    clean = renderWhole(text);
+    lastMode = 'completo';
+  } else {
+    lastMode = 'por bloques';
+  }
+  const t3 = T();
+  previewPane.replaceChildren(injectMath(clean, store));
+  const t4 = T();
   markMissingAssets();
   renderMermaidBlocks();
   renderChartBlocks();
@@ -506,8 +566,11 @@ function render() {
   highlightCode();
   addRunButtons();
   wireTaskCheckboxes(markdownText);
+  const t5 = T();
+  lastTimings = { pre: t1 - t0, bloques: t2 - t1, completo: t3 - t2, dom: t4 - t3, post: t5 - t4, total: t5 - t0 };
   if (window.onPreviewRendered) window.onPreviewRendered();
 }
+let lastTimings = null;
 
 // Antes un link normal ([texto](https://...) o a otro archivo) no tenía
 // ningún manejador: el click navegaba la propia ventana de la app fuera de
@@ -619,7 +682,7 @@ window.mdCodeMirror.on('change', () => {
   debounceTimer = setTimeout(render, 150);
 });
 
-window.mdPreview = { whenHighlighted: () => highlightDone, ensureFresh, isStale: () => stale };
+window.mdPreview = { timings: () => lastTimings, mode: () => lastMode, setIncremental: (on) => { incremental = !!on; blockCache = new Map(); }, renderWholeForTest: (t) => renderWhole(t), renderBlocksForTest: (t) => renderBlocks(t), whenHighlighted: () => highlightDone, ensureFresh, isStale: () => stale };
 
 render();
 

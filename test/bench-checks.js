@@ -38,6 +38,8 @@
   }, 3);
   await window.mdTabs.openTab(big);
   await measure('Preview completo de la nota grande', () => window.renderPreview(), 5);
+  const pt = window.mdPreview.timings && window.mdPreview.timings();
+  if (pt) Object.entries(pt).forEach(([k, v]) => { if (k !== 'total') results.push({ name: `  preview · ${k}`, pass: true, ms: Math.round(v * 10) / 10 }); });
   const cm = window.mdCodeMirror;
   await measure('Escribir 100 caracteres (editor)', () => {
     cm.setCursor({ line: 2500, ch: 0 });

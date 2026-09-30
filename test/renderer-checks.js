@@ -3970,6 +3970,50 @@
     check('Exportar: si falla la escritura, devuelve null y avisa (con el log)', res === null && !!toast, `resultado=${res} aviso=${!!toast}`);
   }
 
+  // Preview incremental (por bloques): mismo HTML que el camino completo en
+  // una nota con de todo; con HTML crudo de bloque vuelve al completo; al
+  // editar un bloque solo cambia ese.
+  {
+    const P = window.mdPreview;
+    const rich = [
+      '# Título', '', 'Párrafo con **negrita**, [enlace][ref], [otro](https://ejemplo.com) y `código`.', '',
+      '> [!NOTE]', '> Un callout', '', '- [ ] tarea', '- [x] hecha', '  - anidada', '', '1. uno', '2. dos', '',
+      '| a | b |', '|---|---|', '| 1 | 2 |', '', '```js', 'const x = 1;', '```', '', '---', '',
+      'Texto con salto  ', 'duro y ==resaltado== y #etiqueta y [[Otra nota]].', '', '![foto](img/a.png)', '',
+      '[ref]: https://referencia.com "título"', ''
+    ].join('\n');
+    const same = P.renderWholeForTest(rich) === P.renderBlocksForTest(rich);
+    const withHtml = P.renderBlocksForTest('<details>\n<summary>Ver</summary>\n\nadentro\n\n</details>\n') === null;
+    await window.mdTabs.newTab(rich);
+    window.renderPreview();
+    const modeOk = P.mode() === 'por bloques';
+    const pane = document.getElementById('preview-pane') || document.querySelector('.preview');
+    const firstP = pane && pane.querySelector('p');
+    window.mdCodeMirror.replaceRange('Nuevo párrafo al final.\n', { line: window.mdCodeMirror.lineCount(), ch: 0 });
+    window.renderPreview();
+    const updated = pane && pane.textContent.includes('Nuevo párrafo al final.');
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    window.confirm = originalConfirm;
+    // Y con todas las notas reales del repo (copiadas por run.js).
+    const corpus = fixturesDir.replace(/-fixtures$/, '-corpus');
+    const tree = await window.mdEditor.readFolder(corpus);
+    const names = ((tree && tree.tree) || []).filter((n) => !n.esCarpeta && /\.md$/.test(n.nombre));
+    const differ = [];
+    let wholeOnly = 0;
+    for (const n of names) {
+      const r = await window.mdEditor.readFile(n.ruta);
+      const b = P.renderBlocksForTest(r.content);
+      if (b === null) wholeOnly++;
+      else if (b !== P.renderWholeForTest(r.content)) differ.push(n.nombre);
+    }
+    check(`Preview incremental: igual al completo en las ${names.length} notas reales del repo`,
+      names.length > 20 && !differ.length, `distintas=${differ.join(', ') || 'ninguna'} conHTMLcrudo=${wholeOnly}`);
+    check('Preview incremental: mismo HTML que el completo, HTML crudo usa el completo, se actualiza al editar',
+      same && withHtml && modeOk && !!firstP && updated, `igual=${same} htmlCrudo=${withHtml} modo=${P.mode()} actualiza=${updated}`);
+  }
+
   // Home: las tareas hechas hace más de N días pasan al archivo; siguen en
   // la búsqueda y en la racha, y al elegirlas vuelven al Home.
   {

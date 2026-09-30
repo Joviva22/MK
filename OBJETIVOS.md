@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 114 de 141 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 115 de 141 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -202,7 +202,7 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 - [x] ~~**Exportar / importar todo**: un solo archivo con Home, bases de datos, ajustes y snippets (respaldo y mudanza a otra computadora)~~ (2026-09-30: `.mkbackup` con ajustes —incluye snippets y mascota—, Home e imágenes de mascotas; copia automática antes de importar. Las bases de datos viven en `<carpeta>/.mk/` y viajan con la carpeta de notas)
 
 ### Rendimiento de la edición
-- [ ] **Preview incremental**: redibujar solo los bloques que cambiaron (hoy se regenera todo el HTML en cada pausa)
+- [x] ~~**Preview incremental**: redibujar solo los bloques que cambiaron (hoy se regenera todo el HTML en cada pausa)~~ (2026-09-30: cada bloque se convierte y sanitiza una vez y queda en caché; nota de 5000 líneas 192 → 96 ms; mismo HTML que el completo, verificado en las 55 notas del repo) — *queda: el lexer (~35 ms) y el DOM (~30 ms) siguen siendo de todo el documento*
 - [ ] **Live Preview incremental al escribir**: hoy cada cambio de texto reconstruye todas las marcas del documento; limitarlo a las líneas tocadas
 - [ ] **Migrar a CodeMirror 6**: CodeMirror 5 está en mantenimiento; la 6 es más rápida con documentos grandes, tiene mejor accesibilidad y decoraciones nativas para Live Preview
 - [x] ~~**Medición continua** (`npm run bench`): arranque, render del preview y apertura de carpeta, con valores de referencia para detectar si algo empeora~~ (2026-09-30: 9 mediciones con la app real, referencia en `test/bench-baseline.json`, `--save` / `--strict`)

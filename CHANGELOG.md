@@ -37,6 +37,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 - **Accesibilidad**: contraste WCAG AA en los 26 temas, navegación con teclado, ARIA.
 
 ### Carpetas grandes
+
+- **Preview incremental**: solo se reprocesa el bloque que cambió (la mitad de tiempo en notas grandes).
 - La carpeta **se vigila sola**, disco asíncrono, **índice** en memoria y en disco; `main.js` separado en módulos.
 
 ### Seguridad y solidez

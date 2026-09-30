@@ -22,6 +22,19 @@ const fixturesDir = path.join(os.tmpdir(), `${runId}-fixtures`);
 
 fs.mkdirSync(profileDir, { recursive: true });
 fs.mkdirSync(fixturesDir, { recursive: true });
+// Notas reales del repo (Ejemplos, Guías, manual) para comparar el preview
+// por bloques con el completo. Aparte de los fixtures: no cambian las
+// cuentas de archivos/etiquetas de los otros tests.
+const corpusDir = path.join(os.tmpdir(), `${runId}-corpus`);
+fs.mkdirSync(corpusDir, { recursive: true });
+let corpusN = 0;
+for (const dir of ['Ejemplos', path.join('Ejemplos', 'Plantillas'), 'Guias', '.']) {
+  const abs = path.join(root, dir);
+  if (!fs.existsSync(abs)) continue;
+  for (const f of fs.readdirSync(abs)) {
+    if (f.endsWith('.md')) fs.copyFileSync(path.join(abs, f), path.join(corpusDir, `${corpusN++}-${f}`));
+  }
+}
 fs.writeFileSync(
   path.join(fixturesDir, 'note.md'),
   '# Hola MK\n\nFormula: $x^2 + y^2 = z^2$ #proyecto\n',
@@ -127,6 +140,7 @@ async function writePdfFixture() {
 function cleanup() {
   fs.rmSync(profileDir, { recursive: true, force: true });
   fs.rmSync(fixturesDir, { recursive: true, force: true });
+  fs.rmSync(corpusDir, { recursive: true, force: true });
   // Los tests de exportar (EPUB, DOCX, PDF, Anki...) escriben en el tmp del
   // sistema como mk-test-export-*: sin esto se acumulaban en cada corrida.
   for (const name of fs.readdirSync(os.tmpdir())) {
