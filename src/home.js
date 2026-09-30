@@ -575,6 +575,57 @@ function fireReminder(r) {
     // Notification puede no estar disponible en algunos entornos
   }
   showReminderToast(r);
+  // También por correo, si está activado (ver mailsettings.js / ipc-mail.js).
+  if (window.mdMail) window.mdMail.notify(`🔔 ${r.snoozed ? '(pospuesto) ' : ''}${r.title}`, `${r.body || ''}\n\n— MK`);
+}
+
+// ---- resumen diario por correo ----
+// A la hora elegida en ⚙ Ajustes → Correo: lo de hoy, lo atrasado de las
+// últimas dos semanas y lo que viene en los próximos 7 días. Si MK se abre
+// más tarde ese día, se manda igual (una vez por día).
+function itemLine(title, time, extra) {
+  return `• ${time ? time + ' ' : ''}${title}${extra ? ` (${extra})` : ''}`;
+}
+
+function dayItems(dateIso) {
+  const lines = [];
+  occurrencesOn(dateIso).forEach((it) => { if (!it.done) lines.push(itemLine(it.task.title, it.task.time)); });
+  noteItemsOn(dateIso).forEach((it) => { if (!it.done) lines.push(itemLine(it.title, null, 'nota')); });
+  dbItemsOn(dateIso).forEach((it) => { if (!it.done) lines.push(itemLine(it.title, null, it.databaseName)); });
+  return lines;
+}
+
+function dailySummaryText(today) {
+  const base = parseIso(today);
+  const out = [];
+  const todayLines = dayItems(today);
+  out.push(`HOY (${formatWhen(today, null)})`);
+  out.push(...(todayLines.length ? todayLines : ['• Nada planificado.']));
+  const overdue = [];
+  for (let i = 14; i >= 1; i--) {
+    const d = iso(addDays(base, -i));
+    occurrencesOn(d).forEach((it) => { if (!it.done && !it.recurring) overdue.push(itemLine(it.task.title, null, formatWhen(d, null))); });
+    noteItemsOn(d).forEach((it) => { if (!it.done) overdue.push(itemLine(it.title, null, formatWhen(d, null))); });
+  }
+  if (overdue.length) out.push('', `ATRASADAS (${overdue.length})`, ...overdue);
+  const next = [];
+  for (let i = 1; i <= 7; i++) {
+    const d = iso(addDays(base, i));
+    dayItems(d).forEach((l) => next.push(`${l} — ${formatWhen(d, null)}`));
+  }
+  if (next.length) out.push('', 'PRÓXIMOS 7 DÍAS', ...next);
+  return { subject: `MK: tu día — ${todayLines.length} para hoy${overdue.length ? `, ${overdue.length} atrasadas` : ''}`, text: out.join('\n') + '\n\n— MK' };
+}
+
+function checkDailySummary(now, today) {
+  const daily = window.mdMail && window.mdMail.getDaily();
+  if (!daily || !daily.on) return false;
+  const key = `${today}|mail-summary`;
+  if (data.notified[key] || now < atTime(today, daily.time)) return false;
+  data.notified[key] = true;
+  const { subject, text } = dailySummaryText(today);
+  window.mdMail.notify(subject, text);
+  return true;
 }
 
 function checkReminders() {
@@ -590,6 +641,7 @@ function checkReminders() {
     if (now - r.at > REMINDER_GRACE_MS && !r.lateOk) return;
     fireReminder(r);
   });
+  if (checkDailySummary(now, today)) changed = true;
   // Avisos pospuestos: suenan cuando les toca aunque la app haya estado
   // cerrada un rato (los pediste vos a propósito).
   const due = data.snoozes.filter((s) => s.at <= now);
@@ -1772,6 +1824,6 @@ async function revealTask(id) {
   openTaskEditor(task.date ? findItem(task.id, task.date) : itemFor(task));
 }
 
-window.mdHome = { weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
+window.mdHome = { dailySummaryText, weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
 
 })();

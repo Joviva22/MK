@@ -11,6 +11,7 @@
 | Tabulación | 2 · 4 · 8 espacios |
 | Ajuste de línea | Sí / No |
 | Snippets | `/abrev = texto`, uno por línea |
+| Correo (Gmail) | Recordatorios y resumen diario por correo, a tu propia dirección. Ver [recordatorios.md](recordatorios.md#también-por-correo-gmail) |
 | Shell de la terminal | Del sistema, bash, zsh, fish… (los instalados). Ver [terminal.md](terminal.md) |
 | Nota diaria | Carpeta, formato del nombre (`AAAA-MM-DD`, `AAAA/MM/DD`…) y plantilla. Ver [nota-diaria.md](nota-diaria.md) |
 | Git al guardar | Ver [historial-y-git.md](historial-y-git.md) |

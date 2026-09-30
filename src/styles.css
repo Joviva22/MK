@@ -4489,3 +4489,30 @@ table.db-embed-table th {
   cursor: pointer;
   font-size: 15px;
 }
+
+/* ---- Ajustes: correo ---- */
+.mail-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 4px 10px 6px;
+  font-size: 12px;
+}
+
+.mail-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+}
+
+.mail-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mail-buttons .toolbar-button {
+  padding: 3px 8px;
+  font-size: 12px;
+}

@@ -153,6 +153,17 @@ contextBridge.exposeInMainWorld('mdEditor', {
   clipboardReadText: () => ipcRenderer.invoke('clipboard:readText'),
   logError: (where, message) => ipcRenderer.invoke('log:error', where, message),
   onAppError: (callback) => ipcRenderer.on('app:error', (event, info) => callback(info)),
+  // Correo (ver ipc-mail.js): la contraseña va de acá al proceso principal
+  // y nunca vuelve; los correos van siempre a tu propia dirección.
+  mail: {
+    status: () => ipcRenderer.invoke('mail:status'),
+    setSettings: (s) => ipcRenderer.invoke('mail:setSettings', s),
+    setPassword: (pw) => ipcRenderer.invoke('mail:setPassword', pw),
+    clearPassword: () => ipcRenderer.invoke('mail:clearPassword'),
+    send: (subject, text) => ipcRenderer.invoke('mail:send', { subject, text }),
+    test: () => ipcRenderer.invoke('mail:test'),
+    lastTestMessage: () => ipcRenderer.invoke('mail:lastTestMessage')
+  },
   db: {
     listDatabases: (root) => ipcRenderer.invoke('db:listDatabases', { root }),
     createDatabase: (root, name) => ipcRenderer.invoke('db:createDatabase', { root, name }),

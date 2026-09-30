@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 69 de 131 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 71 de 131 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -19,7 +19,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 3. ~~**Abrir con IA (Claude Code, Gemini CLI, Codex)**~~ ✅ hecho.
 4. ~~**Gráficos en las bases de datos**~~ ✅ hecho.
 5. ~~**Búsqueda global también en bases de datos y tareas del Home**~~ ✅ hecho.
-6. **Recordatorios y resumen diario por Gmail** — *en curso (2026-09-30)*: la contraseña de aplicación se escribe en ⚙ Ajustes → Correo (nunca en un chat) y se guarda cifrada con el llavero del sistema.
+6. ~~**Recordatorios y resumen diario por Gmail**~~ ✅ hecho (2026-09-30): ⚙ Ajustes → Correo; contraseña de aplicación cifrada con el llavero del sistema.
 7. ~~**Home: estadísticas**~~ ✅ hecho.
 8. **Barra superior más limpia**: opción en ⚙ Ajustes para mostrar los botones de la toolbar **solo con ícono** o **con texto** (hoy unos tienen texto y otros no), y ocultar la barra entera (se vuelve a mostrar con un atajo o al acercar el mouse arriba).
 9. **Rediseño de ⚙ Ajustes**: hoy es un menú desplegable largo que se armó al principio y creció a los tumbos. Pasarlo a un **panel propio con secciones** (Editor, Apariencia, Nota diaria, Terminal, Home y recordatorios, Correo, Archivos y git, Toolbar), con buscador de ajustes y descripciones cortas.
@@ -220,8 +220,8 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 
 Funciones más grandes o que tocan varias partes de la app.
 
-- [ ] **Recordatorios por Gmail**: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: es la única función que necesita internet
-- [ ] **Resumen diario por Gmail**: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas
+- [x] ~~**Recordatorios por Gmail**~~: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: es la única función que necesita internet (hecho 2026-09-30)
+- [x] ~~**Resumen diario por Gmail**~~: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas (hecho 2026-09-30)
 - [x] ~~**Separar `main.js`** (más de 1100 líneas) en módulos por área~~ (2026-09-29: queda en ~340 líneas; `ipc-files`, `ipc-notes`, `ipc-export`, `ipc-system`, `mainctx`, `folderwatch`, `folderindex`)
 
 ## Largo plazo

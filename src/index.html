@@ -131,6 +131,20 @@
         <label class="dropdown-label" for="terminal-shell-select">Shell de la terminal</label>
         <select id="terminal-shell-select" title="Qué shell abre la terminal integrada (+, Ctrl+`). El ▾ del panel abre una con otro shell sin cambiar este."></select>
 
+        <div class="dropdown-label" title="Los recordatorios también te llegan por correo (a tu propia dirección). Necesita una contraseña de aplicación de Google: myaccount.google.com/apppasswords">Correo (Gmail)</div>
+        <div class="mail-settings">
+          <label class="mail-row"><input type="checkbox" id="mail-enabled" /> Mandar los recordatorios por correo</label>
+          <input type="email" id="mail-address" class="settings-text-input" placeholder="tu.direccion@gmail.com" autocomplete="off" />
+          <input type="password" id="mail-password" class="settings-text-input" placeholder="Contraseña de aplicación (16 letras)" autocomplete="new-password" />
+          <label class="mail-row"><input type="checkbox" id="mail-daily" /> Resumen diario a las <input type="time" id="mail-daily-time" class="home-week-before-time" value="08:00" /></label>
+          <div class="mail-buttons">
+            <button type="button" id="mail-save" class="toolbar-button">Guardar</button>
+            <button type="button" id="mail-test" class="toolbar-button">Enviar prueba</button>
+            <button type="button" id="mail-forget" class="toolbar-button" title="Borra la contraseña guardada">Olvidar contraseña</button>
+          </div>
+          <div id="mail-status" class="dailynote-example" role="status"></div>
+        </div>
+
         <label class="dropdown-label" for="gitsync-toggle">
           <input type="checkbox" id="gitsync-toggle" /> Sincronizar con git al guardar
         </label>
@@ -552,6 +566,7 @@
   <script src="media.js"></script>
   <script src="ui-dropdowns.js"></script>
   <script src="errortoast.js"></script>
+  <script src="mailsettings.js"></script>
   <script src="askdialog.js"></script>
   <script src="templates.js"></script>
   <script src="settings.js"></script>

@@ -5,7 +5,7 @@
 ## Privacidad
 
 - Todo es **local**: tus notas son archivos `.md` en tu disco. No hay cuenta, ni nube, ni telemetría.
-- MK no se conecta a internet por su cuenta. Solo carga imágenes `https://` que vos pongas en una nota, y abre en el navegador los enlaces en los que hagas clic.
+- MK no se conecta a internet por su cuenta. Solo carga imágenes `https://` que vos pongas en una nota, abre en el navegador los enlaces en los que hagas clic y, **si lo activás**, manda tus recordatorios por correo a tu propia dirección (Gmail, con la contraseña de aplicación cifrada en el llavero del sistema — ver [recordatorios.md](recordatorios.md#también-por-correo-gmail)).
 
 ## Qué te protege si abrís un `.md` ajeno
 

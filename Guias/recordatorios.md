@@ -54,6 +54,21 @@ Aparece la **notificación del sistema** y además una **tarjeta abajo a la dere
 - En las bases de datos, si la base tiene una columna **Casilla** y la fila está marcada, no avisa.
 - Los avisos anticipados miran hasta **30 días** hacia adelante.
 
-## Próximamente
+## También por correo (Gmail)
 
-Avisos también **por Gmail** y un resumen diario por correo (está en [`OBJETIVOS.md`](../OBJETIVOS.md)).
+Los mismos avisos te pueden llegar **por mail** (al celular, por ejemplo), y un **resumen diario** con lo de hoy, lo atrasado y lo de los próximos 7 días.
+
+1. En tu cuenta de Google, con la verificación en 2 pasos activada, entrá a **myaccount.google.com/apppasswords** y creá una contraseña de aplicación llamada "MK" (16 letras). *No* es tu contraseña normal y la podés revocar cuando quieras.
+2. En MK: **⚙ Ajustes → Correo (Gmail)**: tildá *Mandar los recordatorios por correo*, escribí tu dirección y la contraseña de aplicación → **Guardar**.
+3. **Enviar prueba**: te llega "MK: correo de prueba". Si llega, listo.
+4. Opcional: **Resumen diario a las 08:00** (cambiá la hora). Si abrís MK más tarde ese día, se manda igual (una vez por día).
+
+| Detalle | |
+|---|---|
+| ¿A quién se manda? | Solo **a tu propia dirección**. MK no puede mandar correo a otros |
+| ¿Dónde queda la contraseña? | Cifrada con el **llavero del sistema** (KWallet en KDE, GNOME Keyring). Nunca se muestra de nuevo. Sin llavero, MK no la guarda (no en texto plano) |
+| ¿Hace falta MK abierto? | Sí, abierto o en la bandeja (como los avisos de pantalla) |
+| Si Gmail la rechaza | Aviso rojo "Gmail rechazó la contraseña": creá otra y guardala. **Olvidar contraseña** la borra de MK |
+| Tope | Como mucho 30 correos por hora (por si algo fallara en bucle) |
+
+> ⚠️ Nunca pegues la contraseña de aplicación en un chat, un correo o una nota: si pasó, revocala en myaccount.google.com/apppasswords y creá otra.

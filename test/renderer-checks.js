@@ -3598,6 +3598,31 @@
     check('Errores: guardar sin poder avisa (con el log) sin romper, y un JSON dañado se aparta en vez de pisarse', ok, detail);
   }
 
+  // Correo: dirección + contraseña (nunca vuelve al renderer), prueba, aviso
+  // del Home por correo y resumen diario; siempre a la propia dirección.
+  {
+    const m = window.mdEditor.mail;
+    const bad = await m.setSettings({ address: 'no es un correo' });
+    await m.setSettings({ enabled: true, address: 'yo@example.com' });
+    const pw = await m.setPassword('abcd efgh ijkl mnop');
+    const st = await m.status();
+    const noLeak = !JSON.stringify(st).includes('abcd');
+    const test = await m.test();
+    const tmsg = await m.lastTestMessage();
+    const testOk = test.ok && tmsg && tmsg.to.some((t) => t.address === 'yo@example.com') && tmsg.subject.includes('prueba');
+    await window.mdMail.notify('🔔 Falta 1 semana para Examen', 'Detalle');
+    const rmsg = await m.lastTestMessage();
+    const reminderOk = rmsg && rmsg.subject.includes('Examen') && rmsg.to.length === 1 && rmsg.to[0].address === 'yo@example.com';
+    const summary = window.mdHome.dailySummaryText(new Date().toISOString().slice(0, 10));
+    const summaryOk = summary.subject.startsWith('MK: tu día') && summary.text.includes('HOY');
+    await m.setSettings({ enabled: false });
+    const off = await m.send('x', 'y');
+    const forgot = await m.clearPassword();
+    const ok = !bad.ok && pw.ok && st.hasPassword && noLeak && testOk && reminderOk && summaryOk && off.reason === 'disabled' && !forgot.hasPassword;
+    check('Correo: guarda la contraseña sin devolverla, prueba, aviso y resumen a tu propia dirección, apagado no envía', ok,
+      `dirMala=${!bad.ok} guardada=${st.hasPassword} sinFuga=${noLeak} prueba=${testOk} aviso=${reminderOk} resumen=${summaryOk} apagado=${off.reason} olvidada=${!forgot.hasPassword}`);
+  }
+
   // Rutas: el proceso principal solo deja tocar lo que el usuario abrió
   // (pathguard.js). Afuera: leer, crear, abrir como carpeta, md-local://,
   // bases de datos y git se niegan; adentro (fixtures) todo sigue andando.

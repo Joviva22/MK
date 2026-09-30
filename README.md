@@ -17,7 +17,7 @@ También se pueden abrir y editar archivos de código (`.py`, `.c`/`.cpp`, `.jav
 `Ctrl+F` busca y reemplaza dentro del archivo actual; `Ctrl+Shift+F` busca en toda la carpeta abierta; `Ctrl+P` abre un archivo por nombre sin tocar el mouse. Paleta de comandos (`Ctrl+Shift+P`) para no memorizar dónde está cada botón. Ver [`COMANDOS.md`](./COMANDOS.md) para la lista completa de atajos.
 
 ### Planificar: Home, bases de datos y gráficos
-- **Home** (`Ctrl+Shift+H`): planificador semanal y mensual con calendario, tareas con hora y prioridad, recurrentes (hábitos), arrastrar tareas de día, tareas `📅` escritas en tus notas, estadísticas 📈 y **recordatorios** (a la hora, días antes y **1 semana antes automático** para todo lo que tenga fecha, aunque MK esté en la bandeja).
+- **Home** (`Ctrl+Shift+H`): planificador semanal y mensual con calendario, tareas con hora y prioridad, recurrentes (hábitos), arrastrar tareas de día, tareas `📅` escritas en tus notas, estadísticas 📈 y **recordatorios** (a la hora, días antes y **1 semana antes automático** para todo lo que tenga fecha, aunque MK esté en la bandeja), también **por correo (Gmail)** con resumen diario opcional.
 - **Bases de datos** relacionales tipo Notion (tabla, tablero, calendario, galería y **Gráfico**), guardadas en `.mk/` dentro de tu carpeta, con importar/exportar CSV.
 - **Gráficos**: vista Gráfico de una base, bloque ```` ```chart ```` que dibuja una tabla Markdown, y bloque ```` ```database ```` que muestra una vista de una base **dentro de una nota**.
 
