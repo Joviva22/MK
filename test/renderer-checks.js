@@ -3804,6 +3804,45 @@
       `botones=${btnHidden} paleta=${paletteOk} atajo=${keyOk} ajustes=${settingsOk} vuelve=${backOk}`);
   }
 
+  // Grafo interactivo: etiquetas y carpetas en los nodos, filtros, "solo
+  // vecinas" y menú de clic derecho.
+  if (fixturesDir) {
+    const J = window.mdEditor.joinPath;
+    const gdir = J(fixturesDir, 'grafo-test');
+    await window.mdEditor.createFolder(fixturesDir, 'grafo-test');
+    await window.mdEditor.createFolder(gdir, 'sub');
+    await window.mdEditor.saveFile('# A\n#viaje ver [[B]] y [[C]]\n', J(gdir, 'GA.md'), false);
+    await window.mdEditor.saveFile('# B\n[[GA]]\n', J(gdir, 'B.md'), false);
+    await window.mdEditor.saveFile('# C\n#viaje\n', J(gdir, 'sub', 'C.md'), false);
+    await window.mdEditor.saveFile('# Suelta\n', J(gdir, 'Suelta.md'), false);
+    window.mdSidebar.renderFolder(await window.mdEditor.readFolder(gdir));
+    await window.mdGraph.open();
+    const G = window.mdGraph;
+    const all = G.getVisible().length;
+    G.setFilters({ tag: 'viaje' });
+    const byTag = G.getVisible().sort().join(',');
+    G.setFilters({ tag: '', folder: 'sub' });
+    const byFolder = G.getVisible().join(',');
+    G.setFilters({ folder: '', hideOrphans: true });
+    const noOrphans = !G.getVisible().includes('Suelta');
+    G.setFilters({ hideOrphans: false, focus: 'B' });
+    const focus = G.getVisible().sort().join(',');
+    G.setFilters({ focus: null });
+    const neigh = G.neighborsOf('GA').sort().join(',');
+    // Menú de clic derecho sobre un nodo (en su posición en pantalla).
+    const canvas = document.getElementById('graph-canvas');
+    const node = G.getData().nodes.find((n) => n.id === 'GA');
+    const rect = canvas.getBoundingClientRect();
+    canvas.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: rect.left + node.x * rect.width / canvas.width, clientY: rect.top + node.y * rect.height / canvas.height }));
+    const menu = document.querySelector('.graph-menu');
+    const menuOk = !!menu && menu.textContent.includes('Abrir en el panel secundario') && menu.textContent.includes('backlinks');
+    if (menu) menu.remove();
+    G.close();
+    check('Grafo interactivo: filtros por etiqueta y carpeta, ocultar sueltas, solo vecinas y menú de clic derecho',
+      all === 4 && byTag === 'C,GA' && byFolder === 'C' && noOrphans && focus === 'B,GA' && neigh === 'B,C' && menuOk,
+      `todas=${all} etiqueta=${byTag} carpeta=${byFolder} sinSueltas=${noOrphans} vecinas=${focus} vecinosGA=${neigh} menú=${menuOk}`);
+  }
+
   // Exportar que falla (carpeta inexistente): devuelve null y avisa, en vez
   // de que el botón no haga nada.
   {

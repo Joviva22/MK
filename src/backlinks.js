@@ -17,9 +17,10 @@ function renderEmpty(text) {
   list.appendChild(empty);
 }
 
-async function open() {
+// forPath: de otra nota (grafo → clic derecho → Ver backlinks); si no, la actual.
+async function open(forPath) {
   overlay.hidden = false;
-  const filePath = window.mdState.currentFilePath;
+  const filePath = typeof forPath === 'string' ? forPath : window.mdState.currentFilePath;
   const root = window.mdState.rootFolder;
 
   if (!filePath) {

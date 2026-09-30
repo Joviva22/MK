@@ -98,6 +98,8 @@ ipcMain.handle('wikilink:resolve', async (event, { root, target }) => {
 });
 
 const WIKILINK_RE = /\[\[([^\]|#]+)(?:\|[^\]]+)?\]\]/g;
+// [texto](destino.md) — el destino con extensión de texto (para el grafo).
+const MDLINK_RE = /\]\(\s*<?([^)\s>]+\.(?:md|markdown|txt|tex)(?:#[^)\s>]*)?)>?(?:\s+"[^"]*")?\s*\)/gi;
 
 ipcMain.handle('backlinks:list', async (event, { root, target }) => {
   if (!root || !target || !guard.check(root, 'backlinks')) return [];
@@ -138,22 +140,41 @@ ipcMain.handle('graph:build', async (event, root) => {
   const edgeKeys = new Set();
   const edges = [];
 
+  const byPath = new Map(files.map((f) => [f.path, f]));
+  const addEdge = (f, target) => {
+    if (!target || target.name === f.name) return;
+    const key = `${f.name}->${target.name}`;
+    if (edgeKeys.has(key)) return;
+    edgeKeys.add(key);
+    edges.push({ source: f.name, target: target.name });
+  };
+
   files.forEach((f) => {
     const scanText = stripCodeForScan(f.content);
     WIKILINK_RE.lastIndex = 0;
     let m;
-    while ((m = WIKILINK_RE.exec(scanText))) {
-      const target = byNameLower.get(m[1].trim().toLowerCase());
-      if (!target || target.name === f.name) continue;
-      const key = `${f.name}->${target.name}`;
-      if (edgeKeys.has(key)) continue;
-      edgeKeys.add(key);
-      edges.push({ source: f.name, target: target.name });
+    while ((m = WIKILINK_RE.exec(scanText))) addEdge(f, byNameLower.get(m[1].trim().toLowerCase()));
+    // Links Markdown normales a otra nota: [texto](otra-nota.md) o (sub/x.md#sección).
+    MDLINK_RE.lastIndex = 0;
+    while ((m = MDLINK_RE.exec(scanText))) {
+      let href = m[1].split('#')[0].trim();
+      if (!href || /^[a-z]+:/i.test(href)) continue; // http:, mailto:…
+      try { href = decodeURIComponent(href); } catch { /* se deja como está */ }
+      addEdge(f, byPath.get(path.resolve(path.dirname(f.path), href)));
     }
   });
 
+  // Etiquetas y carpeta de cada nota: para filtrar el grafo.
+  const tagsOf = (content) => {
+    const tags = new Set();
+    const scan = stripCodeForScan(content);
+    TAG_RE.lastIndex = 0;
+    let t;
+    while ((t = TAG_RE.exec(scan))) tags.add(t[2].toLowerCase());
+    return Array.from(tags);
+  };
   return {
-    nodes: files.map((f) => ({ id: f.name, path: f.path })),
+    nodes: files.map((f) => ({ id: f.name, path: f.path, tags: tagsOf(f.content), folder: path.relative(root, path.dirname(f.path)) || '.' })),
     edges
   };
 });

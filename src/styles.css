@@ -1978,9 +1978,17 @@ tr:hover .database-row-del {
 
 /* Grafo de notas */
 .graph-modal {
-  width: 800px;
-  max-width: 92vw;
+  width: min(1100px, 94vw);
+  max-height: none !important;
 }
+
+.graph-hint { font-weight: normal; color: var(--text-muted); font-size: var(--font-xs); margin-left: var(--space-2); }
+.graph-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border); }
+.graph-toolbar .settings-text-input { width: 180px; height: 28px; padding: 0 8px; box-sizing: border-box; }
+.graph-toolbar select { height: 28px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); font: inherit; font-size: var(--font-sm); max-width: 170px; }
+.graph-check { display: flex; align-items: center; gap: 4px; font-size: var(--font-sm); color: var(--text-muted); }
+.graph-count { margin-left: auto; font-size: var(--font-xs); color: var(--text-muted); }
+.graph-menu { position: fixed; z-index: 1200; }
 
 #graph-canvas {
   display: block;

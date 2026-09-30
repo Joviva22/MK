@@ -611,7 +611,14 @@
 
   <div id="graph-panel" class="modal-overlay palette-overlay" hidden>
     <div class="command-palette graph-modal">
-      <div class="backlinks-title">Grafo de notas — clic en un nodo para abrirlo</div>
+      <div class="backlinks-title">Grafo de notas <span class="graph-hint">clic: abrir · clic derecho: más · arrastrar: mover · rueda: zoom</span></div>
+      <div class="graph-toolbar">
+        <input type="search" id="graph-search" class="settings-text-input" placeholder="Buscar nota…" aria-label="Buscar nota en el grafo" autocomplete="off" />
+        <select id="graph-tag" aria-label="Filtrar por etiqueta"></select>
+        <select id="graph-folder" aria-label="Filtrar por carpeta"></select>
+        <label class="graph-check"><input type="checkbox" id="graph-orphans" /> Ocultar sin enlaces</label>
+        <span id="graph-count" class="graph-count" role="status"></span>
+      </div>
       <canvas id="graph-canvas" width="760" height="520"></canvas>
     </div>
   </div>

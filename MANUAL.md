@@ -339,7 +339,8 @@ Mapa visual de qué nota enlaza con cuál, útil para ver de un vistazo cómo se
 1. Escribí enlaces entre tus notas con la sintaxis `[[nombre del archivo]]` (ver [sección 6](#6-etiquetas-y-wikilinks)).
 2. Abrí la paleta de comandos (`Ctrl+Shift+P`) y elegí "Ver grafo de notas".
 3. MK escanea toda la carpeta abierta: cada archivo `.md` es un punto (nodo), y cada `[[wikilink]]` entre dos archivos es una línea que los conecta.
-4. Clic corto en un nodo abre ese archivo directamente.
+4. Clic corto en un nodo abre ese archivo directamente. También cuentan los links Markdown normales a otra nota (`[texto](otra.md)`), y las notas con más enlaces se ven más grandes.
+5. **Pasar el mouse** resalta la nota y sus vecinas; **clic derecho**: abrir, abrir en el panel secundario, ver backlinks o *solo esta y sus vecinas* (`Esc` vuelve). Arriba: buscar (resalta, `Enter` abre), filtrar por #etiqueta o por carpeta, y ocultar las notas sin enlaces.
 
 El acomodo inicial de los nodos es automático (se alejan entre sí, los conectados por un link se atraen entre sí) y se calcula una sola vez al abrir el grafo. Desde ahí podés moverte:
 
