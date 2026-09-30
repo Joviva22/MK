@@ -84,12 +84,19 @@ function sprite(p, stage) {
   return set[2] || set[3] || null;
 }
 
+// Sora y Roxas (kind 'kh'): animados cuadro por cuadro, con los cuadros
+// que arma khchars.js a partir de las hojas del usuario.
+function khData(p) {
+  return p.kind === 'kh' && window.mdKhChars ? window.mdKhChars.get(p.species) : null;
+}
+
 function isImagePet(p) {
   return (p.kind === 'game' || p.kind === 'custom') && !!sprite(p, 1);
 }
 
 function speciesName(p, stage) {
   const st = stage || stageOf(p);
+  if (p.kind === 'kh') return p.species === 'roxas' ? 'Roxas' : 'Sora';
   if (p.kind === 'game' || p.kind === 'custom') {
     const sp = sprite(p, st);
     if (sp && sp.label) return sp.label;
@@ -100,6 +107,7 @@ function speciesName(p, stage) {
 }
 
 function typeName(p) {
+  if (p.kind === 'kh') return 'Kingdom Hearts';
   if (p.kind === 'game') return p.legendary ? 'Legendario · juego' : 'Del juego';
   if (p.kind === 'custom') return 'Imágenes propias';
   return (ART.ALL[p.species] || ART.SPECIES.fuego).type;
@@ -126,6 +134,8 @@ function art(p, mood, stage) {
   const st = stage || stageOf(p);
   const badge = mood === 'sad' ? '😟' : mood === 'sleep' ? '💤' : '';
   const b = badge ? `<span class="pet-mood-badge">${badge}</span>` : '';
+  const kh = khData(p);
+  if (kh) return `<img class="pet-img pet-kh" src="${kh.anims.idle.frames[0]}" alt="" draggable="false"/>${b}`;
   if (p.kind === 'game' || p.kind === 'custom') {
     const sp = sprite(p, st);
     if (sp && sp.sheet) return `<div class="pet-sheet" style="background-image:url('${sp.url}')"></div>${b}`;
@@ -212,6 +222,7 @@ let cardPetId = null;
 
 function sizeOf(p) {
   const st = stageOf(p);
+  if (p.kind === 'kh') return 64;
   if (p.legendary) return isImagePet(p) ? 72 : 66;
   if (isImagePet(p) && sprite(p, st) && sprite(p, st).sheet) return [0, 60, 66, 72][st];
   return [0, 42, 52, 62][st];
@@ -285,7 +296,32 @@ function renderWalker(w, force) {
   w.el.style.height = `${s}px`;
   w.el.style.transform = `translateX(${w.x}px)`;
   const sheet = w.sprite.querySelector('.pet-sheet');
-  if (sheet) {
+  const khImg = w.sprite.querySelector('.pet-kh');
+  const kh = khImg && khData(p);
+  if (kh) {
+    // Cuadro según lo que hace: ataque (al tildar), caminar o quieto. El
+    // alto se escala con la caminata como referencia: el ataque, más
+    // grande en la hoja, se ve más grande también.
+    const now = Date.now();
+    const moving = w.mode === 'walk' || w.mode === 'chase';
+    let anim = kh.anims.idle;
+    let frame = 0;
+    if (w.attackUntil && now < w.attackUntil) {
+      anim = kh.anims.attack;
+      frame = Math.min(anim.frames.length - 1, Math.floor(((now - w.attackStart) / (w.attackUntil - w.attackStart)) * anim.frames.length));
+    } else if (moving) {
+      anim = kh.anims.walk;
+      frame = Math.floor(now / 110) % anim.frames.length;
+    } else {
+      frame = Math.floor(now / 400) % anim.frames.length;
+    }
+    const src = anim.frames[frame];
+    if (khImg.getAttribute('src') !== src) khImg.setAttribute('src', src);
+    const scale = s / kh.anims.walk.height;
+    khImg.style.height = `${Math.round(anim.height * scale)}px`;
+    khImg.style.width = `${Math.round(anim.width * scale)}px`;
+    w.sprite.style.transform = `scaleX(${w.dir * (anim.flip ? -1 : 1)})`;
+  } else if (sheet) {
     // Hoja de RPG Maker: fila 0 de frente (quieta), 1 izquierda, 2 derecha.
     const moving = w.mode === 'walk' || w.mode === 'chase';
     const row = moving ? (w.dir < 0 ? 1 : 2) : 0;
@@ -648,6 +684,10 @@ async function gain(kind, key) {
   });
   checkAchievements();
   walkers.forEach((w) => {
+    if (w.pet.kind === 'kh' && kind === 'task') { // Sora/Roxas: golpe de keyblade
+      w.attackStart = Date.now();
+      w.attackUntil = w.attackStart + 650;
+    }
     if (!evolved && !levelUp) say(w, `+${amount} XP`, 1600);
     w.mode = 'happy';
     w.modeUntil = Date.now() + 1200;
@@ -670,6 +710,7 @@ function info() {
 function setOverdue(n) {
   const was = overdue;
   overdue = Math.max(0, n | 0);
+  if (overdue > was) document.dispatchEvent(new CustomEvent('mk:pet-overdue', { detail: { overdue, was } }));
   if (overdue > 0 && was === 0 && !lane.hidden) say(walkers[0], `Hay ${overdue} tarea${overdue === 1 ? '' : 's'} atrasada${overdue === 1 ? '' : 's'}… 😟`, 3500);
   walkers.forEach((w) => renderWalker(w));
 }
@@ -1030,7 +1071,26 @@ if (resetEl) {
   initCharDir();
 })();
 
+// Sora / Roxas llegan a la colección (khchars.js): sin huevo.
+function addKhPet(species) {
+  ensureStarter();
+  const existing = state.pets.find((p) => p.kind === 'kh' && p.species === species);
+  if (existing) return existing;
+  const id = `p${state.nextId++}`;
+  const p = { id, kind: 'kh', species, name: '', xp: 0, legendary: false, born: today(), mkSpecies: 'agua' };
+  state.pets.push(p);
+  if (state.team.length < TEAM_MAX) state.team.push(id);
+  logEvent({ type: 'kh-joined', petId: id, species });
+  rebuildWalkers();
+  say(walkers.find((x) => x.pet.id === id), species === 'roxas' ? '…Roxas. Encantado.' : '¡Hola! Soy Sora 🗝', 3500);
+  save();
+  if (!overlay.hidden) renderCollection();
+  return p;
+}
+
 window.mdPet = {
+  addKhPet,
+  refreshWalkers: () => { walkers.forEach((w) => renderWalker(w, true)); if (!overlay.hidden) renderCollection(); },
   gain,
   info,
   setOverdue,

@@ -5309,7 +5309,7 @@ body.mk-dim-paragraphs #editor-pane .CodeMirror-code > div.mk-current-para { opa
   100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6) rotate(90deg); }
 }
 .kh-toast {
-  position: fixed; right: 16px; bottom: 16px; z-index: 3000; display: flex; gap: 12px; align-items: center;
+  position: fixed; right: 16px; bottom: 136px; z-index: 3000; display: flex; gap: 12px; align-items: center;
   max-width: min(360px, calc(100vw - 32px)); padding: 10px 14px; border-radius: var(--radius, 8px);
   background: var(--surface); color: var(--text); border: 1px solid var(--accent); box-shadow: var(--shadow-3, 0 12px 30px rgba(0, 0, 0, 0.35));
   animation: mk-pop-in var(--dur) var(--ease); transition: opacity 0.5s, transform 0.5s;
@@ -5354,3 +5354,16 @@ body.mk-dim-paragraphs #editor-pane .CodeMirror-code > div.mk-current-para { opa
   .lucky-big, .lucky-label, .lucky-spark, .lucky-found { animation-duration: 0.01s; animation-delay: 0s; }
   .lucky-big { animation: none; opacity: 0.9; }
 }
+
+/* Sora y Roxas (pet.js kind 'kh', khchars.js) */
+.pet-kh { image-rendering: pixelated; }
+.pet .pet-img.pet-kh { position: absolute; bottom: 0; left: 50%; translate: -50% 0; width: auto; height: 100%; max-width: none; object-fit: fill; }
+.kh-portrait-toast {
+  position: fixed; right: 16px; bottom: 40px; z-index: 3000; display: flex; gap: 12px; align-items: center;
+  max-width: min(380px, calc(100vw - 32px)); padding: 8px 14px 8px 8px; border-radius: var(--radius, 8px);
+  background: var(--surface); color: var(--text); border: 1px solid var(--accent); box-shadow: var(--shadow-3, 0 12px 30px rgba(0, 0, 0, 0.35));
+  animation: mk-pop-in var(--dur) var(--ease); transition: opacity 0.5s, transform 0.5s;
+}
+.kh-portrait-toast img { height: 72px; image-rendering: pixelated; }
+.kh-portrait-toast div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.kh-portrait-toast span { color: var(--text-muted); }

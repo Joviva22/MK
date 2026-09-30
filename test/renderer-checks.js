@@ -4007,6 +4007,26 @@
       `recorte=${st.count} golpe=${swung} cursor=${cursorOn} llavero=${chips} emblema=${celebrated} escondido=${!!hiddenEl} encontrado=${foundOk}`);
   }
 
+  // Sora: su hoja se reconoce por tamaño, se recorta en animaciones, se une
+  // a las mascotas y da un golpe (cuadros de ataque) al tildar; retrato.
+  {
+    const before = window.mdPet.getState();
+    await window.mdPet.setState({ enabled: true });
+    const r = await window.mdKhChars.importChars([`${fixturesDir}-kh/sora.png`]);
+    const sora = window.mdKhChars.get('sora');
+    const animsOk = !!sora && sora.anims.walk.frames.length === 8 && sora.anims.attack.frames.length === 4 && !!sora.portraits.feliz;
+    const joined = window.mdPet.getState().pets.some((p) => p.kind === 'kh' && p.species === 'sora');
+    const toast = document.querySelector('.kh-portrait-toast img'); // "¡Sora se unió!"
+    document.querySelectorAll('.kh-portrait-toast').forEach((t) => t.remove());
+    await window.mdPet.gain('task', `test:kh:${Date.now()}`);
+    await new Promise((res) => setTimeout(res, 150));
+    const img = Array.from(document.querySelectorAll('.pet .pet-kh'))[0];
+    const attacking = !!img && sora.anims.attack.frames.includes(img.getAttribute('src'));
+    await window.mdPet.setState(before);
+    check('Sora: hoja reconocida y recortada, se une (con retrato) y ataca al tildar',
+      r.ok && animsOk && joined && attacking && !!toast, `import=${r.ok || r.error} anims=${animsOk} seUne=${joined} ataque=${attacking} retrato=${!!toast}`);
+  }
+
   // Preview incremental (por bloques): mismo HTML que el camino completo en
   // una nota con de todo; con HTML crudo de bloque vuelve al completo; al
   // editar un bloque solo cambia ese.

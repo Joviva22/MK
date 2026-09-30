@@ -12,6 +12,7 @@ const fs = require('fs');
 const os = require('os');
 const ctx = require('./mainctx');
 const { sliceSheet } = require('./khslice');
+const { cutFrame, alignFrames, trimFrame } = require('./khsprites');
 
 const KH_DIR = path.join(app.getPath('userData'), 'kh');
 const SHEET = path.join(KH_DIR, 'keyblades.png');
@@ -89,7 +90,138 @@ ipcMain.handle('kh:import', async (event, fromPath, testPath) => {
   }
 });
 
+// ---- Sora y Roxas como mascotas (pet.js, kind 'kh') ----
+// Hojas de fans (sin transparencia, distribución irregular): se reconocen
+// por su tamaño exacto y se recortan con las posiciones medidas a mano.
+// Los cuadros miran a la derecha salvo los marcados con flip.
+const CHARS = {
+  sora: {
+    name: 'Sora',
+    size: [1024, 2917],
+    bg: [255, 255, 255],
+    anims: {
+      idle: [[2, 418, 23, 46]],
+      walk: [[2, 418, 23, 46], [34, 419, 29, 45], [67, 416, 24, 48], [96, 416, 24, 48], [125, 415, 21, 49], [152, 414, 24, 50], [182, 414, 24, 50], [210, 414, 22, 50]],
+      attack: [[3, 726, 28, 52], [36, 709, 34, 69], [76, 743, 56, 35], [139, 740, 55, 38]]
+    },
+    flip: { idle: true, walk: true, attack: true }, // en la hoja miran a la izquierda
+    // Celdas de la cuadrícula de retratos (se recortan al dibujo).
+    portraits: { normal: [500, 5, 70, 95], feliz: [570, 575, 70, 95], decidido: [500, 198, 70, 95], preocupado: [500, 295, 70, 95], dormido: [780, 5, 70, 95] }
+  },
+  roxas: {
+    name: 'Roxas',
+    size: [608, 2872],
+    bg: [181, 165, 213],
+    anims: {
+      idle: [[19, 145, 36, 52], [66, 146, 35, 51], [111, 149, 35, 50], [157, 149, 35, 52]],
+      walk: [[6, 231, 54, 44], [68, 235, 50, 44], [127, 236, 50, 42], [183, 231, 51, 45], [244, 235, 55, 44], [306, 237, 66, 46], [383, 241, 63, 42], [469, 239, 52, 42]],
+      attack: [[6, 603, 44, 49], [57, 606, 41, 44], [104, 605, 67, 46], [176, 607, 77, 45], [258, 608, 78, 45], [340, 601, 46, 49]]
+    },
+    flip: {},
+    portraits: { normal: [11, 6, 69, 104], feliz: [93, 10, 69, 98] }
+  }
+};
+
+const charFile = (id) => path.join(KH_DIR, `${id}.png`);
+
+function toDataUrl(f) {
+  return nativeImage.createFromBitmap(f.data, { width: f.width, height: f.height }).toDataURL();
+}
+
+const rect = ([x, y, width, height]) => ({ x, y, width, height });
+
+function buildChar(id) {
+  const def = CHARS[id];
+  const file = charFile(id);
+  if (!def || !fs.existsSync(file)) return null;
+  const img = nativeImage.createFromPath(file);
+  const { width, height } = img.getSize();
+  if (width !== def.size[0] || height !== def.size[1]) return null;
+  const bmp = img.toBitmap(); // BGRA
+  const anims = {};
+  for (const [name, rects] of Object.entries(def.anims)) {
+    const frames = alignFrames(rects.map((r) => trimFrame(cutFrame(bmp, width, rect(r), def.bg, 'bgra'))));
+    anims[name] = { frames: frames.map(toDataUrl), width: frames[0].width, height: frames[0].height, flip: !!def.flip[name] };
+  }
+  const portraits = {};
+  for (const [mood, r] of Object.entries(def.portraits)) portraits[mood] = toDataUrl(trimFrame(cutFrame(bmp, width, rect(r), def.bg, 'bgra')));
+  return { id, name: def.name, anims, portraits };
+}
+
+// Qué personajes se reconocen en una imagen (por tamaño).
+function charForImage(file) {
+  const img = nativeImage.createFromPath(file);
+  if (img.isEmpty()) return null;
+  const { width, height } = img.getSize();
+  return Object.keys(CHARS).find((id) => CHARS[id].size[0] === width && CHARS[id].size[1] === height) || null;
+}
+
+function charCandidates() {
+  const dirs = [app.getPath('downloads'), path.join(os.homedir(), 'Descargas'), path.join(os.homedir(), 'Downloads')];
+  const out = [];
+  for (const d of dirs) {
+    let names = [];
+    try { names = fs.readdirSync(d); } catch { continue; }
+    for (const n of names) {
+      if (!/\.png$/i.test(n)) continue;
+      const p = path.join(d, n);
+      try {
+        if (fs.statSync(p).size > MAX_BYTES * 4) continue;
+        const id = charForImage(p);
+        if (id && !out.some((c) => c.id === id)) out.push({ id, path: p });
+      } catch {
+        // ilegible: se ignora
+      }
+    }
+  }
+  return out;
+}
+
+ipcMain.handle('kh:chars', () => {
+  try {
+    return Object.keys(CHARS).map(buildChar).filter(Boolean);
+  } catch (e) {
+    ctx.logError('kh:chars', e);
+    return [];
+  }
+});
+
+ipcMain.handle('kh:charCandidates', () => charCandidates());
+
+// Copia las hojas de personajes reconocidas (de Descargas, o las que elija
+// el usuario) a userData/kh/<id>.png. testPaths: solo la suite.
+ipcMain.handle('kh:charImport', async (event, testPaths) => {
+  let files = [];
+  if (ctx.isTestMode) files = Array.isArray(testPaths) ? testPaths : [];
+  else {
+    const found = charCandidates();
+    if (found.length) files = found.map((c) => c.path);
+    else {
+      const result = await dialog.showOpenDialog(ctx.mainWindow, {
+        title: 'Hojas de sprites de Sora / Roxas',
+        defaultPath: app.getPath('downloads'),
+        filters: [{ name: 'PNG', extensions: ['png'] }],
+        properties: ['openFile', 'multiSelections']
+      });
+      if (result.canceled) return { canceled: true };
+      files = result.filePaths;
+    }
+  }
+  const imported = [];
+  for (const f of files) {
+    const id = charForImage(f);
+    if (!id) continue;
+    fs.mkdirSync(KH_DIR, { recursive: true });
+    fs.copyFileSync(f, charFile(id));
+    imported.push(id);
+  }
+  if (!imported.length) return { error: 'No reconocí ninguna hoja: MK conoce la de Sora de Chain of Memories (1024×2917) y la de Roxas (608×2872).' };
+  return { ok: true, imported };
+});
+
 ipcMain.handle('kh:clear', () => {
-  fs.rmSync(KH_DIR, { recursive: true, force: true });
+  fs.rmSync(SHEET, { force: true }); // solo las keyblades (Sora y Roxas siguen)
   return true;
 });
+
+module.exports = { CHARS, buildChar };

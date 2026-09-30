@@ -72,6 +72,7 @@ function placeHidden() {
     ev.stopPropagation();
     found++;
     await window.mdEditor.setConfig({ khLuckyFound: found });
+    document.dispatchEvent(new CustomEvent('mk:lucky-found', { detail: { found } })); // Roxas (khchars.js)
     const r = hidden.getBoundingClientRect();
     removeHidden();
     const pop = document.createElement('div');

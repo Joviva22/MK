@@ -55,6 +55,23 @@ const corpusDir = path.join(os.tmpdir(), `${runId}-corpus`);
   const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
   fs.mkdirSync(`${fixturesDir}-kh`, { recursive: true });
   fs.writeFileSync(path.join(`${fixturesDir}-kh`, 'keyblades.png'), png);
+  // Hoja "de Sora" (mismo tamaño que la real, así se reconoce): fondo
+  // blanco con un bloque oscuro en cada cuadro que recorta ipc-kh.js.
+  const { CHARS } = { CHARS: { sora: { size: [1024, 2917], rects: [[2, 418, 23, 46], [34, 419, 29, 45], [67, 416, 24, 48], [96, 416, 24, 48], [125, 415, 21, 49], [152, 414, 24, 50], [182, 414, 24, 50], [210, 414, 22, 50], [3, 726, 28, 52], [36, 709, 34, 69], [76, 743, 56, 35], [139, 740, 55, 38], [500, 5, 70, 95], [570, 575, 70, 95], [500, 198, 70, 95], [500, 295, 70, 95], [780, 5, 70, 95]] } } };
+  const [sw, sh] = CHARS.sora.size;
+  const sraw = Buffer.alloc((sw * 4 + 1) * sh, 255);
+  for (let y = 0; y < sh; y++) sraw[y * (sw * 4 + 1)] = 0;
+  for (const [rx, ry, rw, rh] of CHARS.sora.rects) {
+    for (let y = ry + 3; y < ry + rh - 3; y++) {
+      for (let x = rx + 3; x < rx + rw - 3; x++) {
+        const o = y * (sw * 4 + 1) + 1 + x * 4;
+        sraw[o] = 40; sraw[o + 1] = 40; sraw[o + 2] = 90;
+      }
+    }
+  }
+  const ihdr2 = Buffer.alloc(13);
+  ihdr2.writeUInt32BE(sw, 0); ihdr2.writeUInt32BE(sh, 4); ihdr2[8] = 8; ihdr2[9] = 6;
+  fs.writeFileSync(path.join(`${fixturesDir}-kh`, 'sora.png'), Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr2), chunk('IDAT', zlib.deflateSync(sraw)), chunk('IEND', Buffer.alloc(0))]));
 })();
 fs.mkdirSync(corpusDir, { recursive: true });
 let corpusN = 0;

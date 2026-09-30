@@ -78,5 +78,15 @@ Con una imagen tuya de keyblades (un PNG con fondo transparente, una al lado de 
 - **Cursor keyblade**: el puntero es la keyblade equipada, en diagonal como una flecha (dentro del texto sigue el cursor de escribir).
 - **Tema Kingdom Hearts** (🎨 Tema): azul noche y dorado, con la keyblade equipada de marca de agua en el panel de archivos. Al elegirlo aparece un **Lucky Emblem**; y mientras lo tengas puesto hay **uno chiquito escondido** en algún lugar de la ventana (cambia de sitio cada vez que abrís MK). Si lo encontrás y le hacés clic, suma a tu cuenta.
 
+### Sora y Roxas
+
+Con las hojas de sprites de **Sora** (Kingdom Hearts: Chain of Memories, la de 1024×2917) y **Roxas** (la de 608×2872) en Descargas: **Ajustes → Apariencia → Sora y Roxas → Buscar hojas en Descargas…**. MK las reconoce por su tamaño, les quita el fondo y recorta las animaciones (quieto, caminar, ataque con keyblade) y los retratos. Como las keyblades, se copian solo a tu configuración.
+
+- **Sora** se une a tus mascotas enseguida; **Roxas**, cuando encontraste **3 Lucky Emblems** escondidos (con el tema Kingdom Hearts).
+- Caminan animados y, cuando tildás una tarea, dan un **golpe de keyblade**. Suben de nivel como las demás.
+- **Retratos que reaccionan**: un aviso con la cara de Sora — feliz al completar una tarea, decidido al terminar un Pomodoro, preocupado si aparecen tareas atrasadas (como mucho uno cada 15 s; se apaga en Ajustes).
+
+Otras hojas con otra distribución no se reconocen (cada hoja de fans tiene los cuadros en otro lugar).
+
 Todo se prende y apaga por separado en Ajustes → Apariencia.
 
