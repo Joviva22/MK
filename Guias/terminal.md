@@ -37,6 +37,19 @@ Con un archivo de código abierto, **F5** (o el botón ▶ de la toolbar, o la p
 | `.cpp`, `.cc`, `.cxx` | igual con `g++` |
 | `.java` | `java Archivo.java` |
 | `.rb`, `.go` | `ruby` / `go run` |
+| `.ts` | `npx tsx archivo.ts` (Node.js) |
+| `.rs` | `rustc` y lo ejecuta |
+| `.php`, `.pl`, `.lua`, `.jl` | `php` / `perl` / `lua` / `julia` |
+| `.r` | `Rscript` |
+| `.hs` | `runghc` |
+| `.dart`, `.swift` | `dart run` / `swift` |
+| `.kt` | `kotlinc` → `.jar` → `java -jar` |
+| `.zsh`, `.fish`, `.ps1` | `zsh` / `fish` / `pwsh` |
+| `.sql` | `sqlite3 :memory: < archivo.sql` |
+| `.html` | lo abre en el navegador |
+| `Makefile` | `make` en su carpeta |
+
+Hace falta tener instalado el programa de cada lenguaje; si no está, la terminal dice `command not found` (se instala con el gestor de paquetes, por ejemplo `sudo pacman -S rust`).
 
 Si el programa pide datos (`input()`, `scanf`), escribilos en la terminal.
 

@@ -263,15 +263,16 @@
             <div class="set-control"><input type="checkbox" id="pet-enabled" class="set-switch" role="switch" /></div>
           </div>
           <div class="set-row" data-keywords="especie fuego agua planta">
-            <div class="set-text"><label class="set-title" for="pet-species">Especie</label><div class="set-desc">Criaturas propias de MK. Cambiarla conserva el nivel.</div></div>
+            <div class="set-text"><label class="set-title" for="pet-species">Especie</label><div class="set-desc">Criaturas de MK, personajes de un juego de RPG Maker o tus imágenes. Cambiarla conserva el nivel.</div></div>
             <div class="set-control"><select id="pet-species">
                 <option value="fuego">Fuego · Chispi → Chispón → Brasadrake</option>
                 <option value="agua">Agua · Gotín → Olaquín → Marejón</option>
                 <option value="planta">Planta · Brotito → Hojarín → Robleón</option>
-                <option value="custom">Personalizada · tus imágenes</option>
+                <option value="game">De un juego (RPG Maker) · Pokémon Essentials…</option>
+                <option value="custom">Imágenes propias (PNG / GIF)</option>
               </select></div>
           </div>
-          <div class="set-row set-row-wide" data-keywords="juego rpg maker pokemon essentials characters personajes sprites evolucion">
+          <div class="set-row set-row-wide" id="pet-game-row" data-keywords="juego rpg maker pokemon essentials characters personajes sprites evolucion">
             <div class="set-text"><div class="set-title">Personajes de un juego (RPG Maker)</div><div class="set-desc">Elegí la carpeta <code>Graphics/Characters</code> de un juego hecho con RPG Maker / Pokémon Essentials y buscá una criatura: MK arma su línea evolutiva (si el juego trae <code>PBS/pokemon.txt</code>) y la mascota camina con esos sprites. Se copian solo los 3 elegidos a tu configuración local: son para tu uso personal.</div></div>
             <div class="set-control pet-char-picker">
               <div class="pet-char-dir-row"><span id="pet-char-dir" class="pet-char-dir">Sin carpeta</span><button type="button" id="pet-char-pick" class="toolbar-button">Elegir carpeta…</button></div>

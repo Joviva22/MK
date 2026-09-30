@@ -483,10 +483,34 @@ const RUNNERS = {
   c: 'gcc {f} -o {bin} && {bin}',
   cpp: 'g++ {f} -o {bin} && {bin}',
   cc: 'g++ {f} -o {bin} && {bin}',
-  cxx: 'g++ {f} -o {bin} && {bin}'
+  cxx: 'g++ {f} -o {bin} && {bin}',
+  zsh: 'zsh {f}',
+  fish: 'fish {f}',
+  ts: 'npx --yes tsx {f}',
+  mts: 'npx --yes tsx {f}',
+  rs: 'rustc {f} -o {bin} && {bin}',
+  php: 'php {f}',
+  pl: 'perl {f}',
+  lua: 'lua {f}',
+  r: 'Rscript {f}',
+  jl: 'julia {f}',
+  hs: 'runghc {f}',
+  dart: 'dart run {f}',
+  swift: 'swift {f}',
+  kt: 'kotlinc {f} -include-runtime -d {bin}.jar && java -jar {bin}.jar',
+  ps1: 'pwsh -File {f}',
+  sql: 'sqlite3 :memory: < {f}',
+  html: 'xdg-open {f}',
+  htm: 'xdg-open {f}'
 };
 
+// Qué programa hace falta para cada tipo (para el aviso si no está).
+const RUNNER_PROGRAMS = { ts: 'Node.js (npx)', mts: 'Node.js (npx)', rs: 'rustc', kt: 'kotlinc y Java', hs: 'GHC (runghc)', sql: 'sqlite3', r: 'R (Rscript)', ps1: 'PowerShell (pwsh)' };
+
 function commandForFile(filePath) {
+  const baseName = filePath.split(/[\\/]/).pop();
+  // Makefile / GNUmakefile: make en su carpeta.
+  if (/^(GNU)?makefile$/i.test(baseName)) return `cd ${shellQuote(window.mdEditor.dirName(filePath))} && make`;
   const ext = filePath.split('.').pop().toLowerCase();
   const template = RUNNERS[ext];
   if (!template) return null;
@@ -505,7 +529,7 @@ async function runActiveFile() {
   }
   const command = commandForFile(info.filePath);
   if (!command) {
-    alert(`No sé cómo ejecutar este tipo de archivo. Soportados: ${Object.keys(RUNNERS).map((e) => '.' + e).join(', ')}.`);
+    alert(`No sé cómo ejecutar este tipo de archivo. Soportados: ${Object.keys(RUNNERS).map((e) => '.' + e).join(', ')} y Makefile.`);
     return;
   }
   if (info.modified) await window.mdTabs.saveActive();
@@ -700,6 +724,6 @@ new MutationObserver(() => {
   if (config.terminalHeight) panel.style.height = `${config.terminalHeight}px`;
 })();
 
-window.mdTerminal = { AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, splitTerminal, listShells, getPreferredShell: () => preferredShell, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
+window.mdTerminal = { RUNNERS, RUNNER_PROGRAMS, AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, splitTerminal, listShells, getPreferredShell: () => preferredShell, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
 
 })();

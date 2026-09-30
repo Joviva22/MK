@@ -13,7 +13,8 @@ Criaturas propias de MK, cada una con 3 etapas:
 | 🔥 Fuego | Chispi | Chispón | Brasadrake |
 | 💧 Agua | Gotín | Olaquín | Marejón |
 | 🌱 Planta | Brotito | Hojarín | Robleón |
-| 🖼 Personalizada | tus imágenes | | |
+| 🎮 De un juego (RPG Maker) | los personajes del juego, con su línea evolutiva | | |
+| 🖼 Imágenes propias | tus imágenes | | |
 
 Cambiar de especie **conserva el nivel**.
 
@@ -40,14 +41,14 @@ Nivel = 1 + √(XP ÷ 15): el nivel 5 llega con unas 24 tareas; el 10, con unas 
 ## Personajes de un juego (RPG Maker / Pokémon Essentials)
 Si tenés un juego hecho con RPG Maker (por ejemplo un fan-game de Pokémon con Essentials), MK puede usar sus personajes:
 
-1. ⚙ Ajustes → **Mascota** → *Personajes de un juego*. Si la carpeta `Graphics/Characters` está en Descargas/Documentos, MK **la encuentra sola**; si no, **Elegir carpeta…**.
+1. ⚙ Ajustes → **Mascota** → Especie **De un juego (RPG Maker)…**. Si la carpeta `Graphics/Characters` está en Descargas/Documentos, MK **la encuentra sola**; si no, **Elegir carpeta…**.
 2. Buscá una criatura (*charmander*, *eevee*…). Si el juego trae `PBS/pokemon.txt`, cada opción es una **línea evolutiva** (Charmander → Charmeleon → Charizard; las ramas salen por separado: Eevee → Vaporeon, Eevee → Jolteon…).
 3. Clic en la línea: la mascota pasa a ser esa criatura y **camina con la animación del juego** (de frente cuando está quieta, de costado al caminar). Evoluciona en los niveles 5 y 10 como siempre; si la línea tiene 2 etapas, la última se repite.
 
 MK copia **solo esos 3 sprites** a `~/.config/md-editor-local/pet/` (nada va al repositorio ni a tus notas). Son del juego y de sus dueños: para tu uso personal.
 
 ## Personalizada: tus propias imágenes
-Especie **Personalizada** → **Etapa 1… / Etapa 2… / Etapa 3…** y elegí una imagen para cada etapa (PNG, **GIF animado**, WebP, JPG o SVG; hasta 5 MB). Si falta una etapa, usa la anterior. Queda mejor si mira **hacia la derecha** (MK la da vuelta al caminar para el otro lado) y con fondo transparente.
+Especie **Imágenes propias** → **Etapa 1… / Etapa 2… / Etapa 3…** y elegí una imagen para cada etapa (PNG, **GIF animado**, WebP, JPG o SVG; hasta 5 MB). Si falta una etapa, usa la anterior. Queda mejor si mira **hacia la derecha** (MK la da vuelta al caminar para el otro lado) y con fondo transparente.
 
 Las imágenes se copian a `~/.config/md-editor-local/pet/`: quedan **solo en tu computadora**, no en tus notas ni en el repositorio. MK no trae ni descarga personajes de otras marcas (Pokémon, Digimon…): si usás imágenes así, es para tu uso personal y bajo tu responsabilidad.
 

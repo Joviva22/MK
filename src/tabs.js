@@ -23,10 +23,64 @@ const MODE_BY_EXT = {
   java: { mode: 'text/x-java', label: 'Java' },
   py: { mode: 'python', label: 'Python' },
   sh: { mode: 'shell', label: 'Shell' },
-  bash: { mode: 'shell', label: 'Shell' }
+  bash: { mode: 'shell', label: 'Shell' },
+  zsh: { mode: 'shell', label: 'Zsh' },
+  fish: { mode: 'shell', label: 'Fish' },
+  // Estos cargan su modo recién al abrir el archivo (load: ver lazyload.js).
+  js: { mode: 'javascript', label: 'JavaScript', load: 'javascript' },
+  mjs: { mode: 'javascript', label: 'JavaScript', load: 'javascript' },
+  cjs: { mode: 'javascript', label: 'JavaScript', load: 'javascript' },
+  ts: { mode: 'text/typescript', label: 'TypeScript', load: 'javascript' },
+  mts: { mode: 'text/typescript', label: 'TypeScript', load: 'javascript' },
+  json: { mode: 'application/json', label: 'JSON', load: 'javascript' },
+  rb: { mode: 'ruby', label: 'Ruby', load: 'ruby' },
+  go: { mode: 'go', label: 'Go', load: 'go' },
+  rs: { mode: 'rust', label: 'Rust', load: 'rust' },
+  php: { mode: 'application/x-httpd-php', label: 'PHP', load: 'php' },
+  pl: { mode: 'perl', label: 'Perl', load: 'perl' },
+  pm: { mode: 'perl', label: 'Perl', load: 'perl' },
+  lua: { mode: 'lua', label: 'Lua', load: 'lua' },
+  r: { mode: 'r', label: 'R', load: 'r' },
+  jl: { mode: 'julia', label: 'Julia', load: 'julia' },
+  hs: { mode: 'haskell', label: 'Haskell', load: 'haskell' },
+  dart: { mode: 'application/dart', label: 'Dart', load: 'dart' },
+  swift: { mode: 'swift', label: 'Swift', load: 'swift' },
+  kt: { mode: 'text/x-kotlin', label: 'Kotlin' },
+  kts: { mode: 'text/x-kotlin', label: 'Kotlin' },
+  cs: { mode: 'text/x-csharp', label: 'C#' },
+  scala: { mode: 'text/x-scala', label: 'Scala' },
+  sql: { mode: 'text/x-sql', label: 'SQL', load: 'sql' },
+  ps1: { mode: 'powershell', label: 'PowerShell', load: 'powershell' },
+  html: { mode: 'htmlmixed', label: 'HTML', load: 'htmlmixed' },
+  htm: { mode: 'htmlmixed', label: 'HTML', load: 'htmlmixed' },
+  css: { mode: 'css', label: 'CSS', load: 'css' },
+  xml: { mode: 'xml', label: 'XML', load: 'xml' },
+  yaml: { mode: 'yaml', label: 'YAML', load: 'yaml' },
+  yml: { mode: 'yaml', label: 'YAML', load: 'yaml' },
+  toml: { mode: 'toml', label: 'TOML', load: 'toml' }
 };
 
+// Carga el modo de un tipo de archivo si hace falta y repinta la pestaña.
+// CodeMirror ignora setOption('mode') con el mismo valor, por eso se pasa
+// primero por 'text/plain' (tab.modeStale: se repinta al activarla).
+function ensureMode(tab, modeInfo) {
+  if (!modeInfo.load || !window.mdLoadCmMode) return;
+  window.mdLoadCmMode(modeInfo.load).then(() => {
+    tab.modeStale = true;
+    if (tab.id === activeId) refreshMode(tab);
+  }).catch(() => {});
+}
+
+function refreshMode(tab) {
+  if (!tab.modeStale) return;
+  tab.modeStale = false;
+  tabCm.setOption('mode', 'text/plain');
+  tabCm.setOption('mode', tab.mode);
+}
+
 function modeInfoForPath(filePath) {
+  const base = filePath ? filePath.split(/[\\/]/).pop() : '';
+  if (/^(GNU)?makefile$/i.test(base)) return { mode: 'text/plain', label: 'Makefile' };
   const ext = filePath ? filePath.split('.').pop().toLowerCase() : '';
   return MODE_BY_EXT[ext] || { mode: 'markdown', label: 'Markdown' };
 }
@@ -35,7 +89,7 @@ function modeInfoForPath(filePath) {
 // que no tiene sentido para estos archivos (los "#" de los comentarios se
 // leían como encabezados, etc.) — ver preview.js, ahí se usa esto para no
 // renderizar nada y darle todo el ancho al editor.
-const CODE_MODES = new Set(Object.values(MODE_BY_EXT).map((m) => m.mode).filter((m) => m !== 'stex'));
+const CODE_MODES = new Set(Object.values(MODE_BY_EXT).map((m) => m.mode).filter((m) => m !== 'stex').concat('text/plain'));
 
 function isActiveTabCode() {
   const tab = tabs.find((t) => t.id === activeId);
@@ -59,6 +113,7 @@ function createTab(filePath, content, diskContent) {
     conflict: false
   };
   tabs.push(tab);
+  ensureMode(tab, modeInfo);
   return tab;
 }
 
@@ -143,6 +198,7 @@ function activateTab(id) {
   activeId = id;
   tabCm.swapDoc(tab.doc);
   tabCm.setOption('mode', tab.mode);
+  refreshMode(tab);
   window.mdState.currentFilePath = tab.filePath;
   window.mdStatusMode.textContent = tab.modeLabel;
   if (window.mdModes) window.mdModes.releasePdfForcedReadMode();
@@ -239,6 +295,7 @@ async function saveActive(forceDialog = false) {
   tab.mode = modeInfo.mode;
   tab.modeLabel = modeInfo.label;
   tabCm.setOption('mode', tab.mode);
+  ensureMode(tab, modeInfo); // "Guardar como" con otra extensión
   window.mdState.currentFilePath = filePath;
   window.mdStatusMode.textContent = tab.modeLabel;
   markModified(tab.id, false);

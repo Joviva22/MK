@@ -3658,6 +3658,33 @@
       `abre=${opened} sección=${sectionOk} buscar=${searchOk} vacío=${emptyOk} esc=${closedOk} ctrl,=${ctrlCommaOk} íconos=${iconsOk} texto=${textOk} mixto=${mixedOk} ocultar=${hiddenOk} modo=${modeOk} nombreCorto=${shortOk} punto=${dotOk}`);
   }
 
+  // Más lenguajes: comandos de F5 (Rust, TypeScript, Makefile...) y resaltado
+  // que se carga al abrir el archivo (Rust necesita además el "simple mode").
+  {
+    const T = window.mdTerminal;
+    const rsCmd = T.commandForFile('/tmp/a b/main.rs');
+    const tsCmd = T.commandForFile('/tmp/x.ts');
+    const mkCmd = T.commandForFile('/tmp/proj/Makefile');
+    const cmdsOk = rsCmd.includes("rustc '/tmp/a b/main.rs' -o") && tsCmd.includes('tsx') && mkCmd === "cd '/tmp/proj' && make" && !!T.commandForFile('/tmp/q.sql');
+    let hlOk = 'sin fixtures';
+    if (fixturesDir) {
+      const rs = window.mdEditor.joinPath(fixturesDir, 'hola.rs');
+      await window.mdEditor.saveFile('fn main() {\n    let x = 5;\n    println!("{}", x);\n}\n', rs, false);
+      await window.openFileAtPath(rs);
+      const kw = await waitFor(() => document.querySelector('#editor-pane .CodeMirror .cm-keyword'), 4000);
+      const info = window.mdTabs.getActiveTabInfo();
+      hlOk = !!kw && window.mdTabs.isActiveTabCode() && typeof CodeMirror.modes.rust === 'function';
+      const php = window.mdEditor.joinPath(fixturesDir, 'x.php');
+      await window.mdEditor.saveFile('<?php echo "hola"; ?>\n', php, false);
+      await window.openFileAtPath(php);
+      const phpOk = !!(await waitFor(() => CodeMirror.modes.php && document.querySelector('#editor-pane .CodeMirror .cm-keyword'), 4000));
+      hlOk = hlOk && phpOk && !!info;
+    }
+    const dbg = `modoRust=${typeof CodeMirror.modes.rust} modoPhp=${typeof CodeMirror.modes.php} tab=${(window.mdTabs.getActiveTabInfo() || {}).filePath} opt=${window.mdCodeMirror.getOption('mode')} csp=${(window.__mkCspViolations || []).slice(-2).join(';')}`;
+    check('Más lenguajes: F5 para Rust/TypeScript/SQL/Makefile y resaltado cargado al abrir (Rust, PHP)', cmdsOk && hlOk === true,
+      `comandos=${cmdsOk} (${rsCmd} | ${mkCmd}) resaltado=${hlOk} ${hlOk === true ? '' : dbg}`);
+  }
+
   // Mascota: XP por tarea (una vez por tarea/día), por Pomodoro, sube de
   // nivel y evoluciona (nivel 5 → etapa 2), ánimo según atrasadas, imágenes
   // propias (etapa 1) y tildar una tarea del Home le da experiencia.

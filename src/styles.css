@@ -4953,7 +4953,7 @@ body.pet-on.pet-on-sidebar #sidebar-pane { padding-bottom: 80px; }
 .pet-card-actions { display: flex; gap: var(--space-1); margin-top: var(--space-3); }
 .pet-card-actions .toolbar-button { height: 28px; padding: 0 8px; font-size: var(--font-sm); }
 .pet-sprite-picks { display: flex !important; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
-#pet-custom-row[hidden] { display: none; }
+#pet-custom-row[hidden], #pet-game-row[hidden] { display: none; }
 
 .pet-sheet {
   width: 100%;

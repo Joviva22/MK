@@ -26,12 +26,22 @@ const SPECIES = {
     names: ['Brotito', 'Hojarín', 'Robleón'],
     main: '#6cc070', belly: '#e0f5cf', dark: '#3d8a44', extra: '#ff7eb6'
   },
+  // Personajes de un juego de RPG Maker (hojas 4×4, ver ipc-pet.js).
+  game: {
+    names: ['Mi mascota', 'Mi mascota', 'Mi mascota'],
+    main: '#ff8a3d', belly: '#ffd89a', dark: '#c9502a', extra: '#ffcf3d'
+  },
   // Imágenes propias del usuario (ipc-pet.js), una por etapa.
   custom: {
     names: ['Mi mascota', 'Mi mascota', 'Mi mascota'],
     main: '#ff8a3d', belly: '#ffd89a', dark: '#c9502a', extra: '#ffcf3d'
   }
 };
+
+// Especies que se dibujan con imágenes (del juego o propias), no en SVG.
+function isImageSpecies(species) {
+  return species === 'custom' || species === 'game';
+}
 
 // { 1: { url, sheet, label } | null, 2: ..., 3: ... } de las imágenes
 // propias. sheet: hoja de caminata 4×4 de RPG Maker (filas: abajo,
@@ -77,7 +87,7 @@ function stageFor(level) {
 
 function speciesName(st) {
   const stage = stageFor(levelFor(st.xp));
-  if (st.species === 'custom') {
+  if (isImageSpecies(st.species)) {
     const sp = customSprite(stage);
     if (sp && sp.label) return sp.label;
   }
@@ -85,7 +95,7 @@ function speciesName(st) {
 }
 
 function stageName(species, stage) {
-  if (species === 'custom') {
+  if (isImageSpecies(species)) {
     const sp = customSprites[stage] || customSprite(stage);
     if (sp && sp.label) return sp.label;
   }
@@ -199,7 +209,7 @@ function drawPlanta(stage, mood, c) {
 }
 
 function drawPet(species, stage, mood) {
-  if (species === 'custom') {
+  if (isImageSpecies(species)) {
     const sp = customSprite(stage);
     const badge = mood === 'sad' ? '😟' : mood === 'sleep' ? '💤' : mood === 'happy' ? '✨' : '';
     const b = badge ? `<span class="pet-mood-badge">${badge}</span>` : '';
@@ -254,7 +264,7 @@ let currentStage = null;
 function size() {
   const stage = stageFor(levelFor(state.xp));
   // Sprites pixelados de juego: un poco más grandes (el cuadro trae aire).
-  if (state.species === 'custom' && customSprite(stage) && customSprite(stage).sheet) return [0, 60, 66, 72][stage];
+  if (isImageSpecies(state.species) && customSprite(stage) && customSprite(stage).sheet) return [0, 60, 66, 72][stage];
   return [0, 42, 52, 62][stage];
 }
 
@@ -473,7 +483,7 @@ function renderCard() {
   const moodText = overdue > 0 ? `😟 Preocupada: ${overdue} tarea${overdue === 1 ? '' : 's'} atrasada${overdue === 1 ? '' : 's'}` : '😊 Contenta';
   card.innerHTML = `
     <div class="pet-card-head"><div class="pet-card-art">${drawPet(state.species, stage, overdue > 0 ? 'sad' : 'happy')}</div>
-      <div><div class="pet-card-name"></div><div class="pet-card-species">${state.name ? speciesName(state) + ' · ' : ''}${{ fuego: 'Fuego', agua: 'Agua', planta: 'Planta', custom: 'Personalizada' }[state.species]} · etapa ${stage}/3</div></div></div>
+      <div><div class="pet-card-name"></div><div class="pet-card-species">${state.name ? speciesName(state) + ' · ' : ''}${{ fuego: 'Fuego', agua: 'Agua', planta: 'Planta', game: 'De un juego', custom: 'Imágenes propias' }[state.species]} · etapa ${stage}/3</div></div></div>
     <div class="pet-card-level">Nivel ${level} <span>${state.xp - from}/${to - from} XP</span></div>
     <div class="pet-card-bar"><div style="width:${pct}%"></div></div>
     <div class="pet-card-line">${next}</div>
@@ -570,6 +580,7 @@ const nameEl = document.getElementById('pet-name');
 const positionEl = document.getElementById('pet-position');
 const resetEl = document.getElementById('pet-reset');
 const customRow = document.getElementById('pet-custom-row');
+const gameRow = document.getElementById('pet-game-row');
 const spriteStatus = document.getElementById('pet-sprite-status');
 
 function updateSpriteStatus() {
@@ -627,7 +638,7 @@ function renderCharList() {
       if (charStatus) charStatus.textContent = 'Copiando…';
       const res = await window.mdEditor.pet.useChars(catalog.dir, l.ids, l.names);
       if (res.error) { if (charStatus) charStatus.textContent = '⚠ ' + res.error; return; }
-      state.species = 'custom';
+      state.species = 'game';
       state.charDir = catalog.dir;
       await loadCustomSprites();
       updateSpriteStatus();
@@ -690,6 +701,7 @@ function apply() {
   if (nameEl && document.activeElement !== nameEl) nameEl.value = state.name;
   if (positionEl) positionEl.value = state.position;
   if (customRow) customRow.hidden = state.species !== 'custom';
+  if (gameRow) gameRow.hidden = state.species !== 'game';
 }
 
 if (enabledEl) enabledEl.addEventListener('change', () => { state.enabled = enabledEl.checked; apply(); save(); });

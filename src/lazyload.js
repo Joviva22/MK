@@ -49,4 +49,23 @@ async function mdLoadLib(name) {
 
 window.mdLoadLib = mdLoadLib;
 
+// Modos de resaltado de CodeMirror que no vienen precargados (ver tabs.js,
+// MODE_BY_EXT): se cargan la primera vez que se abre un archivo de ese
+// lenguaje. Algunos dependen de otros (PHP va dentro de HTML, Rust usa el
+// "simple mode").
+const CM = '../node_modules/codemirror/';
+const CM_MODE_FILES = {
+  rust: ['addon/mode/simple.js', 'mode/rust/rust.js'],
+  htmlmixed: ['mode/xml/xml.js', 'mode/javascript/javascript.js', 'mode/css/css.js', 'mode/htmlmixed/htmlmixed.js'],
+  php: ['mode/xml/xml.js', 'mode/javascript/javascript.js', 'mode/css/css.js', 'mode/htmlmixed/htmlmixed.js', 'mode/php/php.js']
+};
+
+async function mdLoadCmMode(name) {
+  if (!/^[a-z0-9-]+$/.test(name)) throw new Error(`Modo inválido: ${name}`);
+  const files = CM_MODE_FILES[name] || [`mode/${name}/${name}.js`];
+  for (const f of files) await loadScript(CM + f);
+}
+
+window.mdLoadCmMode = mdLoadCmMode;
+
 })();
