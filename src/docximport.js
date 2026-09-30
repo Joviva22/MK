@@ -63,7 +63,8 @@ async function openAsMarkdown(filePath) {
     await window.mdLoadLib('mammoth'); // 620 KB: se carga recién al abrir un .docx
     const result = await mammoth.convertToHtml({ arrayBuffer: base64ToArrayBuffer(base64) });
     html = result.value;
-  } catch {
+  } catch (e) {
+    window.mdEditor.logError('docx:abrir', (e && e.stack) || String(e));
     alert('Ese archivo no parece ser un .docx válido.');
     return;
   }

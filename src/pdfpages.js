@@ -46,7 +46,8 @@ async function loadDocFromPath(filePath) {
   }
   try {
     doc = await PDFLib.PDFDocument.load(base64ToBytes(base64));
-  } catch {
+  } catch (e) {
+    window.mdEditor.logError('pdf:abrir', (e && e.stack) || String(e));
     alert('Ese archivo no parece ser un PDF válido.');
     return;
   }
@@ -170,7 +171,8 @@ async function mergeFromPath(filePath) {
     const copied = await doc.copyPages(other, other.getPageIndices());
     copied.forEach((p) => doc.addPage(p));
     render();
-  } catch {
+  } catch (e) {
+    window.mdEditor.logError('pdf:abrir', (e && e.stack) || String(e));
     alert('Ese archivo no parece ser un PDF válido.');
   }
 }

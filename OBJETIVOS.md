@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 89 de 137 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 90 de 137 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -160,7 +160,7 @@ La revisión concluye —y coincido— que ahora toca **consolidar más que aña
 - [x] ~~**Content Security Policy estricta** en `index.html`~~ (scripts solo archivos locales, nada inline; sin conexiones a internet; `'unsafe-eval'` solo por las fórmulas — pasarlas a un Worker lo quitaría. `cspwatch.js` + un test que falla ante cualquier violación) (2026-09-29)
 - [x] ~~**Activar `sandbox: true`**~~ (rutas con un helper POSIX propio en el preload, comparado con Node en un test; highlight.js en el proceso principal, asíncrono; exportar espera el resaltado) (2026-09-29)
 - [x] ~~**Registro local de errores**~~ (`userData/logs/mk.log` rotativo; guardar notas, Home y bases de datos avisan en pantalla si fallan; errores de JS no capturados al log; config/sesión/Home con escritura atómica y un JSON dañado se aparta en vez de pisarse) (2026-09-29)
-- [ ] **Revisar el resto de `catch` silenciosos** (importar docx/CSV, exportar, PDF) para que usen `reportError`
+- [x] ~~**Revisar el resto de `catch` silenciosos**~~ (exportar CSV/PDF/Word/HTML/EPUB/Anki avisa si falla; abrir PDF/docx dañados queda en el log; la ventana que imprime el PDF ahora con sandbox y sin JavaScript) (2026-09-30)
 - [x] ~~**Bases de datos: agrupar escrituras**~~ (una escritura atómica 300 ms después del último cambio, y al salir; 30 cambios → 1 escritura) (2026-09-30)
 
 **Prioridad media**

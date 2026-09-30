@@ -377,7 +377,8 @@ async function loadFromPath(filePath) {
   texts = {};
   try {
     pdfDoc = await window.pdfjsLib.getDocument({ data: originalBytes.slice() }).promise;
-  } catch {
+  } catch (e) {
+    window.mdEditor.logError('pdf:abrir', (e && e.stack) || String(e));
     alert('Ese archivo no parece ser un PDF válido.');
     return;
   }

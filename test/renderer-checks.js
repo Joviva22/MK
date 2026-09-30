@@ -3703,6 +3703,16 @@
       `filas=${rowsNow} pendiente=${pendingOk} escrituras=${w1 - w0}`);
   }
 
+  // Exportar que falla (carpeta inexistente): devuelve null y avisa, en vez
+  // de que el botón no haga nada.
+  {
+    document.querySelectorAll('.app-error-toast').forEach((t) => t.remove());
+    const res = await window.mdEditor.exportAnki([{ front: 'a', back: 'b' }], 'no-existe/tarjetas.txt');
+    const toast = await waitFor(() => Array.from(document.querySelectorAll('.app-error-toast')).find((t) => t.textContent.includes('No se pudieron exportar las tarjetas')));
+    document.querySelectorAll('.app-error-toast').forEach((t) => t.remove());
+    check('Exportar: si falla la escritura, devuelve null y avisa (con el log)', res === null && !!toast, `resultado=${res} aviso=${!!toast}`);
+  }
+
   // Categorías del Home: @categoría en el alta rápida, chip en la tarjeta,
   // filtro (las nuevas heredan la categoría filtrada), estadísticas por
   // categoría y +5 XP a la mascota afín.

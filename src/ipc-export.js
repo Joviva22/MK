@@ -15,9 +15,34 @@ const JSZip = require('jszip');
 const ctx = require('./mainctx');
 const guard = require('./pathguard');
 
+// Si exportar o leer falla (disco lleno, sin permiso, archivo dañado), el
+// usuario lo ve (aviso + userData/logs/mk.log) en vez de que el botón no
+// haga nada; el IPC devuelve null como si se hubiera cancelado.
+const FAIL_MESSAGES = {
+  'csv:save': 'No se pudo guardar el CSV.',
+  'csv:open': 'No se pudo leer ese CSV.',
+  'pdf:saveBytes': 'No se pudo guardar el PDF.',
+  'export:docx': 'No se pudo exportar a Word.',
+  'export:html': 'No se pudo exportar a HTML.',
+  'export:pdf': 'No se pudo exportar a PDF.',
+  'export:epub': 'No se pudo exportar a EPUB.',
+  'export:anki': 'No se pudieron exportar las tarjetas.'
+};
+
+function handle(channel, fn) {
+  ipcMain.handle(channel, async (...args) => {
+    try {
+      return await fn(...args);
+    } catch (e) {
+      ctx.reportError(channel, e, FAIL_MESSAGES[channel] || 'No se pudo completar la operación.');
+      return null;
+    }
+  });
+}
+
 // CSV de las bases de datos (ver database.js): el renderer arma/parsea el
 // texto, acá solo los diálogos y el disco.
-ipcMain.handle('csv:save', async (event, { content, defaultName }) => {
+handle('csv:save', async (event, { content, defaultName }) => {
   const result = await dialog.showSaveDialog(ctx.mainWindow, {
     defaultPath: (defaultName || 'base-de-datos').replace(/[\\/:*?"<>|]/g, '_') + '.csv',
     filters: [{ name: 'CSV', extensions: ['csv'] }]
@@ -28,7 +53,7 @@ ipcMain.handle('csv:save', async (event, { content, defaultName }) => {
   return result.filePath;
 });
 
-ipcMain.handle('csv:open', async () => {
+handle('csv:open', async () => {
   const result = await dialog.showOpenDialog(ctx.mainWindow, {
     properties: ['openFile'],
     filters: [{ name: 'CSV', extensions: ['csv', 'tsv', 'txt'] }]
@@ -62,7 +87,7 @@ ipcMain.handle('pdf:readBytes', async (event, filePath) => {
   }
 });
 
-ipcMain.handle('pdf:saveBytes', async (event, { base64, defaultName }) => {
+handle('pdf:saveBytes', async (event, { base64, defaultName }) => {
   const targetPath = await resolveSavePath(defaultName || 'documento.pdf', [{ name: 'PDF', extensions: ['pdf'] }]);
   if (!targetPath) return null;
   fs.writeFileSync(targetPath, Buffer.from(base64, 'base64'));
@@ -93,7 +118,7 @@ ipcMain.handle('asset:readBytes', async (event, filePath) => {
   }
 });
 
-ipcMain.handle('export:docx', async (event, { base64, defaultName }) => {
+handle('export:docx', async (event, { base64, defaultName }) => {
   const targetPath = await resolveSavePath(defaultName || 'documento.docx', [{ name: 'Word', extensions: ['docx'] }]);
   if (!targetPath) return null;
   fs.writeFileSync(targetPath, Buffer.from(base64, 'base64'));
@@ -133,7 +158,7 @@ function getKatexCssInlined() {
 
 ipcMain.handle('katex:getCss', () => getKatexCssInlined());
 
-ipcMain.handle('export:html', async (event, { html, defaultName }) => {
+handle('export:html', async (event, { html, defaultName }) => {
   const result = await dialog.showSaveDialog(ctx.mainWindow, {
     defaultPath: defaultName || 'documento.html',
     filters: [{ name: 'HTML', extensions: ['html'] }]
@@ -143,7 +168,7 @@ ipcMain.handle('export:html', async (event, { html, defaultName }) => {
   return result.filePath;
 });
 
-ipcMain.handle('export:pdf', async (event, { html, defaultName }) => {
+handle('export:pdf', async (event, { html, defaultName }) => {
   const result = await dialog.showSaveDialog(ctx.mainWindow, {
     defaultPath: defaultName || 'documento.pdf',
     filters: [{ name: 'PDF', extensions: ['pdf'] }]
@@ -152,14 +177,16 @@ ipcMain.handle('export:pdf', async (event, { html, defaultName }) => {
 
   const tmpPath = path.join(os.tmpdir(), `mk-export-${Date.now()}.html`);
   fs.writeFileSync(tmpPath, html, 'utf-8');
-  const pdfWindow = new BrowserWindow({ show: false, webPreferences: { sandbox: false } });
+  // Ventana oculta que imprime TU documento: aislada y sin JavaScript (el
+  // HTML exportado ya viene renderizado: fórmulas, diagramas y resaltado).
+  const pdfWindow = new BrowserWindow({ show: false, webPreferences: { sandbox: true, javascript: false, contextIsolation: true, nodeIntegration: false } });
   try {
     await pdfWindow.loadFile(tmpPath);
     const buffer = await pdfWindow.webContents.printToPDF({ printBackground: true });
     fs.writeFileSync(result.filePath, buffer);
   } finally {
     pdfWindow.destroy();
-    fs.unlinkSync(tmpPath);
+    fs.rmSync(tmpPath, { force: true });
   }
   return result.filePath;
 });
@@ -200,7 +227,7 @@ function imageMediaType(ext) {
 // (libro)", ver exportdoc.js). Portada e imágenes son opcionales: sin ellas
 // queda igual que el export de un capítulo de antes, solo que ahora también
 // soporta más de uno.
-ipcMain.handle('export:epub', async (event, { chapters, images, coverPath, title, defaultName }) => {
+handle('export:epub', async (event, { chapters, images, coverPath, title, defaultName }) => {
   const targetPath = await resolveSavePath(defaultName || 'documento.epub', [{ name: 'EPUB', extensions: ['epub'] }]);
   if (!targetPath) return null;
 
@@ -310,7 +337,7 @@ ipcMain.handle('epub:pickCover', async () => {
   return result.filePaths[0];
 });
 
-ipcMain.handle('export:anki', async (event, { cards, defaultName }) => {
+handle('export:anki', async (event, { cards, defaultName }) => {
   const targetPath = await resolveSavePath(defaultName || 'tarjetas.txt', [{ name: 'Texto (importable en Anki)', extensions: ['txt'] }]);
   if (!targetPath) return null;
   // Formato de importación simple de Anki: una tarjeta por línea, campos
