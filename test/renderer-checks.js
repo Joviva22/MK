@@ -3733,6 +3733,42 @@
       `palabras="${words}" selección="${selWords}" guardado=${saveOk} git=${gitOk}`);
   }
 
+  // Accesibilidad: botones de símbolo con nombre, pestañas y árbol con roles
+  // y flechas, diálogo que atrapa el foco y lo devuelve, menú con teclado.
+  {
+    const sym = document.getElementById('terminal-split');
+    const labelOk = sym.getAttribute('aria-label') && sym.getAttribute('aria-label').startsWith('Dividir');
+    const tabOk = document.getElementById('tabbar').getAttribute('role') === 'tablist' && !!document.querySelector('#tabbar .tab[role="tab"][aria-selected="true"]');
+    let treeOk = 'sin fixtures';
+    if (fixturesDir) {
+      window.mdSidebar.renderFolder(await window.mdEditor.readFolder(fixturesDir));
+      const rows = Array.from(document.querySelectorAll('#sidebar-pane .tree-row[role="treeitem"]')).filter((r) => !r.closest('ul.collapsed'));
+      rows[0].focus();
+      rows[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      treeOk = document.querySelector('[role="tree"]') !== null && document.activeElement === rows[1];
+    }
+    const opener = document.getElementById('btn-settings');
+    opener.focus();
+    window.mdSettingsPanel.open();
+    await new Promise((r) => setTimeout(r, 200));
+    const overlay = document.getElementById('settings-overlay');
+    const box = overlay.firstElementChild;
+    const dialogOk = box.getAttribute('role') === 'dialog' && box.getAttribute('aria-modal') === 'true';
+    // Tab desde el último elemento vuelve al primero (no se escapa).
+    const focusables = Array.from(box.querySelectorAll('button:not([disabled]), input:not([disabled]):not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])')).filter((el) => el.offsetParent !== null);
+    focusables[focusables.length - 1].focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+    const trapOk = overlay.contains(document.activeElement);
+    window.mdSettingsPanel.close();
+    await new Promise((r) => setTimeout(r, 200));
+    const returnOk = document.activeElement === opener;
+    const exportBtn = document.getElementById('btn-export');
+    const menuOk = exportBtn.getAttribute('aria-haspopup') === 'menu' && document.getElementById('export-menu').getAttribute('role') === 'menu';
+    check('Accesibilidad: botones con nombre, pestañas y árbol con roles y flechas, diálogo atrapa y devuelve el foco, menús con roles',
+      labelOk && tabOk && treeOk === true && dialogOk && trapOk && returnOk && menuOk,
+      `botón=${labelOk} pestañas=${tabOk} árbol=${treeOk} diálogo=${dialogOk} atrapa=${trapOk} devuelve=${returnOk} menú=${menuOk}`);
+  }
+
   // Exportar que falla (carpeta inexistente): devuelve null y avisa, en vez
   // de que el botón no haga nada.
   {

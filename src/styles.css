@@ -48,17 +48,17 @@
 
 [data-theme="onedark"] {
   --bg: #282c34; --surface: #21252b; --surface-2: #2c313c;
-  --text: #abb2bf; --text-muted: #5c6370; --border: #3a3f4b; --accent: #61afef;
+  --text: #abb2bf; --text-muted: #8d94a1; --border: #3a3f4b; --accent: #61afef;
 }
 
 [data-theme="dracula"] {
   --bg: #282a36; --surface: #21222c; --surface-2: #343746;
-  --text: #f8f8f2; --text-muted: #6272a4; --border: #44475a; --accent: #bd93f9;
+  --text: #f8f8f2; --text-muted: #8692b7; --border: #44475a; --accent: #bd93f9;
 }
 
 [data-theme="monokai"] {
   --bg: #272822; --surface: #1e1f1c; --surface-2: #3e3d32;
-  --text: #f8f8f2; --text-muted: #90887a; --border: #49483e; --accent: #a6e22e;
+  --text: #f8f8f2; --text-muted: #968f81; --border: #49483e; --accent: #a6e22e;
 }
 
 [data-theme="gruvbox"] {
@@ -68,37 +68,37 @@
 
 [data-theme="solarized-dark"] {
   --bg: #002b36; --surface: #073642; --surface-2: #0a4552;
-  --text: #93a1a1; --text-muted: #657b83; --border: #0d5865; --accent: #268bd2;
+  --text: #93a1a1; --text-muted: #8c9b9c; --border: #0d5865; --accent: #268bd2;
 }
 
 [data-theme="solarized-light"] {
   --bg: #fdf6e3; --surface: #eee8d5; --surface-2: #e4ddc4;
-  --text: #586e75; --text-muted: #93a1a1; --border: #d3cbb7; --accent: #268bd2;
+  --text: #073642; --text-muted: #51666c; --border: #d3cbb7; --accent: #2075b4;
 }
 
 [data-theme="nord"] {
   --bg: #2e3440; --surface: #3b4252; --surface-2: #434c5e;
-  --text: #e5e9f0; --text-muted: #8f9bb3; --border: #4c566a; --accent: #88c0d0;
+  --text: #e5e9f0; --text-muted: #a4aec2; --border: #4c566a; --accent: #88c0d0;
 }
 
 [data-theme="ayu-dark"] {
   --bg: #0a0e14; --surface: #0d1017; --surface-2: #131721;
-  --text: #b3b1ad; --text-muted: #626a73; --border: #1b202b; --accent: #e6b450;
+  --text: #b3b1ad; --text-muted: #777c82; --border: #1b202b; --accent: #e6b450;
 }
 
 [data-theme="ayu-mirage"] {
   --bg: #1f2430; --surface: #232834; --surface-2: #272d38;
-  --text: #cbccc6; --text-muted: #707a8c; --border: #343945; --accent: #ffcc66;
+  --text: #cbccc6; --text-muted: #888f9b; --border: #343945; --accent: #ffcc66;
 }
 
 [data-theme="ayu-light"] {
   --bg: #fafafa; --surface: #f3f4f5; --surface-2: #e7e8e9;
-  --text: #5c6166; --text-muted: #828c99; --border: #e0e1e2; --accent: #ff9940;
+  --text: #5c6166; --text-muted: #6a7078; --border: #e0e1e2; --accent: #c1844e;
 }
 
 [data-theme="palenight"] {
   --bg: #292d3e; --surface: #232635; --surface-2: #34394f;
-  --text: #a6accd; --text-muted: #767c9d; --border: #3a3f58; --accent: #c792ea;
+  --text: #a6accd; --text-muted: #8d93b4; --border: #3a3f58; --accent: #c792ea;
 }
 
 [data-theme="cobalt2"] {
@@ -108,7 +108,7 @@
 
 [data-theme="tokyo-night"] {
   --bg: #1a1b26; --surface: #16161e; --surface-2: #24283b;
-  --text: #a9b1d6; --text-muted: #6771a4; --border: #292e42; --accent: #7aa2f7;
+  --text: #a9b1d6; --text-muted: #7882b1; --border: #292e42; --accent: #7aa2f7;
 }
 
 [data-theme="catppuccin"] {
@@ -143,7 +143,7 @@
 
 [data-theme="material"] {
   --bg: #263238; --surface: #1e272c; --surface-2: #314549;
-  --text: #eeffff; --text-muted: #7995a1; --border: #2f393f; --accent: #82aaff;
+  --text: #eeffff; --text-muted: #829da9; --border: #2f393f; --accent: #82aaff;
 }
 
 [data-theme="horizon"] {
@@ -5069,3 +5069,17 @@ body.pet-on.pet-on-sidebar #sidebar-pane { padding-bottom: 80px; }
 .home-cats-list { display: flex; flex-direction: column; gap: var(--space-2); margin: var(--space-3) 0; max-height: 50vh; overflow-y: auto; }
 .home-cats-row { display: grid; grid-template-columns: 36px 1fr 28px; gap: var(--space-2); align-items: center; }
 .home-cats-row input[type="color"] { width: 32px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: none; cursor: pointer; }
+
+/* ---- Accesibilidad: foco visible con teclado en todo lo interactivo ---- */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[role="tab"]:focus-visible,
+[role="treeitem"]:focus-visible,
+[role="menuitem"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.tree-row:focus-visible { background: var(--surface-2); }

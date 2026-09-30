@@ -1009,6 +1009,7 @@ function taskCard(item, compact) {
   const box = el('input');
   box.type = 'checkbox';
   box.checked = item.done;
+  box.setAttribute('aria-label', `Hecha: ${task.title}`);
   box.addEventListener('click', (e) => e.stopPropagation());
   box.addEventListener('change', () => setItemDone(item, box.checked));
   card.appendChild(box);

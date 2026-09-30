@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 92 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 94 de 136 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -138,7 +138,7 @@ Revisado el 2026-09-30. Lo que ya estaba hecho o repetido queda anotado; lo nuev
 - [x] ~~**Micro-interacciones**~~ (2026-09-30: menús, diálogos, avisos, hover y destello al guardar; respeta "reducir movimiento"): abrir/cerrar sidebar y panel secundario, cambio a Live Preview, hover de la toolbar, destello sutil al guardar. Respetando "reducir movimiento" del sistema
 - [x] ~~**Indicador de cambios sin guardar en el sidebar**~~ (2026-09-30) (punto de color junto al archivo, no solo en la pestaña)
 - [x] ~~**Barra de estado más útil**~~ (guardado / sin guardar / cambió afuera, rama de git con clic a commits, palabras y caracteres de la selección) (2026-09-30)
-- [ ] **Contraste suficiente en todos los temas** (revisar los 26 con una herramienta de contraste)
+- [x] ~~**Contraste suficiente en todos los temas**~~ (13 temas corregidos en el texto secundario y ayu-light en el acento; prueba automática WCAG AA) (2026-09-30)
 
 **Funciones**
 - [ ] **Bloque `database` editable** desde la nota (hoy es de solo lectura con botón Abrir)
@@ -165,7 +165,7 @@ La revisión concluye —y coincido— que ahora toca **consolidar más que aña
 **Prioridad media**
 - [ ] **Dividir `database.js` (~2200 líneas), `home.js` (~1800) y `styles.css` (~4400)** por responsabilidad (va junto con la migración a módulos ES)
 - [x] ~~**Pruebas unitarias rápidas**~~ (`npm run test:unit`, node:test, 23 pruebas en ~0,3 s, también en CI: fechas/recurrencias, tareas 📅, @categoría, CSV, gráficos, rutas, JSON atómico, índice, catálogo del juego; lógica compartida en `src/shared/`) (2026-09-30) — *faltan pruebas visuales*
-- [ ] **Accesibilidad**: roles y etiquetas ARIA en paneles, menús, pestañas y diálogos; navegación completa con teclado
+- [x] ~~**Accesibilidad**: roles y etiquetas ARIA; navegación con teclado~~ (botones de ícono con nombre, pestañas y árbol con roles y flechas, diálogos que atrapan y devuelven el foco, menús con teclado, foco visible) (2026-09-30) — *falta probar con un lector de pantalla real (Orca)*
 - [ ] **Quitar los `…Sync` que quedan** en el proceso principal (exportar, config, sesión, Home)
 
 **Prioridad baja**
@@ -204,7 +204,7 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 - [x] ~~**Una sola capa de acceso a archivos** con validación de rutas centralizada~~ (`pathguard.js`, 2026-09-29)
 - [ ] **Tareas pesadas fuera de la ventana** (Web Workers / proceso aparte): parseo de la carpeta, grafo, CSV grandes, PDFs grandes
 - [ ] **Traducciones (i18n)**: los textos están escritos en el código; sacarlos a archivos para poder tener MK en inglés u otros idiomas
-- [ ] **Accesibilidad**: navegación completa con teclado, roles ARIA en paneles y menús, probado con lector de pantalla
+- [ ] **Accesibilidad: probar con lector de pantalla** (Orca) — lo de teclado y ARIA ya está (ver Consolidación, 2026-09-30)
 
 ### Calidad
 - [x] ~~**Tests unitarios rápidos** (node:test)~~ (ver Consolidación, 2026-09-30)

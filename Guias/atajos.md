@@ -59,3 +59,14 @@
 
 ## Sin atajo (desde `Ctrl+Shift+P`)
 Bases de datos · Kanban · Grafo · Herramientas PDF · Versiones anteriores · Git control fino · Tema personalizado · Pomodoro.
+
+## Sin mouse (teclado y lectores de pantalla)
+
+| Dónde | Teclas |
+|---|---|
+| Pestañas (con el foco en una: `Tab` hasta la barra de pestañas) | `←` / `→` cambian de pestaña, `Inicio` / `Fin`, `Supr` la cierra |
+| Árbol de archivos (`Tab` hasta el sidebar) | `↑` / `↓` recorren, `Enter` o `Espacio` abren, `→` despliega una carpeta, `←` la pliega o sube a la carpeta padre |
+| Menús (Nuevo ▾, Exportar ▾, Tema ▾, IA ▾) | `Enter` / `↓` abren y entran, `↑` / `↓` recorren, `Esc` cierra y vuelve al botón |
+| Diálogos (Ajustes, Home, paletas…) | El foco entra solo; `Tab` no se escapa del diálogo; al cerrar vuelve a donde estabas |
+
+Todos los botones de ícono tienen nombre para los lectores de pantalla, y los 26 temas cumplen el contraste mínimo WCAG AA (texto y texto secundario ≥ 4,5:1): lo verifica una prueba automática.

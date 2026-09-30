@@ -160,11 +160,36 @@ async function diskChangedSince(tab) {
   return disk !== null && disk !== tab.diskContent;
 }
 
+// Lectores de pantalla y teclado: pestañas con role="tab"; ←/→ cambian de
+// pestaña, Supr la cierra (el foco va a la pestaña activa con Tab).
+tabbarEl.setAttribute('role', 'tablist');
+tabbarEl.setAttribute('aria-label', 'Archivos abiertos');
+tabbarEl.addEventListener('keydown', (e) => {
+  const idx = tabs.findIndex((t) => t.id === activeId);
+  if (idx < 0) return;
+  let next = null;
+  if (e.key === 'ArrowRight') next = tabs[(idx + 1) % tabs.length];
+  else if (e.key === 'ArrowLeft') next = tabs[(idx - 1 + tabs.length) % tabs.length];
+  else if (e.key === 'Home') next = tabs[0];
+  else if (e.key === 'End') next = tabs[tabs.length - 1];
+  else if (e.key === 'Delete') { e.preventDefault(); closeTab(activeId); }
+  if (next) {
+    e.preventDefault();
+    activateTab(next.id);
+    const el = tabbarEl.querySelector('.tab.active');
+    if (el) el.focus();
+  }
+});
+
 function renderTabbar() {
+  const hadFocus = tabbarEl.contains(document.activeElement);
   tabbarEl.innerHTML = '';
   for (const tab of tabs) {
     const el = document.createElement('div');
     el.className = 'tab' + (tab.id === activeId ? ' active' : '') + (tab.conflict ? ' tab-conflict' : '');
+    el.setAttribute('role', 'tab');
+    el.setAttribute('aria-selected', String(tab.id === activeId));
+    el.tabIndex = tab.id === activeId ? 0 : -1;
     el.title = tab.conflict
       ? `${tab.filePath}\n⚠ Cambió fuera de MK mientras tenías cambios sin guardar: el autoguardado está en pausa. Guardá (Ctrl+S) para elegir qué versión queda.`
       : (tab.filePath || 'Sin título');
@@ -177,6 +202,8 @@ function renderTabbar() {
     const closeBtn = document.createElement('span');
     closeBtn.className = 'tab-close';
     closeBtn.textContent = '×';
+    closeBtn.setAttribute('role', 'button');
+    closeBtn.setAttribute('aria-label', `Cerrar ${labelFor(tab)}`);
     closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       closeTab(tab.id);
@@ -189,6 +216,10 @@ function renderTabbar() {
       showTabMenu(e.clientX, e.clientY, tab);
     });
     tabbarEl.appendChild(el);
+  }
+  if (hadFocus) {
+    const active = tabbarEl.querySelector('.tab.active');
+    if (active) active.focus();
   }
 }
 
