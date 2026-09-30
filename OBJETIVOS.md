@@ -34,9 +34,11 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 16. ~~**Nota diaria configurable**~~ ✅ hecho.
 17. ~~**Terminal: pantalla dividida**~~ ✅ hecho.
 
-**P4 — Mantenimiento técnico** (no se ve, pero hace que lo demás sea más fácil y seguro de cambiar)
+**P4 — Mantenimiento técnico: LO PRÓXIMO** (decidido 2026-09-30: parar de sumar funciones y consolidar; no se ve, pero hace que todo lo que venga cueste la mitad y se rompa menos)
 18. ~~**Separar `main.js`** en módulos~~ ✅ hecho.
-19. **Migrar a módulos ES** (después del 18).
+19. **Migrar el editor a CodeMirror 6** ⭐ *primero.* MK usa CodeMirror 5, que ya solo recibe arreglos. La 6 es más rápida con notas grandes, más accesible (lectores de pantalla, móvil), y trae "decoraciones" nativas, lo que haría el Live Preview más simple y rápido. Es el cambio más grande: tocan el editor Live Preview, autocompletado, snippets, buscar/reemplazar, plegado, máquina de escribir, pestañas (un documento por pestaña) y los tests.
+20. **Migrar la ventana a módulos ES** (`import`/`export` en vez de `window.mdX` y del orden de los `<script>`: hoy un script cargado antes de tiempo rompe cosas en silencio).
+21. **Partir `home.js` (~2400 líneas), `database.js` (~2200) y `styles.css` (~5000)** por responsabilidad (vistas, avisos, archivo… / tabla, vistas, fórmulas… / un CSS por panel). Va junto con el 20.
 
 **Escalabilidad** — ver la sección "Escalabilidad y solidez": ~~índice de la carpeta~~, ~~vigilar la carpeta~~ y ~~disco asíncrono~~ hechos (2026-09-29): una carpeta con miles de notas ya no congela MK.
 
