@@ -73,9 +73,13 @@ npm start
 Suite de humo que lanza la app real en un perfil aislado y corre checks dentro de la ventana (nada de mocks):
 
 ```bash
-npm test        # suite completa (Electron real + perfil aislado)
-npm run lint     # ESLint (no-undef/no-unused-vars)
+npm run test:unit  # pruebas unitarias (Node, sin Electron, menos de 1 s): fechas y recurrencias del Home,
+                   # tareas 📅 de notas, CSV, gráficos, rutas autorizadas, JSON atómico, índice, catálogo de mascotas
+npm test           # suite completa (Electron real + perfil aislado)
+npm run lint       # ESLint (no-undef/no-unused-vars)
 ```
+
+La lógica pura compartida entre la ventana y las pruebas vive en `src/shared/` (se carga como `<script>` y también con `require`).
 
 Correr esto antes de tocar algo grande — cubre bugs reales que ya pasaron en este proyecto (guardado multi-pestaña, dropdowns que ignoraban `[hidden]`, etc.). Se corre solo en cada push/PR vía [GitHub Actions](.github/workflows/ci.yml).
 

@@ -7,6 +7,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node test/run.js",
+    "test:unit": "node --test test/unit/",
     "lint": "eslint .",
     "dist": "electron-builder --linux AppImage",
     "install-desktop": "node scripts/install-desktop.js"

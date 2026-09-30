@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 90 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 92 de 136 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -164,7 +164,7 @@ La revisión concluye —y coincido— que ahora toca **consolidar más que aña
 
 **Prioridad media**
 - [ ] **Dividir `database.js` (~2200 líneas), `home.js` (~1800) y `styles.css` (~4400)** por responsabilidad (va junto con la migración a módulos ES)
-- [ ] **Pruebas unitarias rápidas** (Node, sin Electron) para fechas y recurrencias, filtros, fórmulas, CSV, rutas y transformaciones de Markdown; más tarde pruebas visuales
+- [x] ~~**Pruebas unitarias rápidas**~~ (`npm run test:unit`, node:test, 23 pruebas en ~0,3 s, también en CI: fechas/recurrencias, tareas 📅, @categoría, CSV, gráficos, rutas, JSON atómico, índice, catálogo del juego; lógica compartida en `src/shared/`) (2026-09-30) — *faltan pruebas visuales*
 - [ ] **Accesibilidad**: roles y etiquetas ARIA en paneles, menús, pestañas y diálogos; navegación completa con teclado
 - [ ] **Quitar los `…Sync` que quedan** en el proceso principal (exportar, config, sesión, Home)
 
@@ -207,7 +207,7 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 - [ ] **Accesibilidad**: navegación completa con teclado, roles ARIA en paneles y menús, probado con lector de pantalla
 
 ### Calidad
-- [ ] **Tests unitarios rápidos** (node:test) para la lógica pura (fechas del Home, CSV, filtros, fórmulas, parseo de tareas), además de la suite de la app completa (hoy 106 checks, ~25 s)
+- [x] ~~**Tests unitarios rápidos** (node:test)~~ (ver Consolidación, 2026-09-30)
 - [x] ~~**Registro de errores local**~~ (`logs/mk.log`, 2026-09-29)
 - [ ] **Botón "Reportar un problema"** que arme el informe (versión, últimas líneas del log) sin datos personales
 - [ ] **Pruebas visuales**: capturas de referencia de los paneles principales en claro/oscuro, para detectar diseño roto
