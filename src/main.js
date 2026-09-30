@@ -198,13 +198,15 @@ function createWindow() {
       sendOpenExternalFile(pendingFilePath);
       pendingFilePath = null;
     }
+    if (isTestMode && process.env.MK_TEST_SCRIPT === 'bench') console.log('MK_BENCH_LOADED');
     if (isTestMode) runTests();
   });
 }
 
 async function runTests() {
   try {
-    const checksPath = path.join(__dirname, '..', 'test', 'renderer-checks.js');
+    // npm run bench usa el mismo mecanismo con otro script (test/bench-checks.js).
+    const checksPath = path.join(__dirname, '..', 'test', process.env.MK_TEST_SCRIPT === 'bench' ? 'bench-checks.js' : 'renderer-checks.js');
     const code = fs.readFileSync(checksPath, 'utf-8');
     // Si la suite revienta, executeJavaScript pierde el stack: capturarlo
     // adentro de la ventana para saber en qué línea fue.

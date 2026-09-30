@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 113 de 141 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 114 de 141 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -205,7 +205,7 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 - [ ] **Preview incremental**: redibujar solo los bloques que cambiaron (hoy se regenera todo el HTML en cada pausa)
 - [ ] **Live Preview incremental al escribir**: hoy cada cambio de texto reconstruye todas las marcas del documento; limitarlo a las líneas tocadas
 - [ ] **Migrar a CodeMirror 6**: CodeMirror 5 está en mantenimiento; la 6 es más rápida con documentos grandes, tiene mejor accesibilidad y decoraciones nativas para Live Preview
-- [ ] **Medición continua** (`npm run bench`): arranque, render del preview y apertura de carpeta, con valores de referencia para detectar si algo empeora
+- [x] ~~**Medición continua** (`npm run bench`): arranque, render del preview y apertura de carpeta, con valores de referencia para detectar si algo empeora~~ (2026-09-30: 9 mediciones con la app real, referencia en `test/bench-baseline.json`, `--save` / `--strict`)
 
 ### Arquitectura
 - [ ] **Migrar a módulos ES** (ver Mediano/Largo plazo; `main.js` ya está separado)

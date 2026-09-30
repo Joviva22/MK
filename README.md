@@ -77,7 +77,10 @@ npm run test:unit  # pruebas unitarias (Node, sin Electron, menos de 1 s): fecha
                    # tareas 📅 de notas, CSV, gráficos, rutas autorizadas, JSON atómico, índice, catálogo de mascotas
 npm test           # suite completa (Electron real + perfil aislado)
 npm run lint       # ESLint (no-undef/no-unused-vars)
+npm run bench      # rendimiento: arranque, carpeta de 3000 notas, nota de 5000 líneas
 ```
+
+`npm run bench` genera una carpeta y una nota grandes, las mide con la app real y compara con `test/bench-baseline.json` (marca ⚠ lo que empeoró más de un 30 %). `npm run bench -- --save` guarda la medición como referencia nueva; `-- --strict` sale con error si algo empeoró. Los tiempos dependen de la máquina: sirve para comparar antes y después de un cambio en la misma computadora.
 
 La lógica pura compartida entre la ventana y las pruebas vive en `src/shared/` (se carga como `<script>` y también con `require`).
 
