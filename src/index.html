@@ -166,7 +166,7 @@
         <section class="set-section" data-section="appearance" data-title="Apariencia" hidden>
           <h2 class="set-section-title">Apariencia</h2>
           <div class="set-row" data-keywords="color oscuro claro">
-            <div class="set-text"><div class="set-title">Tema</div><div class="set-desc">26 temas y uno personalizado.</div></div>
+            <div class="set-text"><div class="set-title">Tema</div><div class="set-desc">27 temas y uno personalizado.</div></div>
             <div class="set-control"><button type="button" id="set-open-theme" class="toolbar-button">Elegir tema…</button></div>
           </div>
           <div class="set-row" data-keywords="toolbar iconos texto limpio">
@@ -180,6 +180,27 @@
           <div class="set-row" data-keywords="toolbar esconder limpio">
             <div class="set-text"><label class="set-title" for="set-toolbar-autohide">Ocultar la barra superior</label><div class="set-desc">Aparece al acercar el mouse arriba. Atajo: Ctrl+Shift+M.</div></div>
             <div class="set-control"><input type="checkbox" id="set-toolbar-autohide" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row set-row-wide" data-keywords="kingdom hearts keyblade llavero guiño llave">
+            <div class="set-text"><div class="set-title">🗝 Keyblades</div><div class="set-desc" id="kh-status">Un guiño a Kingdom Hearts con tu propia imagen de keyblades (se guarda solo en tu configuración).</div></div>
+            <div class="set-control kh-controls">
+              <button type="button" id="kh-from-downloads" class="toolbar-button" hidden>Usar keyblades.png de Descargas</button>
+              <button type="button" id="kh-pick" class="toolbar-button">Elegir imagen…</button>
+              <button type="button" id="kh-clear" class="toolbar-button" hidden>Quitar</button>
+            </div>
+            <div id="kh-settings" class="kh-settings"></div>
+          </div>
+          <div class="set-row" data-keywords="kingdom hearts keyblade tarea animacion">
+            <div class="set-text"><label class="set-title" for="kh-swing">Golpe de keyblade al tildar una tarea</label></div>
+            <div class="set-control"><input type="checkbox" id="kh-swing" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row" data-keywords="kingdom hearts keyblade puntero raton">
+            <div class="set-text"><label class="set-title" for="kh-cursor">Cursor keyblade</label><div class="set-desc">Fuera del texto; al escribir sigue el cursor normal.</div></div>
+            <div class="set-control"><input type="checkbox" id="kh-cursor" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row" data-keywords="kingdom hearts keyblade mascota">
+            <div class="set-text"><label class="set-title" for="kh-petCarries">La mascota lleva la keyblade equipada</label></div>
+            <div class="set-control"><input type="checkbox" id="kh-petCarries" class="set-switch" role="switch" /></div>
           </div>
           <div class="set-row set-row-wide" data-keywords="toolbar botones visibles">
             <div class="set-text"><div class="set-title">Qué botones mostrar</div><div class="set-desc">Destildá los que no uses; ▶ los ejecuta igual aunque estén ocultos.</div></div>
@@ -785,6 +806,8 @@
   <script src="replacefolder.js"></script>
   <script src="typewriter.js"></script>
   <script src="reportdialog.js"></script>
+  <script src="keyblades.js"></script>
+  <script src="luckyemblem.js"></script>
   <script src="askdialog.js"></script>
   <script src="templates.js"></script>
   <script src="settings.js"></script>

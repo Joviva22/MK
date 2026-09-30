@@ -50,7 +50,7 @@ Todo esto viene ya armado en la app, no son plugins de terceros:
 - Editar tablas Markdown ya escritas: agregar fila/columna o alinear, desde el menú contextual.
 
 ### Personalización
-26 temas de color, tipografía y tamaño de fuente del editor (con zoom rápido por `Ctrl+scroll`), ancho de tabulación, autoguardado configurable, y cuatro modos de vista: normal, enfoque, lectura y **Live Preview** (el Markdown se ve renderizado mientras escribís, salvo en la línea del cursor). Al cerrar la ventana MK puede quedar en la bandeja (para que suenen los recordatorios) y arrancar con el sistema. ⚙ Ajustes (`Ctrl+,`) es un panel con secciones y buscador; la barra superior puede ir **solo con íconos**, con texto o mixta, u **ocultarse** hasta acercar el mouse, y los botones que no uses se esconden (y se ejecutan igual desde Ajustes).
+27 temas de color (incluido uno de Kingdom Hearts), tipografía y tamaño de fuente del editor (con zoom rápido por `Ctrl+scroll`), ancho de tabulación, autoguardado configurable, y cuatro modos de vista: normal, enfoque, lectura y **Live Preview** (el Markdown se ve renderizado mientras escribís, salvo en la línea del cursor). Al cerrar la ventana MK puede quedar en la bandeja (para que suenen los recordatorios) y arrancar con el sistema. ⚙ Ajustes (`Ctrl+,`) es un panel con secciones y buscador; la barra superior puede ir **solo con íconos**, con texto o mixta, u **ocultarse** hasta acercar el mouse, y los botones que no uses se esconden (y se ejecutan igual desde Ajustes).
 
 ## Documentación
 

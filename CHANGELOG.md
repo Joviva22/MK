@@ -30,6 +30,9 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ### Interfaz
 
+- **Guiño a Kingdom Hearts**: llavero de keyblades con logros (con tu propia imagen), golpe al tildar, cursor keyblade, tema *Kingdom Hearts* con Lucky Emblems.
+- Títulos y enlaces del editor con el color del tema (antes, azul ilegible en los temas oscuros).
+
 - **Reabrir la pestaña cerrada** con `Ctrl+Alt+W` (también los borradores sin título, con su texto).
 
 - **Bienvenida** en el primer arranque: elegir qué usar (Escribir / Escribir y planificar / Todo), crear o elegir la carpeta de notas y los atajos clave.

@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 115 de 141 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 116 de 142 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -133,6 +133,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Reabrir pestaña cerrada**~~ (2026-09-30: `Ctrl+Alt+W` —`Ctrl+Alt+T` abre Konsole en KDE—, menú de pestañas y paleta; 20 recordadas, cursor, borradores con su texto)
 - [x] ~~**Buscar y reemplazar en toda la carpeta**, con vista previa por archivo, confirmación y copia en el historial local~~ (2026-09-30: botón **⇄ Reemplazar…** en `Ctrl+Shift+F` y paleta; mayúsculas, palabra completa, regex con `$1`; vista −/+ por línea; salta pestañas con cambios sin guardar)
 - [x] ~~**Modo máquina de escribir**: cursor siempre centrado y párrafos que no se escriben atenuados~~ (2026-09-30: `Ctrl+Alt+M`, Ajustes → Editor y paleta; atenuar párrafos es aparte y se combina con el modo enfoque)
+- [x] ~~**Guiño a Kingdom Hearts**~~ (2026-09-30, pedido: keyblades propias —solo en la config local— como llavero de logros, golpe al tildar, cursor y compañera de la mascota; tema Kingdom Hearts con Lucky Emblem al elegirlo y uno escondido para encontrar)
 - [ ] **Atajos de teclado personalizables** (Ajustes → Atajos: cambiar, detectar choques, restaurar)
 
 ## Ideas de `MEJORAS_PROPUESTAS.md` (Gemini)

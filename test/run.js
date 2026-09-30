@@ -26,6 +26,36 @@ fs.mkdirSync(fixturesDir, { recursive: true });
 // por bloques con el completo. Aparte de los fixtures: no cambian las
 // cuentas de archivos/etiquetas de los otros tests.
 const corpusDir = path.join(os.tmpdir(), `${runId}-corpus`);
+// Hoja de keyblades de prueba (3 figuras sobre fondo transparente), hecha
+// acá: el arte de verdad no está en el repo.
+(function writeKeybladeSheet() {
+  const zlib = require('zlib');
+  const w = 40;
+  const h = 24;
+  const figs = [[2, 2, 6, 20], [14, 4, 8, 18], [30, 1, 5, 22]];
+  const raw = Buffer.alloc((w * 4 + 1) * h);
+  for (let y = 0; y < h; y++) {
+    raw[y * (w * 4 + 1)] = 0;
+    for (let x = 0; x < w; x++) {
+      const on = figs.some(([fx, fy, fw, fh]) => x >= fx && x < fx + fw && y >= fy && y < fy + fh);
+      const o = y * (w * 4 + 1) + 1 + x * 4;
+      raw[o] = 230; raw[o + 1] = 190; raw[o + 2] = 80; raw[o + 3] = on ? 255 : 0;
+    }
+  }
+  const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc = (buf) => { let c = 0xffffffff; for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
+    const td = Buffer.concat([Buffer.from(type), data]);
+    const c = Buffer.alloc(4); c.writeUInt32BE(crc(td));
+    return Buffer.concat([len, td, c]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 6;
+  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+  fs.mkdirSync(`${fixturesDir}-kh`, { recursive: true });
+  fs.writeFileSync(path.join(`${fixturesDir}-kh`, 'keyblades.png'), png);
+})();
 fs.mkdirSync(corpusDir, { recursive: true });
 let corpusN = 0;
 for (const dir of ['Ejemplos', path.join('Ejemplos', 'Plantillas'), 'Guias', '.']) {
@@ -141,6 +171,7 @@ function cleanup() {
   fs.rmSync(profileDir, { recursive: true, force: true });
   fs.rmSync(fixturesDir, { recursive: true, force: true });
   fs.rmSync(corpusDir, { recursive: true, force: true });
+  fs.rmSync(`${fixturesDir}-kh`, { recursive: true, force: true });
   // Los tests de exportar (EPUB, DOCX, PDF, Anki...) escriben en el tmp del
   // sistema como mk-test-export-*: sin esto se acumulaban en cada corrida.
   for (const name of fs.readdirSync(os.tmpdir())) {

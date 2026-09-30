@@ -26,7 +26,7 @@ De izquierda a derecha: el tipo de archivo, **✓ Guardado / ● Sin guardar** (
 - Las animaciones son cortas y se desactivan solas si tu sistema tiene "reducir movimiento".
 
 ## 🎨 Temas
-26 temas: Claro, Oscuro, Dracula, Nord, Gruvbox, Monokai, Solarized, One Dark Pro, Tokyo Night, Catppuccin, Rosé Pine, GitHub...
+27 temas: Claro, Oscuro, Dracula, Nord, Gruvbox, Monokai, Solarized, One Dark Pro, Tokyo Night, Catppuccin, Rosé Pine, GitHub...
 
 **Tema personalizado**: paleta → "Tema personalizado..." → elegí con selector de color los 7 colores (fondo, superficie, superficie 2, texto, texto tenue, borde, acento). Se aplica en vivo; **Guardar** para dejarlo.
 

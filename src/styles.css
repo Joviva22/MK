@@ -166,6 +166,12 @@
   --text: #24292f; --text-muted: #57606a; --border: #d0d7de; --accent: #0969da;
 }
 
+/* Kingdom Hearts: azul noche de Hollow Bastion, dorado de keyblade. */
+[data-theme="kingdom-hearts"] {
+  --bg: #0b1433; --surface: #111c44; --surface-2: #19275a;
+  --text: #e8ecff; --text-muted: #a9b5de; --border: #2a3a78; --accent: #e8c45e;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -726,6 +732,16 @@ ul.tree.collapsed {
   background: var(--bg);
   color: var(--text);
 }
+
+/* Markdown en el editor con los colores del tema: CodeMirror trae
+   títulos y enlaces en azul puro (#00f), ilegible en los temas oscuros. */
+#editor-pane .cm-s-default:not(.cm-live) .cm-header { color: var(--accent); }
+#editor-pane .cm-s-default .cm-link,
+#editor-pane .cm-s-default .cm-url { color: var(--accent); }
+#editor-pane .cm-s-default .cm-quote { color: var(--text-muted); }
+#editor-pane .cm-s-default .cm-variable-2,
+#editor-pane .cm-s-default .cm-variable-3 { color: var(--text); }
+#editor-pane .cm-s-default .cm-hr { color: var(--text-muted); }
 
 #editor-pane .CodeMirror-gutters {
   background: var(--surface);
@@ -5247,3 +5263,94 @@ body.mk-dim-paragraphs #editor-pane .CodeMirror-code > div.mk-current-para { opa
 .report-body { flex: 1; min-height: 200px; width: 100%; box-sizing: border-box; resize: vertical; font-family: var(--font-mono, monospace); font-size: 12px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius, 8px); padding: 8px; }
 .report-status { color: var(--text-muted); min-height: 1em; margin: 6px 0 0; }
 .modal-overlay:not([hidden]) > .report-dialog { animation: mk-pop-in var(--dur) var(--ease); }
+
+/* ---- Guiño a Kingdom Hearts (keyblades.js) ---- */
+[data-theme="kingdom-hearts"] .toolbar { background: linear-gradient(180deg, #16245a 0%, var(--surface) 100%); }
+[data-theme="kingdom-hearts"] #preview-pane h1, [data-theme="kingdom-hearts"] #preview-pane h2 { color: #f3d98a; }
+[data-theme="kingdom-hearts"] #preview-pane h1 { border-bottom-color: rgba(232, 196, 94, 0.35); }
+/* La keyblade equipada, de marca de agua al pie del sidebar. */
+[data-theme="kingdom-hearts"] body.kh-has-keyblade #sidebar-pane {
+  background-image: var(--kh-keyblade); background-repeat: no-repeat;
+  background-position: right 12px bottom 12px; background-size: auto 110px;
+  image-rendering: pixelated;
+}
+.kh-controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.kh-settings { grid-column: 1 / -1; }
+.kh-keychain { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.kh-key {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px;
+  width: 64px; height: 118px; padding: 6px 4px; border-radius: var(--radius, 8px);
+  border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; font: inherit;
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.kh-key img { max-height: 84px; max-width: 52px; image-rendering: pixelated; }
+.kh-key span { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.kh-key:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-2px); }
+.kh-key.kh-equipped { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.kh-key.kh-equipped span { color: var(--accent); font-weight: 600; }
+.kh-key.kh-locked { cursor: default; }
+/* Bloqueada: silueta gris, se ve en temas claros y oscuros. */
+.kh-key.kh-locked img { filter: grayscale(1) brightness(0.5) opacity(0.55); }
+.kh-keychain-compact .kh-key { width: 56px; height: 104px; }
+.kh-keychain-compact .kh-key img { max-height: 72px; }
+
+.kh-swing { position: fixed; z-index: 3000; pointer-events: none; transform: translate(-50%, -85%); }
+.kh-swing img { display: block; image-rendering: pixelated; transform-origin: 50% 90%; animation: kh-swing 0.45s cubic-bezier(.2, .8, .3, 1) forwards; filter: drop-shadow(0 0 6px rgba(255, 230, 150, 0.8)); }
+.kh-spark { position: absolute; left: 50%; top: 70%; color: #ffe89a; font-size: 22px; text-shadow: 0 0 8px #fff3c4; opacity: 0; animation: kh-spark 0.6s ease-out 0.18s forwards; }
+@keyframes kh-swing {
+  0% { transform: rotate(-70deg); opacity: 0; }
+  25% { opacity: 1; }
+  70% { transform: rotate(35deg); opacity: 1; }
+  100% { transform: rotate(40deg); opacity: 0; }
+}
+@keyframes kh-spark {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6) rotate(90deg); }
+}
+.kh-toast {
+  position: fixed; right: 16px; bottom: 16px; z-index: 3000; display: flex; gap: 12px; align-items: center;
+  max-width: min(360px, calc(100vw - 32px)); padding: 10px 14px; border-radius: var(--radius, 8px);
+  background: var(--surface); color: var(--text); border: 1px solid var(--accent); box-shadow: var(--shadow-3, 0 12px 30px rgba(0, 0, 0, 0.35));
+  animation: mk-pop-in var(--dur) var(--ease); transition: opacity 0.5s, transform 0.5s;
+}
+.kh-toast img { height: 56px; image-rendering: pixelated; }
+.kh-toast div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.kh-toast span { color: var(--text-muted); }
+.kh-toast-out { opacity: 0; transform: translateY(8px); }
+.pet-keyblade { position: absolute; right: -10px; bottom: 4px; height: 34px; image-rendering: pixelated; transform: rotate(28deg); transform-origin: 50% 90%; pointer-events: none; animation: kh-bob 2.4s ease-in-out infinite; }
+@keyframes kh-bob { 50% { transform: rotate(18deg) translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) {
+  .kh-swing img, .kh-spark, .pet-keyblade { animation: none; }
+  .kh-swing img { opacity: 1; transform: rotate(20deg); }
+}
+
+/* Lucky Emblem (luckyemblem.js) */
+.lucky-emblem svg, .lucky-mini svg { display: block; width: 100%; height: 100%; fill: currentColor; }
+.lucky-mini { display: inline-block; width: 0.95em; height: 0.95em; vertical-align: -0.1em; color: #e8c45e; }
+.lucky-celebrate { position: fixed; inset: 0; z-index: 3500; pointer-events: none; display: grid; place-items: center; }
+.lucky-big { width: 150px; height: 150px; color: #e8c45e; filter: drop-shadow(0 0 18px rgba(255, 223, 128, 0.85)); animation: lucky-in 1.8s cubic-bezier(.2, .9, .3, 1) forwards; grid-area: 1 / 1; }
+.lucky-label { grid-area: 1 / 1; margin-top: 210px; font: 600 15px/1 var(--font, sans-serif); letter-spacing: 0.3em; text-transform: uppercase; color: #f3d98a; text-shadow: 0 0 10px rgba(0, 0, 0, 0.6); opacity: 0; animation: lucky-label 1.8s ease forwards; }
+.lucky-spark { grid-area: 1 / 1; color: #fff3c4; font-size: 20px; opacity: 0; text-shadow: 0 0 8px #ffe89a; animation: lucky-spark 1.2s ease-out 0.35s forwards; }
+@keyframes lucky-in {
+  0% { transform: scale(0.2) rotate(-25deg); opacity: 0; }
+  35% { transform: scale(1.08) rotate(4deg); opacity: 1; }
+  50% { transform: scale(1) rotate(0); }
+  80% { opacity: 1; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+@keyframes lucky-label { 25% { opacity: 0; } 45% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes lucky-spark {
+  0% { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(0.5); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(-120px) scale(1.2); }
+}
+.lucky-hidden { position: absolute; left: var(--lx, 50%); bottom: 3px; width: 11px; height: 11px; color: var(--accent); opacity: 0.28; cursor: pointer; z-index: 5; transition: opacity 0.3s, transform 0.3s; }
+.lucky-hidden:hover { opacity: 0.9; transform: scale(1.3); }
+[data-theme="kingdom-hearts"] .statusbar, [data-theme="kingdom-hearts"] .toolbar, [data-theme="kingdom-hearts"] #sidebar-pane, [data-theme="kingdom-hearts"] .preview-wrapper { position: relative; }
+.lucky-found { position: fixed; z-index: 3500; transform: translate(-50%, -120%); pointer-events: none; padding: 4px 10px; border-radius: 999px; background: #111c44; color: #f3d98a; border: 1px solid #e8c45e; font-size: 13px; white-space: nowrap; animation: lucky-found 1.8s ease forwards; }
+@keyframes lucky-found { 0% { opacity: 0; transform: translate(-50%, -80%); } 15% { opacity: 1; transform: translate(-50%, -140%); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -190%); } }
+@media (prefers-reduced-motion: reduce) {
+  .lucky-big, .lucky-label, .lucky-spark, .lucky-found { animation-duration: 0.01s; animation-delay: 0s; }
+  .lucky-big { animation: none; opacity: 0.9; }
+}

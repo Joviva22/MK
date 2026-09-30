@@ -30,7 +30,8 @@ const THEME_LIST = [
   { slug: 'horizon', label: 'Horizon' },
   { slug: 'rose-pine', label: 'Rosé Pine' },
   { slug: 'github-dark', label: 'GitHub Dark' },
-  { slug: 'github-light', label: 'GitHub Light' }
+  { slug: 'github-light', label: 'GitHub Light' },
+  { slug: 'kingdom-hearts', label: 'Kingdom Hearts' }
 ];
 
 const themeMenu = document.getElementById('theme-menu');
@@ -58,9 +59,12 @@ THEME_LIST.forEach((theme) => {
   const btn = document.createElement('button');
   btn.textContent = theme.label;
   btn.dataset.theme = theme.slug;
+  if (theme.slug === 'kingdom-hearts') btn.insertAdjacentHTML('beforeend', ' <span class="lucky-mini" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="22" cy="26" r="17"/><circle cx="78" cy="26" r="17"/><circle cx="50" cy="60" r="31"/></svg></span>');
   btn.addEventListener('click', async () => {
     themeMenu.hidden = true;
     applyTheme(theme.slug);
+    // Guiño: Lucky Emblem al elegir el tema Kingdom Hearts (luckyemblem.js).
+    if (theme.slug === 'kingdom-hearts' && window.mdLuckyEmblem) window.mdLuckyEmblem.celebrate();
     if (window.renderPreview) window.renderPreview();
     await window.mdEditor.setConfig({ theme: theme.slug });
   });

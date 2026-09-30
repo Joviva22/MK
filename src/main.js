@@ -366,6 +366,7 @@ require('./ipc-system'); // git y reproductor del sistema (playerctl)
 require('./ipc-mail'); // recordatorios por correo (Gmail)
 require('./ipc-pet'); // imágenes propias de la mascota
 require('./ipc-backup'); // exportar / importar todo
+require('./ipc-kh'); // keyblades (guiño a Kingdom Hearts)
 registerDatabaseIpc(ipcMain, (root) => guard.check(root, 'db'), (channel, e) => ctx.reportError(channel, e, 'Error en la base de datos: el último cambio pudo no guardarse.'));
 registerTerminalIpc(ipcMain, () => mainWindow);
 

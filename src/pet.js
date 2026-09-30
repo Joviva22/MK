@@ -229,6 +229,7 @@ function makeWalker(p, i) {
   bubble.hidden = true;
   el.append(spr, bubble);
   lane.appendChild(el);
+  if (i === 0 && window.mdKeyblades) window.mdKeyblades.attachToPet(el); // la keyblade equipada
   const w = { pet: p, el, sprite: spr, bubble, x: 10 + i * 50, dir: i % 2 ? -1 : 1, mode: 'walk', modeUntil: 0, mood: null, stage: null };
   let clickTimer = null;
   el.addEventListener('click', (e) => {
@@ -625,6 +626,8 @@ async function gain(kind, key) {
     if (state.stats.taskDays.length > 400) state.stats.taskDays.splice(0, state.stats.taskDays.length - 400);
   }
   if (kind === 'pomodoro') state.stats.pomodoros++;
+  // keyblades.js: golpe al tildar y desbloqueos del llavero.
+  document.dispatchEvent(new CustomEvent('mk:pet-gain', { detail: { kind } }));
   lastInteraction = Date.now();
   const team = teamPets().length ? teamPets() : [leader()];
   const incubating = new Set(state.eggs.map((e) => e.id)); // los de antes de esta vuelta
@@ -786,6 +789,10 @@ function renderCollection() {
     ach.appendChild(row);
   });
   colBody.appendChild(ach);
+  if (window.mdKeyblades && window.mdKeyblades.getState().count) {
+    colBody.appendChild(mk('h3', 'pet-col-section', '🗝 Llavero'));
+    window.mdKeyblades.renderKeychain(colBody);
+  }
 }
 
 function setInTeam(id, on) {

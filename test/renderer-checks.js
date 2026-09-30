@@ -3970,6 +3970,43 @@
     check('Exportar: si falla la escritura, devuelve null y avisa (con el log)', res === null && !!toast, `resultado=${res} aviso=${!!toast}`);
   }
 
+  // Guiño a Kingdom Hearts: la hoja se recorta sola; la primera keyblade de
+  // regalo, las otras por hitos; golpe al tildar; cursor; Lucky Emblem al
+  // elegir el tema y uno escondido que suma al encontrarlo.
+  {
+    const K = window.mdKeyblades;
+    const sheet = `${fixturesDir}-kh/keyblades.png`;
+    const imp = await K.importSheet(null, sheet);
+    const st = K.getState();
+    const sliced = imp.ok && st.count === 3 && st.cfg.unlocked.includes(0);
+    const locked2 = !st.cfg.unlocked.includes(2) || window.mdPet.getState().stats.tasks >= 10;
+    await K.setCfgForTest({ swing: true, cursor: true, equipped: 0 });
+    document.dispatchEvent(new window.PointerEvent('pointerdown', { clientX: 200, clientY: 200, bubbles: true }));
+    document.dispatchEvent(new CustomEvent('mk:pet-gain', { detail: { kind: 'task' } }));
+    const swung = !!document.querySelector('.kh-swing img');
+    await new Promise((r) => setTimeout(r, 200));
+    const cursorOn = document.body.classList.contains('kh-cursor') && Array.from(document.querySelectorAll('style')).some((s) => s.textContent.includes('body.kh-cursor') && s.textContent.includes('data:image/png'));
+    const chips = document.querySelectorAll('#kh-settings .kh-key').length;
+    await K.setCfgForTest({ cursor: false });
+
+    const before = document.documentElement.getAttribute('data-theme');
+    document.querySelector('#theme-menu button[data-theme="kingdom-hearts"]').click();
+    const celebrated = !!document.querySelector('.lucky-celebrate .lucky-big svg');
+    await new Promise((r) => setTimeout(r, 100));
+    const hiddenEl = window.mdLuckyEmblem.hiddenEl();
+    const n0 = window.mdLuckyEmblem.found();
+    if (hiddenEl) hiddenEl.click();
+    await new Promise((r) => setTimeout(r, 150));
+    const foundOk = window.mdLuckyEmblem.found() === n0 + 1 && !window.mdLuckyEmblem.hiddenEl();
+    const cfg = await window.mdEditor.getConfig();
+    window.mdThemes.applyTheme(before || 'light');
+    await window.mdEditor.setConfig({ theme: before || 'light' });
+    await K.clearSheet();
+    check('Kingdom Hearts: keyblades recortadas, llavero, golpe, cursor y Lucky Emblem',
+      sliced && locked2 && swung && cursorOn && chips === 3 && celebrated && !!hiddenEl && foundOk && cfg.khLuckyFound === n0 + 1,
+      `recorte=${st.count} golpe=${swung} cursor=${cursorOn} llavero=${chips} emblema=${celebrated} escondido=${!!hiddenEl} encontrado=${foundOk}`);
+  }
+
   // Preview incremental (por bloques): mismo HTML que el camino completo en
   // una nota con de todo; con HTML crudo de bloque vuelve al completo; al
   // editar un bloque solo cambia ese.
