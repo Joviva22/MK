@@ -8,8 +8,11 @@
 
 const { ipcMain } = require('electron');
 const path = require('path');
-const { folderIndex } = require('./ipc-files');
+const fsp = require('fs').promises;
+const { folderIndex, makeBackup, indexTouch } = require('./ipc-files');
 const guard = require('./pathguard');
+const ctx = require('./mainctx');
+const { buildMatcher, replaceIn } = require('./shared/replace');
 
 const SEARCH_MAX_RESULTS = 200;
 
@@ -58,6 +61,64 @@ ipcMain.handle('search:inFolder', async (event, { root, query }) => {
   });
 
   return results;
+});
+
+// ---- Buscar y reemplazar en la carpeta (replacefolder.js) ----
+// preview: qué archivos cambian y cómo (no toca nada). apply: reemplaza en
+// los archivos elegidos, cada uno con su copia en el historial local de
+// versiones (igual que al guardar), y salta los que están en `skip`
+// (pestañas con cambios sin guardar).
+const REPLACE_MAX_FILES = 2000;
+
+ipcMain.handle('replace:preview', async (event, { root, find, replacement, opts }) => {
+  if (!root || !guard.check(root, 'replace')) return { error: 'Sin carpeta abierta.' };
+  const m = buildMatcher(String(find || ''), opts);
+  if (m.error) return { error: m.error };
+  const files = [];
+  let total = 0;
+  await walkTextFiles(root, (fullPath, content) => {
+    const r = replaceIn(content, m.re, String(replacement == null ? '' : replacement), opts);
+    if (!r.count) return true;
+    total += r.count;
+    files.push({ filePath: fullPath, relPath: path.relative(root, fullPath), count: r.count, samples: r.samples });
+    return files.length < REPLACE_MAX_FILES;
+  });
+  return { files, total, truncated: files.length >= REPLACE_MAX_FILES };
+});
+
+ipcMain.handle('replace:apply', async (event, { root, find, replacement, opts, files, skip }) => {
+  if (!root || !guard.check(root, 'replace') || !Array.isArray(files)) return { error: 'Sin carpeta abierta.' };
+  const m = buildMatcher(String(find || ''), opts);
+  if (m.error) return { error: m.error };
+  const skipSet = new Set(Array.isArray(skip) ? skip : []);
+  const done = [];
+  const skipped = [];
+  const failed = [];
+  let total = 0;
+  for (const filePath of files) {
+    if (typeof filePath !== 'string' || !guard.check(filePath, 'replace') || !path.resolve(filePath).startsWith(path.resolve(root) + path.sep)) {
+      failed.push(filePath);
+      continue;
+    }
+    if (skipSet.has(filePath)) {
+      skipped.push(filePath);
+      continue;
+    }
+    try {
+      const content = await fsp.readFile(filePath, 'utf-8');
+      const r = replaceIn(content, m.re, String(replacement == null ? '' : replacement), opts);
+      if (!r.count) continue;
+      await makeBackup(filePath);
+      await fsp.writeFile(filePath, r.output, 'utf-8');
+      indexTouch(filePath, false);
+      done.push(filePath);
+      total += r.count;
+    } catch (e) {
+      ctx.logError('replace:apply', e);
+      failed.push(filePath);
+    }
+  }
+  return { done, skipped, failed, total };
 });
 
 // Deja afuera del escaneo de #tag / [[wikilink]] el contenido de bloques

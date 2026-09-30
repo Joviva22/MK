@@ -3970,6 +3970,36 @@
     check('Exportar: si falla la escritura, devuelve null y avisa (con el log)', res === null && !!toast, `resultado=${res} aviso=${!!toast}`);
   }
 
+  // Modo máquina de escribir: la línea del cursor queda cerca del centro;
+  // "atenuar párrafos" marca solo el párrafo del cursor y sigue al cursor.
+  {
+    const T = window.mdTypewriter;
+    const cm = window.mdCodeMirror;
+    window.mdTabs.newTab(Array.from({ length: 120 }, (_, i) => (i % 4 === 3 ? '' : `línea ${i}`)).join('\n'));
+    await T.set({ typewriter: true, dim: true });
+    cm.focus();
+    cm.setCursor({ line: 60, ch: 0 });
+    await new Promise((r) => setTimeout(r, 150));
+    const info = cm.getScrollInfo();
+    const { top, bottom } = cm.charCoords({ line: 60, ch: 0 }, 'local');
+    const offCenter = Math.abs((top + bottom) / 2 - info.top - info.clientHeight / 2);
+    const centered = offCenter < 30;
+    const marked = () => Array.from(document.querySelectorAll('#editor-pane .mk-current-para')).map((el) => el.querySelector('.CodeMirror-line').textContent);
+    const para1 = marked().join('|');
+    cm.setCursor({ line: 1, ch: 0 });
+    await new Promise((r) => setTimeout(r, 100));
+    const para2 = marked().join('|');
+    const dimOk = para1 === 'línea 60|línea 61|línea 62' && para2 === 'línea 0|línea 1|línea 2' && document.body.classList.contains('mk-dim-paragraphs');
+    await T.set({ typewriter: false, dim: false });
+    const cleared = !document.querySelector('#editor-pane .mk-current-para') && !document.body.classList.contains('mk-typewriter');
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    window.confirm = originalConfirm;
+    check('Modo máquina de escribir: cursor centrado y solo su párrafo con color pleno',
+      centered && dimOk && cleared, `desvío=${Math.round(offCenter)}px párrafo="${para1}" → "${para2}" limpia=${cleared}`);
+  }
+
   // Categorías del Home: @categoría en el alta rápida, chip en la tarjeta y
   // filtro (las nuevas heredan la categoría filtrada).
   {
@@ -4022,6 +4052,50 @@
     check('Versión: visible en Ajustes, aviso apagado por defecto, sin red en test',
       /^\d+\.\d+\.\d+$/.test(version) && desc.textContent.includes(version) && !cfg.updateCheck && r.current === version && r.newer === false,
       `v=${version} desc="${desc.textContent}" aviso=${!!cfg.updateCheck}`);
+  }
+
+  // Reemplazar en la carpeta: vista previa sin tocar nada, se saltan las
+  // pestañas con cambios sin guardar, cada archivo deja su versión en el
+  // historial, y las pestañas abiertas se recargan.
+  {
+    const R = window.mdReplaceFolder;
+    const rfRoot = window.mdState.rootFolder || fixturesDir;
+    const cm = window.mdCodeMirror;
+    const a = window.mdEditor.joinPath(rfRoot, 'reemplazo-a.md');
+    const b = window.mdEditor.joinPath(rfRoot, 'reemplazo-b.md');
+    const c = window.mdEditor.joinPath(rfRoot, 'reemplazo-c.md');
+    await window.mdEditor.saveFile('Proyecto Zeta y zeta\n', a, false);
+    await window.mdEditor.saveFile('nada que ver\nel proyecto zeta\n', b, false);
+    await window.mdEditor.saveFile('zeta sin guardar\n', c, false);
+    await window.mdTabs.openTab(a);
+    await window.mdTabs.openTab(c);
+    cm.replaceRange('cambio local ', { line: 0, ch: 0 });
+    await window.mdTabs.openTab(a);
+    R.open();
+    R.setForTest('zeta', 'Omega', { wholeWord: true });
+    const pv = await R.runPreview();
+    const untouched = (await window.mdEditor.readFile(a)).content === 'Proyecto Zeta y zeta\n';
+    const cBox = Array.from(document.querySelectorAll('.rf-file input')).find((i) => i.dataset.path === c);
+    const skipsUnsaved = cBox && cBox.disabled && !cBox.checked;
+    const res = (await R.apply(true)) || { total: -1 };
+    const aNow = (await window.mdEditor.readFile(a)).content;
+    const bNow = (await window.mdEditor.readFile(b)).content;
+    const cNow = (await window.mdEditor.readFile(c)).content;
+    await new Promise((r) => setTimeout(r, 300));
+    const tabReloaded = cm.getValue() === aNow;
+    const hist = await window.mdEditor.listBackups(a);
+    const regexErr = (R.setForTest('(', 'x', { regex: true }), await R.runPreview());
+    R.close();
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    for (const p of [a, c]) {
+      await window.mdTabs.openTab(p);
+      document.querySelector('#tabbar .tab.active .tab-close').click();
+    }
+    window.confirm = originalConfirm;
+    check('Reemplazar en la carpeta: vista previa, salta sin guardar, historial y recarga',
+      pv.total === 4 && untouched && skipsUnsaved && res.total === 3 && aNow === 'Proyecto Omega y Omega\n' && bNow === 'nada que ver\nel proyecto Omega\n' && cNow === 'zeta sin guardar\n' && tabReloaded && Array.isArray(hist) && hist.length >= 1 && !!regexErr.error,
+      `previa=${pv.total} intacto=${untouched} salta=${skipsUnsaved} hechos=${res.total} a="${aNow.trim()}" recarga=${tabReloaded} historial=${hist && hist.length} regex=${!!regexErr.error}`);
   }
 
   // Reabrir pestaña cerrada: Ctrl+Alt+W vuelve a abrir la última (con el

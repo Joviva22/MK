@@ -118,6 +118,11 @@ overlay.addEventListener('mousedown', (e) => {
 });
 
 document.getElementById('btn-search').addEventListener('click', openSearch);
+document.getElementById('search-replace-btn').addEventListener('click', () => {
+  const q = input.value.trim();
+  closeSearch();
+  window.mdReplaceFolder.open(q);
+});
 
 document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {

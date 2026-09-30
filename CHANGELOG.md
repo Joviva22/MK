@@ -17,6 +17,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ### Escribir y ver
 
+- **Modo máquina de escribir** (`Ctrl+Alt+M`): la línea del cursor siempre centrada; opción de **atenuar los otros párrafos**.
+- **Reemplazar en toda la carpeta** (botón en `Ctrl+Shift+F`): vista previa −/+ por línea, regex, cada archivo con su versión anterior en el historial.
 - **Pegar imágenes** con `Ctrl+V` (capturas, *Copiar imagen*) o arrastrarlas desde el navegador: se guardan en `assets/` junto a la nota.
 - **Live Preview**, botón de modo con el modo actual, fotos / video / audio de cualquier formato común, explorador de multimedia.
 - **Escribir en PDF** (texto libre y formularios).

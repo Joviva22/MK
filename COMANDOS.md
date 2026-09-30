@@ -23,6 +23,7 @@ Referencia rápida y resumida. Para la explicación completa de cada función, v
 | `Ctrl+F` | Buscar/reemplazar en el archivo actual — `Enter`/`Shift+Enter` salta a la coincidencia siguiente/anterior, `Escape` cierra |
 | `Ctrl+P` | Abrir archivo rápido por nombre (filtra mientras tipeás, `Enter` abre, `↑`/`↓` navegan) |
 | `Ctrl+Shift+F` | Búsqueda global en la carpeta abierta (busca contenido, navega a otro archivo) |
+| **⇄ Reemplazar…** (en `Ctrl+Shift+F`, o la paleta) | Reemplazar en toda la carpeta: vista previa −/+ por línea, destildar archivos, cada uno guarda su versión anterior en el historial |
 | `Ctrl+Shift+P` | Paleta de comandos — todo lo que hace MK, filtrable por texto |
 | `Ctrl+Shift+T` | Etiquetas (`#tag`) de la carpeta abierta |
 | `Ctrl+Shift+B` | Backlinks del archivo activo (qué otras notas lo enlazan) |
@@ -40,6 +41,7 @@ Referencia rápida y resumida. Para la explicación completa de cada función, v
 | `Ctrl+B` | Ocultar/mostrar el sidebar de archivos |
 | `Ctrl+Shift+O` | Índice del documento (encabezados) |
 | `Ctrl+Shift+E` | Modo enfoque (solo editor) |
+| `Ctrl+Alt+M` | Modo máquina de escribir (la línea del cursor siempre en el centro); en Ajustes → Editor también *Atenuar los otros párrafos* |
 | `Ctrl+Shift+R` | Modo lectura (solo preview) |
 | `Ctrl+Shift+L` | Modo Live Preview (escribir viendo el Markdown renderizado; solo la línea del cursor muestra la sintaxis) |
 | `F11` | Pantalla completa / escritura sin distracciones |

@@ -150,6 +150,14 @@
             <div class="set-text"><label class="set-title" for="wordwrap-toggle">Ajuste de línea</label><div class="set-desc">Las líneas largas continúan abajo en vez de salirse a la derecha.</div></div>
             <div class="set-control"><input type="checkbox" id="wordwrap-toggle" class="set-switch" role="switch" /></div>
           </div>
+          <div class="set-row" data-keywords="maquina de escribir centrado cursor concentracion typewriter">
+            <div class="set-text"><label class="set-title" for="typewriter-toggle">Modo máquina de escribir</label><div class="set-desc">La línea que escribís queda siempre en el centro de la pantalla. Atajo: Ctrl+Alt+M.</div></div>
+            <div class="set-control"><input type="checkbox" id="typewriter-toggle" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row" data-keywords="atenuar parrafo foco concentracion">
+            <div class="set-text"><label class="set-title" for="dimparagraphs-toggle">Atenuar los otros párrafos</label><div class="set-desc">Solo el párrafo del cursor se ve con color pleno.</div></div>
+            <div class="set-control"><input type="checkbox" id="dimparagraphs-toggle" class="set-switch" role="switch" /></div>
+          </div>
           <div class="set-row set-row-wide" data-keywords="abreviaturas atajos texto">
             <div class="set-text"><label class="set-title" for="snippets-textarea">Snippets de texto</label><div class="set-desc">Uno por línea: <code>/abrev = texto</code>. Se expanden al escribir la abreviatura y un espacio. Vienen <code>/fecha</code> y <code>/hora</code>.</div></div>
             <div class="set-control"><textarea id="snippets-textarea" class="snippets-textarea" rows="4" placeholder="/firma = Saludos, Tu Nombre"></textarea></div>
@@ -459,7 +467,10 @@
 
   <div id="search-panel" class="modal-overlay palette-overlay" hidden>
     <div class="command-palette search-palette">
-      <input id="search-input" type="text" placeholder="Buscar en los archivos de la carpeta abierta..." autocomplete="off" spellcheck="false" />
+      <div class="search-input-row">
+        <input id="search-input" type="text" placeholder="Buscar en los archivos de la carpeta abierta..." autocomplete="off" spellcheck="false" />
+        <button type="button" id="search-replace-btn" class="toolbar-button" title="Reemplazar en toda la carpeta (con vista previa)">⇄ Reemplazar…</button>
+      </div>
       <div id="search-results" class="command-palette-list"></div>
     </div>
   </div>
@@ -758,6 +769,8 @@
   <script src="appversion.js"></script>
   <script src="backup.js"></script>
   <script src="welcome.js"></script>
+  <script src="replacefolder.js"></script>
+  <script src="typewriter.js"></script>
   <script src="askdialog.js"></script>
   <script src="templates.js"></script>
   <script src="settings.js"></script>

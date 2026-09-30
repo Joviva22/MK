@@ -497,4 +497,4 @@ ipcMain.handle('asset:saveImage', async (event, { targetDir, baseName, ext, byte
   }
 });
 
-module.exports = { folderIndex };
+module.exports = { folderIndex, makeBackup, indexTouch };

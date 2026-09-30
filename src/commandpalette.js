@@ -45,6 +45,8 @@ function buildCommands() {
   cmds.push({ label: 'Nota diaria de hoy', run: () => window.mdDailyNote && window.mdDailyNote.open() });
   cmds.push({ label: 'Ver tablero Kanban', run: () => window.mdKanban && window.mdKanban.open() });
   cmds.push({ label: 'Modo Live Preview (escribir viendo el Markdown renderizado)', run: () => window.mdModes && window.mdModes.toggleMode('live') });
+  cmds.push({ label: 'Modo máquina de escribir (cursor centrado)', run: () => window.mdTypewriter && window.mdTypewriter.set({ typewriter: !window.mdTypewriter.isOn() }) });
+  cmds.push({ label: 'Atenuar los otros párrafos', run: () => window.mdTypewriter && window.mdTypewriter.set({ dim: !window.mdTypewriter.isDim() }) });
   cmds.push({ label: 'Terminal: mostrar/ocultar', run: () => window.mdTerminal && window.mdTerminal.toggle() });
   cmds.push({ label: 'Ejecutar archivo actual en la terminal (F5)', run: () => window.mdTerminal && window.mdTerminal.runActiveFile() });
   ['claude', 'gemini', 'codex'].forEach((id) => {
@@ -56,6 +58,7 @@ function buildCommands() {
   cmds.push({ label: 'Mascotas: mi colección, huevos y logros', run: () => window.mdPet && window.mdPet.openCollection() });
   cmds.push({ label: 'Home: planificador semanal y mensual', run: () => window.mdHome && window.mdHome.open() });
   cmds.push({ label: 'Bases de datos', run: () => window.mdDatabase && window.mdDatabase.open() });
+  cmds.push({ label: 'Reemplazar en toda la carpeta…', run: () => window.mdReplaceFolder && window.mdReplaceFolder.open() });
   cmds.push({ label: 'Bienvenida: volver a ver la guía de inicio', run: () => window.mdWelcome && window.mdWelcome.open() });
   cmds.push({ label: 'Respaldo: exportar todo (ajustes, Home, mascotas)', run: () => window.mdBackup && window.mdBackup.exportAll() });
   cmds.push({ label: 'Respaldo: importar…', run: () => window.mdBackup && window.mdBackup.importAll() });

@@ -59,6 +59,8 @@ contextBridge.exposeInMainWorld('mdEditor', {
   saveFile: (content, filePath, forceDialog = false) => ipcRenderer.invoke('file:save', { content, filePath, forceDialog }),
   readFile: (filePath) => ipcRenderer.invoke('file:read', filePath),
   openFolder: () => ipcRenderer.invoke('folder:open'),
+  replacePreview: (root, find, replacement, opts) => ipcRenderer.invoke('replace:preview', { root, find, replacement, opts }),
+  replaceApply: (root, find, replacement, opts, files, skip) => ipcRenderer.invoke('replace:apply', { root, find, replacement, opts, files, skip }),
   createStarterFolder: () => ipcRenderer.invoke('folder:createStarter'),
   getLastFolder: () => ipcRenderer.invoke('folder:getLast'),
   readFolder: (rootPath) => ipcRenderer.invoke('folder:read', rootPath),
