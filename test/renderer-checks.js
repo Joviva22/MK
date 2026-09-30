@@ -4024,6 +4024,22 @@
       `v=${version} desc="${desc.textContent}" aviso=${!!cfg.updateCheck}`);
   }
 
+  // Respaldo: exportar → revisar → importar (en test sin diálogos ni recarga).
+  // Importar sin elegir antes el archivo se rechaza.
+  {
+    const cfg = await window.mdEditor.getConfig();
+    const file = `${fixturesDir.replace(/[^/]+$/, "")}mk-test-export-respaldo-${Date.now()}.mkbackup`;
+    const exp = await window.mdEditor.backupExport(file);
+    const sneaky = await window.mdEditor.backupImport('/tmp/otro.mkbackup');
+    const picked = await window.mdEditor.backupPick(file);
+    const imp = await window.mdEditor.backupImport(picked.file);
+    const after = await window.mdEditor.getConfig();
+    const sameTheme = after.theme === cfg.theme;
+    check('Respaldo: exportar e importar (solo el archivo elegido; copia previa automática)',
+      exp.ok && !!sneaky.error && picked.ok && imp.ok && /antes-de-importar-/.test(imp.safety) && sameTheme,
+      `exp=${exp.ok || exp.error} sneaky=${!!sneaky.error} pick=${picked.ok || picked.error} imp=${imp.ok || imp.error} tema=${sameTheme}`);
+  }
+
   // Mascotas: equipo, XP (una vez por tarea/día), evolución → huevo → nace
   // otra criatura; logro → huevo legendario; ocultas siguen ganando;
   // ánimo; imágenes propias; tildar en el Home; migración de la versión 1.

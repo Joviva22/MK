@@ -332,6 +332,10 @@
             <div class="set-text"><div class="set-title">Versión</div><div class="set-desc" id="app-version-desc">MK</div></div>
             <div class="set-control"><button type="button" id="app-check-update" class="toolbar-button">Buscar versión nueva</button></div>
           </div>
+          <div class="set-row" data-keywords="respaldo backup exportar importar copia otro equipo">
+            <div class="set-text"><div class="set-title">Respaldo de MK</div><div class="set-desc" id="backup-desc">Ajustes, tareas del Home y mascotas en un archivo <code>.mkbackup</code> (tus notas no: ya son archivos tuyos). La contraseña del correo no viaja: hay que volver a escribirla.</div></div>
+            <div class="set-control"><button type="button" id="backup-export" class="toolbar-button">Exportar…</button> <button type="button" id="backup-import" class="toolbar-button">Importar…</button></div>
+          </div>
           <div class="set-row" data-keywords="actualizacion aviso internet">
             <div class="set-text"><label class="set-title" for="app-update-toggle">Avisar si hay una versión nueva</label><div class="set-desc">Consulta GitHub al iniciar (una vez por día). Nunca descarga ni instala nada solo. Apagado, MK no se conecta a internet para esto.</div></div>
             <div class="set-control"><input type="checkbox" id="app-update-toggle" class="set-switch" role="switch" /></div>
@@ -752,6 +756,7 @@
   <script src="runblocks.js"></script>
   <script src="mediabrowser.js"></script>
   <script src="appversion.js"></script>
+  <script src="backup.js"></script>
   <script src="askdialog.js"></script>
   <script src="templates.js"></script>
   <script src="settings.js"></script>

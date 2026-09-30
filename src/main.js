@@ -137,6 +137,7 @@ function createWindow() {
   // Terminales integradas (ptyhost.js): si la página se recarga o la ventana
   // se cierra, sus shells quedarían huérfanos sin nadie que los lea.
   mainWindow.webContents.on('did-navigate', killAllTerminals);
+  mainWindow.webContents.on('did-navigate', () => { ctx.writesFrozen = false; });
   mainWindow.on('closed', killAllTerminals);
   // Sin barra de menú nativa (Archivo/Editar/Ver): la toolbar de la app ya
   // cubre esas acciones, y sus atajos (Ctrl+N/O/S/Shift+S) están registrados
@@ -263,6 +264,7 @@ ipcMain.handle('home:load', (event, root) => {
 
 ipcMain.handle('home:save', (event, data, root) => {
   if (root && !guard.check(root, 'home:save')) return false;
+  if (ctx.writesFrozen) return true; // importando un respaldo (ipc-backup.js)
   const file = homeFileFor(root);
   try {
     // Atómico: si se corta a mitad (apagón, cierre forzado) no queda un
@@ -297,6 +299,7 @@ ipcMain.handle('log:error', (event, where, message) => errlog.logError(`renderer
 ipcMain.handle('config:get', () => loadConfig());
 
 ipcMain.handle('config:set', (event, partial) => {
+  if (ctx.writesFrozen) return loadConfig(); // importando un respaldo (ipc-backup.js)
   const next = { ...loadConfig(), ...partial };
   saveConfig(next);
   return next;
@@ -311,6 +314,7 @@ require('./ipc-export'); // CSV, PDF, docx, HTML, EPUB, Anki
 require('./ipc-system'); // git y reproductor del sistema (playerctl)
 require('./ipc-mail'); // recordatorios por correo (Gmail)
 require('./ipc-pet'); // imágenes propias de la mascota
+require('./ipc-backup'); // exportar / importar todo
 registerDatabaseIpc(ipcMain, (root) => guard.check(root, 'db'), (channel, e) => ctx.reportError(channel, e, 'Error en la base de datos: el último cambio pudo no guardarse.'));
 registerTerminalIpc(ipcMain, () => mainWindow);
 

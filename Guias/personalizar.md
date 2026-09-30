@@ -14,7 +14,7 @@ Un panel con **secciones a la izquierda** y un **buscador** arriba: escribí "ta
 | **Correo** | Recordatorios y resumen diario por Gmail, a tu propia dirección. Ver [recordatorios.md](recordatorios.md#también-por-correo-gmail) |
 | **Terminal** | Shell (del sistema, bash, zsh, fish…). Ver [terminal.md](terminal.md) |
 | **Módulos** | Apagar lo que no uses: Home, bases de datos, Kanban, grafo, etiquetas y backlinks, terminal e IA, herramientas de PDF, Pomodoro, reproductor. Desaparecen de la barra, la paleta y los menús, y sus atajos no hacen nada; **no se borra ningún dato** |
-| **Sistema** | Git al guardar ([historial-y-git.md](historial-y-git.md)), seguir en la bandeja al cerrar (salir: `Ctrl+Q`), iniciar MK con el sistema, versión instalada y buscar versión nueva (aviso al iniciar opcional, apagado por defecto; ver [CHANGELOG](../CHANGELOG.md)) |
+| **Sistema** | Git al guardar ([historial-y-git.md](historial-y-git.md)), seguir en la bandeja al cerrar (salir: `Ctrl+Q`), iniciar MK con el sistema, versión instalada y buscar versión nueva (aviso al iniciar opcional, apagado por defecto; ver [CHANGELOG](../CHANGELOG.md)), **respaldo** exportar/importar (ver abajo) |
 
 ## La barra de estado (abajo)
 De izquierda a derecha: el tipo de archivo, **✓ Guardado / ● Sin guardar** (o ⚠ si cambió afuera), la **rama de git** de la carpeta (clic: commits eligiendo archivos), **palabras y caracteres** (de la selección si seleccionaste algo) y la posición del cursor.
@@ -36,3 +36,16 @@ De izquierda a derecha: el tipo de archivo, **✓ Guardado / ● Sin guardar** (
 - Presentar en pantalla compartida: tema claro + `Ctrl+=` un par de veces.
 
 Todo se guarda solo y se recuerda entre sesiones.
+
+## Respaldo y mudanza a otra computadora
+
+**Ajustes → Sistema → Respaldo de MK** (o la paleta: *Respaldo: exportar todo* / *Respaldo: importar…*) guarda en un solo archivo `.mkbackup`:
+
+- todos los ajustes (tema, barra, atajos, snippets, módulos, correo sin la contraseña, estado de las mascotas…);
+- las tareas del Home;
+- las imágenes de las mascotas.
+
+No incluye tus notas ni las bases de datos: son archivos de la carpeta de notas (las bases están en `<carpeta>/.mk/databases.sqlite3`) y se copian con ella. Tampoco la **contraseña del correo**, que está cifrada con el llavero de este equipo: en el otro hay que volver a escribirla en Ajustes → Correo.
+
+Al **importar**, MK muestra qué trae el respaldo y pide confirmación; antes de reemplazar nada guarda una copia de lo que había en `~/.config/md-editor-local/backups/antes-de-importar-<fecha>.mkbackup` (si te arrepentís, importás esa). Después se recarga sola. El tamaño de la ventana de este equipo se conserva.
+

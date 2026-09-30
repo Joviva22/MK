@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 104 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 105 de 136 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -191,7 +191,7 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 - [ ] **Bases de datos grandes**: tabla virtualizada (solo filas visibles), paginación y cálculo de fórmulas/rollups en segundo plano, para bases de 10.000+ filas
 - [ ] **Home con años de tareas**: archivar tareas terminadas viejas (siguen en búsqueda y estadísticas) y buscar avisos por fecha en vez de recorrer todas las tareas cada 30 s
 - [ ] **Versión en los archivos de datos** (`home.json`, `config.json`, esquema SQLite) con migraciones automáticas, para poder cambiar formatos sin romper datos viejos
-- [ ] **Exportar / importar todo**: un solo archivo con Home, bases de datos, ajustes y snippets (respaldo y mudanza a otra computadora)
+- [x] ~~**Exportar / importar todo**: un solo archivo con Home, bases de datos, ajustes y snippets (respaldo y mudanza a otra computadora)~~ (2026-09-30: `.mkbackup` con ajustes —incluye snippets y mascota—, Home e imágenes de mascotas; copia automática antes de importar. Las bases de datos viven en `<carpeta>/.mk/` y viajan con la carpeta de notas)
 
 ### Rendimiento de la edición
 - [ ] **Preview incremental**: redibujar solo los bloques que cambiaron (hoy se regenera todo el HTML en cada pausa)

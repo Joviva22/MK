@@ -31,6 +31,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 - La carpeta **se vigila sola**, disco asíncrono, **índice** en memoria y en disco; `main.js` separado en módulos.
 
 ### Seguridad y solidez
+
+- Respaldo: exportar / importar ajustes, Home y mascotas en un archivo `.mkbackup` (copia automática antes de importar).
 - Electron 44; **CSP**, **sandbox**, **rutas validadas** en el proceso principal; ventana de impresión de PDF aislada.
 - Guardado **atómico** (bases de datos, Home, configuración); un JSON dañado se aparta en vez de pisarse; **registro de errores** y avisos visibles; las pestañas viejas ya no pisan archivos cambiados afuera.
 - **Pruebas**: suite de la app (133 checks) y pruebas unitarias rápidas (`npm run test:unit`) en CI.
