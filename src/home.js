@@ -35,6 +35,16 @@ const PRIORITIES = [
   { value: 'media', label: 'Media', color: '#f2cc8f' },
   { value: 'baja', label: 'Baja', color: '#81b29a' }
 ];
+// Categorías de las tareas (editables en el Home → 🏷 Categorías). pet: tipo
+// de criatura que gana experiencia extra con las tareas de esa categoría.
+const DEFAULT_CATEGORIES = [
+  { id: 'universidad', name: 'Universidad', color: '#3b82f6', pet: 'electrico' },
+  { id: 'trabajo', name: 'Trabajo', color: '#8b5cf6', pet: 'fantasma' },
+  { id: 'casa', name: 'Casa', color: '#f59e0b', pet: 'roca' },
+  { id: 'economia', name: 'Economía', color: '#10b981', pet: 'planta' },
+  { id: 'salud', name: 'Salud', color: '#ef4444', pet: 'fuego' },
+  { id: 'personal', name: 'Personal', color: '#06b6d4', pet: 'agua' }
+];
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const REPEAT_OPTIONS = [
   { value: '', label: 'No se repite' },
@@ -59,7 +69,8 @@ const REMINDER_GRACE_MS = 10 * 60 * 1000; // avisos atrasados más que esto (app
 // (tareas del Home no recurrentes, tareas 📅 de notas y fechas de bases de
 // datos), sin tener que configurarlo tarea por tarea. Activado por defecto.
 const WEEK_BEFORE_DEFAULT = { on: true, time: '09:00' };
-let data = { tasks: [], goals: {}, notes: {}, showDatabases: true, showNotes: true, notified: {}, snoozes: [], weekBefore: { ...WEEK_BEFORE_DEFAULT } };
+let data = { tasks: [], goals: {}, notes: {}, showDatabases: true, showNotes: true, notified: {}, snoozes: [], weekBefore: { ...WEEK_BEFORE_DEFAULT }, categories: DEFAULT_CATEGORIES.map((c) => ({ ...c })) };
+let categoryFilter = ''; // '' = todas; 'none' = sin categoría; o el id
 let noteItems = []; // tareas "- [ ] ... 📅 AAAA-MM-DD" encontradas en las notas de la carpeta
 let saveTimer = null;
 let mode = 'week'; // 'week' | 'month'
@@ -151,7 +162,8 @@ async function readStored(root) {
       snoozes: Array.isArray(stored.snoozes) ? stored.snoozes : [],
       weekBefore: stored.weekBefore && typeof stored.weekBefore === 'object'
         ? { on: stored.weekBefore.on !== false, time: /^\d{2}:\d{2}$/.test(stored.weekBefore.time) ? stored.weekBefore.time : WEEK_BEFORE_DEFAULT.time }
-        : { ...WEEK_BEFORE_DEFAULT }
+        : { ...WEEK_BEFORE_DEFAULT },
+      categories: Array.isArray(stored.categories) ? stored.categories : DEFAULT_CATEGORIES.map((c) => ({ ...c }))
     };
   }
   showDbToggle.checked = data.showDatabases;
@@ -266,10 +278,43 @@ function priorityColor(task) {
   return p ? p.color : 'var(--border)';
 }
 
+// ---- categorías ----
+
+function categoryById(id) {
+  return (data.categories || []).find((c) => c.id === id) || null;
+}
+
+function normalize(s) {
+  return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+// "@uni repasar parcial" → categoría Universidad, título "repasar parcial".
+function parseCategoryToken(text) {
+  const m = text.match(/(^|\s)@([\p{L}\p{N}_-]+)/u);
+  if (!m) return { title: text, category: null };
+  const q = normalize(m[2]);
+  const cat = (data.categories || []).find((c) => normalize(c.id).startsWith(q) || normalize(c.name).startsWith(q));
+  if (!cat) return { title: text, category: null };
+  return { title: text.replace(m[0], ' ').replace(/\s+/g, ' ').trim(), category: cat.id };
+}
+
+function matchesFilter(task) {
+  if (!categoryFilter) return true;
+  if (categoryFilter === 'none') return !task.category || !categoryById(task.category);
+  return task.category === categoryFilter;
+}
+
+function shownOn(dateIso) {
+  return occurrencesOn(dateIso).filter((it) => matchesFilter(it.task));
+}
+
 function addTask(title, date) {
-  const text = title.trim();
+  const parsed = parseCategoryToken(title.trim());
+  const text = parsed.title;
   if (!text) return;
-  data.tasks.push({ id: newId(), title: text, date: date || null, done: false, priority: 'media', notes: '' });
+  // Sin @categoría, hereda la del filtro activo (si hay una elegida).
+  const category = parsed.category || (categoryFilter && categoryFilter !== 'none' ? categoryFilter : null);
+  data.tasks.push({ id: newId(), title: text, date: date || null, done: false, priority: 'media', notes: '', category });
   save();
   render();
 }
@@ -290,7 +335,7 @@ function deleteTask(id) {
 
 function setItemDone(item, done) {
   // La mascota gana experiencia (una vez por tarea y día, ver pet.js).
-  if (done && !item.done && window.mdPet) window.mdPet.gain('task', `home:${item.task.id}|${item.date}`);
+  if (done && !item.done && window.mdPet) window.mdPet.gain('task', `home:${item.task.id}|${item.date}`, { category: categoryById(item.task.category) });
   if (item.recurring) {
     const dates = new Set(item.task.doneDates || []);
     if (done) dates.add(item.date); else dates.delete(item.date);
@@ -1058,6 +1103,14 @@ function taskCard(item, compact) {
     startInlineRename(card, titleEl, task);
   });
   card.appendChild(titleEl);
+  const cat = categoryById(task.category);
+  if (cat) {
+    const chip = el('span', 'home-task-cat', cat.name);
+    chip.style.setProperty('--cat', cat.color);
+    chip.title = `Categoría: ${cat.name}`;
+    card.appendChild(chip);
+    card.dataset.category = cat.id;
+  }
   const badges = (item.recurring ? '🔁' : '') + ((task.remind != null && task.time) || (task.advance && task.advance.length) ? '🔔' : '') + (task.pomodoros ? `🍅${task.pomodoros}` : '');
   if (badges) card.appendChild(el('span', 'home-task-badges', badges));
   if (task.note) {
@@ -1226,7 +1279,7 @@ function renderSide(periodTasks) {
   sideEl.appendChild(notes);
 
   // Atrasadas
-  const overdue = overdueTasks();
+  const overdue = overdueTasks().filter(matchesFilter);
   if (overdue.length) {
     const titleRow = el('div', 'home-side-title home-side-title-row');
     titleRow.appendChild(el('span', 'home-overdue-title', `Atrasadas (${overdue.length})`));
@@ -1262,7 +1315,7 @@ function renderSide(periodTasks) {
   // Sin fecha (backlog): se puede arrastrar desde/hacia los días
   sideEl.appendChild(el('div', 'home-side-title', 'Sin fecha'));
   const backlog = el('div', 'home-task-list home-backlog');
-  data.tasks.filter((t) => !t.date).forEach((t) => backlog.appendChild(taskCard(itemFor(t))));
+  data.tasks.filter((t) => !t.date && matchesFilter(t)).forEach((t) => backlog.appendChild(taskCard(itemFor(t))));
   makeDropTarget(backlog, () => null);
   sideEl.appendChild(backlog);
   sideEl.appendChild(quickAddInput(null, '+ Tarea sin fecha'));
@@ -1278,7 +1331,7 @@ function renderWeek() {
     `${monday.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ` +
     `${sunday.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
-  renderSide(itemsInRange(iso(monday), iso(sunday)));
+  renderSide(itemsInRange(iso(monday), iso(sunday)).filter((it) => matchesFilter(it.task)));
 
   mainEl.innerHTML = '';
   const grid = el('div', 'home-week');
@@ -1289,7 +1342,7 @@ function renderWeek() {
     const header = el('div', 'home-day-header');
     header.appendChild(el('span', 'home-day-name', DAY_NAMES[i]));
     header.appendChild(el('span', 'home-day-number', String(day.getDate())));
-    const dayTasks = occurrencesOn(dayIso);
+    const dayTasks = shownOn(dayIso);
     if (dayTasks.length) {
       header.appendChild(el('span', 'home-day-count', `${dayTasks.filter((t) => t.done).length}/${dayTasks.length}`));
     }
@@ -1317,7 +1370,7 @@ function renderMonth() {
   const label = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   rangeLabel.textContent = label.charAt(0).toUpperCase() + label.slice(1);
 
-  renderSide(itemsInRange(iso(first), iso(last)));
+  renderSide(itemsInRange(iso(first), iso(last)).filter((it) => matchesFilter(it.task)));
 
   mainEl.innerHTML = '';
   const cal = el('div', 'home-calendar');
@@ -1342,7 +1395,7 @@ function renderMonth() {
     cell.appendChild(num);
 
     const items = [
-      ...occurrencesOn(dayIso).map((it) => taskCard(it, true)),
+      ...shownOn(dayIso).map((it) => taskCard(it, true)),
       ...noteItemsOn(dayIso).map((it) => noteChip(it)),
       ...dbItemsOn(dayIso).map((it) => dbChip(it))
     ];
@@ -1465,6 +1518,7 @@ function openTaskEditor(item) {
   const getAdvance = window.mdReminderUI.build(advWrap, task.advance || []);
 
   const prioSelect = field('Prioridad', selectOf(PRIORITIES, task.priority || 'media'));
+  const catSelect = field('Categoría', selectOf([{ value: '', label: 'Sin categoría' }, ...(data.categories || []).map((c) => ({ value: c.id, label: c.name }))], task.category || ''));
 
   const noteInput = field('Nota enlazada (opcional)', el('input', 'home-editor-input'));
   noteInput.placeholder = 'Nombre de una nota de la carpeta';
@@ -1522,6 +1576,7 @@ function openTaskEditor(item) {
       advance: getAdvance(),
       repeat: freq ? { freq, until: untilInput.value || null, days: freq === 'weekly' ? days : undefined } : null,
       priority: prioSelect.value,
+      category: catSelect.value || null,
       notes: notesInput.value,
       note: noteInput.value.trim() || null
     });
@@ -1554,6 +1609,7 @@ function openTaskEditor(item) {
 // ---- general ----
 
 function render() {
+  renderCategoryFilter();
   if (overlay.hidden) return;
   if (mode === 'week') renderWeek(); else renderMonth();
 }
@@ -1590,6 +1646,110 @@ document.getElementById('home-next').addEventListener('click', () => shift(1));
 document.getElementById('home-today').addEventListener('click', () => { cursor = new Date(); render(); });
 document.getElementById('home-close').addEventListener('click', close);
 document.getElementById('home-stats-btn').addEventListener('click', openStats);
+
+// ---- filtro y administrador de categorías ----
+const catFilterEl = document.getElementById('home-cat-filter');
+
+function renderCategoryFilter() {
+  if (!catFilterEl) return;
+  const cats = data.categories || [];
+  if (categoryFilter && categoryFilter !== 'none' && !categoryById(categoryFilter)) categoryFilter = '';
+  catFilterEl.innerHTML = '';
+  [{ value: '', label: '🏷 Todas' }, ...cats.map((c) => ({ value: c.id, label: c.name })), { value: 'none', label: 'Sin categoría' }].forEach((o) => {
+    const opt = el('option', null, o.label);
+    opt.value = o.value;
+    catFilterEl.appendChild(opt);
+  });
+  catFilterEl.value = categoryFilter;
+  const cat = categoryById(categoryFilter);
+  catFilterEl.style.borderColor = cat ? cat.color : '';
+}
+
+if (catFilterEl) {
+  catFilterEl.addEventListener('change', () => {
+    categoryFilter = catFilterEl.value;
+    render();
+  });
+}
+
+const PET_TYPES = [
+  { value: '', label: '— ninguna —' },
+  { value: 'fuego', label: '🔥 Fuego' }, { value: 'agua', label: '💧 Agua' }, { value: 'planta', label: '🌱 Planta' },
+  { value: 'electrico', label: '⚡ Eléctrico' }, { value: 'hielo', label: '❄ Hielo' }, { value: 'roca', label: '🪨 Roca' },
+  { value: 'fantasma', label: '👻 Fantasma' }
+];
+
+let catsModal = null;
+
+function closeCategories() {
+  if (catsModal) { catsModal.remove(); catsModal = null; }
+}
+
+function openCategories() {
+  closeCategories();
+  const draft = (data.categories || []).map((c) => ({ ...c }));
+  const modal = el('div', 'modal-overlay palette-overlay');
+  const box = el('div', 'command-palette home-cats');
+  modal.appendChild(box);
+  box.appendChild(el('div', 'backlinks-title', '🏷 Categorías'));
+  box.appendChild(el('div', 'home-editor-hint', 'Con @nombre en "+ Agregar tarea" se asigna sola (ej. "@uni repasar"). Las tareas de una categoría dan +5 XP extra a las mascotas de su tipo.'));
+  const list = el('div', 'home-cats-list');
+  box.appendChild(list);
+  const drawRows = () => {
+    list.innerHTML = '';
+    draft.forEach((c, i) => {
+      const row = el('div', 'home-cats-row');
+      const color = el('input');
+      color.type = 'color';
+      color.value = c.color;
+      color.setAttribute('aria-label', 'Color');
+      color.addEventListener('input', () => { c.color = color.value; });
+      const name = el('input', 'home-editor-input');
+      name.value = c.name;
+      name.setAttribute('aria-label', 'Nombre');
+      name.addEventListener('input', () => { c.name = name.value; });
+      const pet = el('select', 'home-editor-input');
+      pet.setAttribute('aria-label', 'Mascota que gana experiencia extra');
+      PET_TYPES.forEach((o) => { const opt = el('option', null, o.label); opt.value = o.value; pet.appendChild(opt); });
+      pet.value = c.pet || '';
+      pet.addEventListener('change', () => { c.pet = pet.value || null; });
+      const del = el('button', 'home-icon-button', '×');
+      del.title = 'Quitar categoría (sus tareas quedan sin categoría)';
+      del.addEventListener('click', () => { draft.splice(i, 1); drawRows(); });
+      row.append(color, name, pet, del);
+      list.appendChild(row);
+    });
+  };
+  drawRows();
+  const add = el('button', 'toolbar-button', '+ Categoría');
+  add.addEventListener('click', () => {
+    draft.push({ id: newId(), name: 'Nueva', color: '#64748b', pet: null });
+    drawRows();
+    const inputs = list.querySelectorAll('.home-cats-row input.home-editor-input');
+    if (inputs.length) inputs[inputs.length - 1].select();
+  });
+  const actions = el('div', 'home-editor-actions');
+  const cancel = el('button', 'toolbar-button', 'Cancelar');
+  cancel.addEventListener('click', closeCategories);
+  const ok = el('button', 'toolbar-button', 'Guardar');
+  ok.addEventListener('click', () => {
+    const clean = draft.filter((c) => c.name.trim()).map((c) => ({ ...c, name: c.name.trim().slice(0, 30) }));
+    const ids = new Set(clean.map((c) => c.id));
+    data.tasks.forEach((t) => { if (t.category && !ids.has(t.category)) t.category = null; });
+    data.categories = clean;
+    save();
+    closeCategories();
+    render();
+  });
+  actions.append(add, el('span', 'toolbar-spacer'), cancel, ok);
+  box.appendChild(actions);
+  modal.addEventListener('mousedown', (e) => { if (e.target === modal) closeCategories(); });
+  modal.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.stopPropagation(); closeCategories(); } });
+  document.body.appendChild(modal);
+  catsModal = modal;
+}
+
+document.getElementById('home-cats-btn').addEventListener('click', openCategories);
 document.getElementById('btn-home').addEventListener('click', open);
 showNotesToggle.addEventListener('change', async () => {
   data.showNotes = showNotesToggle.checked;
@@ -1730,7 +1890,19 @@ function computeStats() {
     };
   });
 
+  // Por categoría: hechas este mes y pendientes (con su color).
+  const cats = [...(data.categories || []), { id: null, name: 'Sin categoría', color: '#94a3b8' }];
+  const catOf = (t) => (categoryById(t.category) ? t.category : null);
+  const byCategory = cats.map((c) => ({
+    label: c.name,
+    color: c.color,
+    doneMonth: monthItems.filter((i) => i.done && catOf(i.task) === c.id).length,
+    doneWeek: weekItems.filter((i) => i.done && catOf(i.task) === c.id).length,
+    pending: data.tasks.filter((t) => !(t.repeat && t.repeat.freq) && !t.done && catOf(t) === c.id).length
+  }));
+
   return {
+    byCategory,
     week: { done: weekItems.filter((i) => i.done).length, total: weekItems.length },
     month: { done: monthItems.filter((i) => i.done).length, total: monthItems.length },
     overdue: overdueTasks().length,
@@ -1787,6 +1959,19 @@ function openStats() {
   charts.append(weekBlock, prioBlock);
   box.appendChild(charts);
 
+  // Qué hiciste más: hechas este mes por categoría + pendientes.
+  const catCharts = el('div', 'home-stats-charts');
+  const catDoneBlock = el('div', 'home-stats-block');
+  catDoneBlock.appendChild(el('div', 'home-stats-subtitle', 'Hechas este mes por categoría'));
+  const catDoneHost = el('div');
+  catDoneBlock.appendChild(catDoneHost);
+  const catPendBlock = el('div', 'home-stats-block');
+  catPendBlock.appendChild(el('div', 'home-stats-subtitle', 'Pendientes por categoría'));
+  const catPendHost = el('div');
+  catPendBlock.appendChild(catPendHost);
+  catCharts.append(catDoneBlock, catPendBlock);
+  box.appendChild(catCharts);
+
   if (s.habits.length) {
     const habitsBlock = el('div', 'home-stats-block');
     habitsBlock.appendChild(el('div', 'home-stats-subtitle', 'Hábitos (tareas recurrentes)'));
@@ -1816,6 +2001,8 @@ function openStats() {
   // Recién ahora (con el ancho real) se dibujan los gráficos.
   window.mdCharts.render(weekHost, { type: 'bar', time: true, data: s.weeks.map((w) => ({ label: w.label, value: w.done })), valueLabel: 'hechas', labelTitle: 'Semana del', emptyText: 'Todavía no hay tareas.' });
   window.mdCharts.render(prioHost, { type: 'pie', data: s.pendingByPriority.filter((p) => p.value > 0), valueLabel: 'pendientes', labelTitle: 'Prioridad', emptyText: 'No hay tareas pendientes.' });
+  window.mdCharts.render(catDoneHost, { type: 'bar', data: s.byCategory.filter((c) => c.doneMonth > 0).map((c) => ({ label: c.label, value: c.doneMonth, color: c.color })), valueLabel: 'hechas', labelTitle: 'Categoría', emptyText: 'Todavía no hiciste tareas este mes.' });
+  window.mdCharts.render(catPendHost, { type: 'pie', data: s.byCategory.filter((c) => c.pending > 0).map((c) => ({ label: c.label, value: c.pending, color: c.color })), valueLabel: 'pendientes', labelTitle: 'Categoría', emptyText: 'No hay tareas pendientes.' });
 }
 
 // Búsqueda global (search.js): tareas del Home por título y notas.
@@ -1839,6 +2026,6 @@ async function revealTask(id) {
   openTaskEditor(task.date ? findItem(task.id, task.date) : itemFor(task));
 }
 
-window.mdHome = { overdueCount, updatePetMood, dailySummaryText, weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
+window.mdHome = { openCategories, setCategoryFilter: (v) => { categoryFilter = v || ''; render(); }, parseCategoryToken, overdueCount, updatePetMood, dailySummaryText, weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
 
 })();

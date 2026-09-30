@@ -162,6 +162,19 @@ En el editor de tarea, **Nota enlazada**: escribí el nombre de una nota de la c
 
 En el editor de tarea, **⏱ Pomodoro** arranca un foco con esa tarea: la barra de estado muestra `🍅 Foco 24:59 · Título`. Al terminar cada foco suma un 🍅 a la tarea y te pregunta si la terminaste — si decís que sí, se tilda sola.
 
+## Categorías 🏷
+
+Cada tarea puede tener una **categoría** (Universidad, Trabajo, Casa, Economía, Salud, Personal… editables): se ve como un chip de color en la tarjeta.
+
+| Cómo | Qué hace |
+|---|---|
+| Escribir `@uni repasar parcial` en "+ Agregar tarea" | Crea la tarea en **Universidad** (alcanza con el comienzo del nombre, sin tildes) |
+| Editor de la tarea → **Categoría** | Cambiarla o quitarla |
+| Selector **🏷 Todas** en la cabecera | Muestra **solo esa categoría** (o "Sin categoría"); las tareas nuevas que agregues **la heredan** |
+| Botón **🏷** | Administrar: nombre, **color**, y qué **mascota** gana experiencia extra (+5 XP) con esas tareas; agregar o quitar (sus tareas quedan sin categoría) |
+
+En **📈 Estadísticas** aparecen *Hechas este mes por categoría* (qué hiciste más) y *Pendientes por categoría*, con sus colores.
+
 ## Plan de hoy → nota diaria 📝
 
 Botón **"Plan de hoy → nota diaria"** en el panel lateral: abre (o crea) la [nota diaria](nota-diaria.md) y agrega una sección `## Plan del día` con todas las tareas de hoy como checklist (con hora, las de tus notas y las de bases de datos). Si lo apretás de nuevo, solo agrega lo que falta — no duplica.

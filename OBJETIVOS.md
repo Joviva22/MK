@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 82 de 135 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 84 de 136 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -26,7 +26,7 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 10. ~~**El botón de modo muestra en qué modo estás**~~ ✅ hecho (2026-09-30): el botón de vista cambia de ícono y texto según el modo actual (Normal · Enfoque · Lectura · Live Preview), no solo el tooltip.
 11. ~~**Mascota virtual**~~ ✅ hecho (2026-09-30) (como *vscode-pets* / *vscode-pokemon*): un compañero animado en una esquina (o en el panel de la terminal) que camina, se puede alimentar/tirar la pelota; varias especies y temas.
 12. ~~**Mascota ligada a tus tareas y Pomodoros**~~ ✅ hecho (2026-09-30) (estilo *Digimon/Pokémon*): gana experiencia con cada tarea tildada y cada Pomodoro terminado, sube de nivel y **evoluciona**; se pone triste si hay tareas atrasadas. Depende del 11 y del 13.
-13. **Categorías en las tareas del Home** (Universidad, Casa, Economía… editables, con color): filtro por categoría en el Home y **estadísticas por categoría** (qué hiciste más esta semana/mes). Se puede ligar a la mascota (cada categoría le da un tipo de experiencia).
+13. ~~**Categorías en las tareas del Home**~~ ✅ hecho (2026-09-30) (Universidad, Casa, Economía… editables, con color): filtro por categoría en el Home y **estadísticas por categoría** (qué hiciste más esta semana/mes). Se puede ligar a la mascota (cada categoría le da un tipo de experiencia).
 
 **P3 — Comodidad**
 14. ~~**Gráficos desde tablas Markdown**~~ ✅ hecho.
@@ -124,8 +124,9 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Mascota con personajes de un juego RPG Maker**~~ (carpeta `Graphics/Characters` detectada sola, líneas evolutivas desde `PBS/pokemon.txt` con ramas, caminata animada por dirección; se copian solo 3 sprites a la config local) (2026-09-30)
 - [x] ~~**Varias mascotas: equipo, huevos y legendarias**~~ (equipo de 3, colección, huevo por cada evolución, 4 logros → huevos legendarios, 7 líneas + 4 legendarias de MK o criaturas y legendarios del juego, ocultas siguen ganando, migración de la mascota anterior) (2026-09-30)
 - [x] ~~**Más lenguajes: F5 y resaltado**~~ (F5 para TS, Rust, PHP, Perl, Lua, R, Julia, Haskell, Dart, Swift, Kotlin, zsh, fish, PowerShell, SQL, HTML y Makefile; resaltado de ~25 lenguajes más cargado al abrir) (2026-09-30)
-- [ ] **Mascota: XP por categoría** (cuando existan las categorías del Home, P2 · 13) y por filas de bases de datos marcadas como hechas
-- [ ] **Categorías en tareas del Home + estadísticas por categoría** (P2 · 13)
+- [x] ~~**Mascota: XP por categoría**~~ (+5 XP a la mascota afín; falta: filas de bases de datos) (2026-09-30)
+- [ ] **Mascota: XP por filas de bases de datos marcadas como hechas** (la casilla "Hecha" de una fila con fecha)
+- [x] ~~**Categorías en tareas del Home + estadísticas por categoría**~~ (`@categoría` al agregar, chip de color, filtro que heredan las nuevas, administrador con color, estadísticas por categoría) (2026-09-30)
 
 ## Ideas de `MEJORAS_PROPUESTAS.md` (Gemini)
 

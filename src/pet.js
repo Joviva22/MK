@@ -609,7 +609,11 @@ function checkAchievements() {
 }
 
 // kind: 'task' | 'pomodoro'. key: una tarea en un día (no vuelve a sumar).
-async function gain(kind, key) {
+// opts.category: la categoría de la tarea (home.js): sus mascotas afines
+// (mismo tipo de criatura de MK) ganan CATEGORY_BONUS extra.
+const CATEGORY_BONUS = 5;
+
+async function gain(kind, key, opts) {
   const amount = XP[kind] || 0;
   if (!amount) return null;
   ensureStarter();
@@ -630,11 +634,22 @@ async function gain(kind, key) {
   const incubating = new Set(state.eggs.map((e) => e.id)); // los de antes de esta vuelta
   let evolved = false;
   let levelUp = false;
+  const cat = opts && opts.category;
+  let bonusFor = 0;
   team.forEach((p) => {
-    const r = addXp(p, amount);
+    const affine = cat && cat.pet && p.kind === 'mk' && p.species === cat.pet;
+    const r = addXp(p, amount + (affine ? CATEGORY_BONUS : 0));
+    if (affine) {
+      bonusFor++;
+      say(walkers.find((w) => w.pet.id === p.id), `¡Me encanta ${cat.name}! +${amount + CATEGORY_BONUS} XP`, 2200);
+    }
     evolved = evolved || r.evolved;
     levelUp = levelUp || r.levelUp;
   });
+  if (cat && cat.name) {
+    state.stats.byCategory = state.stats.byCategory || {};
+    state.stats.byCategory[cat.name] = (state.stats.byCategory[cat.name] || 0) + 1;
+  }
   // Los huevos también se incuban con lo que hacés (los que aparecieron
   // en esta misma vuelta empiezan de 0).
   const ready = [];
@@ -645,7 +660,7 @@ async function gain(kind, key) {
   });
   checkAchievements();
   walkers.forEach((w) => {
-    if (!evolved && !levelUp) say(w, `+${amount} XP`, 1600);
+    if (!evolved && !levelUp && !(bonusFor && cat && cat.pet === w.pet.species)) say(w, `+${amount} XP`, 1600);
     w.mode = 'happy';
     w.modeUntil = Date.now() + 1200;
     hearts(w);
@@ -655,7 +670,7 @@ async function gain(kind, key) {
   for (const e of ready) await hatch(e);
   if (!card.hidden) renderCard();
   if (!overlay.hidden) renderCollection();
-  return { ...info(), evolved, levelUp, hatched: ready.length };
+  return { ...info(), evolved, levelUp, hatched: ready.length, bonus: bonusFor };
 }
 
 function info() {

@@ -5025,3 +5025,35 @@ body.pet-on.pet-on-sidebar #sidebar-pane { padding-bottom: 80px; }
 .pet.pet-legendary .pet-sprite { filter: drop-shadow(0 0 6px rgba(255, 204, 51, 0.7)); }
 @keyframes pet-aura { 0%, 100% { opacity: 0.12; } 50% { opacity: 0.3; } }
 .pet .pet-aura { animation: pet-aura 2.4s ease-in-out infinite; }
+
+/* ---- Categorías del Home ---- */
+.home-task-cat {
+  flex: none;
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 999px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--cat) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cat) 55%, transparent);
+  white-space: nowrap;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.home-task-compact .home-task-cat { padding: 2px 4px; font-size: 9px; max-width: 60px; }
+.home-cat-filter {
+  height: 30px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-sm);
+}
+.home-cats { width: min(560px, 92vw); padding: var(--space-4) !important; }
+.home-cats .home-editor-hint { margin-top: var(--space-1); }
+.home-cats-list { display: flex; flex-direction: column; gap: var(--space-2); margin: var(--space-3) 0; max-height: 50vh; overflow-y: auto; }
+.home-cats-row { display: grid; grid-template-columns: 36px 1fr 150px 28px; gap: var(--space-2); align-items: center; }
+.home-cats-row input[type="color"] { width: 32px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: none; cursor: pointer; }

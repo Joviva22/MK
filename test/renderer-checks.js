@@ -3685,6 +3685,61 @@
       `comandos=${cmdsOk} (${rsCmd} | ${mkCmd}) resaltado=${hlOk} ${hlOk === true ? '' : dbg}`);
   }
 
+  // Categorías del Home: @categoría en el alta rápida, chip en la tarjeta,
+  // filtro (las nuevas heredan la categoría filtrada), estadísticas por
+  // categoría y +5 XP a la mascota afín.
+  {
+    const parsed = window.mdHome.parseCategoryToken('@uni repasar parcial');
+    const parseOk = parsed.category === 'universidad' && parsed.title === 'repasar parcial';
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    window.mdHome.setCategoryFilter('');
+    const stamp = Date.now();
+    const qa = () => document.querySelector('#home-main .home-day.home-today .home-quick-add');
+    (await waitFor(qa)).value = `Leer apuntes ${stamp} @uni`;
+    qa().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const card = () => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(`Leer apuntes ${stamp}`));
+    const c1 = await waitFor(card);
+    const chipOk = !!c1 && c1.dataset.category === 'universidad' && c1.querySelector('.home-task-cat').textContent === 'Universidad';
+
+    window.mdHome.setCategoryFilter('casa');
+    const hiddenOk = !card();
+    qa().value = `Lavar ropa ${stamp}`;
+    qa().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const c2 = await waitFor(() => Array.from(document.querySelectorAll('#home-main .home-task')).find((c) => c.textContent.includes(`Lavar ropa ${stamp}`)));
+    const inheritOk = !!c2 && c2.dataset.category === 'casa';
+    window.mdHome.setCategoryFilter('');
+
+    // Mascota afín: Universidad → Eléctrico (+5 XP extra).
+    const P = window.mdPet;
+    const before = P.getState();
+    await P.setState({ enabled: false, pets: [{ id: 'p1', kind: 'mk', species: 'electrico', name: '', xp: 0, legendary: false }], team: ['p1'], eggs: [], awarded: [] });
+    card().querySelector('input[type="checkbox"]').click();
+    await new Promise((r) => setTimeout(r, 250));
+    const bonusOk = P.info().xp === 15;
+    const stats = window.mdHome.computeStats();
+    const uni = stats.byCategory.find((c) => c.label === 'Universidad');
+    const statsOk = !!uni && uni.doneWeek >= 1 && uni.color === '#3b82f6';
+    await P.setState(before);
+
+    // Limpieza
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    for (const text of [`Leer apuntes ${stamp}`, `Lavar ropa ${stamp}`]) {
+      const c = Array.from(document.querySelectorAll('#home-main .home-task')).find((x) => x.textContent.includes(text));
+      if (!c) continue;
+      c.click();
+      await waitFor(() => document.querySelector('.home-editor'));
+      Array.from(document.querySelectorAll('.home-editor button')).find((b) => b.textContent === 'Eliminar').click();
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    window.confirm = originalConfirm;
+    window.mdHome.close();
+    check('Categorías del Home: @categoría, chip, filtro (las nuevas heredan), estadísticas por categoría y +5 XP a la mascota afín',
+      parseOk && chipOk && hiddenOk && inheritOk && bonusOk && statsOk,
+      `@=${parseOk} chip=${chipOk} filtra=${hiddenOk} hereda=${inheritOk} mascota=${bonusOk}(${P.info().xp}) estadísticas=${statsOk}`);
+  }
+
   // Mascotas: equipo, XP (una vez por tarea/día), evolución → huevo → nace
   // otra criatura; logro → huevo legendario; ocultas siguen ganando;
   // ánimo; imágenes propias; tildar en el Home; migración de la versión 1.
