@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 117 de 143 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 117 de 145 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -40,12 +40,17 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 20. **Migrar la ventana a módulos ES** (`import`/`export` en vez de `window.mdX` y del orden de los `<script>`: hoy un script cargado antes de tiempo rompe cosas en silencio).
 21. **Partir `home.js` (~2400 líneas), `database.js` (~2200) y `styles.css` (~5000)** por responsabilidad (vistas, avisos, archivo… / tabla, vistas, fórmulas… / un CSS por panel). Va junto con el 20.
 
+**P4b — Plugins y temas de verdad: DESPUÉS DE P4** (decidido 2026-09-30). La app base trae lo esencial; lo que es gusto personal se instala aparte. Las mascotas y los temas extra se quedan en *tu* MK porque te gustan, pero no vienen de fábrica.
+22. **Sistema de plugins real**: cada plugin es una carpeta en `~/.config/md-editor-local/plugins/<nombre>/` con un `plugin.json` (nombre, versión, permisos) y sus archivos. Se prenden y apagan en Ajustes → Plugins. API acotada (sin `require`/`fs` libre): agregar un panel o botón, escuchar eventos (tarea hecha, Pomodoro, tema cambiado), guardar su propia configuración. Nunca se descargan solos: se instalan desde una carpeta o un `.zip` que elige el usuario.
+23. **Sacar de la base a plugins**: **Mascotas** (equipo, huevos, colección, sprites de juegos) y **Kingdom Hearts** (keyblades, Lucky Emblems, Sora y Roxas, tema KH) pasan a ser plugins; MK base funciona igual sin ellos (hoy los módulos ya se pueden apagar: es el paso siguiente). Migración: quien los usa los conserva instalados, con su progreso.
+24. **Temas instalables**: la base trae pocos (Claro, Oscuro y alguno de alto contraste); el resto (Dracula, Nord, Gruvbox… y KH) van en **paquetes de temas**: un `.json` con los 7 colores (+ extras opcionales como el editor o una imagen de fondo), instalables desde la galería de Ajustes → Apariencia (*Instalar tema…*) y exportables para compartir. El tema personalizado se puede guardar como paquete.
+
 **Escalabilidad** — ver la sección "Escalabilidad y solidez": ~~índice de la carpeta~~, ~~vigilar la carpeta~~ y ~~disco asíncrono~~ hechos (2026-09-29): una carpeta con miles de notas ya no congela MK.
 
 **Consolidación** — ver la sección "Consolidación" (revisiones externas): ~~validación de rutas~~, ~~CSP~~, ~~sandbox~~ y ~~registro de errores~~ hechos (2026-09-29); quedan agrupar escrituras de bases de datos, pruebas unitarias, accesibilidad y dividir archivos grandes.
 
 **P5 — Proyectos grandes** (requieren decidir antes el diseño; hacerlos de a uno y con tiempo)
-14. Sincronización entre dispositivos · 15. Windows y macOS · 16. Sistema de plugins · 17. Pizarra Excalidraw · 18. Dos editores escribibles · 19. Ejecutar Python en el preview · 20. YouTube embebido · 21. Editar texto dentro de un PDF.
+14. Sincronización entre dispositivos · 15. Windows y macOS · 16. ~~Sistema de plugins~~ (pasó a P4b) · 17. Pizarra Excalidraw · 18. Dos editores escribibles · 19. Ejecutar Python en el preview · 20. YouTube embebido · 21. Editar texto dentro de un PDF.
 
 ---
 
@@ -246,7 +251,7 @@ Funciones más grandes o que tocan varias partes de la app.
 Proyectos pesados o que requieren decisiones de diseño/seguridad antes de empezar.
 
 - [ ] **Pizarra Excalidraw** embebida para dibujar diagramas a mano (viable con su build UMD, pero suma ~2 MB y React; decidir antes si se guarda como `.excalidraw` aparte o dentro del `.md`)
-- [ ] **Sistema de plugins** seguro: scripts locales en `plugins/` (nunca descargados), con una API limitada de hooks (`onRender`, `onSave`) sin acceso libre a `require`/`fs`, revisados antes de habilitarse
+- [ ] **Sistema de plugins** (→ ahora en **P4b**, ver Prioridad recomendada) seguro: scripts locales en `plugins/` (nunca descargados), con una API limitada de hooks (`onRender`, `onSave`) sin acceso libre a `require`/`fs`, revisados antes de habilitarse
 - [ ] **Ejecutar Python y otros lenguajes** dentro de los bloques de código del preview (hoy solo JS aislado en un Worker; para otros lenguajes está F5 en la terminal, que es explícito)
 - [ ] **Dos editores escribibles a la vez** en pantalla dividida (hoy el panel secundario es de solo lectura; varios módulos asumen un único CodeMirror)
 - [ ] **Migrar los scripts sueltos (`window.mdX`) a módulos ES** (`import`/`export`): refactor de todo `src/`, mejor hacerlo solo y con tiempo
