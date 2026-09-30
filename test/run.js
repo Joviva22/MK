@@ -57,7 +57,7 @@ const corpusDir = path.join(os.tmpdir(), `${runId}-corpus`);
   fs.writeFileSync(path.join(`${fixturesDir}-kh`, 'keyblades.png'), png);
   // Hoja "de Sora" (mismo tamaño que la real, así se reconoce): fondo
   // blanco con un bloque oscuro en cada cuadro que recorta ipc-kh.js.
-  const { CHARS } = { CHARS: { sora: { size: [1024, 2917], rects: [[2, 418, 23, 46], [34, 419, 29, 45], [67, 416, 24, 48], [96, 416, 24, 48], [125, 415, 21, 49], [152, 414, 24, 50], [182, 414, 24, 50], [210, 414, 22, 50], [3, 726, 28, 52], [36, 709, 34, 69], [76, 743, 56, 35], [139, 740, 55, 38], [500, 5, 70, 95], [570, 575, 70, 95], [500, 198, 70, 95], [500, 295, 70, 95], [780, 5, 70, 95]] } } };
+  const { CHARS } = { CHARS: { sora: { size: [1024, 2917], rects: [[360, 15, 25, 50], [392, 15, 25, 50], [2, 156, 23, 49], [34, 156, 27, 49], [67, 156, 26, 49], [98, 155, 24, 50], [128, 157, 24, 48], [3, 726, 28, 52], [36, 709, 34, 69], [76, 743, 56, 35], [139, 740, 55, 38], [500, 5, 70, 95], [570, 575, 70, 95], [500, 198, 70, 95], [500, 295, 70, 95], [780, 5, 70, 95]] } } };
   const [sw, sh] = CHARS.sora.size;
   const sraw = Buffer.alloc((sw * 4 + 1) * sh, 255);
   for (let y = 0; y < sh; y++) sraw[y * (sw * 4 + 1)] = 0;

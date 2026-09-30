@@ -4028,7 +4028,7 @@
     await window.mdPet.setState({ enabled: true });
     const r = await window.mdKhChars.importChars([`${fixturesDir}-kh/sora.png`]);
     const sora = window.mdKhChars.get('sora');
-    const animsOk = !!sora && sora.anims.walk.frames.length === 8 && sora.anims.attack.frames.length === 4 && !!sora.portraits.feliz;
+    const animsOk = !!sora && sora.anims.walk.frames.length === 5 && sora.anims.attack.frames.length === 4 && !!sora.portraits.feliz;
     const joined = window.mdPet.getState().pets.some((p) => p.kind === 'kh' && p.species === 'sora');
     const toast = document.querySelector('.kh-portrait-toast img'); // "¡Sora se unió!"
     document.querySelectorAll('.kh-portrait-toast').forEach((t) => t.remove());
