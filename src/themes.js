@@ -69,17 +69,14 @@ function currentTheme() {
   return document.documentElement.getAttribute('data-theme') || 'light';
 }
 
-// El botón 🎨 de la barra abre la galería de temas en Ajustes.
-const themeBtn = document.getElementById('btn-theme');
-if (themeBtn) {
-  themeBtn.addEventListener('click', () => {
-    if (window.mdSettingsPanel) window.mdSettingsPanel.open('appearance');
-    const g = document.getElementById('theme-gallery');
-    if (g) setTimeout(() => g.scrollIntoView({ block: 'nearest' }), 50);
-  });
+// La galería de temas vive en Ajustes → Apariencia (themegallery.js).
+function openGallery() {
+  if (window.mdSettingsPanel) window.mdSettingsPanel.open('appearance');
+  const g = document.getElementById('theme-gallery');
+  if (g) setTimeout(() => g.scrollIntoView({ block: 'nearest' }), 50);
 }
 
-window.mdThemes = { applyTheme, chooseTheme, currentTheme, THEME_LIST };
+window.mdThemes = { applyTheme, chooseTheme, currentTheme, openGallery, THEME_LIST };
 
 (async () => {
   const config = await window.mdEditor.getConfig();

@@ -397,7 +397,7 @@ Para ver, comparar o recuperar una versión anterior: paleta de comandos → **"
 
 - **Botones de la toolbar**: en Ajustes → Apariencia hay una lista con todos los botones "sueltos" de la toolbar (los que no son Nuevo/Abrir/Guardar). Destildar uno lo esconde de la toolbar — útil si tenés muchos y no usás todos, para no tener que buscar el que sí usás en medio de una fila larga de íconos. Cada fila tiene además un botón **▶** que ejecuta esa acción ahí mismo, esté tildado o no — así podés seguir usando algo puntualmente aunque lo tengas escondido, sin ir a destildarlo primero. Qué se esconde queda guardado entre sesiones.
 
-El botón 🎨 **Tema** abre la **galería de temas** en Ajustes → Apariencia: una muestra de cada uno y una vista previa grande (barra, archivos, editor y vista) que cambia al pasar el mouse; clic para usarlo. 27 temas de color — Claro, Oscuro, 24 conocidos (Dracula, Nord, Gruvbox, Monokai, Solarized, One Dark Pro, Tokyo Night, Catppuccin, Rosé Pine, GitHub Dark/Light, y otros) y **Kingdom Hearts** (ver [Guias/mascota.md](./Guias/mascota.md)). Se guarda tu elección para la próxima vez.
+El tema se elige en la **galería de temas** de Ajustes → Apariencia (o paleta → *Tema: ver la galería de temas*): una muestra de cada uno y una vista previa grande (barra, archivos, editor y vista) que cambia al pasar el mouse; clic para usarlo. 27 temas de color — Claro, Oscuro, 24 conocidos (Dracula, Nord, Gruvbox, Monokai, Solarized, One Dark Pro, Tokyo Night, Catppuccin, Rosé Pine, GitHub Dark/Light, y otros) y **Kingdom Hearts** (ver [Guias/mascota.md](./Guias/mascota.md)). Se guarda tu elección para la próxima vez.
 
 Todos estos ajustes se guardan automáticamente y se recuerdan entre sesiones.
 

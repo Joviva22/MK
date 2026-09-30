@@ -240,7 +240,6 @@ function makeWalker(p, i) {
   bubble.hidden = true;
   el.append(spr, bubble);
   lane.appendChild(el);
-  if (i === 0 && window.mdKeyblades) window.mdKeyblades.attachToPet(el); // la keyblade equipada
   const w = { pet: p, el, sprite: spr, bubble, x: 10 + i * 50, dir: i % 2 ? -1 : 1, mode: 'walk', modeUntil: 0, mood: null, stage: null };
   let clickTimer = null;
   el.addEventListener('click', (e) => {

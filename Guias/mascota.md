@@ -72,11 +72,10 @@ Ajustes → Mascota → **Empezar de cero…** borra mascotas, huevos y logros (
 
 Con una imagen tuya de keyblades (un PNG con fondo transparente, una al lado de la otra, como `keyblades.png`), MK arma un **llavero**: **Ajustes → Apariencia → 🗝 Keyblades** → *Usar keyblades.png de Descargas* (si la encuentra) o *Elegir imagen…*. Se recorta sola y se copia **solo a tu configuración**: el arte es de Square Enix/Disney y no va al repositorio.
 
-- **Llavero**: la primera keyblade es de regalo; las demás se desbloquean con hitos: 10 tareas, racha de 7 días, 25 Pomodoros, 100 tareas, racha de 30 días, 250 tareas, 100 Pomodoros, 500 tareas (y una más cada 250). Cuando ganás una aparece un aviso. Clic en una desbloqueada para **equiparla**. También se ve en la colección de mascotas.
-- **La mascota la lleva**: la equipada acompaña a tu mascota principal.
+- **Llavero**: la primera keyblade es de regalo; las demás se desbloquean con hitos: 10 tareas, racha de 7 días, 25 Pomodoros, 100 tareas, racha de 30 días, 250 tareas, 100 Pomodoros, 500 tareas (y una más cada 250). Cuando ganás una aparece un aviso. Clic en una desbloqueada para **equiparla** (es la que se usa en el golpe, el cursor y la marca de agua del tema). También se ve en la colección de mascotas.
 - **Golpe al tildar**: al completar una tarea (Home, notas, bases de datos), un tajo corto con destello donde hiciste clic.
 - **Cursor keyblade**: el puntero es la keyblade equipada, en diagonal como una flecha (dentro del texto sigue el cursor de escribir).
-- **Tema Kingdom Hearts** (🎨 Tema): azul noche y dorado, con la keyblade equipada de marca de agua en el panel de archivos. Al elegirlo aparece un **Lucky Emblem**; y mientras lo tengas puesto hay **uno chiquito escondido** en algún lugar de la ventana (cambia de sitio cada vez que abrís MK). Si lo encontrás y le hacés clic, suma a tu cuenta.
+- **Tema Kingdom Hearts** (Ajustes → Apariencia → Tema): azul noche y dorado, con la keyblade equipada de marca de agua en el panel de archivos. Al elegirlo aparece un **Lucky Emblem**; y mientras lo tengas puesto hay **uno chiquito escondido** en algún lugar de la ventana (cambia de sitio cada vez que abrís MK). Si lo encontrás y le hacés clic, suma a tu cuenta.
 
 ### Sora y Roxas
 

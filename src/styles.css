@@ -5319,10 +5319,8 @@ body.mk-dim-paragraphs #editor-pane .CodeMirror-code > div.mk-current-para { opa
 .kh-toast div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
 .kh-toast span { color: var(--text-muted); }
 .kh-toast-out { opacity: 0; transform: translateY(8px); }
-.pet-keyblade { position: absolute; right: -10px; bottom: 4px; height: 34px; image-rendering: pixelated; transform: rotate(28deg); transform-origin: 50% 90%; pointer-events: none; animation: kh-bob 2.4s ease-in-out infinite; }
-@keyframes kh-bob { 50% { transform: rotate(18deg) translateY(-2px); } }
 @media (prefers-reduced-motion: reduce) {
-  .kh-swing img, .kh-spark, .pet-keyblade { animation: none; }
+  .kh-swing img, .kh-spark { animation: none; }
   .kh-swing img { opacity: 1; transform: rotate(20deg); }
 }
 

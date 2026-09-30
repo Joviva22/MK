@@ -4,8 +4,7 @@
 // Guiño a Kingdom Hearts. Con una hoja de keyblades propia (Ajustes →
 // Apariencia; se copia a la configuración local, ver ipc-kh.js):
 // - Llavero: cada keyblade se desbloquea con un hito (tareas, racha,
-//   Pomodoros); la equipada la lleva la mascota principal y se usa en lo
-//   de abajo. Se ve también en la colección de mascotas.
+//   Pomodoros); la equipada se usa en lo de abajo. Se ve también en la colección de mascotas.
 // - Golpe: al tildar una tarea, un tajo corto con destello donde hiciste clic.
 // - Cursor keyblade (fuera del texto: dentro del editor sigue el de texto).
 // - El tema "Kingdom Hearts" (themes.js) usa la equipada de marca de agua.
@@ -29,7 +28,7 @@ function milestone(i) {
   return { label: `${goal} tareas tildadas`, value: (s) => s.tasks, goal };
 }
 
-const DEFAULTS = { swing: true, cursor: false, petCarries: true, equipped: 0, unlocked: [0] };
+const DEFAULTS = { swing: true, cursor: false, equipped: 0, unlocked: [0] };
 
 let keyblades = []; // [{ dataUrl, width, height }]
 let cfg = { ...DEFAULTS };
@@ -162,24 +161,15 @@ async function applyCursor() {
   document.head.appendChild(cursorStyle);
 }
 
-// ---- mascota y tema ----
-function attachToPet(el) {
-  if (!el) return;
-  el.querySelectorAll('.pet-keyblade').forEach((x) => x.remove());
-  const kb = equipped();
-  if (!kb || !cfg.petCarries) return;
-  const img = document.createElement('img');
-  img.className = 'pet-keyblade';
-  img.src = kb.dataUrl;
-  img.alt = '';
-  el.appendChild(img);
-}
+// ---- tema ----
+// (Antes la mascota "llevaba" la keyblade: quedaba pegada a la caja y no al
+// dibujo, y parecía una llave flotando sola. Se quitó.)
 
 function applyAll() {
   const kb = equipped();
   document.documentElement.style.setProperty('--kh-keyblade', kb ? `url("${kb.dataUrl}")` : 'none');
   document.body.classList.toggle('kh-has-keyblade', !!kb);
-  attachToPet(document.querySelector('.pet'));
+  document.querySelectorAll('.pet-keyblade').forEach((x) => x.remove()); // de versiones anteriores
   applyCursor();
   renderSettings();
 }
@@ -228,7 +218,7 @@ function renderSettings() {
   if (clearBtn) clearBtn.hidden = false;
   if (status) status.textContent = `${keyblades.length} keyblades · ${cfg.unlocked.filter((i) => i < keyblades.length).length} desbloqueadas. Las otras se ganan con tus tareas, rachas y Pomodoros.`;
   renderKeychain(box);
-  ['swing', 'cursor', 'petCarries'].forEach((k) => {
+  ['swing', 'cursor'].forEach((k) => {
     const t = document.getElementById(`kh-${k}`);
     if (t) t.checked = !!cfg[k];
   });
@@ -277,7 +267,7 @@ function wire(id, fn) {
 wire('kh-pick', () => importSheet(null));
 wire('kh-from-downloads', (e) => importSheet(e.currentTarget.dataset.path).then(showCandidates));
 wire('kh-clear', () => clearSheet().then(showCandidates));
-['swing', 'cursor', 'petCarries'].forEach((k) => wire(`kh-${k}`, async (e) => {
+['swing', 'cursor'].forEach((k) => wire(`kh-${k}`, async (e) => {
   cfg[k] = e.currentTarget.checked;
   await saveCfg();
   applyAll();
@@ -286,6 +276,7 @@ wire('kh-clear', () => clearSheet().then(showCandidates));
 (async () => {
   const config = await window.mdEditor.getConfig();
   cfg = { ...DEFAULTS, ...(config.kh || {}) };
+  delete cfg.petCarries;
   if (!Array.isArray(cfg.unlocked)) cfg.unlocked = [0];
   keyblades = await window.mdEditor.khKeyblades();
   if (keyblades.length) checkUnlocks(false);
@@ -294,7 +285,6 @@ wire('kh-clear', () => clearSheet().then(showCandidates));
 })();
 
 window.mdKeyblades = {
-  attachToPet,
   renderKeychain: (container) => { if (keyblades.length) renderKeychain(container, true); },
   swing,
   equip,

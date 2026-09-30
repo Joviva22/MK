@@ -72,7 +72,7 @@ function buildCommands() {
   (window.mdThemes ? window.mdThemes.THEME_LIST : []).forEach((t) => {
     cmds.push({ label: `Tema: ${t.label}`, run: () => window.mdThemes.chooseTheme(t.slug) });
   });
-  cmds.push({ label: 'Tema: ver la galería de temas', run: () => document.getElementById('btn-theme').click() });
+  cmds.push({ label: 'Tema: ver la galería de temas', run: () => window.mdThemes.openGallery() });
   cmds.push({ label: 'Tema personalizado...', run: () => window.mdCustomTheme && window.mdCustomTheme.open() });
 
   if (window.mdTabs) {

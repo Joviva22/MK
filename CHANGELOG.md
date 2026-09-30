@@ -30,7 +30,7 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ### Interfaz
 
-- **Galería de temas** en Ajustes → Apariencia, con muestra de cada tema y vista previa grande al pasar el mouse (el botón 🎨 de la barra abre ahí).
+- **Galería de temas** en Ajustes → Apariencia, con muestra de cada tema y vista previa grande al pasar el mouse (reemplaza al menú «Tema» de la barra).
 
 - **Guiño a Kingdom Hearts**: llavero de keyblades con logros (con tu propia imagen), golpe al tildar, cursor keyblade, tema *Kingdom Hearts* con Lucky Emblems; **Sora y Roxas** como mascotas animadas (con tus hojas de sprites) y retratos de Sora que reaccionan.
 - Títulos y enlaces del editor con el color del tema (antes, azul ilegible en los temas oscuros).
