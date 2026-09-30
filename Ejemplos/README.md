@@ -8,6 +8,7 @@ Cada archivo de esta carpeta muestra una función distinta con contenido real, l
 | [`ejecutar-codigo.md`](ejecutar-codigo.md) | Botón ▶ Ejecutar sobre bloques `js` |
 | [`tablero-kanban.md`](tablero-kanban.md) | Columnas y tarjetas para el tablero Kanban |
 | [`home-y-recordatorios.md`](home-y-recordatorios.md) | Tareas con `📅 fecha` que aparecen solas en el calendario del Home, y cómo probar los avisos |
+| [`tablero.md`](tablero.md) | Nota de inicio con **widgets**: tareas de hoy (tildables), progreso, total de gastos sin pagar y tu equipo de mascotas |
 | [`live-preview.md`](live-preview.md) | Nota completa para probar el modo Live Preview (`Ctrl+Shift+L`) |
 | [`formato-avanzado.md`](formato-avanzado.md) | Callouts, resaltado, etiquetas, wikilinks, tareas, fórmulas, tablas y código |
 | [`graficos.md`](graficos.md) | Base de datos **Gastos** con vistas Gráfico (torta, barras por mes), Calendario y "Sin pagar"; bloques `chart` y `database` en la nota |

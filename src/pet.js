@@ -1036,6 +1036,8 @@ window.mdPet = {
   loadCatalog,
   streak,
   events: () => events.slice(),
+  // Widget de mascotas (widgets.js): el equipo con su dibujo y nivel.
+  teamSummary: () => teamPets().map((p) => ({ name: nameOf(p), level: levelFor(p.xp), stage: stageOf(p), legendary: !!p.legendary, art: art(p, 'normal') })),
   getState: () => JSON.parse(JSON.stringify(state)),
   setState: async (s) => {
     state = { ...state, ...JSON.parse(JSON.stringify(s)) };

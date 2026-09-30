@@ -3843,6 +3843,47 @@
       `todas=${all} etiqueta=${byTag} carpeta=${byFolder} sinSueltas=${noOrphans} vecinas=${focus} vecinosGA=${neigh} menú=${menuOk}`);
   }
 
+  // Widgets en notas: tareas de hoy (tildables), progreso, total de una base,
+  // mascotas y error claro si el tipo no existe.
+  if (fixturesDir) {
+    window.mdState.rootFolder = fixturesDir;
+    const stamp = Date.now();
+    await window.mdHome.open();
+    window.mdHome.setMode('week');
+    const qa = await waitFor(() => document.querySelector('#home-main .home-day.home-today .home-quick-add'));
+    qa.value = `Widget ${stamp}`;
+    qa.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    window.mdHome.close();
+    const wdb = await window.mdEditor.db.createDatabase(fixturesDir, 'Widget Gastos');
+    const [wName] = await window.mdEditor.db.listColumns(fixturesDir, wdb.id);
+    const wMonto = await window.mdEditor.db.createColumn(fixturesDir, wdb.id, { name: 'Monto', type: 'number' });
+    await window.mdEditor.db.createRows(fixturesDir, wdb.id, [{ [wName.id]: 'a', [wMonto.id]: 10 }, { [wName.id]: 'b', [wMonto.id]: 32.5 }]);
+    const fence = '```';
+    window.mdModes.setLayoutMode('normal');
+    window.mdTabs.newTab([fence + 'widget', 'tareas: hoy', fence, '', fence + 'widget', 'progreso', fence, '', fence + 'widget', 'base: Widget Gastos', 'suma: Monto', fence, '', fence + 'widget', 'mascotas', fence, '', fence + 'widget', 'algo raro', fence].join('\n'));
+    window.renderPreview();
+    const ws = await waitFor(() => { const l = document.querySelectorAll('#preview-pane .md-widget'); return l.length === 5 && l[2].querySelector('.md-widget-number') ? l : null; }, 5000);
+    const tasksW = ws && ws[0];
+    const row = tasksW && Array.from(tasksW.querySelectorAll('li')).find((li) => li.textContent.includes(`Widget ${stamp}`));
+    let tickOk = false;
+    if (row) {
+      row.querySelector('input').click();
+      tickOk = !!(await waitFor(async () => (await window.mdHome.widgetItems('hoy')).some((i) => i.title === `Widget ${stamp}` && i.done), 3000));
+    }
+    const progOk = !!(ws && ws[1].querySelectorAll('.md-widget-tile').length === 3);
+    const baseOk = !!(ws && ws[2].querySelector('.md-widget-number').textContent.replace(/[^\d,.]/g, '').replace(',', '.') === '42.5');
+    const petsOk = !!(ws && ws[3].textContent.includes('Tu equipo'));
+    const errOk = !!(ws && ws[4].querySelector('.md-widget-error'));
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    window.confirm = originalConfirm;
+    await window.mdEditor.db.deleteDatabase(fixturesDir, wdb.id);
+    check('Widgets en notas: tareas de hoy (tildables), progreso, total de una base, mascotas y error claro',
+      !!row && tickOk && progOk && baseOk && petsOk && errOk,
+      `tarea=${!!row} tildar=${tickOk} progreso=${progOk} base=${baseOk}(${ws && ws[2].querySelector('.md-widget-number') && ws[2].querySelector('.md-widget-number').textContent}) mascotas=${petsOk} error=${errOk}`);
+  }
+
   // Exportar que falla (carpeta inexistente): devuelve null y avisa, en vez
   // de que el botón no haga nada.
   {

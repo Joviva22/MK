@@ -302,6 +302,16 @@ function renderDatabaseBlocks() {
   });
 }
 
+// Bloques ```widget``` (tareas, progreso, totales de una base, mascotas; ver widgets.js).
+function renderWidgetBlocks() {
+  previewPane.querySelectorAll('pre code.language-widget').forEach((code) => {
+    const host = document.createElement('div');
+    host.className = 'md-widget';
+    code.parentElement.replaceWith(host);
+    if (window.mdWidgets) window.mdWidgets.renderWidget(host, code.textContent);
+  });
+}
+
 // Bloques ```chart``` (tabla Markdown → gráfico, ver charts.js).
 function renderChartBlocks() {
   previewPane.querySelectorAll('pre code.language-chart').forEach((code) => {
@@ -482,6 +492,7 @@ function render() {
   renderMermaidBlocks();
   renderChartBlocks();
   renderDatabaseBlocks();
+  renderWidgetBlocks();
   highlightCode();
   addRunButtons();
   wireTaskCheckboxes(markdownText);

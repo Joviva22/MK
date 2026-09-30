@@ -13,6 +13,7 @@ Una guía especializada por cada función del sistema. Cada una empieza con **pa
 | **Bases de datos** — relacionales, tipo Notion | [bases-de-datos-como-usar.md](bases-de-datos-como-usar.md) | [bases-de-datos-para-que-sirve.md](bases-de-datos-para-que-sirve.md) |
 | **Recordatorios** — avisos a la hora, días antes, posponer, bandeja | [recordatorios.md](recordatorios.md) | ↑ misma guía |
 | **Gráficos** — vista Gráfico, bloque `chart`, estadísticas del Home | [graficos.md](graficos.md) | ↑ |
+| **Widgets en notas** — tareas, progreso, totales, mascotas | [widgets.md](widgets.md) | ↑ |
 | **Una base dentro de una nota** — bloque `database` | [bases-de-datos-como-usar.md](bases-de-datos-como-usar.md#mostrar-una-base-dentro-de-una-nota) | ↑ |
 | **Kanban** — tablero desde una nota | [kanban.md](kanban.md) | ↑ misma guía |
 | **Nota diaria** — carpeta, formato y plantilla configurables | [nota-diaria.md](nota-diaria.md) | ↑ |

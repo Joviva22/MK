@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 98 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 99 de 136 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -144,7 +144,7 @@ Revisado el 2026-09-30. Lo que ya estaba hecho o repetido queda anotado; lo nuev
 - [x] ~~**Bloque `database` editable**~~ (texto, número, fecha, selección y casillas en el lugar, con teclado; se redibuja respetando filtros) (2026-09-30)
 - [x] ~~**Grafo interactivo**~~ (clic derecho: abrir, panel secundario, backlinks, solo vecinas; filtros por etiqueta, carpeta y sin enlaces; buscar; resaltar vecinas; tamaño por enlaces; también cuenta links Markdown `[x](otra.md)`) (2026-09-30)
 - [x] ~~**Desactivar módulos que no uses**~~ (Ajustes → Módulos: 9 módulos; se ocultan de la barra, la paleta y los menús y sus atajos se frenan, sin borrar datos) (2026-09-30)
-- [ ] **Dashboards / widgets en notas**: bloques que resumen datos vivos (progreso de Kanbans, totales de una base, tareas de la semana) — extiende los bloques `chart` y `database`
+- [x] ~~**Dashboards / widgets en notas**~~ (bloque `widget`: tareas hoy/semana/atrasadas tildables, progreso, total/promedio/cuenta de una base, mascotas; preview y Live Preview) (2026-09-30)
 - [ ] **Botones de script en una nota**: un bloque que al pulsarlo ejecuta un comando en la terminal integrada (con confirmación la primera vez; útil para backups, despliegues, `docker compose up`)
 - [ ] **Explorador de multimedia**: ver fotos/audios/videos de la carpeta en cuadrícula, con etiquetas y búsqueda
 - *Descartado por ahora:* indexar en Rust/C++ — el índice en memoria ya da búsquedas de ~7 ms en 3000 notas; se revisa si hiciera falta.

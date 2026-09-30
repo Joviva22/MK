@@ -1910,6 +1910,28 @@ async function revealTask(id) {
   openTaskEditor(task.date ? findItem(task.id, task.date) : itemFor(task));
 }
 
-window.mdHome = { openCategories, setCategoryFilter: (v) => { categoryFilter = v || ''; render(); }, parseCategoryToken, overdueCount, updatePetMood, dailySummaryText, weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
+// ---- para los widgets de notas (widgets.js) ----
+async function widgetItems(kind) {
+  await load();
+  const today = todayIso();
+  let items;
+  if (kind === 'hoy') items = occurrencesOn(today);
+  else if (kind === 'atrasadas') items = overdueTasks().map(itemFor);
+  else {
+    const monday = mondayOf(new Date());
+    items = itemsInRange(iso(monday), iso(addDays(monday, 6)));
+  }
+  return items.map((it) => {
+    const cat = categoryById(it.task.category);
+    return { id: it.task.id, date: it.date, title: it.task.title, time: it.task.time || null, done: it.done, category: cat ? cat.name : null, color: cat ? cat.color : null };
+  });
+}
+
+function widgetSetDone(taskId, dateIso, done) {
+  const it = findItem(taskId, dateIso);
+  if (it) setItemDone(it, done);
+}
+
+window.mdHome = { widgetItems, widgetSetDone, openCategories, setCategoryFilter: (v) => { categoryFilter = v || ''; render(); }, parseCategoryToken, overdueCount, updatePetMood, dailySummaryText, weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
 
 })();

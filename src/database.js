@@ -2088,6 +2088,32 @@ function withTemporaryState(temp, fn) {
   }
 }
 
+// Widget "total de una base" (widgets.js): suma / promedio / cuenta de una
+// columna numérica sobre las filas de una vista (con sus filtros).
+async function widgetTotal(spec) {
+  const r = root();
+  if (!r) return { error: 'Abrí la carpeta donde está la base de datos.' };
+  const databases = await window.mdEditor.db.listDatabases(r);
+  const db = databases.find((d) => d.name.toLowerCase() === String(spec.base || '').toLowerCase());
+  if (!db) return { error: `No hay una base "${spec.base}". Disponibles: ${databases.map((d) => d.name).join(', ') || '(ninguna)'}.` };
+  const [columns, rows, views] = await Promise.all([window.mdEditor.db.listColumns(r, db.id), window.mdEditor.db.listRows(r, db.id), window.mdEditor.db.listViews(r, db.id)]);
+  const view = spec.vista ? views.find((v) => v.name.toLowerCase() === spec.vista.toLowerCase()) : views[0];
+  if (!view) return { error: `La base "${db.name}" no tiene una vista "${spec.vista}".` };
+  const colName = spec.suma || spec.promedio || null;
+  const col = colName ? columns.find((c) => c.name.toLowerCase() === colName.toLowerCase()) : null;
+  if (colName && !col) return { error: `La base "${db.name}" no tiene una columna "${colName}".` };
+  const list = withTemporaryState({ columns, rows, views, viewId: view.id, relatedData: { [db.id]: { columns, rows } }, databaseId: db.id, filter: '' }, () => filteredRows());
+  let value = list.length;
+  let label = `filas en ${view.name}`;
+  if (col) {
+    const nums = list.map((row) => Number(cellDisplayValue(col, row, columns))).filter((n) => Number.isFinite(n));
+    const sum = nums.reduce((a, b) => a + b, 0);
+    value = spec.promedio ? (nums.length ? sum / nums.length : 0) : sum;
+    label = `${spec.promedio ? 'promedio' : 'total'} de ${col.name} · ${view.name}`;
+  }
+  return { value, label, db: db.name, dbId: db.id, count: list.length };
+}
+
 const EMBED_EDITABLE = new Set(['text', 'number', 'date', 'checkbox', 'select']);
 
 // Una celda del bloque ```database```: editable si el tipo lo permite. Los
@@ -2310,6 +2336,6 @@ async function searchRows(query, limit) {
   return out;
 }
 
-window.mdDatabase = { open, openWithFilter, searchRows, renderEmbed, parseEmbedSpec, close, parseCsv, inferColumn, duplicateRow, chartData };
+window.mdDatabase = { widgetTotal, open, openWithFilter, searchRows, renderEmbed, parseEmbedSpec, close, parseCsv, inferColumn, duplicateRow, chartData };
 
 })();

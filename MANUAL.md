@@ -35,6 +35,7 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 27. [Terminal integrada](#27-terminal-integrada)
 28. [Seguridad, privacidad y errores](#28-seguridad-privacidad-y-errores)
 29. [Mascotas](#29-mascotas)
+30. [Widgets en notas](#30-widgets-en-notas)
 
 > Guías especializadas por función (cómo usar / para qué sirve): carpeta [`Guias/`](./Guias/README.md).
 
@@ -606,3 +607,7 @@ Todo es local: sin cuenta, sin nube, sin telemetría. Al abrir un `.md` ajeno, M
 ## 29. Mascotas
 
 Un **equipo de hasta 3 criaturas** que camina al pie del sidebar (o por toda la ventana) y crece con tu trabajo: cada tarea tildada (+10, una vez por tarea y día) y cada Pomodoro (+25) dan experiencia a todo el equipo; evolucionan en el **nivel 5** y en el **10**. **Cada evolución deja un huevo** 🥚 con una criatura nueva (nace a los 60 XP) y los **logros** —7 días seguidos con tareas, 50 Pomodoros, 200 tareas, 3 mascotas en etapa final— dan **huevos legendarios** 🌟 (150 XP). **🐾 Mis mascotas** muestra la colección, el equipo (líder, al equipo / descansar, nombre), los huevos y el progreso de cada logro. Criaturas de MK: 7 líneas (Fuego, Agua, Planta, Eléctrico, Hielo, Roca, Fantasma) y 4 legendarias; o personajes de un **juego de RPG Maker / Pokémon Essentials** (líneas evolutivas y legendarios desde su `PBS/pokemon.txt`), o **imágenes propias**. Ocultarlas (Ajustes → Mascota) no pierde nada: **siguen ganando** experiencia. Guía: [`Guias/mascota.md`](./Guias/mascota.md).
+
+## 30. Widgets en notas
+
+Bloques ```` ```widget ```` con datos vivos, en el preview y en Live Preview: `tareas: hoy | semana | atrasadas` (lista del Home, **tildable desde la nota**), `progreso` (semana, racha, atrasadas), `base: Nombre` + `suma: Columna` / `promedio: Columna` (o nada para contar filas) y opcional `vista:` (un número grande con los filtros de la vista), y `mascotas` (tu equipo). Ejemplo: [`Ejemplos/tablero.md`](./Ejemplos/tablero.md); guía: [`Guias/widgets.md`](./Guias/widgets.md).

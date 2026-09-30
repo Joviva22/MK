@@ -418,6 +418,11 @@ function decorateUnit(u, active) {
     div.textContent = 'Cargando base de datos…';
     replaceWith({ line: u.from, ch: 0 }, blockEnd(u), div, true);
     if (window.mdDatabase) window.mdDatabase.renderEmbed(div, code);
+  } else if (u.kind === 'fence' && u.data.lang === 'widget' && u.data.closed && u.to > u.from + 1 && !unitActive(u, active)) {
+    const code = cm.getRange({ line: u.from + 1, ch: 0 }, { line: u.to - 1, ch: cm.getLine(u.to - 1).length });
+    const div = el('div', 'mk-live-widget-block md-widget');
+    replaceWith({ line: u.from, ch: 0 }, blockEnd(u), div, true);
+    if (window.mdWidgets) window.mdWidgets.renderWidget(div, code);
   } else if (u.kind === 'fence' && u.data.lang === 'chart' && u.data.closed && u.to > u.from + 1 && !unitActive(u, active)) {
     const code = cm.getRange({ line: u.from + 1, ch: 0 }, { line: u.to - 1, ch: cm.getLine(u.to - 1).length });
     const div = el('div', 'mk-live-chart');

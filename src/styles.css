@@ -5109,3 +5109,35 @@ textarea:focus-visible,
   background: var(--bg);
   color: var(--text);
 }
+
+/* ---- Widgets en notas (widgets.js) ---- */
+.md-widget {
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  font-size: var(--font-md);
+}
+.md-widget-title { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); font-weight: 700; margin-bottom: var(--space-2); }
+.md-widget-error, .md-widget-empty { color: var(--text-muted); font-size: var(--font-sm); }
+.md-widget-tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.md-widget-tasks li { display: flex; align-items: center; gap: var(--space-2); }
+.md-widget-tasks li.done .md-widget-task-title { text-decoration: line-through; color: var(--text-muted); }
+.md-widget-task-title { flex: 1; min-width: 0; }
+.md-widget-time, .md-widget-date { font-size: var(--font-xs); color: var(--text-muted); white-space: nowrap; }
+.md-widget-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--space-2); margin-bottom: var(--space-2); }
+.md-widget-tile { padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); }
+.md-widget-tile-label { font-size: var(--font-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.md-widget-tile-value { font-size: 22px; font-weight: 700; }
+.md-widget-tile-sub { font-size: var(--font-xs); color: var(--text-muted); }
+.md-widget-number { font-size: 30px; font-weight: 700; line-height: 1.2; }
+.md-widget-pets { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.md-widget-pet { text-align: center; min-width: 90px; }
+.md-widget-pet-art { position: relative; width: 56px; height: 56px; margin: 0 auto; }
+.md-widget-pet-art .pet-sheet { background-position: 0 0; }
+.md-widget-pet-name { font-weight: 600; font-size: var(--font-sm); }
+.md-widget-pet.legendary .md-widget-pet-art { filter: drop-shadow(0 0 5px rgba(255, 204, 51, 0.7)); }
+.md-widget-tasks input[type="checkbox"] { margin: 0; position: static; }
+.md-widget-tasks li::before { content: none; }
