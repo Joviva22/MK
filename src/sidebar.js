@@ -384,7 +384,7 @@ function showSidebarMenu(x, y, node, multiNodes) {
 
   // Terminal integrada: en una carpeta (o la raíz) abre ahí; en un archivo,
   // en la carpeta que lo contiene. Y las IAs de terminal sobre ese archivo.
-  if (window.mdTerminal) {
+  if (window.mdTerminal && (!window.mdModules || window.mdModules.isOn('terminal'))) {
     const termDir = node && !node.esCarpeta ? window.mdEditor.dirName(node.ruta) : dirPath;
     addMenuItem('Abrir terminal aquí', () => window.mdTerminal.newTerminal(termDir));
     const aiTarget = node ? node.ruta : dirPath;

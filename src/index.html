@@ -98,6 +98,7 @@
         <button type="button" class="set-nav-btn" data-section="mail"><i data-lucide="mail"></i><span>Correo</span></button>
         <button type="button" class="set-nav-btn" data-section="terminal"><i data-lucide="square-terminal"></i><span>Terminal</span></button>
         <button type="button" class="set-nav-btn" data-section="pet"><i data-lucide="paw-print"></i><span>Mascota</span></button>
+        <button type="button" class="set-nav-btn" data-section="modules"><i data-lucide="blocks"></i><span>Módulos</span></button>
         <button type="button" class="set-nav-btn" data-section="system"><i data-lucide="monitor-cog"></i><span>Sistema</span></button>
       </nav>
       <div class="set-main">
@@ -319,6 +320,11 @@
             <div class="set-text"><div class="set-title">Empezar de cero</div><div class="set-desc">Borra todas las mascotas, huevos y logros.</div></div>
             <div class="set-control"><button type="button" id="pet-reset" class="toolbar-button">Empezar de cero…</button></div>
           </div>
+        </section>
+        <section class="set-section" data-section="modules" data-title="Módulos" hidden>
+          <h2 class="set-section-title">Módulos</h2>
+          <p class="set-desc set-section-intro">Apagá lo que no uses: desaparece de la barra, de la paleta de comandos y de los menús, y sus atajos no hacen nada. No se borra ningún dato.</p>
+          <div id="modules-list"></div>
         </section>
         <section class="set-section" data-section="system" data-title="Sistema" hidden>
           <h2 class="set-section-title">Sistema</h2>
@@ -726,6 +732,7 @@
   <script src="pet.js"></script>
   <script src="statusbar.js"></script>
   <script src="a11y.js"></script>
+  <script src="modules.js"></script>
   <script src="askdialog.js"></script>
   <script src="templates.js"></script>
   <script src="settings.js"></script>

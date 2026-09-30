@@ -72,7 +72,8 @@ function buildCommands() {
     cmds.push({ label: 'Pestaña anterior', run: () => window.mdTabs.cycleTab(-1) });
   }
 
-  return cmds;
+  // Módulos apagados en Ajustes → Módulos no aparecen.
+  return window.mdModules ? cmds.filter((c) => window.mdModules.allowsCommand(c.label)) : cmds;
 }
 
 function render(filter) {

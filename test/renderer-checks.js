@@ -3769,6 +3769,25 @@
       `botón=${labelOk} pestañas=${tabOk} árbol=${treeOk} diálogo=${dialogOk} atrapa=${trapOk} devuelve=${returnOk} menú=${menuOk}`);
   }
 
+  // Módulos: apagar Terminal oculta sus botones, lo saca de la paleta y del
+  // menú del sidebar y frena sus atajos; prenderlo lo devuelve.
+  {
+    const M = window.mdModules;
+    await M.setModule('terminal', false);
+    const btnHidden = getComputedStyle(document.getElementById('btn-terminal')).display === 'none' && getComputedStyle(document.getElementById('btn-run-file')).display === 'none';
+    const paletteOk = !M.allowsCommand('Terminal: mostrar/ocultar') && M.allowsCommand('Guardar');
+    const panel = document.getElementById('terminal-panel');
+    const wasHidden = panel.hidden;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '`', code: 'Backquote', ctrlKey: true, bubbles: true, cancelable: true }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '`', code: 'Backquote', ctrlKey: true, bubbles: true, cancelable: true }));
+    const keyOk = panel.hidden === wasHidden;
+    const settingsOk = !!document.getElementById('module-terminal') && !document.getElementById('module-terminal').checked;
+    await M.setModule('terminal', true);
+    const backOk = getComputedStyle(document.getElementById('btn-terminal')).display !== 'none' && M.allowsCommand('Terminal: mostrar/ocultar');
+    check('Módulos: apagar oculta botones, saca de la paleta, frena atajos y se vuelve a prender', btnHidden && paletteOk && keyOk && settingsOk && backOk,
+      `botones=${btnHidden} paleta=${paletteOk} atajo=${keyOk} ajustes=${settingsOk} vuelve=${backOk}`);
+  }
+
   // Exportar que falla (carpeta inexistente): devuelve null y avisa, en vez
   // de que el botón no haga nada.
   {

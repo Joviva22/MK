@@ -5083,3 +5083,7 @@ textarea:focus-visible,
   outline-offset: 1px;
 }
 .tree-row:focus-visible { background: var(--surface-2); }
+
+/* Módulos apagados (modules.js) */
+[data-module-off] { display: none !important; }
+.set-section-intro { margin: 0 0 var(--space-2); }

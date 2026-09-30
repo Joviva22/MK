@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 94 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 95 de 136 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -143,7 +143,7 @@ Revisado el 2026-09-30. Lo que ya estaba hecho o repetido queda anotado; lo nuev
 **Funciones**
 - [ ] **Bloque `database` editable** desde la nota (hoy es de solo lectura con botón Abrir)
 - [ ] **Grafo interactivo**: clic derecho en un nodo → abrir en panel secundario / ver backlinks; filtros por etiqueta o fecha
-- [ ] **Desactivar módulos que no uses** (Pomodoro, reproductor, Kanban, bases de datos…): se ocultan y no se cargan, interfaz más limpia
+- [x] ~~**Desactivar módulos que no uses**~~ (Ajustes → Módulos: 9 módulos; se ocultan de la barra, la paleta y los menús y sus atajos se frenan, sin borrar datos) (2026-09-30)
 - [ ] **Dashboards / widgets en notas**: bloques que resumen datos vivos (progreso de Kanbans, totales de una base, tareas de la semana) — extiende los bloques `chart` y `database`
 - [ ] **Botones de script en una nota**: un bloque que al pulsarlo ejecuta un comando en la terminal integrada (con confirmación la primera vez; útil para backups, despliegues, `docker compose up`)
 - [ ] **Explorador de multimedia**: ver fotos/audios/videos de la carpeta en cuadrícula, con etiquetas y búsqueda

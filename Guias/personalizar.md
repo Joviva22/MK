@@ -13,6 +13,7 @@ Un panel con **secciones a la izquierda** y un **buscador** arriba: escribí "ta
 | **Home y avisos** | Abrir el Home al iniciar, guardar el Home en la carpeta (`.mk/home.json`, viaja con git), minutos de Pomodoro. El aviso "1 semana antes" se maneja arriba en el Home |
 | **Correo** | Recordatorios y resumen diario por Gmail, a tu propia dirección. Ver [recordatorios.md](recordatorios.md#también-por-correo-gmail) |
 | **Terminal** | Shell (del sistema, bash, zsh, fish…). Ver [terminal.md](terminal.md) |
+| **Módulos** | Apagar lo que no uses: Home, bases de datos, Kanban, grafo, etiquetas y backlinks, terminal e IA, herramientas de PDF, Pomodoro, reproductor. Desaparecen de la barra, la paleta y los menús, y sus atajos no hacen nada; **no se borra ningún dato** |
 | **Sistema** | Git al guardar ([historial-y-git.md](historial-y-git.md)), seguir en la bandeja al cerrar (salir: `Ctrl+Q`), iniciar MK con el sistema |
 
 ## La barra de estado (abajo)
