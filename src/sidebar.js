@@ -494,6 +494,7 @@ function buildTree(nodes) {
       requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }));
     }
     if (selectedNodes.has(node.ruta)) row.classList.add('tree-row-selected'); // sobrevive a un refreshTree() de otra acción
+    if (!node.esCarpeta && unsavedPaths().has(node.ruta)) row.classList.add('tree-row-unsaved');
     makeDraggable(row, node);
 
     const iconEl = document.createElement('span');
@@ -617,6 +618,18 @@ document.getElementById('btn-open-folder').addEventListener('click', async () =>
   const result = await window.mdEditor.getLastFolder();
   if (result) renderFolder(result);
 })();
+
+// Punto junto a los archivos con cambios sin guardar (ver tabs.js).
+function unsavedPaths() {
+  return new Set(window.mdTabs && window.mdTabs.getModifiedPaths ? window.mdTabs.getModifiedPaths() : []);
+}
+
+document.addEventListener('mk:modified-changed', () => {
+  const unsaved = unsavedPaths();
+  sidebarPane.querySelectorAll('.tree-row').forEach((row) => {
+    row.classList.toggle('tree-row-unsaved', !!(row._node && !row._node.esCarpeta && unsaved.has(row._node.ruta)));
+  });
+});
 
 window.mdSidebar = {
   renderFolder, setFileIcon, createEntry, renameEntry, deleteEntry, moveEntry, goToParent, refreshTree,

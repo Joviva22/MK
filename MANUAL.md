@@ -366,7 +366,7 @@ Para ver, comparar o recuperar una versión anterior: paleta de comandos → **"
 
 ## 14. Personalizar MK
 
-Desde ⚙ **Ajustes**:
+⚙ **Ajustes** (`Ctrl+,`) es un panel con secciones —Editor, Apariencia, Notas, Home y avisos, Correo, Terminal, Sistema— y un buscador arriba que filtra los ajustes por nombre o descripción (sin importar tildes). **Apariencia** agrega: botones de la barra *Mixto / Solo íconos / Con texto*, **ocultar la barra superior** (aparece al acercar el mouse arriba, o `Ctrl+Shift+M`) y la lista de botones visibles. El botón de **modo de vista** muestra el modo actual (ícono y nombre); un punto de color en el sidebar marca archivos con cambios sin guardar. Guía: [`Guias/personalizar.md`](./Guias/personalizar.md). Lo que hay en cada sección:
 
 - **Autoguardado**: desactivado, cada 1s, cada 5s, cada 30s.
 - **Tamaño de fuente** del editor: 12 a 18px (dropdown), o ajuste rápido con `Ctrl+scroll`, `Ctrl+=`/`Ctrl+-` (de a 1px, entre 10 y 28), y `Ctrl+0` para volver a 14px — quedan sincronizados con el mismo dropdown y se guardan igual. El preview se agranda/achica junto con el editor (mismo movimiento, cada uno desde su propio tamaño de base) — `Ctrl+scroll` funciona tanto sobre el editor como sobre el preview, así que también sirve estando en modo lectura (ahí el editor está oculto).
@@ -389,7 +389,7 @@ Desde ⚙ **Ajustes**:
 
 **Requisito** (de ambos): la carpeta ya tiene que ser un repo git (MK nunca corre `git init` por vos).
 
-- **Botones de la toolbar**: al final de Ajustes hay una lista con todos los botones "sueltos" de la toolbar (los que no son Nuevo/Abrir/Guardar). Destildar uno lo esconde de la toolbar — útil si tenés muchos y no usás todos, para no tener que buscar el que sí usás en medio de una fila larga de íconos. Cada fila tiene además un botón **▶** que ejecuta esa acción ahí mismo, esté tildado o no — así podés seguir usando algo puntualmente aunque lo tengas escondido, sin ir a destildarlo primero. Qué se esconde queda guardado entre sesiones.
+- **Botones de la toolbar**: en Ajustes → Apariencia hay una lista con todos los botones "sueltos" de la toolbar (los que no son Nuevo/Abrir/Guardar). Destildar uno lo esconde de la toolbar — útil si tenés muchos y no usás todos, para no tener que buscar el que sí usás en medio de una fila larga de íconos. Cada fila tiene además un botón **▶** que ejecuta esa acción ahí mismo, esté tildado o no — así podés seguir usando algo puntualmente aunque lo tengas escondido, sin ir a destildarlo primero. Qué se esconde queda guardado entre sesiones.
 
 Desde 🎨 **Tema**: 26 temas de color — Claro, Oscuro, y 24 más conocidos (Dracula, Nord, Gruvbox, Monokai, Solarized, One Dark Pro, Tokyo Night, Catppuccin, Rosé Pine, GitHub Dark/Light, y otros). Se guarda tu elección para la próxima vez.
 

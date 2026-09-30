@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 71 de 131 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 77 de 131 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -21,9 +21,9 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 5. ~~**Búsqueda global también en bases de datos y tareas del Home**~~ ✅ hecho.
 6. ~~**Recordatorios y resumen diario por Gmail**~~ ✅ hecho (2026-09-30): ⚙ Ajustes → Correo; contraseña de aplicación cifrada con el llavero del sistema.
 7. ~~**Home: estadísticas**~~ ✅ hecho.
-8. **Barra superior más limpia**: opción en ⚙ Ajustes para mostrar los botones de la toolbar **solo con ícono** o **con texto** (hoy unos tienen texto y otros no), y ocultar la barra entera (se vuelve a mostrar con un atajo o al acercar el mouse arriba).
-9. **Rediseño de ⚙ Ajustes**: hoy es un menú desplegable largo que se armó al principio y creció a los tumbos. Pasarlo a un **panel propio con secciones** (Editor, Apariencia, Nota diaria, Terminal, Home y recordatorios, Correo, Archivos y git, Toolbar), con buscador de ajustes y descripciones cortas.
-10. **El botón de modo muestra en qué modo estás**: el botón de vista cambia de ícono y texto según el modo actual (Normal · Enfoque · Lectura · Live Preview), no solo el tooltip.
+8. ~~**Barra superior más limpia**~~ ✅ hecho (2026-09-30): opción en ⚙ Ajustes para mostrar los botones de la toolbar **solo con ícono** o **con texto** (hoy unos tienen texto y otros no), y ocultar la barra entera (se vuelve a mostrar con un atajo o al acercar el mouse arriba).
+9. ~~**Rediseño de ⚙ Ajustes**~~ ✅ hecho (2026-09-30): hoy es un menú desplegable largo que se armó al principio y creció a los tumbos. Pasarlo a un **panel propio con secciones** (Editor, Apariencia, Nota diaria, Terminal, Home y recordatorios, Correo, Archivos y git, Toolbar), con buscador de ajustes y descripciones cortas.
+10. ~~**El botón de modo muestra en qué modo estás**~~ ✅ hecho (2026-09-30): el botón de vista cambia de ícono y texto según el modo actual (Normal · Enfoque · Lectura · Live Preview), no solo el tooltip.
 11. **Mascota virtual** (como *vscode-pets* / *vscode-pokemon*): un compañero animado en una esquina (o en el panel de la terminal) que camina, se puede alimentar/tirar la pelota; varias especies y temas.
 12. **Mascota ligada a tus tareas y Pomodoros** (estilo *Digimon/Pokémon*): gana experiencia con cada tarea tildada y cada Pomodoro terminado, sube de nivel y **evoluciona**; se pone triste si hay tareas atrasadas. Depende del 11 y del 13.
 13. **Categorías en las tareas del Home** (Universidad, Casa, Economía… editables, con color): filtro por categoría en el Home y **estadísticas por categoría** (qué hiciste más esta semana/mes). Se puede ligar a la mascota (cada categoría le da un tipo de experiencia).
@@ -116,9 +116,9 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 
 ## Pedidos nuevos (2026-09-30)
 
-- [ ] **Toolbar: botones solo ícono / con texto** y ocultar la barra superior (P2 · 8)
-- [ ] **Rediseño de ⚙ Ajustes** en un panel con secciones y buscador (P2 · 9)
-- [ ] **Botón de modo que muestra el modo actual** (ícono + texto: Normal, Enfoque, Lectura, Live) (P2 · 10)
+- [x] ~~**Toolbar: botones solo ícono / con texto** y ocultar la barra superior~~ (Ajustes → Apariencia; `Ctrl+Shift+M`) (2026-09-30)
+- [x] ~~**Rediseño de ⚙ Ajustes** en un panel con secciones y buscador~~ (`Ctrl+,`; 7 secciones, búsqueda sin tildes, interruptores, teclado) (2026-09-30)
+- [x] ~~**Botón de modo que muestra el modo actual**~~ (ícono + nombre) (2026-09-30)
 - [ ] **Mascota virtual** estilo vscode-pets / vscode-pokemon (P2 · 11)
 - [ ] **Mascota que evoluciona con tareas y Pomodoros** estilo Digimon/Pokémon (P2 · 12)
 - [ ] **Categorías en tareas del Home + estadísticas por categoría** (P2 · 13)
@@ -130,9 +130,9 @@ Revisado el 2026-09-30. Lo que ya estaba hecho o repetido queda anotado; lo nuev
 **Ya hechas (ver Consolidación):** CSP estricta, `sandbox: true`, validación de rutas en el proceso principal, avisos + registro de errores. **Ya estaban en la lista:** SQLite nativo / agrupar escrituras, dividir CSS y archivos grandes, módulos ES, accesibilidad ARIA + teclado, editar texto de PDFs, sincronización entre dispositivos (P2P ≈ "Sincronización" de largo plazo).
 
 **Estética (UI/UX)**
-- [ ] **Sistema de diseño con tokens**: escala tipográfica fija (H1–H6, cuerpo, notas), radios estándar (8px tarjetas, 4px botones) y sombras suaves en vez de bordes duros — base para el rediseño de Ajustes y los temas
-- [ ] **Micro-interacciones** (150–300 ms): abrir/cerrar sidebar y panel secundario, cambio a Live Preview, hover de la toolbar, destello sutil al guardar. Respetando "reducir movimiento" del sistema
-- [ ] **Indicador de cambios sin guardar en el sidebar** (punto de color junto al archivo, no solo en la pestaña)
+- [x] ~~**Sistema de diseño con tokens**~~ (2026-09-30: `--radius*`, `--shadow-1..3`, `--space-1..5`, `--font-xs..xl`, `--dur*`/`--ease` en `styles.css`; los usan Ajustes, la barra y lo nuevo — el resto de componentes se migra de a poco): escala tipográfica fija (H1–H6, cuerpo, notas), radios estándar (8px tarjetas, 4px botones) y sombras suaves en vez de bordes duros — base para el rediseño de Ajustes y los temas
+- [x] ~~**Micro-interacciones**~~ (2026-09-30: menús, diálogos, avisos, hover y destello al guardar; respeta "reducir movimiento"): abrir/cerrar sidebar y panel secundario, cambio a Live Preview, hover de la toolbar, destello sutil al guardar. Respetando "reducir movimiento" del sistema
+- [x] ~~**Indicador de cambios sin guardar en el sidebar**~~ (2026-09-30) (punto de color junto al archivo, no solo en la pestaña)
 - [ ] **Barra de estado más útil**: contador de palabras, rama de git actual y estado de guardado
 - [ ] **Contraste suficiente en todos los temas** (revisar los 26 con una herramienta de contraste)
 

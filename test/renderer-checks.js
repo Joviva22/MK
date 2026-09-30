@@ -1214,7 +1214,7 @@
 
   const pluginsPanelBefore = document.getElementById('plugins-panel').hidden;
   const pluginsRunBtn = Array.from(document.querySelectorAll('.toolbar-buttons-settings-row'))
-    .find((row) => row.querySelector('label').textContent === 'Plugins y comunidad')
+    .find((row) => row.querySelector('label').textContent === 'Plugins')
     .querySelector('.toolbar-buttons-settings-run');
   pluginsRunBtn.click();
   await waitFor(() => !document.getElementById('plugins-panel').hidden);
@@ -3596,6 +3596,66 @@
       detail = `guardarDevuelveNull=${bad === null} aviso=${!!toast} log=${logOk} homeDañadoApartado=${loaded === null && original === null}`;
     }
     check('Errores: guardar sin poder avisa (con el log) sin romper, y un JSON dañado se aparta en vez de pisarse', ok, detail);
+  }
+
+  // Ajustes y barra: panel con secciones y buscador, Ctrl+, / Esc; botones
+  // solo íconos / con texto; auto-ocultar; el botón de modo dice el modo;
+  // punto de "sin guardar" en el sidebar.
+  {
+    const overlay = document.getElementById('settings-overlay');
+    document.getElementById('btn-settings').click();
+    const opened = !overlay.hidden && document.activeElement === document.getElementById('settings-search');
+    overlay.querySelector('.set-nav-btn[data-section="terminal"]').click();
+    const sectionOk = !overlay.querySelector('.set-section[data-section="terminal"]').hidden && overlay.querySelector('.set-section[data-section="editor"]').hidden;
+    const search = document.getElementById('settings-search');
+    search.value = 'tabulacion'; // sin tilde: igual encuentra "Tabulación"
+    search.dispatchEvent(new Event('input'));
+    const visibleRows = Array.from(overlay.querySelectorAll('.set-row')).filter((r) => !r.hidden && !r.closest('.set-section').hidden);
+    const searchOk = visibleRows.length === 1 && visibleRows[0].textContent.includes('Tabulación');
+    search.value = 'zzzz nada';
+    search.dispatchEvent(new Event('input'));
+    const emptyOk = !document.getElementById('settings-empty').hidden;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    const closedOk = overlay.hidden;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: ',', ctrlKey: true, bubbles: true }));
+    const ctrlCommaOk = !overlay.hidden;
+    window.mdSettingsPanel.close();
+
+    const lbl = (id) => document.querySelector(`#${id} .tb-label`);
+    const visible = (el) => !!el && getComputedStyle(el).display !== 'none';
+    window.mdToolbarStyle.applyLabels('icons');
+    const iconsOk = !visible(lbl('btn-open')) && !visible(lbl('btn-terminal'));
+    window.mdToolbarStyle.applyLabels('text');
+    const textOk = visible(lbl('btn-open')) && visible(lbl('btn-terminal')) && lbl('btn-terminal').textContent === 'Terminal';
+    window.mdToolbarStyle.applyLabels('mixed');
+    const mixedOk = visible(lbl('btn-open')) && !visible(lbl('btn-terminal'));
+    await window.mdToolbarStyle.setAutohide(true);
+    const hiddenOk = document.body.classList.contains('toolbar-autohide');
+    await window.mdToolbarStyle.setAutohide(false);
+
+    window.mdModes.setLayoutMode('read');
+    const modeLabel = document.querySelector('#btn-focus .mode-label');
+    const modeOk = !!modeLabel && modeLabel.textContent === 'Lectura' && document.getElementById('btn-focus').dataset.mode === 'read';
+    window.mdModes.setLayoutMode('normal');
+
+    const shortOk = Array.from(document.querySelectorAll('.toolbar-buttons-settings-row label')).some((l) => l.textContent === 'Modo de vista');
+
+    let dotOk = false;
+    if (fixturesDir) {
+      const p = window.mdEditor.joinPath(fixturesDir, 'punto-sin-guardar.md');
+      await window.mdEditor.saveFile('# hola\n', p, false);
+      window.mdSidebar.renderFolder(await window.mdEditor.readFolder(fixturesDir));
+      await window.openFileAtPath(p);
+      window.mdCodeMirror.replaceRange('x', { line: 0, ch: 0 });
+      const row = () => Array.from(document.querySelectorAll('.tree-row')).find((r) => r.textContent.trim() === 'punto-sin-guardar.md');
+      const dotOn = !!(await waitFor(() => row() && row().classList.contains('tree-row-unsaved'), 2000));
+      await window.mdTabs.saveActive();
+      const dotOff = !row().classList.contains('tree-row-unsaved');
+      dotOk = dotOn && dotOff;
+    }
+    check('Ajustes y barra: panel con secciones y buscador (Ctrl+, / Esc), íconos/texto/mixto, auto-ocultar, botón de modo con nombre, punto de sin guardar',
+      opened && sectionOk && searchOk && emptyOk && closedOk && ctrlCommaOk && iconsOk && textOk && mixedOk && hiddenOk && modeOk && shortOk && dotOk,
+      `abre=${opened} sección=${sectionOk} buscar=${searchOk} vacío=${emptyOk} esc=${closedOk} ctrl,=${ctrlCommaOk} íconos=${iconsOk} texto=${textOk} mixto=${mixedOk} ocultar=${hiddenOk} modo=${modeOk} nombreCorto=${shortOk} punto=${dotOk}`);
   }
 
   // Correo: dirección + contraseña (nunca vuelve al renderer), prueba, aviso

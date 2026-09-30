@@ -9,7 +9,6 @@ let pomodoroBreakMinutes = 5;
 window.mdGetAutosaveInterval = () => autosaveIntervalMs;
 window.mdGetGitSyncEnabled = () => gitSyncEnabled;
 
-window.initDropdown('btn-settings', 'settings-menu');
 
 const autosaveSelect = document.getElementById('autosave-select');
 const fontSizeSelect = document.getElementById('fontsize-select');

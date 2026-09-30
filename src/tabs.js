@@ -157,6 +157,12 @@ function markModified(id, value) {
   if (!tab || tab.modified === value) return;
   tab.modified = value;
   renderTabbar();
+  // El sidebar marca con un punto los archivos con cambios sin guardar.
+  document.dispatchEvent(new CustomEvent('mk:modified-changed'));
+}
+
+function getModifiedPaths() {
+  return tabs.filter((t) => t.modified && t.filePath).map((t) => t.filePath);
 }
 
 function findTabByPath(filePath) {
@@ -237,6 +243,12 @@ async function saveActive(forceDialog = false) {
   window.mdStatusMode.textContent = tab.modeLabel;
   markModified(tab.id, false);
   persistSession();
+  // Guardado a mano: un destello sutil en la pestaña confirma que se guardó.
+  const activeTabEl = document.querySelector('#tabbar .tab.active');
+  if (activeTabEl) {
+    activeTabEl.classList.add('tab-saved-flash');
+    setTimeout(() => activeTabEl.classList.remove('tab-saved-flash'), 800);
+  }
 
   // Sync con git: solo en guardado manual (no en cada tick de autoguardado,
   // para no llenar el historial de commits) y solo si está prendido.
@@ -482,7 +494,7 @@ function syncPaths(paths) {
   tabs.filter((t) => t.filePath && changed.has(t.filePath)).forEach((t) => syncWithDisk(t));
 }
 
-window.mdTabs = { syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
+window.mdTabs = { getModifiedPaths, syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
 window.openFileAtPath = openTab;
 
 window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));

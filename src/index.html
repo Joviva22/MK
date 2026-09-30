@@ -77,119 +77,202 @@
       </div>
     </div>
 
-    <div class="dropdown">
-      <button id="btn-settings" class="toolbar-button" title="Ajustes"><i data-lucide="settings"></i></button>
-      <div id="settings-menu" class="dropdown-menu dropdown-menu-scroll" hidden>
-        <label class="dropdown-label" for="autosave-select">Autoguardado</label>
-        <select id="autosave-select">
-          <option value="0">Desactivado</option>
-          <option value="1000">Cada 1 segundo</option>
-          <option value="5000">Cada 5 segundos</option>
-          <option value="30000">Cada 30 segundos</option>
-        </select>
-
-        <label class="dropdown-label" for="fontsize-select">Tamaño de fuente</label>
-        <select id="fontsize-select">
-          <option value="12">12px</option>
-          <option value="13">13px</option>
-          <option value="14">14px</option>
-          <option value="15">15px</option>
-          <option value="16">16px</option>
-          <option value="18">18px</option>
-        </select>
-
-        <label class="dropdown-label" for="fontfamily-select">Tipografía</label>
-        <select id="fontfamily-select">
-          <option value='"JetBrains Mono", "Fira Code", Consolas, monospace'>JetBrains Mono</option>
-          <option value='"Fira Code", Consolas, monospace'>Fira Code</option>
-          <option value="Consolas, monospace">Consolas</option>
-          <option value="ui-monospace, Menlo, Monaco, monospace">Monoespaciada del sistema</option>
-        </select>
-
-        <label class="dropdown-label" for="tabsize-select">Ancho de tabulación</label>
-        <select id="tabsize-select">
-          <option value="2">2 espacios</option>
-          <option value="4">4 espacios</option>
-          <option value="8">8 espacios</option>
-        </select>
-
-        <label class="dropdown-label" for="wordwrap-toggle">
-          <input type="checkbox" id="wordwrap-toggle" /> Ajuste de línea
-        </label>
-
-        <label class="dropdown-label" for="snippets-textarea">Snippets de texto (uno por línea)</label>
-        <textarea id="snippets-textarea" class="snippets-textarea" rows="3" placeholder="/firma = Saludos, Tu Nombre"></textarea>
-
-        <div class="dropdown-label" title="Ctrl+Shift+D. Formato: AAAA (año), AA, MM (mes), DD (día); con / se reparte en subcarpetas, ej. AAAA/MM/AAAA-MM-DD">Nota diaria (Ctrl+Shift+D)</div>
-        <div class="dailynote-settings">
-          <input type="text" id="dailynote-folder" class="settings-text-input" placeholder="Carpeta (vacío = raíz)" title="Carpeta dentro de la carpeta abierta" />
-          <input type="text" id="dailynote-format" class="settings-text-input" placeholder="AAAA-MM-DD" title="Nombre: AAAA, AA, MM, DD; / = subcarpeta" />
-          <input type="text" id="dailynote-template" class="settings-text-input" placeholder="Plantilla (opcional): Plantillas/diaria.md" title="Nota cuyo texto se copia al crear la nota del día; {{fecha}} se reemplaza por la fecha" />
-          <div id="dailynote-example" class="dailynote-example"></div>
-        </div>
-
-        <label class="dropdown-label" for="terminal-shell-select">Shell de la terminal</label>
-        <select id="terminal-shell-select" title="Qué shell abre la terminal integrada (+, Ctrl+`). El ▾ del panel abre una con otro shell sin cambiar este."></select>
-
-        <div class="dropdown-label" title="Los recordatorios también te llegan por correo (a tu propia dirección). Necesita una contraseña de aplicación de Google: myaccount.google.com/apppasswords">Correo (Gmail)</div>
-        <div class="mail-settings">
-          <label class="mail-row"><input type="checkbox" id="mail-enabled" /> Mandar los recordatorios por correo</label>
-          <input type="email" id="mail-address" class="settings-text-input" placeholder="tu.direccion@gmail.com" autocomplete="off" />
-          <input type="password" id="mail-password" class="settings-text-input" placeholder="Contraseña de aplicación (16 letras)" autocomplete="new-password" />
-          <label class="mail-row"><input type="checkbox" id="mail-daily" /> Resumen diario a las <input type="time" id="mail-daily-time" class="home-week-before-time" value="08:00" /></label>
-          <div class="mail-buttons">
-            <button type="button" id="mail-save" class="toolbar-button">Guardar</button>
-            <button type="button" id="mail-test" class="toolbar-button">Enviar prueba</button>
-            <button type="button" id="mail-forget" class="toolbar-button" title="Borra la contraseña guardada">Olvidar contraseña</button>
-          </div>
-          <div id="mail-status" class="dailynote-example" role="status"></div>
-        </div>
-
-        <label class="dropdown-label" for="gitsync-toggle">
-          <input type="checkbox" id="gitsync-toggle" /> Sincronizar con git al guardar
-        </label>
-
-        <label class="dropdown-label" for="keep-in-tray-toggle" title="Cerrar la ventana deja MK en la bandeja del sistema: los recordatorios siguen sonando. Para salir: Ctrl+Q o menú de la bandeja → Salir.">
-          <input type="checkbox" id="keep-in-tray-toggle" /> Al cerrar, seguir en la bandeja (avisos activos)
-        </label>
-
-        <label class="dropdown-label" for="autostart-toggle" title="Arranca MK oculto en la bandeja al iniciar sesión, para que los recordatorios suenen aunque no lo abras.">
-          <input type="checkbox" id="autostart-toggle" /> Iniciar MK con el sistema (en la bandeja)
-        </label>
-
-        <label class="dropdown-label" for="home-in-folder-toggle" title="Las tareas del Home se guardan en <carpeta>/.mk/home.json: viajan con git y tus copias de seguridad. Cada carpeta tiene su propio Home.">
-          <input type="checkbox" id="home-in-folder-toggle" /> Guardar el Home en la carpeta abierta (.mk/)
-        </label>
-
-        <label class="dropdown-label" for="home-startup-toggle">
-          <input type="checkbox" id="home-startup-toggle" /> Abrir Home al iniciar
-        </label>
-
-        <label class="dropdown-label" for="pomodoro-focus-select">Pomodoro: minutos de foco</label>
-        <select id="pomodoro-focus-select">
-          <option value="15">15 min</option>
-          <option value="20">20 min</option>
-          <option value="25">25 min</option>
-          <option value="30">30 min</option>
-          <option value="45">45 min</option>
-          <option value="50">50 min</option>
-        </select>
-
-        <label class="dropdown-label" for="pomodoro-break-select">Pomodoro: minutos de descanso</label>
-        <select id="pomodoro-break-select">
-          <option value="5">5 min</option>
-          <option value="10">10 min</option>
-          <option value="15">15 min</option>
-        </select>
-
-        <label class="dropdown-label">Botones de la toolbar (tildado = visible)</label>
-        <div id="toolbar-buttons-settings" class="toolbar-buttons-settings"></div>
-      </div>
-    </div>
+    <button id="btn-settings" class="toolbar-button" title="Ajustes (Ctrl+,)"><i data-lucide="settings"></i></button>
 
     <div class="dropdown">
       <button id="btn-theme" class="toolbar-button" title="Cambiar tema"><i data-lucide="palette"></i> Tema ▾</button>
       <div id="theme-menu" class="dropdown-menu dropdown-menu-scroll" hidden></div>
+    </div>
+  </div>
+
+  <div id="settings-overlay" class="modal-overlay settings-overlay" hidden>
+    <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-heading">
+      <nav class="set-nav" aria-label="Secciones de ajustes">
+        <div id="settings-heading" class="set-heading"><i data-lucide="settings"></i> Ajustes</div>
+        <button type="button" class="set-nav-btn set-nav-active" data-section="editor"><i data-lucide="pencil"></i><span>Editor</span></button>
+        <button type="button" class="set-nav-btn" data-section="appearance"><i data-lucide="palette"></i><span>Apariencia</span></button>
+        <button type="button" class="set-nav-btn" data-section="notes"><i data-lucide="notebook-pen"></i><span>Notas</span></button>
+        <button type="button" class="set-nav-btn" data-section="home"><i data-lucide="calendar-check"></i><span>Home y avisos</span></button>
+        <button type="button" class="set-nav-btn" data-section="mail"><i data-lucide="mail"></i><span>Correo</span></button>
+        <button type="button" class="set-nav-btn" data-section="terminal"><i data-lucide="square-terminal"></i><span>Terminal</span></button>
+        <button type="button" class="set-nav-btn" data-section="system"><i data-lucide="monitor-cog"></i><span>Sistema</span></button>
+      </nav>
+      <div class="set-main">
+        <div class="set-top">
+          <input type="search" id="settings-search" class="set-search" placeholder="Buscar un ajuste…" aria-label="Buscar un ajuste" autocomplete="off" />
+          <button type="button" id="settings-close" class="toolbar-button" title="Cerrar (Esc)" aria-label="Cerrar ajustes">✕</button>
+        </div>
+        <div class="set-body">
+        <section class="set-section" data-section="editor" data-title="Editor">
+          <h2 class="set-section-title">Editor</h2>
+          <div class="set-row" data-keywords="guardar guardado automático">
+            <div class="set-text"><label class="set-title" for="autosave-select">Autoguardado</label><div class="set-desc">Cada cuánto se guardan solos los cambios.</div></div>
+            <div class="set-control"><select id="autosave-select">
+                <option value="0">Desactivado</option>
+                <option value="1000">Cada 1 segundo</option>
+                <option value="5000">Cada 5 segundos</option>
+                <option value="30000">Cada 30 segundos</option>
+              </select></div>
+          </div>
+          <div class="set-row" data-keywords="letra zoom tamaño">
+            <div class="set-text"><label class="set-title" for="fontsize-select">Tamaño de fuente</label><div class="set-desc">También con Ctrl+rueda del mouse, Ctrl+= / Ctrl+- y Ctrl+0.</div></div>
+            <div class="set-control"><select id="fontsize-select">
+                <option value="12">12 px</option>
+                <option value="13">13 px</option>
+                <option value="14">14 px</option>
+                <option value="15">15 px</option>
+                <option value="16">16 px</option>
+                <option value="18">18 px</option>
+              </select></div>
+          </div>
+          <div class="set-row" data-keywords="fuente letra">
+            <div class="set-text"><label class="set-title" for="fontfamily-select">Tipografía</label><div class="set-desc">Fuente del editor (el preview usa la suya).</div></div>
+            <div class="set-control"><select id="fontfamily-select">
+                <option value='"JetBrains Mono", "Fira Code", Consolas, monospace'>JetBrains Mono</option>
+                <option value='"Fira Code", Consolas, monospace'>Fira Code</option>
+                <option value="Consolas, monospace">Consolas</option>
+                <option value="ui-monospace, Menlo, Monaco, monospace">Monoespaciada del sistema</option>
+              </select></div>
+          </div>
+          <div class="set-row" data-keywords="tab sangría indentación">
+            <div class="set-text"><label class="set-title" for="tabsize-select">Tabulación</label><div class="set-desc">Espacios por nivel de sangría.</div></div>
+            <div class="set-control"><select id="tabsize-select">
+                <option value="2">2 espacios</option>
+                <option value="4">4 espacios</option>
+                <option value="8">8 espacios</option>
+              </select></div>
+          </div>
+          <div class="set-row" data-keywords="wrap">
+            <div class="set-text"><label class="set-title" for="wordwrap-toggle">Ajuste de línea</label><div class="set-desc">Las líneas largas continúan abajo en vez de salirse a la derecha.</div></div>
+            <div class="set-control"><input type="checkbox" id="wordwrap-toggle" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row set-row-wide" data-keywords="abreviaturas atajos texto">
+            <div class="set-text"><label class="set-title" for="snippets-textarea">Snippets de texto</label><div class="set-desc">Uno por línea: <code>/abrev = texto</code>. Se expanden al escribir la abreviatura y un espacio. Vienen <code>/fecha</code> y <code>/hora</code>.</div></div>
+            <div class="set-control"><textarea id="snippets-textarea" class="snippets-textarea" rows="4" placeholder="/firma = Saludos, Tu Nombre"></textarea></div>
+          </div>
+        </section>
+        <section class="set-section" data-section="appearance" data-title="Apariencia" hidden>
+          <h2 class="set-section-title">Apariencia</h2>
+          <div class="set-row" data-keywords="color oscuro claro">
+            <div class="set-text"><div class="set-title">Tema</div><div class="set-desc">26 temas y uno personalizado.</div></div>
+            <div class="set-control"><button type="button" id="set-open-theme" class="toolbar-button">Elegir tema…</button></div>
+          </div>
+          <div class="set-row" data-keywords="toolbar iconos texto limpio">
+            <div class="set-text"><label class="set-title" for="set-toolbar-labels">Botones de la barra</label><div class="set-desc">Solo íconos (más limpio), con texto, o mixto (como venía).</div></div>
+            <div class="set-control"><select id="set-toolbar-labels">
+                <option value="mixed">Mixto</option>
+                <option value="icons">Solo íconos</option>
+                <option value="text">Con texto</option>
+              </select></div>
+          </div>
+          <div class="set-row" data-keywords="toolbar esconder limpio">
+            <div class="set-text"><label class="set-title" for="set-toolbar-autohide">Ocultar la barra superior</label><div class="set-desc">Aparece al acercar el mouse arriba. Atajo: Ctrl+Shift+M.</div></div>
+            <div class="set-control"><input type="checkbox" id="set-toolbar-autohide" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row set-row-wide" data-keywords="toolbar botones visibles">
+            <div class="set-text"><div class="set-title">Qué botones mostrar</div><div class="set-desc">Destildá los que no uses; ▶ los ejecuta igual aunque estén ocultos.</div></div>
+            <div class="set-control"><div id="toolbar-buttons-settings" class="toolbar-buttons-settings"></div></div>
+          </div>
+        </section>
+        <section class="set-section" data-section="notes" data-title="Notas" hidden>
+          <h2 class="set-section-title">Notas</h2>
+          <div class="set-row set-row-wide" data-keywords="diario plantilla formato">
+            <div class="set-text"><div class="set-title">Nota diaria</div><div class="set-desc"><code>Ctrl+Shift+D</code>. Formato: <code>AAAA</code> año, <code>AA</code>, <code>MM</code> mes, <code>DD</code> día; con <code>/</code> se reparte en subcarpetas (<code>AAAA/MM/DD</code>). Plantilla: una nota de tu carpeta; <code>{{fecha}}</code> se cambia por la fecha.</div></div>
+            <div class="set-control"><div class="dailynote-settings">
+                <input type="text" id="dailynote-folder" class="settings-text-input" placeholder="Carpeta (vacío = raíz)" aria-label="Carpeta de la nota diaria" />
+                <input type="text" id="dailynote-format" class="settings-text-input" placeholder="AAAA-MM-DD" aria-label="Formato del nombre" />
+                <input type="text" id="dailynote-template" class="settings-text-input" placeholder="Plantilla (opcional): Plantillas/diaria.md" aria-label="Plantilla" />
+                <div id="dailynote-example" class="dailynote-example"></div>
+              </div></div>
+          </div>
+        </section>
+        <section class="set-section" data-section="home" data-title="Home y avisos" hidden>
+          <h2 class="set-section-title">Home y avisos</h2>
+          <div class="set-row" data-keywords="inicio planificador">
+            <div class="set-text"><label class="set-title" for="home-startup-toggle">Abrir el Home al iniciar</label></div>
+            <div class="set-control"><input type="checkbox" id="home-startup-toggle" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row" data-keywords="tareas carpeta git">
+            <div class="set-text"><label class="set-title" for="home-in-folder-toggle">Guardar el Home en la carpeta</label><div class="set-desc">Las tareas van a <code>&lt;carpeta&gt;/.mk/home.json</code>: viajan con git; cada carpeta tiene su Home.</div></div>
+            <div class="set-control"><input type="checkbox" id="home-in-folder-toggle" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row" data-keywords="tomate temporizador">
+            <div class="set-text"><label class="set-title" for="pomodoro-focus-select">Pomodoro: foco</label><div class="set-desc">Minutos de trabajo.</div></div>
+            <div class="set-control"><select id="pomodoro-focus-select">
+                <option value="15">15 min</option>
+                <option value="20">20 min</option>
+                <option value="25">25 min</option>
+                <option value="30">30 min</option>
+                <option value="45">45 min</option>
+                <option value="50">50 min</option>
+              </select></div>
+          </div>
+          <div class="set-row" data-keywords="tomate temporizador pausa">
+            <div class="set-text"><label class="set-title" for="pomodoro-break-select">Pomodoro: descanso</label><div class="set-desc">Minutos de pausa.</div></div>
+            <div class="set-control"><select id="pomodoro-break-select">
+                <option value="5">5 min</option>
+                <option value="10">10 min</option>
+                <option value="15">15 min</option>
+              </select></div>
+          </div>
+          <div class="set-row" data-keywords="recordatorio semana">
+            <div class="set-text"><div class="set-title">Aviso 1 semana antes</div><div class="set-desc">Se activa y se cambia la hora arriba en el Home (🔔 1 semana antes).</div></div>
+            <div class="set-control"></div>
+          </div>
+        </section>
+        <section class="set-section" data-section="mail" data-title="Correo" hidden>
+          <h2 class="set-section-title">Correo</h2>
+          <div class="set-row" data-keywords="gmail email recordatorios">
+            <div class="set-text"><label class="set-title" for="mail-enabled">Mandar los recordatorios por correo</label><div class="set-desc">Siempre a tu propia dirección. Necesita una <a href="https://myaccount.google.com/apppasswords">contraseña de aplicación de Google</a>.</div></div>
+            <div class="set-control"><input type="checkbox" id="mail-enabled" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row" data-keywords="gmail email">
+            <div class="set-text"><label class="set-title" for="mail-address">Tu dirección</label></div>
+            <div class="set-control"><input type="email" id="mail-address" class="settings-text-input" placeholder="tu.direccion@gmail.com" autocomplete="off" /></div>
+          </div>
+          <div class="set-row" data-keywords="gmail clave">
+            <div class="set-text"><label class="set-title" for="mail-password">Contraseña de aplicación</label><div class="set-desc">16 letras. Se guarda cifrada con el llavero del sistema y no se vuelve a mostrar. Nunca la pegues en un chat.</div></div>
+            <div class="set-control"><input type="password" id="mail-password" class="settings-text-input" placeholder="Contraseña de aplicación" autocomplete="new-password" /></div>
+          </div>
+          <div class="set-row" data-keywords="gmail resumen mañana">
+            <div class="set-text"><label class="set-title" for="mail-daily">Resumen diario</label><div class="set-desc">Hoy, atrasadas y próximos 7 días, a la hora que elijas.</div></div>
+            <div class="set-control"><label class="mail-row"><input type="checkbox" id="mail-daily" class="set-switch" role="switch" aria-label="Resumen diario" /> a las <input type="time" id="mail-daily-time" class="home-week-before-time" value="08:00" aria-label="Hora del resumen" /></label></div>
+          </div>
+          <div class="set-row set-row-wide" data-keywords="gmail probar">
+            <div class="set-text"><div class="set-title"></div></div>
+            <div class="set-control"><div class="mail-buttons">
+                <button type="button" id="mail-save" class="toolbar-button set-primary">Guardar</button>
+                <button type="button" id="mail-test" class="toolbar-button">Enviar prueba</button>
+                <button type="button" id="mail-forget" class="toolbar-button" title="Borra la contraseña guardada">Olvidar contraseña</button>
+              </div>
+              <div id="mail-status" class="dailynote-example" role="status"></div></div>
+          </div>
+        </section>
+        <section class="set-section" data-section="terminal" data-title="Terminal" hidden>
+          <h2 class="set-section-title">Terminal</h2>
+          <div class="set-row" data-keywords="bash zsh fish consola">
+            <div class="set-text"><label class="set-title" for="terminal-shell-select">Shell</label><div class="set-desc">El que abre <b>+</b> y <code>Ctrl+`</code>. El ▾ del panel abre otro sin cambiar este.</div></div>
+            <div class="set-control"><select id="terminal-shell-select"></select></div>
+          </div>
+        </section>
+        <section class="set-section" data-section="system" data-title="Sistema" hidden>
+          <h2 class="set-section-title">Sistema</h2>
+          <div class="set-row" data-keywords="commit push">
+            <div class="set-text"><label class="set-title" for="gitsync-toggle">Sincronizar con git al guardar</label><div class="set-desc">Solo si la carpeta ya es un repositorio git.</div></div>
+            <div class="set-control"><input type="checkbox" id="gitsync-toggle" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row" data-keywords="tray cerrar segundo plano">
+            <div class="set-text"><label class="set-title" for="keep-in-tray-toggle">Al cerrar, seguir en la bandeja</label><div class="set-desc">Los recordatorios siguen sonando. Salir de verdad: Ctrl+Q.</div></div>
+            <div class="set-control"><input type="checkbox" id="keep-in-tray-toggle" class="set-switch" role="switch" /></div>
+          </div>
+          <div class="set-row" data-keywords="arranque autostart">
+            <div class="set-text"><label class="set-title" for="autostart-toggle">Iniciar MK con el sistema</label><div class="set-desc">Arranca oculto en la bandeja al iniciar sesión.</div></div>
+            <div class="set-control"><input type="checkbox" id="autostart-toggle" class="set-switch" role="switch" /></div>
+          </div>
+        </section>
+          <div id="settings-empty" class="set-empty" hidden>Ningún ajuste coincide.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -567,6 +650,8 @@
   <script src="ui-dropdowns.js"></script>
   <script src="errortoast.js"></script>
   <script src="mailsettings.js"></script>
+  <script src="settingspanel.js"></script>
+  <script src="toolbarstyle.js"></script>
   <script src="askdialog.js"></script>
   <script src="templates.js"></script>
   <script src="settings.js"></script>

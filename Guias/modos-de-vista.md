@@ -7,14 +7,14 @@
 | Eje | Control | Opciones |
 |---|---|---|
 | Sidebar | `Ctrl+B` | Visible / oculto |
-| Principal | Botón 🎯, `Ctrl+Shift+E` / `Ctrl+Shift+R` / `Ctrl+Shift+L` | Normal · Enfoque (solo editor) · Lectura (solo preview) · **Live Preview** |
+| Principal | Botón de modo (muestra el modo actual: ícono y nombre), `Ctrl+Shift+E` / `Ctrl+Shift+R` / `Ctrl+Shift+L` | Normal · Enfoque (solo editor) · Lectura (solo preview) · **Live Preview** |
 | Panel secundario | Clic derecho en archivo → "Abrir en panel secundario" | Cerrado / abierto |
 
 Y `F11`: pantalla completa sin toolbar ni barra de estado.
 
 ## Live Preview: escribir viendo el resultado
 
-Un cuarto modo, **además** de los otros tres (que siguen igual). `Ctrl+Shift+L`, el botón 🎯 (después de Lectura) o la paleta → "Modo Live Preview".
+Un cuarto modo, **además** de los otros tres (que siguen igual). `Ctrl+Shift+L`, el botón de modo (después de Lectura) o la paleta → "Modo Live Preview".
 
 - Escribís en el mismo editor, pero la nota se ve **como en modo lectura**: encabezados grandes, **negrita**, *cursiva*, ~~tachado~~, enlaces, `#etiquetas`, `==resaltado==`, fórmulas, imágenes, tablas, separadores, citas y viñetas.
 - **Solo la línea del cursor** muestra la sintaxis Markdown (`#`, `**`, `[texto](url)`...) para que la edites; al salir de la línea vuelve a verse renderizada.

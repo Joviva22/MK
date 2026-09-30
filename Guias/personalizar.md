@@ -2,25 +2,24 @@
 
 **Para qué sirve:** dejar MK a tu gusto — colores, tipografía, qué botones ver y cómo se comporta.
 
-## ⚙ Ajustes
-| Ajuste | Opciones |
+## ⚙ Ajustes (`Ctrl+,`)
+Un panel con **secciones a la izquierda** y un **buscador** arriba: escribí "tab", "correo" o "bandeja" y aparecen solo esos ajustes (sin importar tildes). `Esc` o clic afuera cierra. Todo se guarda solo al cambiarlo.
+
+| Sección | Qué tiene |
 |---|---|
-| Autoguardado | Desactivado · 1 s · 5 s · 30 s |
-| Tamaño de fuente | 12–18 px (o `Ctrl+scroll` / `Ctrl+=` / `Ctrl+-` / `Ctrl+0`) |
-| Tipografía | JetBrains Mono, Fira Code, Consolas, del sistema |
-| Tabulación | 2 · 4 · 8 espacios |
-| Ajuste de línea | Sí / No |
-| Snippets | `/abrev = texto`, uno por línea |
-| Correo (Gmail) | Recordatorios y resumen diario por correo, a tu propia dirección. Ver [recordatorios.md](recordatorios.md#también-por-correo-gmail) |
-| Shell de la terminal | Del sistema, bash, zsh, fish… (los instalados). Ver [terminal.md](terminal.md) |
-| Nota diaria | Carpeta, formato del nombre (`AAAA-MM-DD`, `AAAA/MM/DD`…) y plantilla. Ver [nota-diaria.md](nota-diaria.md) |
-| Git al guardar | Ver [historial-y-git.md](historial-y-git.md) |
-| Abrir Home al iniciar | Ver [Home](home-como-usar.md) |
-| Guardar el Home en la carpeta abierta | Tareas en `<carpeta>/.mk/home.json` (viajan con git; cada carpeta con su Home) |
-| Al cerrar, seguir en la bandeja | Cerrar la ventana deja MK en la bandeja y los recordatorios siguen sonando (activado por defecto). Salir: `Ctrl+Q` |
-| Iniciar MK con el sistema | Arranca oculto en la bandeja al iniciar sesión |
-| Pomodoro | Minutos de foco y descanso |
-| Botones de la toolbar | Destildá los que no uses; **▶** los ejecuta igual aunque estén ocultos |
+| **Editor** | Autoguardado (desactivado · 1 s · 5 s · 30 s), tamaño de fuente (o `Ctrl+scroll` / `Ctrl+=` / `Ctrl+-` / `Ctrl+0`), tipografía, tabulación, ajuste de línea, snippets (`/abrev = texto`) |
+| **Apariencia** | Tema · **botones de la barra**: *Mixto* (como venía), *Solo íconos* (más limpio, entra en una línea) o *Con texto* · **ocultar la barra superior** (aparece al acercar el mouse arriba; `Ctrl+Shift+M`) · qué botones mostrar (▶ los ejecuta aunque estén ocultos) |
+| **Notas** | Nota diaria: carpeta, formato del nombre y plantilla. Ver [nota-diaria.md](nota-diaria.md) |
+| **Home y avisos** | Abrir el Home al iniciar, guardar el Home en la carpeta (`.mk/home.json`, viaja con git), minutos de Pomodoro. El aviso "1 semana antes" se maneja arriba en el Home |
+| **Correo** | Recordatorios y resumen diario por Gmail, a tu propia dirección. Ver [recordatorios.md](recordatorios.md#también-por-correo-gmail) |
+| **Terminal** | Shell (del sistema, bash, zsh, fish…). Ver [terminal.md](terminal.md) |
+| **Sistema** | Git al guardar ([historial-y-git.md](historial-y-git.md)), seguir en la bandeja al cerrar (salir: `Ctrl+Q`), iniciar MK con el sistema |
+
+## La barra superior
+- El botón de **modo de vista** muestra en qué modo estás (ícono y nombre: Normal, Enfoque, Lectura, Live); clic pasa al siguiente.
+- Un **punto de color** junto a un archivo del sidebar = tiene cambios sin guardar.
+- Al guardar con `Ctrl+S`, la pestaña hace un destello corto para confirmarlo.
+- Las animaciones son cortas y se desactivan solas si tu sistema tiene "reducir movimiento".
 
 ## 🎨 Temas
 26 temas: Claro, Oscuro, Dracula, Nord, Gruvbox, Monokai, Solarized, One Dark Pro, Tokyo Night, Catppuccin, Rosé Pine, GitHub...

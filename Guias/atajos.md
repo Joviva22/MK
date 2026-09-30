@@ -28,6 +28,8 @@
 |---|---|
 | `Ctrl+Shift+H` | **Home** (semana / mes) |
 | `Ctrl+Shift+D` | Nota diaria de hoy (carpeta y formato en ⚙ Ajustes) |
+| `Ctrl+,` | Abrir / cerrar ⚙ Ajustes |
+| `Ctrl+Shift+M` | Ocultar / mostrar la barra superior (auto-ocultar) |
 
 ## Terminal
 | Atajo | Acción |

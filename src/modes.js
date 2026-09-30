@@ -34,10 +34,19 @@ function setLayoutMode(mode, opts) {
 const MODE_LABELS = { normal: 'Normal', focus: 'Enfoque', read: 'Lectura', live: 'Live Preview' };
 const MODE_CYCLE = ['normal', 'focus', 'read', 'live'];
 
+// El botón muestra el modo ACTUAL (ícono + nombre), no solo en el tooltip:
+// así se ve de un vistazo si estás escribiendo, leyendo o en Live Preview.
+const MODE_ICONS = { normal: 'columns-2', focus: 'focus', read: 'book-open', live: 'eye' };
+const MODE_SHORT = { normal: 'Normal', focus: 'Enfoque', read: 'Lectura', live: 'Live' };
+
 function updateFocusButtonTitle() {
   const btn = document.getElementById('btn-focus');
   const next = MODE_CYCLE[(MODE_CYCLE.indexOf(currentLayoutMode) + 1) % MODE_CYCLE.length];
   btn.title = `Modo: ${MODE_LABELS[currentLayoutMode]} → clic: ${MODE_LABELS[next]} (Enfoque Ctrl+Shift+E · Lectura Ctrl+Shift+R · Live Preview Ctrl+Shift+L)`;
+  btn.setAttribute('aria-label', `Modo de vista: ${MODE_LABELS[currentLayoutMode]}`);
+  btn.dataset.mode = currentLayoutMode;
+  btn.innerHTML = `<i data-lucide="${MODE_ICONS[currentLayoutMode]}"></i><span class="tb-label mode-label">${MODE_SHORT[currentLayoutMode]}</span>`;
+  if (window.lucide) window.lucide.createIcons({ attrs: { width: 16, height: 16, 'stroke-width': 2 }, root: btn });
   btn.classList.toggle('mode-button-active', currentLayoutMode !== 'normal');
 }
 
@@ -51,6 +60,8 @@ function toggleMode(mode) {
 function releasePdfForcedReadMode() {
   if (pdfForcedReadMode) setLayoutMode('normal');
 }
+
+updateFocusButtonTitle();
 
 window.mdModes = { setLayoutMode, toggleMode, getLayoutMode: () => currentLayoutMode, releasePdfForcedReadMode };
 

@@ -11,7 +11,8 @@ const container = document.getElementById('toolbar-buttons-settings');
 // El title trae "Acción (atajo)" — para la lista alcanza con la acción,
 // el atajo completo se ve igual al pasar el mouse por el botón real.
 function labelFor(btn) {
-  return (btn.title || btn.id).replace(/\s*\([^)]*\)\s*$/, '').trim();
+  // Nombre corto (toolbarstyle.js) y, si no, el title sin el atajo.
+  return btn.dataset.short || (btn.title || btn.id).replace(/\s*\([^)]*\)\s*$/, '').trim();
 }
 
 async function setVisible(id, visible) {
@@ -35,6 +36,7 @@ function buildRows() {
     checkbox.addEventListener('change', () => setVisible(btn.id, checkbox.checked));
 
     const text = document.createElement('label');
+    text.title = btn.title;
     text.setAttribute('for', checkbox.id);
     text.textContent = labelFor(btn);
 
