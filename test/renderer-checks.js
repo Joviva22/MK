@@ -3884,6 +3884,48 @@
       `tarea=${!!row} tildar=${tickOk} progreso=${progOk} base=${baseOk}(${ws && ws[2].querySelector('.md-widget-number') && ws[2].querySelector('.md-widget-number').textContent}) mascotas=${petsOk} error=${errOk}`);
   }
 
+  // Bloque run: muestra el comando, pide confirmación la primera vez (con el
+  // comando exacto), ejecuta en la terminal y no vuelve a preguntar por el
+  // mismo texto; si el comando cambia, pregunta de nuevo.
+  {
+    const R = window.mdRunBlocks;
+    const parsed = R.parse('título: Saludo\necho uno\n# comentario\necho dos');
+    const parseOk = parsed.title === 'Saludo' && parsed.commands.join('|') === 'echo uno|echo dos';
+    const stamp = Date.now();
+    const cmd = [`echo RUN_OK_${stamp}`];
+    const notePath = fixturesDir ? window.mdEditor.joinPath(fixturesDir, 'script.md') : null;
+    const originalConfirm = window.confirm;
+    const asked = [];
+    window.confirm = (m) => { asked.push(m); return false; };
+    await R.run(cmd, notePath); // dice que no: no corre
+    const deniedOk = asked.length === 1 && asked[0].includes(`echo RUN_OK_${stamp}`);
+    window.confirm = (m) => { asked.push(m); return true; };
+    await R.run(cmd, notePath);
+    const session = await waitFor(() => window.mdTerminal.getSessions().find((x) => !x.exited));
+    const screen = () => { const b = session.term.buffer.active; let t = ''; for (let i = 0; i < b.length; i++) t += b.getLine(i).translateToString(true) + '\n'; return t; };
+    const ranOk = !!(await waitFor(() => screen().includes(`RUN_OK_${stamp}`) && screen().split(`RUN_OK_${stamp}`).length > 2, 8000));
+    const askedBefore = asked.length;
+    await R.run(cmd, notePath); // mismo comando: no pregunta
+    const trustOk = asked.length === askedBefore;
+    await R.run([`echo OTRO_${stamp}`], notePath); // distinto: pregunta
+    const changedOk = asked.length === askedBefore + 1;
+    window.confirm = originalConfirm;
+    for (let i = 0; i < 10 && document.querySelector('.terminal-tab-close'); i++) document.querySelector('.terminal-tab-close').click();
+    // En el preview: tarjeta con el comando y ▶ Ejecutar.
+    const fence = '```';
+    window.mdModes.setLayoutMode('normal');
+    window.mdTabs.newTab([fence + 'run', 'título: Prueba', 'ls -la', fence].join('\n'));
+    window.renderPreview();
+    const card = await waitFor(() => document.querySelector('#preview-pane .md-run'));
+    const cardOk = !!card && card.textContent.includes('Prueba') && card.textContent.includes('ls -la') && !!card.querySelector('.md-run-btn:not([disabled])');
+    window.confirm = () => true;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    window.confirm = originalConfirm;
+    check('Bloque run: comando visible, confirmación con el texto exacto, ejecuta en la terminal, no repregunta el mismo, sí uno distinto',
+      parseOk && deniedOk && ranOk && trustOk && changedOk && cardOk,
+      `parse=${parseOk} rechaza=${deniedOk} ejecuta=${ranOk} confiado=${trustOk} cambiado=${changedOk} tarjeta=${cardOk}`);
+  }
+
   // Exportar que falla (carpeta inexistente): devuelve null y avisa, en vez
   // de que el botón no haga nada.
   {

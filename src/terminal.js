@@ -724,6 +724,6 @@ new MutationObserver(() => {
   if (config.terminalHeight) panel.style.height = `${config.terminalHeight}px`;
 })();
 
-window.mdTerminal = { RUNNERS, RUNNER_PROGRAMS, AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, splitTerminal, listShells, getPreferredShell: () => preferredShell, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
+window.mdTerminal = { shellQuote, RUNNERS, RUNNER_PROGRAMS, AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, splitTerminal, listShells, getPreferredShell: () => preferredShell, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
 
 })();

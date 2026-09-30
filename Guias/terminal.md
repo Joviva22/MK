@@ -96,6 +96,21 @@ Con el cursor en la terminal, las teclas van **al shell**, no a MK: `Ctrl+W` bor
 - **Convertir documentos**: `pandoc nota.md -o nota.docx`.
 - **Buscar en tus notas**: `grep -rn "parcial" .`
 
+## Botones de script en una nota (bloque `run`)
+
+Un bloque con lenguaje `run` se ve como una tarjeta con **▶ Ejecutar**: corre sus comandos en la terminal integrada, **en la carpeta de la nota** (varias líneas se ejecutan en orden y se corta si una falla).
+
+````markdown
+```run
+título: Respaldo de mis notas
+tar czf ~/respaldo-notas.tgz .
+```
+````
+
+Ideas: `git pull`, compilar un proyecto, `docker compose up -d`, abrir el servidor de desarrollo, generar un informe.
+
+**Seguridad:** la primera vez MK muestra el **comando exacto** y pide confirmación; después no pregunta más por ese mismo comando en esa nota. Si el comando cambia (aunque sea una letra), vuelve a preguntar. Cuidado con notas descargadas de internet: un comando puede borrar o modificar archivos. Si apagás la terminal en Ajustes → Módulos, el botón queda desactivado.
+
 ## Seguridad
 
 Es una terminal con **tus permisos**, igual que cualquier otra: lo que ejecutes ahí puede modificar o borrar archivos. Solo la ventana principal de MK puede abrir terminales (no el contenido que se muestra en el preview), y solo con un shell de la lista de instalados (no un programa cualquiera). Más en [seguridad-y-errores.md](seguridad-y-errores.md).

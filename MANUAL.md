@@ -36,6 +36,7 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 28. [Seguridad, privacidad y errores](#28-seguridad-privacidad-y-errores)
 29. [Mascotas](#29-mascotas)
 30. [Widgets en notas](#30-widgets-en-notas)
+31. [Botones de script (bloque run)](#31-botones-de-script-bloque-run)
 
 > Guías especializadas por función (cómo usar / para qué sirve): carpeta [`Guias/`](./Guias/README.md).
 
@@ -611,3 +612,7 @@ Un **equipo de hasta 3 criaturas** que camina al pie del sidebar (o por toda la 
 ## 30. Widgets en notas
 
 Bloques ```` ```widget ```` con datos vivos, en el preview y en Live Preview: `tareas: hoy | semana | atrasadas` (lista del Home, **tildable desde la nota**), `progreso` (semana, racha, atrasadas), `base: Nombre` + `suma: Columna` / `promedio: Columna` (o nada para contar filas) y opcional `vista:` (un número grande con los filtros de la vista), y `mascotas` (tu equipo). Ejemplo: [`Ejemplos/tablero.md`](./Ejemplos/tablero.md); guía: [`Guias/widgets.md`](./Guias/widgets.md).
+
+## 31. Botones de script (bloque run)
+
+Un bloque ```` ```run ```` (opcional primera línea `título: …`, luego uno o varios comandos) se muestra como tarjeta con **▶ Ejecutar**: corre los comandos en la terminal integrada, en la carpeta de la nota, en orden y cortando si uno falla. La primera vez pide confirmación mostrando el comando exacto; después no vuelve a preguntar por ese mismo texto en esa nota (si cambia, sí). Guía: [`Guias/terminal.md`](./Guias/terminal.md#botones-de-script-en-una-nota-bloque-run).

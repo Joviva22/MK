@@ -312,6 +312,15 @@ function renderWidgetBlocks() {
   });
 }
 
+// Bloques ```run``` (botón que ejecuta comandos en la terminal, ver runblocks.js).
+function renderRunBlocks() {
+  previewPane.querySelectorAll('pre code.language-run').forEach((code) => {
+    const host = document.createElement('div');
+    code.parentElement.replaceWith(host);
+    if (window.mdRunBlocks) window.mdRunBlocks.render(host, code.textContent);
+  });
+}
+
 // Bloques ```chart``` (tabla Markdown → gráfico, ver charts.js).
 function renderChartBlocks() {
   previewPane.querySelectorAll('pre code.language-chart').forEach((code) => {
@@ -493,6 +502,7 @@ function render() {
   renderChartBlocks();
   renderDatabaseBlocks();
   renderWidgetBlocks();
+  renderRunBlocks();
   highlightCode();
   addRunButtons();
   wireTaskCheckboxes(markdownText);

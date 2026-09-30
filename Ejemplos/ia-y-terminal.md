@@ -19,6 +19,15 @@ Si tenés instalada alguna IA de terminal (`claude`, `gemini`, `codex`):
 
 Si la IA cambia el archivo mientras lo tenés abierto, MK lo recarga solo (o lo marca con ⚠ si tenías cambios sin guardar).
 
+## Un botón que ejecuta comandos
+
+```run
+título: ¿Qué hay en esta carpeta?
+ls -la
+```
+
+La primera vez te muestra el comando y pide confirmación.
+
 ## Más cosas de la terminal
 
 - Clic derecho en una carpeta → **Abrir terminal aquí**.
