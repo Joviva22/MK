@@ -36,6 +36,9 @@ Clic en el archivo en el sidebar → se abre en el visor:
 ## Ver archivos sueltos
 Clic en una imagen o PDF del sidebar → se abre a pantalla completa en el preview (modo lectura). Para tenerlo **al lado** mientras escribís: clic derecho → *Abrir en panel secundario* ([modos-de-vista.md](modos-de-vista.md)).
 
+## Explorar toda la multimedia de la carpeta
+Paleta → **"Multimedia: explorar…"** (o clic derecho en una carpeta del sidebar → *🖼 Explorar multimedia*): todas las fotos, videos y audios de la carpeta (y subcarpetas) en una cuadrícula con miniaturas. Filtrá por **Fotos / Videos / Audio**, buscá por nombre, **clic** para abrir en el visor e **Insertar** para ponerlo en la nota abierta con la ruta relativa correcta.
+
 ## Imágenes de otras carpetas
 Por seguridad, el preview solo muestra archivos **dentro de la carpeta abierta** (o del archivo que abriste). Si una imagen está en otro lado, arrastrala al editor: se copia sola a `assets/` y queda bien enlazada. Ver [seguridad-y-errores.md](seguridad-y-errores.md).
 

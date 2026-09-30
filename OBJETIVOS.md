@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 100 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 101 de 136 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -146,7 +146,7 @@ Revisado el 2026-09-30. Lo que ya estaba hecho o repetido queda anotado; lo nuev
 - [x] ~~**Desactivar módulos que no uses**~~ (Ajustes → Módulos: 9 módulos; se ocultan de la barra, la paleta y los menús y sus atajos se frenan, sin borrar datos) (2026-09-30)
 - [x] ~~**Dashboards / widgets en notas**~~ (bloque `widget`: tareas hoy/semana/atrasadas tildables, progreso, total/promedio/cuenta de una base, mascotas; preview y Live Preview) (2026-09-30)
 - [x] ~~**Botones de script en una nota**~~ (bloque `run` con título opcional; en la carpeta de la nota; confirmación con el comando exacto y confianza por nota + texto) (2026-09-30)
-- [ ] **Explorador de multimedia**: ver fotos/audios/videos de la carpeta en cuadrícula, con etiquetas y búsqueda
+- [x] ~~**Explorador de multimedia**~~ (cuadrícula con miniaturas perezosas, filtros por tipo, búsqueda, abrir e insertar en la nota) (2026-09-30) — *falta: etiquetas propias para la multimedia*
 - *Descartado por ahora:* indexar en Rust/C++ — el índice en memoria ya da búsquedas de ~7 ms en 3000 notas; se revisa si hiciera falta.
 
 ## Consolidación (revisión externa, `REVISION_APLICACION.md`)

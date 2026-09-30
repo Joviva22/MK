@@ -56,6 +56,7 @@ function buildCommands() {
   cmds.push({ label: 'Mascotas: mi colección, huevos y logros', run: () => window.mdPet && window.mdPet.openCollection() });
   cmds.push({ label: 'Home: planificador semanal y mensual', run: () => window.mdHome && window.mdHome.open() });
   cmds.push({ label: 'Bases de datos', run: () => window.mdDatabase && window.mdDatabase.open() });
+  cmds.push({ label: 'Multimedia: explorar fotos, videos y audio de la carpeta', run: () => window.mdMediaBrowser && window.mdMediaBrowser.open() });
   cmds.push({ label: 'Ver grafo de notas', run: () => window.mdGraph && window.mdGraph.open() });
   cmds.push({ label: 'Operaciones de páginas PDF (unir, separar, rotar...)', run: () => window.mdPdfPages && window.mdPdfPages.open() });
   cmds.push({ label: 'PDF: subrayar y escribir (texto libre, formularios)', run: () => window.mdPdfHighlight && window.mdPdfHighlight.open() });

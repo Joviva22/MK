@@ -3926,6 +3926,40 @@
       `parse=${parseOk} rechaza=${deniedOk} ejecuta=${ranOk} confiado=${trustOk} cambiado=${changedOk} tarjeta=${cardOk}`);
   }
 
+  // Explorador de multimedia: encuentra fotos/videos/audios (subcarpetas
+  // incluidas), filtra por tipo y busca; "Insertar" pone la ruta relativa
+  // en la nota abierta.
+  if (fixturesDir) {
+    const J = window.mdEditor.joinPath;
+    const mdir = J(fixturesDir, 'multi-test');
+    await window.mdEditor.createFolder(fixturesDir, 'multi-test');
+    await window.mdEditor.createFolder(mdir, 'fotos');
+    await window.mdEditor.saveFile('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"/>', J(mdir, 'fotos', 'playa.svg'), false);
+    await window.mdEditor.saveFile('x', J(mdir, 'cancion.mp3'), false);
+    await window.mdEditor.saveFile('x', J(mdir, 'clip.webm'), false);
+    await window.mdEditor.saveFile('# nota\n', J(mdir, 'nota.md'), false);
+    window.mdSidebar.renderFolder(await window.mdEditor.readFolder(mdir));
+    await window.openFileAtPath(J(mdir, 'nota.md'));
+    await window.mdMediaBrowser.open();
+    const items = window.mdMediaBrowser.getItems();
+    const foundOk = items.length === 3 && items.some((i) => i.rel === J('fotos', 'playa.svg') && i.kind === 'image');
+    window.mdMediaBrowser.setFilter('audio');
+    const cards = document.querySelectorAll('.media-browser .media-card');
+    const filterOk = cards.length === 1 && cards[0].textContent.includes('cancion.mp3');
+    window.mdMediaBrowser.setFilter('image');
+    document.querySelector('.media-browser .media-card .media-insert').click();
+    const inserted = window.mdCodeMirror.getValue();
+    const insertOk = inserted.includes('![playa.svg](fotos/playa.svg)');
+    const closedOk = document.querySelector('.media-browser-overlay').hidden;
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    window.confirm = originalConfirm;
+    check('Explorador de multimedia: encuentra fotos/videos/audios, filtra y "Insertar" pone la ruta relativa en la nota',
+      foundOk && filterOk && insertOk && closedOk,
+      `encontrados=${items.length} filtro=${filterOk} insertar=${insertOk} cierra=${closedOk}`);
+  }
+
   // Exportar que falla (carpeta inexistente): devuelve null y avisa, en vez
   // de que el botón no haga nada.
   {

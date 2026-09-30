@@ -382,6 +382,8 @@ function showSidebarMenu(x, y, node, multiNodes) {
     if (node) addMenuItem('Copiar ruta relativa', () => window.mdEditor.clipboardWriteText(window.mdEditor.relativeToRoot(window.mdState.rootFolder, node.ruta)));
   }
 
+  if (!node || node.esCarpeta) addMenuItem('🖼 Explorar multimedia de la carpeta', () => window.mdMediaBrowser && window.mdMediaBrowser.open());
+
   // Terminal integrada: en una carpeta (o la raíz) abre ahí; en un archivo,
   // en la carpeta que lo contiene. Y las IAs de terminal sobre ese archivo.
   if (window.mdTerminal && (!window.mdModules || window.mdModules.isOn('terminal'))) {

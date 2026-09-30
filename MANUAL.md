@@ -37,6 +37,7 @@ Guía completa de cómo usar MK. Para instalar/correr la app ver [`README.md`](.
 29. [Mascotas](#29-mascotas)
 30. [Widgets en notas](#30-widgets-en-notas)
 31. [Botones de script (bloque run)](#31-botones-de-script-bloque-run)
+32. [Explorador de multimedia](#32-explorador-de-multimedia)
 
 > Guías especializadas por función (cómo usar / para qué sirve): carpeta [`Guias/`](./Guias/README.md).
 
@@ -616,3 +617,7 @@ Bloques ```` ```widget ```` con datos vivos, en el preview y en Live Preview: `t
 ## 31. Botones de script (bloque run)
 
 Un bloque ```` ```run ```` (opcional primera línea `título: …`, luego uno o varios comandos) se muestra como tarjeta con **▶ Ejecutar**: corre los comandos en la terminal integrada, en la carpeta de la nota, en orden y cortando si uno falla. La primera vez pide confirmación mostrando el comando exacto; después no vuelve a preguntar por ese mismo texto en esa nota (si cambia, sí). Guía: [`Guias/terminal.md`](./Guias/terminal.md#botones-de-script-en-una-nota-bloque-run).
+
+## 32. Explorador de multimedia
+
+Paleta → "Multimedia: explorar fotos, videos y audio de la carpeta" (o clic derecho en una carpeta → *🖼 Explorar multimedia*): cuadrícula con todas las fotos, videos y audios de la carpeta abierta y sus subcarpetas (hasta 3000), con miniaturas que cargan al verse, filtros por tipo y búsqueda por nombre. Clic abre el visor; **Insertar** agrega `![foto](ruta/relativa)` (o `![[video]]`) en la nota abierta. Guía: [`Guias/imagenes-video-pdf.md`](./Guias/imagenes-video-pdf.md).
