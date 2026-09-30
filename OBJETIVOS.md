@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 69 de 114 objetivos cumplidos · última actualización 2026-09-29.
+**Estado:** 69 de 131 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -19,22 +19,28 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 3. ~~**Abrir con IA (Claude Code, Gemini CLI, Codex)**~~ ✅ hecho.
 4. ~~**Gráficos en las bases de datos**~~ ✅ hecho.
 5. ~~**Búsqueda global también en bases de datos y tareas del Home**~~ ✅ hecho.
-6. **Recordatorios y resumen diario por Gmail**: el sistema de avisos ya está completo; falta el canal de correo (necesita tu contraseña de aplicación de Google).
+6. **Recordatorios y resumen diario por Gmail** — *en curso (2026-09-30)*: la contraseña de aplicación se escribe en ⚙ Ajustes → Correo (nunca en un chat) y se guarda cifrada con el llavero del sistema.
 7. ~~**Home: estadísticas**~~ ✅ hecho.
+8. **Barra superior más limpia**: opción en ⚙ Ajustes para mostrar los botones de la toolbar **solo con ícono** o **con texto** (hoy unos tienen texto y otros no), y ocultar la barra entera (se vuelve a mostrar con un atajo o al acercar el mouse arriba).
+9. **Rediseño de ⚙ Ajustes**: hoy es un menú desplegable largo que se armó al principio y creció a los tumbos. Pasarlo a un **panel propio con secciones** (Editor, Apariencia, Nota diaria, Terminal, Home y recordatorios, Correo, Archivos y git, Toolbar), con buscador de ajustes y descripciones cortas.
+10. **El botón de modo muestra en qué modo estás**: el botón de vista cambia de ícono y texto según el modo actual (Normal · Enfoque · Lectura · Live Preview), no solo el tooltip.
+11. **Mascota virtual** (como *vscode-pets* / *vscode-pokemon*): un compañero animado en una esquina (o en el panel de la terminal) que camina, se puede alimentar/tirar la pelota; varias especies y temas.
+12. **Mascota ligada a tus tareas y Pomodoros** (estilo *Digimon/Pokémon*): gana experiencia con cada tarea tildada y cada Pomodoro terminado, sube de nivel y **evoluciona**; se pone triste si hay tareas atrasadas. Depende del 11 y del 13.
+13. **Categorías en las tareas del Home** (Universidad, Casa, Economía… editables, con color): filtro por categoría en el Home y **estadísticas por categoría** (qué hiciste más esta semana/mes). Se puede ligar a la mascota (cada categoría le da un tipo de experiencia).
 
 **P3 — Comodidad**
-8. ~~**Gráficos desde tablas Markdown**~~ ✅ hecho.
-9. ~~**Bases de datos dentro de una nota**~~ ✅ hecho.
-10. ~~**Nota diaria configurable**~~ ✅ hecho.
-11. ~~**Terminal: pantalla dividida**~~ ✅ hecho.
+14. ~~**Gráficos desde tablas Markdown**~~ ✅ hecho.
+15. ~~**Bases de datos dentro de una nota**~~ ✅ hecho.
+16. ~~**Nota diaria configurable**~~ ✅ hecho.
+17. ~~**Terminal: pantalla dividida**~~ ✅ hecho.
 
 **P4 — Mantenimiento técnico** (no se ve, pero hace que lo demás sea más fácil y seguro de cambiar)
-12. ~~**Separar `main.js`** en módulos~~ ✅ hecho.
-13. **Migrar a módulos ES** (después del 12).
+18. ~~**Separar `main.js`** en módulos~~ ✅ hecho.
+19. **Migrar a módulos ES** (después del 18).
 
 **Escalabilidad** — ver la sección "Escalabilidad y solidez": ~~índice de la carpeta~~, ~~vigilar la carpeta~~ y ~~disco asíncrono~~ hechos (2026-09-29): una carpeta con miles de notas ya no congela MK.
 
-**Consolidación** — ver la sección "Consolidación" (revisión externa): validación de rutas en el proceso principal, CSP, sandbox y registro de errores van **antes** que funciones nuevas.
+**Consolidación** — ver la sección "Consolidación" (revisiones externas): ~~validación de rutas~~, ~~CSP~~, ~~sandbox~~ y ~~registro de errores~~ hechos (2026-09-29); quedan agrupar escrituras de bases de datos, pruebas unitarias, accesibilidad y dividir archivos grandes.
 
 **P5 — Proyectos grandes** (requieren decidir antes el diseño; hacerlos de a uno y con tiempo)
 14. Sincronización entre dispositivos · 15. Windows y macOS · 16. Sistema de plugins · 17. Pizarra Excalidraw · 18. Dos editores escribibles · 19. Ejecutar Python en el preview · 20. YouTube embebido · 21. Editar texto dentro de un PDF.
@@ -107,6 +113,37 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Aviso automático "1 semana antes"** (tareas del Home, 📅 de notas y fechas de bases de datos; interruptor y hora en el Home; "+ 1 semana antes" en el editor de avisos)~~ (2026-09-29)
 - [x] ~~**Terminal: elegir el shell** (⚙ Ajustes o menú ▾; lista de /etc/shells + PATH, validada en el proceso principal)~~ (2026-09-29)
 - [ ] **Índice guardado en `.mk/index`** para que la primera consulta tras abrir MK también sea rápida (y etiquetas/enlaces precalculados en el índice, no solo el texto)
+
+## Pedidos nuevos (2026-09-30)
+
+- [ ] **Toolbar: botones solo ícono / con texto** y ocultar la barra superior (P2 · 8)
+- [ ] **Rediseño de ⚙ Ajustes** en un panel con secciones y buscador (P2 · 9)
+- [ ] **Botón de modo que muestra el modo actual** (ícono + texto: Normal, Enfoque, Lectura, Live) (P2 · 10)
+- [ ] **Mascota virtual** estilo vscode-pets / vscode-pokemon (P2 · 11)
+- [ ] **Mascota que evoluciona con tareas y Pomodoros** estilo Digimon/Pokémon (P2 · 12)
+- [ ] **Categorías en tareas del Home + estadísticas por categoría** (P2 · 13)
+
+## Ideas de `MEJORAS_PROPUESTAS.md` (Gemini)
+
+Revisado el 2026-09-30. Lo que ya estaba hecho o repetido queda anotado; lo nuevo, como objetivo.
+
+**Ya hechas (ver Consolidación):** CSP estricta, `sandbox: true`, validación de rutas en el proceso principal, avisos + registro de errores. **Ya estaban en la lista:** SQLite nativo / agrupar escrituras, dividir CSS y archivos grandes, módulos ES, accesibilidad ARIA + teclado, editar texto de PDFs, sincronización entre dispositivos (P2P ≈ "Sincronización" de largo plazo).
+
+**Estética (UI/UX)**
+- [ ] **Sistema de diseño con tokens**: escala tipográfica fija (H1–H6, cuerpo, notas), radios estándar (8px tarjetas, 4px botones) y sombras suaves en vez de bordes duros — base para el rediseño de Ajustes y los temas
+- [ ] **Micro-interacciones** (150–300 ms): abrir/cerrar sidebar y panel secundario, cambio a Live Preview, hover de la toolbar, destello sutil al guardar. Respetando "reducir movimiento" del sistema
+- [ ] **Indicador de cambios sin guardar en el sidebar** (punto de color junto al archivo, no solo en la pestaña)
+- [ ] **Barra de estado más útil**: contador de palabras, rama de git actual y estado de guardado
+- [ ] **Contraste suficiente en todos los temas** (revisar los 26 con una herramienta de contraste)
+
+**Funciones**
+- [ ] **Bloque `database` editable** desde la nota (hoy es de solo lectura con botón Abrir)
+- [ ] **Grafo interactivo**: clic derecho en un nodo → abrir en panel secundario / ver backlinks; filtros por etiqueta o fecha
+- [ ] **Desactivar módulos que no uses** (Pomodoro, reproductor, Kanban, bases de datos…): se ocultan y no se cargan, interfaz más limpia
+- [ ] **Dashboards / widgets en notas**: bloques que resumen datos vivos (progreso de Kanbans, totales de una base, tareas de la semana) — extiende los bloques `chart` y `database`
+- [ ] **Botones de script en una nota**: un bloque que al pulsarlo ejecuta un comando en la terminal integrada (con confirmación la primera vez; útil para backups, despliegues, `docker compose up`)
+- [ ] **Explorador de multimedia**: ver fotos/audios/videos de la carpeta en cuadrícula, con etiquetas y búsqueda
+- *Descartado por ahora:* indexar en Rust/C++ — el índice en memoria ya da búsquedas de ~7 ms en 3000 notas; se revisa si hiciera falta.
 
 ## Consolidación (revisión externa, `REVISION_APLICACION.md`)
 
