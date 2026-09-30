@@ -14,7 +14,7 @@ Un panel con **secciones a la izquierda** y un **buscador** arriba: escribí "ta
 | **Correo** | Recordatorios y resumen diario por Gmail, a tu propia dirección. Ver [recordatorios.md](recordatorios.md#también-por-correo-gmail) |
 | **Terminal** | Shell (del sistema, bash, zsh, fish…). Ver [terminal.md](terminal.md) |
 | **Módulos** | Apagar lo que no uses: Home, bases de datos, Kanban, grafo, etiquetas y backlinks, terminal e IA, herramientas de PDF, Pomodoro, reproductor. Desaparecen de la barra, la paleta y los menús, y sus atajos no hacen nada; **no se borra ningún dato** |
-| **Sistema** | Git al guardar ([historial-y-git.md](historial-y-git.md)), seguir en la bandeja al cerrar (salir: `Ctrl+Q`), iniciar MK con el sistema |
+| **Sistema** | Git al guardar ([historial-y-git.md](historial-y-git.md)), seguir en la bandeja al cerrar (salir: `Ctrl+Q`), iniciar MK con el sistema, versión instalada y buscar versión nueva (aviso al iniciar opcional, apagado por defecto; ver [CHANGELOG](../CHANGELOG.md)) |
 
 ## La barra de estado (abajo)
 De izquierda a derecha: el tipo de archivo, **✓ Guardado / ● Sin guardar** (o ⚠ si cambió afuera), la **rama de git** de la carpeta (clic: commits eligiendo archivos), **palabras y caracteres** (de la selección si seleccionaste algo) y la posición del cursor.

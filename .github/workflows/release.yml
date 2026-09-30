@@ -1,0 +1,44 @@
+name: Release
+
+# Al empujar una etiqueta vX.Y.Z (npm version … && git push --follow-tags):
+# lint, pruebas, compila el AppImage y lo publica como release de GitHub
+# con las notas de esa versión sacadas de CHANGELOG.md.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:unit
+
+      - name: Instalar Xvfb (Electron necesita un display real)
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - run: xvfb-run -a npm test
+
+      - name: Compilar el AppImage
+        run: npx electron-builder --linux AppImage --publish never
+
+      - name: Notas de la versión (desde CHANGELOG.md)
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          awk -v v="$v" '$0 ~ "^## \\[" v "\\]" {on=1; next} /^## \[/ {on=0} on' CHANGELOG.md > notas.md
+          test -s notas.md || echo "Versión $v" > notas.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: MK ${{ github.ref_name }}
+          body_path: notas.md
+          files: dist/*.AppImage

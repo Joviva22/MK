@@ -91,6 +91,19 @@ npm run dist
 
 Genera `dist/MK-<version>.AppImage`, standalone (incluye Electron + dependencias).
 
+## Versiones y releases
+
+MK usa versionado semántico (`mayor.menor.parche`); los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md). La versión instalada se ve en **Ajustes → Sistema**, donde también se puede buscar una versión nueva (o activar el aviso al iniciar: viene apagado y es la única consulta a internet de MK aparte del correo; nunca descarga ni instala nada sola).
+
+Para publicar una versión: escribir sus notas en `CHANGELOG.md` y
+
+```bash
+npm version menor        # o mayor / parche: sube package.json, hace commit y etiqueta vX.Y.Z
+git push --follow-tags   # la etiqueta dispara .github/workflows/release.yml
+```
+
+El workflow corre lint y tests, compila el AppImage y crea la release en GitHub con las notas de esa versión del CHANGELOG.
+
 ## Instalar en tu usuario (menú de aplicaciones)
 
 ```bash

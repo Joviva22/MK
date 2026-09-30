@@ -1,6 +1,6 @@
 {
   "name": "md-editor-local",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Editor de Markdown sencillo para usar en local, sin depender de servicios externos ni conexión a internet.",
   "main": "src/main.js",
   "desktopName": "mk-editor.desktop",

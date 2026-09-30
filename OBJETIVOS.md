@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 102 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 104 de 136 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -169,7 +169,7 @@ La revisión concluye —y coincido— que ahora toca **consolidar más que aña
 - [ ] **Quitar los `…Sync` que quedan** en el proceso principal (exportar, config, sesión, Home)
 
 **Prioridad baja**
-- [ ] **Versionado semántico y CHANGELOG** (hoy `package.json` sigue en 1.0.0)
+- [x] ~~**Versionado semántico y CHANGELOG**~~ (2026-09-30: 2.0.0, CHANGELOG.md, versión en Ajustes → Sistema)
 - [ ] **Documentación sin cifras volátiles** (README ya corregido; revisar el resto)
 - [ ] **Primer arranque guiado**: separar claramente escribir / planificar / herramientas avanzadas
 
@@ -218,7 +218,7 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 - [ ] **Permisos de la terminal e IAs** documentados y visibles (qué carpeta ve cada una)
 
 ### Distribución
-- [ ] **Versiones y CHANGELOG** (semver) y **releases automáticos** del AppImage en GitHub Actions
+- [x] ~~**Versiones y CHANGELOG** (semver) y **releases automáticos** del AppImage en GitHub Actions~~ (2026-09-30: etiqueta `v*` → release.yml; aviso de versión nueva opcional)
 - [ ] **Actualización automática** del AppImage (avisar cuando hay versión nueva y actualizar con un clic)
 
 ## Mediano plazo

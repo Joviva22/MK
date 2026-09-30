@@ -5,13 +5,14 @@
 // Se carga desde main.js (require) después de fijar userData; lo compartido
 // con main.js (ventana, config, modo test) está en mainctx.js.
 
-const { ipcMain } = require('electron');
+const { ipcMain, app, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const crypto = require('crypto');
 const { execFile } = require('child_process');
 const guard = require('./pathguard');
+const ctx = require('./mainctx');
 
 // Sincronización con git al guardar (opt-in, ver settings.js): solo actúa
 // si la carpeta ya es un repo git existente — nunca corre "git init" por
@@ -108,6 +109,38 @@ ipcMain.handle('git:commitStaged', async (event, { root, message }) => {
   if (!staged.error && !staged.stdout.trim()) return { ok: false, reason: 'nothing-staged' };
   const commit = await runGit(['commit', '-m', message], root);
   return commit.error ? { ok: false, reason: 'commit-failed' } : { ok: true };
+});
+
+// ---- versión y aviso de versión nueva ----
+// Solo si el usuario lo activa (Ajustes → Sistema): consulta la última
+// release pública del repositorio. Es la única llamada a internet de MK
+// fuera del correo, y nunca descarga ni instala nada sola.
+const RELEASES_API = 'https://api.github.com/repos/Joviva22/MK/releases/latest';
+
+function newerThan(a, b) {
+  const pa = String(a).replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
+  const pb = String(b).replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
+  }
+  return false;
+}
+
+ipcMain.handle('app:version', () => app.getVersion());
+
+ipcMain.handle('app:checkUpdate', async () => {
+  const current = app.getVersion();
+  if (ctx.isTestMode) return { current, latest: null, newer: false };
+  try {
+    const res = await net.fetch(RELEASES_API, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'MK' } });
+    if (!res.ok) return { current, error: res.status === 404 ? 'Todavía no hay versiones publicadas.' : `GitHub respondió ${res.status}.` };
+    const data = await res.json();
+    const latest = String(data.tag_name || '').replace(/^v/, '');
+    return { current, latest, newer: newerThan(latest, current), url: data.html_url };
+  } catch (e) {
+    ctx.logError('app:checkUpdate', e);
+    return { current, error: 'Sin conexión.' };
+  }
 });
 
 // Control del reproductor multimedia del sistema vía playerctl (D-Bus/MPRIS,

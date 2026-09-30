@@ -4012,6 +4012,18 @@
       `@=${parseOk} chip=${chipOk} filtra=${hiddenOk} hereda=${inheritOk}`);
   }
 
+  // Versión en Ajustes → Sistema; el aviso de versión nueva viene apagado y
+  // en modo test no sale a internet.
+  {
+    const version = await window.mdEditor.appVersion();
+    const desc = document.getElementById('app-version-desc');
+    const cfg = await window.mdEditor.getConfig();
+    const r = await window.mdEditor.checkUpdate();
+    check('Versión: visible en Ajustes, aviso apagado por defecto, sin red en test',
+      /^\d+\.\d+\.\d+$/.test(version) && desc.textContent.includes(version) && !cfg.updateCheck && r.current === version && r.newer === false,
+      `v=${version} desc="${desc.textContent}" aviso=${!!cfg.updateCheck}`);
+  }
+
   // Mascotas: equipo, XP (una vez por tarea/día), evolución → huevo → nace
   // otra criatura; logro → huevo legendario; ocultas siguen ganando;
   // ánimo; imágenes propias; tildar en el Home; migración de la versión 1.
