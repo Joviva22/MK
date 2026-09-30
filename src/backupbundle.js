@@ -72,6 +72,7 @@ function buildBundle(dir, appVersion) {
     created: new Date().toISOString(),
     config,
     home: readJson(path.join(dir, 'home.json'), null),
+    homeArchive: readJson(path.join(dir, 'home-archive.json'), null),
     pet
   };
 }
@@ -87,7 +88,7 @@ function validateBundle(data) {
     if (!PET_FILE_RE.test(rel) || typeof b64 !== 'string') return { ok: false, error: 'El respaldo está dañado (mascotas).' };
   }
   const home = data.home || {};
-  const tasks = Array.isArray(home.tasks) ? home.tasks.length : 0;
+  const tasks = (Array.isArray(home.tasks) ? home.tasks.length : 0) + (data.homeArchive && Array.isArray(data.homeArchive.tasks) ? data.homeArchive.tasks.length : 0);
   const pets = data.config.pet && Array.isArray(data.config.pet.pets) ? data.config.pet.pets.length : 0;
   return {
     ok: true,
@@ -122,6 +123,7 @@ function restoreBundle(dir, data) {
   fs.mkdirSync(dir, { recursive: true });
   writeAtomic(path.join(dir, 'config.json'), JSON.stringify(config, null, 2));
   if (data.home) writeAtomic(path.join(dir, 'home.json'), JSON.stringify(data.home, null, 2));
+  if (data.homeArchive && typeof data.homeArchive === 'object') writeAtomic(path.join(dir, 'home-archive.json'), JSON.stringify(data.homeArchive));
   const petDir = path.join(dir, 'pet');
   fs.rmSync(petDir, { recursive: true, force: true });
   for (const [rel, b64] of Object.entries(data.pet || {})) {

@@ -221,3 +221,14 @@ Por defecto en `home.json`, dentro de la carpeta de configuración de MK: `~/.co
 - La primera vez, la carpeta arranca con las tareas que ya tenías.
 - **Cada carpeta tiene su propio Home**: al abrir otra carpeta, el Home muestra las tareas de esa.
 - Al desactivarlo, las tareas vuelven a la configuración de la app tal como estaban.
+
+## Tareas viejas: el archivo
+
+Las tareas comunes **terminadas** hace más de 3 meses pasan solas a un archivo aparte (`home-archive.json`, al lado de `home.json`). Así el Home sigue rápido aunque lo uses años. No se pierde nada:
+
+- aparecen en la **búsqueda global** (`Ctrl+Shift+F`) marcadas *🗄 archivada*; al elegir una, **vuelve al Home** y se abre en su semana;
+- siguen contando para la **racha** de 📈 Estadísticas;
+- las **recurrentes** (hábitos) y las **pendientes** nunca se archivan.
+
+El plazo se cambia en **Ajustes → Home y avisos → Archivar tareas terminadas**: 1 mes, 3 meses, 1 año o nunca. El archivo entra en el **respaldo** (Ajustes → Sistema).
+

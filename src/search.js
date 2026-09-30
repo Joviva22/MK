@@ -64,7 +64,7 @@ function renderResults({ files, tasks, rows }, query) {
     sectionTitle(`Tareas del Home (${tasks.length})`);
     tasks.forEach((t) => {
       const when = t.date ? new Date(t.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : 'sin fecha';
-      resultItem(`🏠 ${when}${t.recurring ? ' · 🔁' : ''}${t.done ? ' · ✓ hecha' : ''}`, t.title + (t.notes ? ` — ${t.notes}` : ''), () => window.mdHome.revealTask(t.id));
+      resultItem(`🏠 ${when}${t.recurring ? ' · 🔁' : ''}${t.done ? ' · ✓ hecha' : ''}${t.archived ? ' · 🗄 archivada (vuelve al Home)' : ''}`, t.title + (t.notes ? ` — ${t.notes}` : ''), () => window.mdHome.revealTask(t.id));
     });
   }
   if (rows.length) {

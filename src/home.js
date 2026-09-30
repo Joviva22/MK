@@ -26,6 +26,7 @@ const showNotesToggle = document.getElementById('home-show-notes');
 const weekBeforeToggle = document.getElementById('home-week-before');
 const weekBeforeTime = document.getElementById('home-week-before-time');
 const startupToggle = document.getElementById('home-startup-toggle');
+const archiveSelect = document.getElementById('home-archive-select');
 const DRAG_MIME = 'application/x-mk-home-task';
 const NOTE_DRAG_MIME = 'application/x-mk-home-note'; // tarea "📅" de una nota
 const DB_DRAG_MIME = 'application/x-mk-home-dbrow'; // fila de base de datos con fecha
@@ -145,9 +146,11 @@ async function readStored(root) {
       weekBefore: stored.weekBefore && typeof stored.weekBefore === 'object'
         ? { on: stored.weekBefore.on !== false, time: /^\d{2}:\d{2}$/.test(stored.weekBefore.time) ? stored.weekBefore.time : WEEK_BEFORE_DEFAULT.time }
         : { ...WEEK_BEFORE_DEFAULT },
-      categories: Array.isArray(stored.categories) ? stored.categories : DEFAULT_CATEGORIES.map((c) => ({ ...c }))
+      categories: Array.isArray(stored.categories) ? stored.categories : DEFAULT_CATEGORIES.map((c) => ({ ...c })),
+      archivedDays: stored.archivedDays && typeof stored.archivedDays === 'object' ? stored.archivedDays : {}
     };
   }
+  if (!data.archivedDays) data.archivedDays = {};
   showDbToggle.checked = data.showDatabases;
   showNotesToggle.checked = data.showNotes;
   weekBeforeToggle.checked = data.weekBefore.on;
@@ -179,6 +182,9 @@ async function switchLocation(want, previous) {
     await window.mdEditor.homeSave(data, dataRoot);
   }
   await readStored(want);
+  const config = await window.mdEditor.getConfig();
+  archiveAfterDays = Number.isInteger(config.homeArchiveDays) ? config.homeArchiveDays : 90;
+  await archiveOld();
 }
 
 function save() {
@@ -289,8 +295,88 @@ function setItemDone(item, done) {
     if (done) dates.add(item.date); else dates.delete(item.date);
     updateTask(item.task.id, { doneDates: Array.from(dates) });
   } else {
-    updateTask(item.task.id, { done });
+    // doneAt: para archivar después las terminadas sin fecha (ver archiveOld).
+    updateTask(item.task.id, { done, doneAt: done ? todayIso() : null });
   }
+}
+
+// ---- archivo de tareas terminadas viejas ----
+// Con años de uso, home.json crecía con miles de tareas hechas que se
+// recorren en cada dibujo y cada 30 s (avisos). Las comunes terminadas hace
+// más de N días (Ajustes → Home y avisos; 90 por defecto) pasan a
+// home-archive.json al lado: siguen en la búsqueda global (y al elegir una
+// vuelve al Home) y cuentan para la racha de las estadísticas (archivedDays).
+// Las recurrentes (hábitos) no se archivan.
+let archiveAfterDays = 90;
+let archiveCache = null; // { root, tasks } — se lee recién cuando hace falta
+
+async function loadArchive() {
+  if (archiveCache && archiveCache.root === dataRoot) return archiveCache.tasks;
+  const stored = await window.mdEditor.homeArchiveLoad(dataRoot);
+  archiveCache = { root: dataRoot, tasks: stored && Array.isArray(stored.tasks) ? stored.tasks : [] };
+  return archiveCache.tasks;
+}
+
+function archiveCutoff() {
+  return iso(addDays(new Date(), -archiveAfterDays));
+}
+
+function isArchivable(t, cutoff) {
+  if ((t.repeat && t.repeat.freq) || !t.done) return false;
+  if (t.unarchivedAt && t.unarchivedAt >= cutoff) return false; // la sacaste del archivo hace poco
+  const when = t.date || t.doneAt;
+  return !!when && when < cutoff;
+}
+
+async function archiveOld() {
+  if (!archiveAfterDays) return 0;
+  const today = todayIso();
+  // Terminadas de antes (sin doneAt): se cuentan desde hoy.
+  let stamped = false;
+  data.tasks.forEach((t) => {
+    if (t.done && !t.date && !t.doneAt && !(t.repeat && t.repeat.freq)) { t.doneAt = today; stamped = true; }
+  });
+  const cutoff = archiveCutoff();
+  const old = data.tasks.filter((t) => isArchivable(t, cutoff));
+  if (!old.length) {
+    if (stamped) save();
+    return 0;
+  }
+  const archived = await loadArchive();
+  const ids = new Set(archived.map((t) => t.id));
+  old.forEach((t) => { if (!ids.has(t.id)) archived.push(t); });
+  // Primero el archivo, después el Home: si algo se corta en el medio, a lo
+  // sumo la tarea queda en los dos (y no se duplica al reintentar).
+  const okArchive = await window.mdEditor.homeArchiveSave({ tasks: archived }, dataRoot);
+  if (!okArchive) return 0;
+  old.forEach((t) => {
+    const day = t.date || t.doneAt;
+    data.archivedDays[day] = (data.archivedDays[day] || 0) + 1;
+  });
+  const oldIds = new Set(old.map((t) => t.id));
+  data.tasks = data.tasks.filter((t) => !oldIds.has(t.id));
+  clearTimeout(saveTimer);
+  await window.mdEditor.homeSave(data, dataRoot);
+  return old.length;
+}
+
+// Vuelve una tarea archivada al Home (al elegirla en la búsqueda).
+async function unarchive(id) {
+  const archived = await loadArchive();
+  const task = archived.find((t) => t.id === id);
+  if (!task) return null;
+  archiveCache.tasks = archived.filter((t) => t.id !== id);
+  await window.mdEditor.homeArchiveSave({ tasks: archiveCache.tasks }, dataRoot);
+  const day = task.date || task.doneAt;
+  if (day && data.archivedDays[day]) {
+    data.archivedDays[day]--;
+    if (!data.archivedDays[day]) delete data.archivedDays[day];
+  }
+  // Recién desarchivada: que no se vuelva a archivar enseguida.
+  task.unarchivedAt = todayIso();
+  data.tasks.push(task);
+  save();
+  return task;
 }
 
 // Saca una sola repetición de la serie (la agrega a skipDates).
@@ -1705,6 +1791,7 @@ document.addEventListener('keydown', (e) => {
   homeInFolder = !!config.homeInFolder;
   inFolderToggle.checked = homeInFolder;
   startupToggle.checked = !!config.homeOnStartup;
+  if (archiveSelect) archiveSelect.value = String(Number.isInteger(config.homeArchiveDays) ? config.homeArchiveDays : 90);
   if (config.homeOnStartup) open();
   // Recordatorios: cargar las tareas ya al arrancar (aunque el Home no se
   // abra) y revisar cada 30 s.
@@ -1733,6 +1820,15 @@ inFolderToggle.addEventListener('change', async () => {
   await window.mdEditor.setConfig({ homeInFolder: enable });
   await rootChanged();
 });
+
+if (archiveSelect) {
+  archiveSelect.addEventListener('change', async () => {
+    archiveAfterDays = Number(archiveSelect.value);
+    await window.mdEditor.setConfig({ homeArchiveDays: archiveAfterDays });
+    await load();
+    if (await archiveOld()) render();
+  });
+}
 
 startupToggle.addEventListener('change', () => {
   window.mdEditor.setConfig({ homeOnStartup: startupToggle.checked });
@@ -1776,10 +1872,12 @@ function computeStats() {
 
   // Racha: días seguidos (hasta hoy, o ayer si hoy todavía no hiciste nada) con ≥1 tarea hecha.
   let streak = 0;
+  // Cuenta también lo archivado (archivedDays: tareas hechas por día).
+  const doneOn = (day) => !!data.archivedDays[day] || occurrencesOn(day).some((it) => it.done);
   let d = new Date();
-  if (!occurrencesOn(today).some((i) => i.done)) d = addDays(d, -1);
+  if (!doneOn(today)) d = addDays(d, -1);
   for (let i = 0; i < 400; i++, d = addDays(d, -1)) {
-    if (occurrencesOn(iso(d)).some((it) => it.done)) streak++;
+    if (doneOn(iso(d))) streak++;
     else break;
   }
 
@@ -1894,16 +1992,22 @@ async function searchTasks(query) {
   const q = (query || '').trim().toLowerCase();
   if (q.length < 2) return [];
   await load();
-  return data.tasks
-    .filter((t) => (t.title || '').toLowerCase().includes(q) || (t.notes || '').toLowerCase().includes(q))
-    .slice(0, 50)
-    .map((t) => ({ id: t.id, title: t.title, date: t.date, recurring: !!(t.repeat && t.repeat.freq), done: !!t.done, notes: t.notes || '' }));
+  const match = (t) => (t.title || '').toLowerCase().includes(q) || (t.notes || '').toLowerCase().includes(q);
+  const toResult = (archived) => (t) => ({ id: t.id, title: t.title, date: t.date, recurring: !!(t.repeat && t.repeat.freq), done: !!t.done, notes: t.notes || '', archived });
+  const active = data.tasks.filter(match).slice(0, 50).map(toResult(false));
+  const archived = active.length < 50 ? (await loadArchive()).filter(match).slice(0, 50 - active.length).map(toResult(true)) : [];
+  return active.concat(archived);
 }
 
-// Abrir el Home en la semana de la tarea, con su editor abierto.
+// Abrir el Home en la semana de la tarea, con su editor abierto. Si está
+// archivada, primero vuelve al Home.
 async function revealTask(id) {
   await open();
-  const task = data.tasks.find((t) => t.id === id);
+  let task = data.tasks.find((t) => t.id === id);
+  if (!task) {
+    task = await unarchive(id);
+    render();
+  }
   if (!task) return;
   if (task.date) cursor = parseIso(task.date);
   setMode('week');
@@ -1932,6 +2036,6 @@ function widgetSetDone(taskId, dateIso, done) {
   if (it) setItemDone(it, done);
 }
 
-window.mdHome = { widgetItems, widgetSetDone, openCategories, setCategoryFilter: (v) => { categoryFilter = v || ''; render(); }, parseCategoryToken, overdueCount, updatePetMood, dailySummaryText, weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
+window.mdHome = { archiveOld, unarchive, loadArchive: async () => { await load(); return loadArchive(); }, setArchiveDays: (n) => { archiveAfterDays = n; }, getData: () => data, widgetItems, widgetSetDone, openCategories, setCategoryFilter: (v) => { categoryFilter = v || ''; render(); }, parseCategoryToken, overdueCount, updatePetMood, dailySummaryText, weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
 
 })();

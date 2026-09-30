@@ -208,6 +208,15 @@
             <div class="set-text"><label class="set-title" for="home-in-folder-toggle">Guardar el Home en la carpeta</label><div class="set-desc">Las tareas van a <code>&lt;carpeta&gt;/.mk/home.json</code>: viajan con git; cada carpeta tiene su Home.</div></div>
             <div class="set-control"><input type="checkbox" id="home-in-folder-toggle" class="set-switch" role="switch" /></div>
           </div>
+          <div class="set-row" data-keywords="archivo tareas viejas terminadas limpiar">
+            <div class="set-text"><label class="set-title" for="home-archive-select">Archivar tareas terminadas</label><div class="set-desc">Las hechas hace más de ese tiempo pasan a un archivo aparte: el Home queda liviano y siguen apareciendo en la búsqueda (Ctrl+Shift+F) y en la racha.</div></div>
+            <div class="set-control"><select id="home-archive-select">
+                <option value="30">después de 1 mes</option>
+                <option value="90">después de 3 meses</option>
+                <option value="365">después de 1 año</option>
+                <option value="0">nunca</option>
+              </select></div>
+          </div>
           <div class="set-row" data-keywords="tomate temporizador">
             <div class="set-text"><label class="set-title" for="pomodoro-focus-select">Pomodoro: foco</label><div class="set-desc">Minutos de trabajo.</div></div>
             <div class="set-control"><select id="pomodoro-focus-select">

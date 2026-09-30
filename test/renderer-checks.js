@@ -3970,6 +3970,35 @@
     check('Exportar: si falla la escritura, devuelve null y avisa (con el log)', res === null && !!toast, `resultado=${res} aviso=${!!toast}`);
   }
 
+  // Home: las tareas hechas hace más de N días pasan al archivo; siguen en
+  // la búsqueda y en la racha, y al elegirlas vuelven al Home.
+  {
+    const H = window.mdHome;
+    await H.open();
+    const d = H.getData();
+    const old = new Date(Date.now() - 200 * 86400000).toISOString().slice(0, 10);
+    const recent = new Date(Date.now() - 5 * 86400000).toISOString().slice(0, 10);
+    d.tasks.push({ id: 'arch-old', title: 'Declaración archivable zq', date: old, done: true });
+    d.tasks.push({ id: 'arch-recent', title: 'Reciente zq', date: recent, done: true });
+    d.tasks.push({ id: 'arch-pending', title: 'Pendiente vieja zq', date: old, done: false });
+    H.setArchiveDays(90);
+    const moved = await H.archiveOld();
+    const ids = new Set(H.getData().tasks.map((t) => t.id));
+    const archived = (await H.loadArchive()).map((t) => t.id);
+    const found = await H.searchTasks('archivable zq');
+    const counted = !!H.getData().archivedDays[old];
+    await H.unarchive('arch-old');
+    const back = H.getData().tasks.some((t) => t.id === 'arch-old') && !(await H.loadArchive()).some((t) => t.id === 'arch-old');
+    const notAgain = (await H.archiveOld()) === 0;
+    H.getData().tasks = H.getData().tasks.filter((t) => !t.id.startsWith('arch-'));
+    delete H.getData().archivedDays[old];
+    await window.mdEditor.homeSave(H.getData(), H.dataLocation());
+    H.close();
+    check('Home: archivar tareas hechas viejas (búsqueda, racha y vuelven al elegirlas)',
+      moved === 1 && !ids.has('arch-old') && ids.has('arch-recent') && ids.has('arch-pending') && archived.includes('arch-old') && found.some((t) => t.archived) && counted && back && notAgain,
+      `movidas=${moved} archivo=${archived.join(',')} busca=${found.map((t) => t.archived).join(',')} racha=${counted} vuelve=${back} noOtraVez=${notAgain}`);
+  }
+
   // Versión del formato: config y Home quedan marcados (schemaVersion) al
   // guardar, y un setConfig parcial no la borra.
   {

@@ -93,6 +93,8 @@ contextBridge.exposeInMainWorld('mdEditor', {
   loadSession: () => ipcRenderer.invoke('session:load'),
   homeLoad: (root) => ipcRenderer.invoke('home:load', root || null),
   homeSave: (data, root) => ipcRenderer.invoke('home:save', data, root || null),
+  homeArchiveLoad: (root) => ipcRenderer.invoke('home:archiveLoad', root || null),
+  homeArchiveSave: (data, root) => ipcRenderer.invoke('home:archiveSave', data, root || null),
   terminal: {
     create: (opts) => ipcRenderer.invoke('term:create', opts),
     listShells: () => ipcRenderer.invoke('term:listShells'),

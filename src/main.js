@@ -301,6 +301,31 @@ ipcMain.handle('home:save', (event, data, root) => {
   }
 });
 
+// Archivo de tareas terminadas viejas del Home (home.js, archiveOld): al lado
+// de home.json, en la misma ubicación (config o <carpeta>/.mk/).
+function homeArchiveFileFor(root) {
+  return root ? path.join(root, '.mk', 'home-archive.json') : path.join(app.getPath('userData'), 'home-archive.json');
+}
+
+ipcMain.handle('home:archiveLoad', (event, root) => {
+  if (root && !guard.check(root, 'home:archiveLoad')) return null;
+  return errlog.readJsonSafe(homeArchiveFileFor(root), null);
+});
+
+ipcMain.handle('home:archiveSave', (event, data, root) => {
+  if (root && !guard.check(root, 'home:archiveSave')) return false;
+  if (ctx.writesFrozen) return true; // importando un respaldo (ipc-backup.js)
+  try {
+    const file = homeArchiveFileFor(root);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    errlog.writeJsonAtomic(file, { ...data, schemaVersion: datamigrate.HOME_VERSION });
+    return true;
+  } catch (e) {
+    ctx.reportError('home:archiveSave', e, 'No se pudo guardar el archivo de tareas del Home.');
+    return false;
+  }
+});
+
 // Las pestañas de la sesión anterior se vuelven a abrir: sus archivos
 // cuentan como abiertos por el usuario.
 ipcMain.handle('session:load', () => {
