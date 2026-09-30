@@ -81,10 +81,7 @@
 
     <button id="btn-settings" class="toolbar-button" title="Ajustes (Ctrl+,)"><i data-lucide="settings"></i></button>
 
-    <div class="dropdown">
-      <button id="btn-theme" class="toolbar-button" title="Cambiar tema"><i data-lucide="palette"></i> Tema ▾</button>
-      <div id="theme-menu" class="dropdown-menu dropdown-menu-scroll" hidden></div>
-    </div>
+    <button id="btn-theme" class="toolbar-button" title="Tema (galería en Ajustes → Apariencia)"><i data-lucide="palette"></i> Tema</button>
   </div>
 
   <div id="settings-overlay" class="modal-overlay settings-overlay" hidden>
@@ -165,9 +162,9 @@
         </section>
         <section class="set-section" data-section="appearance" data-title="Apariencia" hidden>
           <h2 class="set-section-title">Apariencia</h2>
-          <div class="set-row" data-keywords="color oscuro claro">
-            <div class="set-text"><div class="set-title">Tema</div><div class="set-desc">27 temas y uno personalizado.</div></div>
-            <div class="set-control"><button type="button" id="set-open-theme" class="toolbar-button">Elegir tema…</button></div>
+          <div class="set-row set-row-wide" data-keywords="tema color oscuro claro kingdom hearts dracula nord gruvbox">
+            <div class="set-text"><div class="set-title">Tema</div><div class="set-desc">Pasá el mouse por un tema para verlo en la muestra; clic para usarlo.</div></div>
+            <div id="theme-gallery" class="theme-gallery"></div>
           </div>
           <div class="set-row" data-keywords="toolbar iconos texto limpio">
             <div class="set-text"><label class="set-title" for="set-toolbar-labels">Botones de la barra</label><div class="set-desc">Solo íconos (más limpio), con texto, o mixto (como venía).</div></div>
@@ -825,6 +822,7 @@
   <script src="toolbarcustomize.js"></script>
   <script src="customtheme.js"></script>
   <script src="themes.js"></script>
+  <script src="themegallery.js"></script>
   <script src="preview.js"></script>
   <script src="toc.js"></script>
   <script src="diff.js"></script>

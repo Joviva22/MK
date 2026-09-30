@@ -69,9 +69,10 @@ function buildCommands() {
   cmds.push({ label: 'PDF: subrayar y escribir (texto libre, formularios)', run: () => window.mdPdfHighlight && window.mdPdfHighlight.open() });
   cmds.push({ label: 'Sincronizar con git (elegir archivos y mensaje)...', run: () => window.mdGitPanel && window.mdGitPanel.open() });
 
-  document.querySelectorAll('#theme-menu button[data-theme]').forEach((btn) => {
-    cmds.push({ label: `Tema: ${btn.textContent}`, run: () => btn.click() });
+  (window.mdThemes ? window.mdThemes.THEME_LIST : []).forEach((t) => {
+    cmds.push({ label: `Tema: ${t.label}`, run: () => window.mdThemes.chooseTheme(t.slug) });
   });
+  cmds.push({ label: 'Tema: ver la galería de temas', run: () => document.getElementById('btn-theme').click() });
   cmds.push({ label: 'Tema personalizado...', run: () => window.mdCustomTheme && window.mdCustomTheme.open() });
 
   if (window.mdTabs) {

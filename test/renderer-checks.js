@@ -217,12 +217,26 @@
   }
 
   // 9. Cambiar de tema actualiza data-theme en <html>
-  const themeBtn = document.querySelector('#theme-menu button[data-theme="dracula"]');
+  // (galería de Ajustes → Apariencia, themegallery.js)
+  const themeBtn = document.querySelector('#theme-gallery .tg-card[data-theme="dracula"]');
   if (themeBtn) themeBtn.click();
   await waitFor(() => document.documentElement.getAttribute('data-theme') === 'dracula');
   check('Cambiar de tema actualiza data-theme en <html>', document.documentElement.getAttribute('data-theme') === 'dracula');
-  const lightBtn = document.querySelector('#theme-menu button[data-theme="light"]');
+  {
+    const nordCard = document.querySelector('#theme-gallery .tg-card[data-theme="nord"]');
+    nordCard.dispatchEvent(new MouseEvent('mouseenter'));
+    const pv = document.querySelector('#theme-gallery .tg-preview');
+    const hoverShows = pv.getAttribute('data-theme') === 'nord' && document.documentElement.getAttribute('data-theme') === 'dracula';
+    const pressed = document.querySelector('#theme-gallery .tg-card[aria-pressed="true"]');
+    const cards = document.querySelectorAll('#theme-gallery .tg-card').length;
+    const muestraColores = window.getComputedStyle(nordCard.querySelector('.tg-mini')).backgroundColor !== window.getComputedStyle(document.querySelector('#theme-gallery .tg-card[data-theme="light"] .tg-mini')).backgroundColor;
+    check('Galería de temas en Ajustes: una muestra por tema, vista previa al pasar el mouse, marca el actual',
+      hoverShows && pressed && pressed.dataset.theme === 'dracula' && cards === window.mdThemes.THEME_LIST.length + 1 && muestraColores,
+      `hover=${hoverShows} marcado=${pressed && pressed.dataset.theme} tarjetas=${cards} colores=${muestraColores}`);
+  }
+  const lightBtn = document.querySelector('#theme-gallery .tg-card[data-theme="light"]');
   if (lightBtn) lightBtn.click();
+  await waitFor(() => !document.documentElement.getAttribute('data-theme'));
 
   // 9b. Tema personalizado: color pickers aplican en vivo (--accent inline),
   // avisa si el contraste texto/fondo queda bajo, y "Guardar" persiste en
@@ -3990,7 +4004,7 @@
     await K.setCfgForTest({ cursor: false });
 
     const before = document.documentElement.getAttribute('data-theme');
-    document.querySelector('#theme-menu button[data-theme="kingdom-hearts"]').click();
+    document.querySelector('#theme-gallery .tg-card[data-theme="kingdom-hearts"]').click();
     const celebrated = !!document.querySelector('.lucky-celebrate .lucky-big svg');
     await new Promise((r) => setTimeout(r, 100));
     const hiddenEl = window.mdLuckyEmblem.hiddenEl();

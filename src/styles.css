@@ -24,7 +24,8 @@
   --dur: 200ms;
 }
 
-:root {
+:root,
+[data-theme="light"] {
   --bg: #ffffff;
   --surface: #f5f7fa;
   --surface-2: #eef1f5;
@@ -5367,3 +5368,39 @@ body.mk-dim-paragraphs #editor-pane .CodeMirror-code > div.mk-current-para { opa
 .kh-portrait-toast img { height: 72px; image-rendering: pixelated; }
 .kh-portrait-toast div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
 .kh-portrait-toast span { color: var(--text-muted); }
+
+/* Galería de temas (Ajustes → Apariencia, themegallery.js): cada muestra
+   lleva data-theme, así toma los colores de ese tema. */
+.theme-gallery { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.tg-preview { position: sticky; top: 0; z-index: 2; border: 1px solid var(--border); border-radius: var(--radius, 8px); overflow: hidden; background: var(--bg); color: var(--text); box-shadow: var(--shadow-1, none); }
+.tg-preview-bar { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--surface); border-bottom: 1px solid var(--border); font-size: 12px; }
+.tg-preview-bar span { padding: 2px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
+.tg-preview-bar b { margin-left: auto; font-weight: 600; }
+.tg-preview-body { display: grid; grid-template-columns: 110px 1fr 1fr; min-height: 150px; font-size: 12px; }
+.tg-preview-side { background: var(--surface); border-right: 1px solid var(--border); padding: 8px; display: grid; gap: 4px; align-content: start; color: var(--text); }
+.tg-preview-side .on { color: var(--accent); font-weight: 600; }
+.tg-preview-edit { padding: 8px 10px; font-family: var(--font-mono, monospace); border-right: 1px solid var(--border); display: grid; gap: 3px; align-content: start; }
+.tg-preview-edit .h { color: var(--accent); font-weight: 700; }
+.tg-preview-edit .m { color: var(--text-muted); }
+.tg-preview-view { padding: 8px 12px; display: grid; gap: 6px; align-content: start; }
+.tg-preview-view h4 { margin: 0; font-size: 16px; }
+.tg-preview-view p { margin: 0; }
+.tg-preview-view a { color: var(--accent); text-decoration: underline; }
+.tg-preview-view .muted { color: var(--text-muted); }
+.tg-preview-view code { background: var(--surface-2); padding: 0 4px; border-radius: 4px; }
+.tg-preview-view .btn { justify-self: start; padding: 3px 10px; border-radius: 6px; background: var(--accent); color: var(--bg); font-weight: 600; }
+.tg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.tg-card { display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: var(--radius, 8px); background: var(--surface); color: var(--text); cursor: pointer; font: inherit; text-align: left; transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.tg-card:hover, .tg-card:focus-visible { border-color: var(--accent); transform: translateY(-1px); }
+.tg-card[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.tg-mini { height: 58px; border-radius: 5px; overflow: hidden; display: grid; grid-template-columns: 26% 1fr; background: var(--bg); border: 1px solid var(--border); }
+.tg-mini i { background: var(--surface); border-right: 1px solid var(--border); }
+.tg-mini div { padding: 6px; display: grid; gap: 4px; align-content: start; }
+.tg-mini b { height: 6px; width: 60%; border-radius: 3px; background: var(--accent); }
+.tg-mini s { height: 4px; width: 90%; border-radius: 2px; background: var(--text); opacity: 0.85; text-decoration: none; }
+.tg-mini s + s { width: 70%; background: var(--text-muted); }
+.tg-name { font-size: 12px; padding: 0 2px 2px; display: flex; align-items: center; gap: 4px; }
+.tg-card[aria-pressed="true"] .tg-name::after { content: '✓'; margin-left: auto; color: var(--accent); }
+.tg-custom .tg-mini { background: conic-gradient(from 90deg, #e8c45e, #58a6ff, #bd93f9, #50fa7b, #e8c45e); }
+.tg-custom .tg-mini i, .tg-custom .tg-mini div { display: none; }
+@media (max-width: 640px) { .tg-preview-body { grid-template-columns: 1fr; } .tg-preview-side, .tg-preview-edit { display: none; } }

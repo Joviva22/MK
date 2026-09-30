@@ -89,11 +89,6 @@ overlay.addEventListener('click', (e) => {
   e.preventDefault();
   window.mdEditor.openExternal(a.href);
 });
-document.getElementById('set-open-theme').addEventListener('click', (e) => {
-  e.stopPropagation();
-  close();
-  document.getElementById('btn-theme').click();
-});
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !overlay.hidden) {
     e.preventDefault();

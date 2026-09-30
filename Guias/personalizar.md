@@ -59,3 +59,7 @@ La primera vez que se abre MK en un equipo aparece una guía de tres pasos:
 
 Si ya usabas MK (tenías una carpeta abierta) no aparece. Para verla otra vez: paleta → *Bienvenida: volver a ver la guía de inicio*.
 
+## Elegir tema
+
+El botón 🎨 **Tema** de la barra (o Ajustes → Apariencia) muestra la **galería de temas**: una tarjeta con los colores de cada uno y, arriba, una **vista previa** de cómo se ve MK —barra, archivos, editor con Markdown y la vista con título, texto secundario, enlace y botón—. Pasá el mouse (o el foco con Tab) por una tarjeta para verlo en la muestra sin cambiar nada; clic o Enter para usarlo. La tarjeta *Personalizado…* abre el editor de colores propios. Desde la paleta también: *Tema: Nord*, etc.
+

@@ -34,7 +34,6 @@ const THEME_LIST = [
   { slug: 'kingdom-hearts', label: 'Kingdom Hearts' }
 ];
 
-const themeMenu = document.getElementById('theme-menu');
 
 // customColors solo importa cuando slug === 'custom' (ver customtheme.js):
 // los 26 temas de acá arriba viven en bloques [data-theme="..."] de
@@ -55,38 +54,32 @@ function applyTheme(slug, customColors) {
   }
 }
 
-THEME_LIST.forEach((theme) => {
-  const btn = document.createElement('button');
-  btn.textContent = theme.label;
-  btn.dataset.theme = theme.slug;
-  if (theme.slug === 'kingdom-hearts') btn.insertAdjacentHTML('beforeend', ' <span class="lucky-mini" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="22" cy="26" r="17"/><circle cx="78" cy="26" r="17"/><circle cx="50" cy="60" r="31"/></svg></span>');
-  btn.addEventListener('click', async () => {
-    themeMenu.hidden = true;
-    applyTheme(theme.slug);
-    // Guiño: Lucky Emblem al elegir el tema Kingdom Hearts (luckyemblem.js).
-    if (theme.slug === 'kingdom-hearts' && window.mdLuckyEmblem) window.mdLuckyEmblem.celebrate();
-    if (window.renderPreview) window.renderPreview();
-    await window.mdEditor.setConfig({ theme: theme.slug });
+// Elegir un tema (galería de Ajustes → Apariencia, themegallery.js, y la
+// paleta de comandos): aplicar, redibujar el preview y guardar.
+async function chooseTheme(slug) {
+  applyTheme(slug);
+  if (window.renderPreview) window.renderPreview();
+  // Guiño: Lucky Emblem al elegir el tema Kingdom Hearts (luckyemblem.js).
+  if (slug === 'kingdom-hearts' && window.mdLuckyEmblem) window.mdLuckyEmblem.celebrate();
+  document.dispatchEvent(new CustomEvent('mk:theme-changed', { detail: { slug } }));
+  await window.mdEditor.setConfig({ theme: slug });
+}
+
+function currentTheme() {
+  return document.documentElement.getAttribute('data-theme') || 'light';
+}
+
+// El botón 🎨 de la barra abre la galería de temas en Ajustes.
+const themeBtn = document.getElementById('btn-theme');
+if (themeBtn) {
+  themeBtn.addEventListener('click', () => {
+    if (window.mdSettingsPanel) window.mdSettingsPanel.open('appearance');
+    const g = document.getElementById('theme-gallery');
+    if (g) setTimeout(() => g.scrollIntoView({ block: 'nearest' }), 50);
   });
-  themeMenu.appendChild(btn);
-});
+}
 
-const divider = document.createElement('div');
-divider.className = 'dropdown-divider';
-themeMenu.appendChild(divider);
-
-const customBtn = document.createElement('button');
-customBtn.textContent = 'Personalizado...';
-customBtn.id = 'btn-custom-theme';
-customBtn.addEventListener('click', () => {
-  themeMenu.hidden = true;
-  if (window.mdCustomTheme) window.mdCustomTheme.open();
-});
-themeMenu.appendChild(customBtn);
-
-window.initDropdown('btn-theme', 'theme-menu');
-
-window.mdThemes = { applyTheme };
+window.mdThemes = { applyTheme, chooseTheme, currentTheme, THEME_LIST };
 
 (async () => {
   const config = await window.mdEditor.getConfig();
