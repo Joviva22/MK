@@ -58,6 +58,7 @@ function buildCommands() {
   cmds.push({ label: 'Mascotas: mi colección, huevos y logros', run: () => window.mdPet && window.mdPet.openCollection() });
   cmds.push({ label: 'Home: planificador semanal y mensual', run: () => window.mdHome && window.mdHome.open() });
   cmds.push({ label: 'Bases de datos', run: () => window.mdDatabase && window.mdDatabase.open() });
+  cmds.push({ label: 'Reportar un problema…', run: () => window.mdReportDialog && window.mdReportDialog.open() });
   cmds.push({ label: 'Reemplazar en toda la carpeta…', run: () => window.mdReplaceFolder && window.mdReplaceFolder.open() });
   cmds.push({ label: 'Bienvenida: volver a ver la guía de inicio', run: () => window.mdWelcome && window.mdWelcome.open() });
   cmds.push({ label: 'Respaldo: exportar todo (ajustes, Home, mascotas)', run: () => window.mdBackup && window.mdBackup.exportAll() });

@@ -87,6 +87,7 @@ contextBridge.exposeInMainWorld('mdEditor', {
   backupPick: (testPath) => ipcRenderer.invoke('backup:pick', testPath),
   backupImport: (file) => ipcRenderer.invoke('backup:import', file),
   checkUpdate: () => ipcRenderer.invoke('app:checkUpdate'),
+  problemReport: () => ipcRenderer.invoke('app:problemReport'),
   openWithSystem: (filePath) => ipcRenderer.invoke('shell:openPath', filePath),
   saveSession: (data) => ipcRenderer.invoke('session:save', data),
   loadSession: () => ipcRenderer.invoke('session:load'),

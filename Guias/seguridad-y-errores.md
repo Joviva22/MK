@@ -40,3 +40,17 @@ Si algo no funciona y querés reportarlo, ese archivo es lo más útil para adju
 ```bash
 tail -20 ~/.config/md-editor-local/logs/mk.log
 ```
+
+## Reportar un problema
+
+**Ajustes → Sistema → Reportar…** (o la paleta: *Reportar un problema…*) arma un informe con la versión de MK, el sistema y las últimas 60 líneas de `mk.log`. Antes de mostrártelo le tapa:
+
+- tu carpeta personal (`/home/<vos>` → `~`) y tu nombre de usuario;
+- direcciones de correo;
+- la ruta temporal del AppImage;
+- cualquier cosa con forma de `password=…`, `token: …`, `clave=…`.
+
+Lo ves en un cuadro editable: escribí arriba qué pasó, borrá lo que no quieras compartir y elegí **Copiar** o **Abrir en GitHub…** (abre un *issue* nuevo en el navegador con el texto; se envía solo si vos lo mandás desde ahí). MK no manda nada por su cuenta.
+
+Los avisos `ResizeObserver loop…` de Chromium ya no se registran: son inofensivos y tapaban los errores reales.
+

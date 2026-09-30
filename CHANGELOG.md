@@ -40,6 +40,9 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ### Seguridad y solidez
 
+- **Reportar un problema** (Ajustes → Sistema): informe con versión, sistema y últimos errores, sin datos personales, para copiar o abrir en GitHub.
+- Corregido: borrar una vista de una base de datos podía dar error si las vistas se habían cambiado desde un bloque en una nota.
+
 - Respaldo: exportar / importar ajustes, Home y mascotas en un archivo `.mkbackup` (copia automática antes de importar).
 - Electron 44; **CSP**, **sandbox**, **rutas validadas** en el proceso principal; ventana de impresión de PDF aislada.
 - Guardado **atómico** (bases de datos, Home, configuración); un JSON dañado se aparta en vez de pisarse; **registro de errores** y avisos visibles; las pestañas viejas ya no pisan archivos cambiados afuera.

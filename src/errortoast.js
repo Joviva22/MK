@@ -38,6 +38,9 @@ function show({ message, detail, logFile }) {
 window.mdEditor.onAppError(show);
 
 window.addEventListener('error', (e) => {
+  // Aviso inofensivo de Chromium (un ResizeObserver no alcanzó a dibujar en
+  // el mismo cuadro): no es un error de MK y tapaba los de verdad en el log.
+  if (/^ResizeObserver loop/.test(e.message || '')) return;
   window.mdEditor.logError('window.onerror', `${e.message} @ ${e.filename}:${e.lineno}`);
 });
 window.addEventListener('unhandledrejection', (e) => {

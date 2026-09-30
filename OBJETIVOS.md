@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 110 de 141 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 111 de 141 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -217,7 +217,7 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 ### Calidad
 - [x] ~~**Tests unitarios rápidos** (node:test)~~ (ver Consolidación, 2026-09-30)
 - [x] ~~**Registro de errores local**~~ (`logs/mk.log`, 2026-09-29)
-- [ ] **Botón "Reportar un problema"** que arme el informe (versión, últimas líneas del log) sin datos personales
+- [x] ~~**Botón "Reportar un problema"** que arme el informe (versión, últimas líneas del log) sin datos personales~~ (2026-09-30: Ajustes → Sistema y paleta; tapa carpeta personal, usuario, correos, ruta del AppImage y claves; se revisa y edita antes de copiar o abrir el issue)
 - [ ] **Pruebas visuales**: capturas de referencia de los paneles principales en claro/oscuro, para detectar diseño roto
 
 ### Seguridad

@@ -3970,6 +3970,19 @@
     check('Exportar: si falla la escritura, devuelve null y avisa (con el log)', res === null && !!toast, `resultado=${res} aviso=${!!toast}`);
   }
 
+  // Reportar un problema: informe con versión y registro, sin la carpeta
+  // personal; la URL del issue lleva título y cuerpo.
+  {
+    await window.mdReportDialog.open();
+    const body = window.mdReportDialog.getBody();
+    const version = await window.mdEditor.appVersion();
+    const url = window.mdReportDialog.issueUrl();
+    window.mdReportDialog.close();
+    check('Reportar un problema: informe sin datos personales y enlace al issue',
+      body.includes(`MK ${version}`) && body.includes('## Entorno') && !/\/home\/[^/\s]+/.test(body) && url.startsWith('https://github.com/Joviva22/MK/issues/new?title=') && url.includes('&body='),
+      `version=${body.includes(version)} home=${/\/home\/[^/\s]+/.test(body)} largo=${body.length}`);
+  }
+
   // Modo máquina de escribir: la línea del cursor queda cerca del centro;
   // "atenuar párrafos" marca solo el párrafo del cursor y sigue al cursor.
   {

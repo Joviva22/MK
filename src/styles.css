@@ -5238,3 +5238,12 @@ body.mk-typewriter #editor-pane .CodeMirror-lines { padding-top: 40vh; padding-b
 body.mk-dim-paragraphs #editor-pane .CodeMirror-code > div { opacity: 0.38; transition: opacity var(--dur) var(--ease); }
 body.mk-dim-paragraphs #editor-pane .CodeMirror-code > div.mk-current-para { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { body.mk-dim-paragraphs #editor-pane .CodeMirror-code > div { transition: none; } }
+
+/* Reportar un problema (reportdialog.js) */
+.modal.report-dialog { max-width: 720px; width: calc(100vw - 32px); max-height: 90vh; display: flex; flex-direction: column; }
+.report-dialog h2 { margin: 0 0 6px; }
+.report-title-label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--text-muted); margin-bottom: 8px; }
+.report-title-input { width: 100%; box-sizing: border-box; }
+.report-body { flex: 1; min-height: 200px; width: 100%; box-sizing: border-box; resize: vertical; font-family: var(--font-mono, monospace); font-size: 12px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius, 8px); padding: 8px; }
+.report-status { color: var(--text-muted); min-height: 1em; margin: 6px 0 0; }
+.modal-overlay:not([hidden]) > .report-dialog { animation: mk-pop-in var(--dur) var(--ease); }

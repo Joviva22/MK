@@ -128,6 +128,41 @@ function newerThan(a, b) {
 
 ipcMain.handle('app:version', () => app.getVersion());
 
+// "Reportar un problema": el informe ya sin datos personales (problemreport.js).
+ipcMain.handle('app:problemReport', async () => {
+  const errlog = require('./errlog');
+  const { buildReport } = require('./problemreport');
+  let log = '';
+  try {
+    const file = errlog.logFile();
+    const st = await fs.promises.stat(file);
+    const fh = await fs.promises.open(file, 'r');
+    const len = Math.min(st.size, 64 * 1024);
+    const buf = Buffer.alloc(len);
+    await fh.read(buf, 0, len, st.size - len);
+    await fh.close();
+    log = buf.toString('utf-8');
+  } catch {
+    // sin log todavía: el informe lo dice
+  }
+  const config = ctx.loadConfig();
+  return buildReport({
+    version: app.getVersion(),
+    electron: process.versions.electron,
+    chrome: process.versions.chrome,
+    node: process.versions.node,
+    platform: process.platform,
+    release: os.release(),
+    arch: process.arch,
+    desktop: process.env.XDG_CURRENT_DESKTOP || '',
+    session: process.env.XDG_SESSION_TYPE || '',
+    modulesOff: Array.isArray(config.disabledModules) ? config.disabledModules : [],
+    log,
+    home: os.homedir(),
+    user: os.userInfo().username
+  });
+});
+
 ipcMain.handle('app:checkUpdate', async () => {
   const current = app.getVersion();
   if (ctx.isTestMode) return { current, latest: null, newer: false };

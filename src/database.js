@@ -464,9 +464,16 @@ function openViewMenu(anchorEl, view) {
     del.textContent = 'Eliminar vista';
     del.addEventListener('click', async () => {
       close();
-      if (state.views.length <= 1) { alert('No se puede borrar la última vista.'); return; }
+      // La lista en memoria puede estar vieja (vistas cambiadas desde un
+      // bloque database en una nota): se cuenta con la del disco.
+      const current = await window.mdEditor.db.listViews(root(), state.databaseId);
+      if (current.filter((v) => v.id !== view.id).length < 1) { alert('No se puede borrar la última vista.'); return; }
       await window.mdEditor.db.deleteView(root(), view.id);
       state.views = await window.mdEditor.db.listViews(root(), state.databaseId);
+      if (!state.views.length) {
+        await window.mdEditor.db.createView(root(), state.databaseId, { name: 'Tabla', type: 'table', config: {} });
+        state.views = await window.mdEditor.db.listViews(root(), state.databaseId);
+      }
       state.viewId = state.views[0].id;
       renderViewTabs();
       renderView();
