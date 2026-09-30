@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 88 de 137 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 89 de 137 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -161,7 +161,7 @@ La revisión concluye —y coincido— que ahora toca **consolidar más que aña
 - [x] ~~**Activar `sandbox: true`**~~ (rutas con un helper POSIX propio en el preload, comparado con Node en un test; highlight.js en el proceso principal, asíncrono; exportar espera el resaltado) (2026-09-29)
 - [x] ~~**Registro local de errores**~~ (`userData/logs/mk.log` rotativo; guardar notas, Home y bases de datos avisan en pantalla si fallan; errores de JS no capturados al log; config/sesión/Home con escritura atómica y un JSON dañado se aparta en vez de pisarse) (2026-09-29)
 - [ ] **Revisar el resto de `catch` silenciosos** (importar docx/CSV, exportar, PDF) para que usen `reportError`
-- [ ] **Bases de datos: agrupar escrituras** (hoy cada cambio reescribe el archivo entero; guardar agrupado cada ~300 ms y al salir) o motor nativo con WAL
+- [x] ~~**Bases de datos: agrupar escrituras**~~ (una escritura atómica 300 ms después del último cambio, y al salir; 30 cambios → 1 escritura) (2026-09-30)
 
 **Prioridad media**
 - [ ] **Dividir `database.js` (~2200 líneas), `home.js` (~1800) y `styles.css` (~4400)** por responsabilidad (va junto con la migración a módulos ES)
@@ -188,7 +188,7 @@ Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas gr
 - [ ] **Búsqueda con índice y sin tope de 200**: resultados al instante, con filtros (carpeta, tipo, fecha) y búsqueda aproximada
 
 ### Datos que crecen
-- [ ] **Bases de datos: guardar solo lo que cambió**: hoy cada edición reescribe el archivo SQLite **entero** (`db.export()`); agrupar escrituras (guardar cada ~1 s) o pasar a SQLite nativo con WAL
+- [ ] **Bases de datos: guardar solo lo que cambió** (escrituras ya agrupadas el 2026-09-30; falta motor nativo con WAL para no reescribir el archivo entero): hoy cada edición reescribe el archivo SQLite **entero** (`db.export()`); agrupar escrituras (guardar cada ~1 s) o pasar a SQLite nativo con WAL
 - [ ] **Bases de datos grandes**: tabla virtualizada (solo filas visibles), paginación y cálculo de fórmulas/rollups en segundo plano, para bases de 10.000+ filas
 - [ ] **Home con años de tareas**: archivar tareas terminadas viejas (siguen en búsqueda y estadísticas) y buscar avisos por fecha en vez de recorrer todas las tareas cada 30 s
 - [ ] **Versión en los archivos de datos** (`home.json`, `config.json`, esquema SQLite) con migraciones automáticas, para poder cambiar formatos sin romper datos viejos

@@ -105,7 +105,7 @@ async function getDb(root) {
   db.run('PRAGMA foreign_keys = ON;');
   db.exec(SCHEMA_SQL);
   DB_CACHE.set(root, db);
-  persist(root, db);
+  writeNow(root, db); // la primera vez, ya (crea el archivo)
   return db;
 }
 
@@ -113,7 +113,7 @@ async function getDb(root) {
 // en el mismo disco es todo-o-nada. Antes se escribía encima del archivo
 // directamente: un corte a mitad (apagón, cierre forzado) dejaba el
 // .sqlite3 truncado y se perdían TODAS las bases de la carpeta.
-function persist(root, db) {
+function writeNow(root, db) {
   const target = dbPathFor(root);
   const tmp = `${target}.${process.pid}.tmp`;
   const fd = fs.openSync(tmp, 'w');
@@ -125,6 +125,49 @@ function persist(root, db) {
   }
   fs.renameSync(tmp, target);
 }
+
+// Escrituras agrupadas: cada cambio marca la base como "sucia" y se guarda
+// una sola vez PERSIST_DELAY_MS después del último (pegar 50 filas, editar
+// celdas seguidas o arrastrar para reordenar ya no reescriben el archivo
+// entero decenas de veces). La base en memoria siempre está al día, así que
+// las lecturas no esperan. Al salir de MK, flushAll() guarda lo pendiente.
+const PERSIST_DELAY_MS = 300;
+const pendingWrites = new Map(); // root -> timeout
+let writeCount = 0;
+
+function flush(root) {
+  const t = pendingWrites.get(root);
+  if (t) clearTimeout(t);
+  pendingWrites.delete(root);
+  const db = DB_CACHE.get(root);
+  if (!db) return;
+  writeNow(root, db);
+  writeCount++;
+}
+
+function persist(root) {
+  const t = pendingWrites.get(root);
+  if (t) clearTimeout(t);
+  pendingWrites.set(root, setTimeout(() => {
+    try {
+      flush(root);
+    } catch (e) {
+      if (onPersistError) onPersistError('db:guardar', e);
+    }
+  }, PERSIST_DELAY_MS));
+}
+
+function flushAll() {
+  Array.from(pendingWrites.keys()).forEach((root) => {
+    try {
+      flush(root);
+    } catch (e) {
+      if (onPersistError) onPersistError('db:guardar', e);
+    }
+  });
+}
+
+let onPersistError = null;
 
 function all(db, sql, params) {
   const stmt = db.prepare(sql);
@@ -460,6 +503,7 @@ async function reorderViews(root, databaseId, orderedIds) {
 // allowRoot(root): la carpeta de la base tiene que estar autorizada (ver
 // pathguard.js); si no, el IPC falla sin tocar el disco.
 function registerDatabaseIpc(realIpcMain, allowRoot, onError) {
+  onPersistError = onError;
   const ipcMain = {
     handle: (channel, fn) => realIpcMain.handle(channel, (e, args) => {
       if (args && 'root' in args && allowRoot && !allowRoot(args.root)) throw new Error('Carpeta no autorizada');
@@ -499,4 +543,4 @@ function registerDatabaseIpc(realIpcMain, allowRoot, onError) {
   ipcMain.handle('db:reorderViews', (e, { root, databaseId, orderedIds }) => reorderViews(root, databaseId, orderedIds));
 }
 
-module.exports = { registerDatabaseIpc };
+module.exports = { registerDatabaseIpc, flushAll, stats: () => ({ writes: writeCount, pending: pendingWrites.size }) };

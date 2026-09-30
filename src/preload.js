@@ -174,6 +174,7 @@ contextBridge.exposeInMainWorld('mdEditor', {
     lastTestMessage: () => ipcRenderer.invoke('mail:lastTestMessage')
   },
   db: {
+    writeStats: () => ipcRenderer.invoke('db:writeStats'),
     listDatabases: (root) => ipcRenderer.invoke('db:listDatabases', { root }),
     createDatabase: (root, name) => ipcRenderer.invoke('db:createDatabase', { root, name }),
     renameDatabase: (root, id, name) => ipcRenderer.invoke('db:renameDatabase', { root, id, name }),

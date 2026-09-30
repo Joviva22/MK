@@ -3685,6 +3685,24 @@
       `comandos=${cmdsOk} (${rsCmd} | ${mkCmd}) resaltado=${hlOk} ${hlOk === true ? '' : dbg}`);
   }
 
+  // Bases de datos: escrituras agrupadas — 30 cambios seguidos escriben el
+  // archivo una sola vez (y los datos en memoria están al día al instante).
+  if (fixturesDir) {
+    const db = window.mdEditor.db;
+    const base = await db.createDatabase(fixturesDir, 'Agrupada');
+    const [col] = await db.listColumns(fixturesDir, base.id);
+    await new Promise((r) => setTimeout(r, 450));
+    const w0 = (await db.writeStats()).writes;
+    for (let i = 0; i < 30; i++) await db.createRow(fixturesDir, base.id, { [col.id]: `fila ${i}` });
+    const rowsNow = (await db.listRows(fixturesDir, base.id)).length;
+    const pendingOk = (await db.writeStats()).pending === 1;
+    await new Promise((r) => setTimeout(r, 500));
+    const w1 = (await db.writeStats()).writes;
+    await db.deleteDatabase(fixturesDir, base.id);
+    check('Bases de datos: 30 cambios seguidos → una sola escritura del archivo, datos al día al instante', rowsNow === 30 && pendingOk && w1 - w0 === 1,
+      `filas=${rowsNow} pendiente=${pendingOk} escrituras=${w1 - w0}`);
+  }
+
   // Categorías del Home: @categoría en el alta rápida, chip en la tarjeta,
   // filtro (las nuevas heredan la categoría filtrada), estadísticas por
   // categoría y +5 XP a la mascota afín.

@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { Readable } = require('stream');
-const { registerDatabaseIpc } = require('./dbengine');
+const { registerDatabaseIpc, flushAll: flushDatabases, stats: dbStats } = require('./dbengine');
 const { registerTerminalIpc, killAllTerminals } = require('./ptyhost');
 const trayMode = require('./traymode');
 const ctx = require('./mainctx');
@@ -364,6 +364,11 @@ app.whenReady().then(() => {
   createWindow();
   trayMode.setupTray({ getWindow: () => mainWindow, iconPath: APP_ICON, ipcMain, isTestMode });
 });
+
+// Bases de datos: lo que quedó sin guardar (escrituras agrupadas) se guarda
+// antes de salir.
+app.on('will-quit', flushDatabases);
+ipcMain.handle('db:writeStats', () => dbStats());
 
 app.on('window-all-closed', () => {
   killAllTerminals();
