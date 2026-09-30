@@ -102,6 +102,7 @@ contextBridge.exposeInMainWorld('mdEditor', {
   getConfig: () => ipcRenderer.invoke('config:get'),
   setConfig: (partial) => ipcRenderer.invoke('config:set', partial),
   copyAsset: (srcPath, targetDir) => ipcRenderer.invoke('asset:copy', { srcPath, targetDir }),
+  saveImageAsset: (targetDir, baseName, ext, bytes) => ipcRenderer.invoke('asset:saveImage', { targetDir, baseName, ext, bytes }),
   searchInFolder: (root, query) => ipcRenderer.invoke('search:inFolder', { root, query }),
   kanbanReadFolderFiles: (root) => ipcRenderer.invoke('kanban:readFolderFiles', root),
   listTags: (root) => ipcRenderer.invoke('tags:list', root),

@@ -16,6 +16,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 - **Mascotas**: equipo que evoluciona con tus tareas y Pomodoros, huevos, legendarias por logros; criaturas de MK, de un juego de RPG Maker o imágenes propias.
 
 ### Escribir y ver
+
+- **Pegar imágenes** con `Ctrl+V` (capturas, *Copiar imagen*) o arrastrarlas desde el navegador: se guardan en `assets/` junto a la nota.
 - **Live Preview**, botón de modo con el modo actual, fotos / video / audio de cualquier formato común, explorador de multimedia.
 - **Escribir en PDF** (texto libre y formularios).
 - Resaltado y F5 para ~25 lenguajes más.

@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 106 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 107 de 141 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -126,6 +126,14 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Más lenguajes: F5 y resaltado**~~ (F5 para TS, Rust, PHP, Perl, Lua, R, Julia, Haskell, Dart, Swift, Kotlin, zsh, fish, PowerShell, SQL, HTML y Makefile; resaltado de ~25 lenguajes más cargado al abrir) (2026-09-30)
 - [x] ~~**Mascota: XP por filas de bases de datos marcadas como hechas**~~ (cualquier casilla tildada, en la base, en el bloque o desde el aviso; una vez por fila y día) (2026-09-30)
 - [x] ~~**Categorías en tareas del Home**~~ (`@categoría` al agregar, chip de color, filtro que heredan las nuevas, administrador con color) (2026-09-30) — *las estadísticas por categoría y el vínculo con las mascotas se probaron y se quitaron a pedido: más simple*
+
+## Propuestos por Claude (2026-09-30, segunda tanda)
+
+- [x] ~~**Pegar imágenes del portapapeles** (`Ctrl+V` con una captura): se guarda junto a la nota y se inserta el enlace; también arrastrar imágenes desde el navegador~~ (2026-09-30: en `assets/`, como al arrastrar)
+- [ ] **Reabrir pestaña cerrada** (`Ctrl+Alt+T`, menú de pestañas y paleta)
+- [ ] **Buscar y reemplazar en toda la carpeta**, con vista previa por archivo, confirmación y copia en el historial local
+- [ ] **Modo máquina de escribir**: cursor siempre centrado y párrafos que no se escriben atenuados
+- [ ] **Atajos de teclado personalizables** (Ajustes → Atajos: cambiar, detectar choques, restaurar)
 
 ## Ideas de `MEJORAS_PROPUESTAS.md` (Gemini)
 

@@ -468,4 +468,33 @@ ipcMain.handle('asset:copy', (event, { srcPath, targetDir }) => {
   }
 });
 
+// Imagen pegada del portapapeles o arrastrada desde el navegador (no hay
+// archivo de origen: llegan los bytes). Se guarda en targetDir (assets/
+// junto a la nota) con un nombre libre.
+const PASTE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+const PASTE_MAX_BYTES = 25 * 1024 * 1024;
+
+ipcMain.handle('asset:saveImage', async (event, { targetDir, baseName, ext, bytes }) => {
+  if (!guard.check(targetDir, 'asset:saveImage')) return null;
+  const e = String(ext || '').toLowerCase();
+  if (!PASTE_EXTS.includes(e) || !(bytes instanceof Uint8Array) || !bytes.length || bytes.length > PASTE_MAX_BYTES) return null;
+  const base = String(baseName || 'imagen').replace(/[\\/:*?"<>|\x00-\x1f]/g, '-').slice(0, 80) || 'imagen';
+  try {
+    await fsp.mkdir(targetDir, { recursive: true });
+    for (let i = 0; i < 1000; i++) {
+      const destPath = path.join(targetDir, `${base}${i ? `-${i}` : ''}.${e}`);
+      try {
+        await fsp.writeFile(destPath, bytes, { flag: 'wx' });
+        return destPath;
+      } catch (err) {
+        if (err.code !== 'EEXIST') throw err;
+      }
+    }
+    return null;
+  } catch (err) {
+    ctx.reportError('asset:saveImage', err, 'No se pudo guardar la imagen pegada.');
+    return null;
+  }
+});
+
 module.exports = { folderIndex };

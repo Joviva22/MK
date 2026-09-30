@@ -216,6 +216,7 @@ Los archivos `.tex` completos también se editan con resaltado de sintaxis LaTeX
 **Formas de insertar estos elementos sin escribir la sintaxis a mano:**
 
 - **Arrastrar y soltar** un archivo desde el explorador de tu sistema al editor: lo copia a una carpeta `assets/` junto al archivo actual e inserta el Markdown correspondiente automáticamente.
+- **Pegar una imagen** con `Ctrl+V` (captura de pantalla, *Copiar imagen* del navegador) o arrastrarla desde el navegador: se guarda en `assets/pegado-<fecha-hora>.png` y se inserta el enlace. La nota tiene que estar guardada.
 - **Arrastrar una fila del sidebar** (un archivo que ya está en tu carpeta abierta) directo al editor: inserta el link/embed apuntando a donde ya está el archivo, sin copiarlo de nuevo.
 - Desde el [menú contextual](#17-menú-contextual-del-editor) del editor: "Insertar imagen".
 

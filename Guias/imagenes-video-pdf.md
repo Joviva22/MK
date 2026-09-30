@@ -15,6 +15,7 @@ Rutas relativas al archivo actual.
 
 ## Sin escribir la sintaxis
 - **Arrastrar desde el explorador del sistema** al editor → se copia a `assets/` junto a la nota y se inserta el enlace.
+- **Pegar una imagen** (`Ctrl+V` después de una captura de pantalla o de *Copiar imagen* en el navegador) → se guarda como `assets/pegado-<fecha-hora>.png` y se inserta `![…](assets/…)`. También funciona **arrastrar una imagen desde el navegador**. La nota tiene que estar guardada (la imagen va junto a ella); si el portapapeles trae texto, se pega el texto como siempre.
 - **Arrastrar desde el sidebar** → enlaza el archivo donde ya está (no copia).
 - Clic derecho → **Insertar imagen**.
 

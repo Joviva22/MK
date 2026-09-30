@@ -28,7 +28,7 @@ Notas/
 ├── Facultad/
 │   ├── Algebra/
 │   └── Historia/
-├── assets/          ← imágenes arrastradas (automático)
+├── assets/          ← imágenes arrastradas o pegadas (automático)
 └── .mk/             ← bases de datos (oculto)
 ```
 Íconos personalizados por carpeta ayudan a encontrar rápido cada área.

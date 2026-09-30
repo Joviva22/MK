@@ -4024,6 +4024,43 @@
       `v=${version} desc="${desc.textContent}" aviso=${!!cfg.updateCheck}`);
   }
 
+  // Pegar una imagen (Ctrl+V con una captura): se guarda en assets/ junto a
+  // la nota y se inserta ![](assets/…). Con texto en el portapapeles, se
+  // pega el texto como siempre. En un temporal aparte (no los fixtures).
+  {
+    const dir = `${fixturesDir.replace(/[^/]+$/, '')}mk-test-export-paste-${Date.now()}`;
+    const png = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0));
+    await window.mdEditor.saveImageAsset(dir, 'semilla', 'png', png); // crea la carpeta
+    const note = window.mdEditor.joinPath(dir, 'nota.md');
+    await window.mdEditor.saveFile('# Nota\n', note, false);
+    await window.mdTabs.openTab(note);
+    const cm = window.mdCodeMirror;
+    cm.setCursor({ line: 1, ch: 0 });
+    const paste = (dt) => cm.getInputField().dispatchEvent(new window.ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    const dt = new DataTransfer();
+    dt.items.add(new window.File([png], 'image.png', { type: 'image/png' }));
+    paste(dt);
+    let inserted = '';
+    for (let i = 0; i < 30 && !inserted; i++) {
+      await new Promise((r) => setTimeout(r, 50));
+      const m = cm.getValue().match(/!\[pegado-[\d-]+\]\((assets\/pegado-[\d-]+\.png)\)/);
+      inserted = m ? m[1] : '';
+    }
+    const saved = inserted ? !!(await window.mdEditor.readFile(window.mdEditor.joinPath(dir, inserted))) : false;
+    const before = cm.getValue();
+    const withText = new DataTransfer();
+    withText.items.add('hola', 'text/plain');
+    withText.items.add(new window.File([png], 'image.png', { type: 'image/png' }));
+    paste(withText);
+    await new Promise((r) => setTimeout(r, 200));
+    const textKept = (cm.getValue().match(/\]\(assets\//g) || []).length === 1 && cm.getValue().length >= before.length;
+    cm.setValue('# Nota\n');
+    await window.mdTabs.saveActive();
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    check('Pegar imagen: se guarda en assets/ y se inserta el enlace (con texto, pega el texto)',
+      !!inserted && saved && textKept, `insertado=${inserted} guardado=${saved} texto=${textKept}`);
+  }
+
   // Bienvenida: en test no aparece sola; el perfil "Escribir" apaga los
   // módulos avanzados, "Más tarde" salta la carpeta y al terminar queda
   // marcada como vista.
