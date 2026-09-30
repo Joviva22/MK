@@ -49,3 +49,13 @@ No incluye tus notas ni las bases de datos: son archivos de la carpeta de notas 
 
 Al **importar**, MK muestra qué trae el respaldo y pide confirmación; antes de reemplazar nada guarda una copia de lo que había en `~/.config/md-editor-local/backups/antes-de-importar-<fecha>.mkbackup` (si te arrepentís, importás esa). Después se recarga sola. El tamaño de la ventana de este equipo se conserva.
 
+## Bienvenida (primer arranque)
+
+La primera vez que se abre MK en un equipo aparece una guía de tres pasos:
+
+1. **Qué vas a usar**: *Escribir* (notas, etiquetas y enlaces), *Escribir y planificar* (más Home, recordatorios, Kanban y Pomodoro) o *Todo*. Solo apaga módulos: se cambia cuando quieras en Ajustes → Módulos.
+2. **Tus notas**: crear `~/Documentos/Notas MK` con una nota de bienvenida, elegir una carpeta propia o dejarlo para después.
+3. **Tres atajos**: `Ctrl+Shift+P` (paleta), `Ctrl+,` (ajustes) y `Ctrl+P` (abrir nota por nombre).
+
+Si ya usabas MK (tenías una carpeta abierta) no aparece. Para verla otra vez: paleta → *Bienvenida: volver a ver la guía de inicio*.
+

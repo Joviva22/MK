@@ -59,6 +59,7 @@ contextBridge.exposeInMainWorld('mdEditor', {
   saveFile: (content, filePath, forceDialog = false) => ipcRenderer.invoke('file:save', { content, filePath, forceDialog }),
   readFile: (filePath) => ipcRenderer.invoke('file:read', filePath),
   openFolder: () => ipcRenderer.invoke('folder:open'),
+  createStarterFolder: () => ipcRenderer.invoke('folder:createStarter'),
   getLastFolder: () => ipcRenderer.invoke('folder:getLast'),
   readFolder: (rootPath) => ipcRenderer.invoke('folder:read', rootPath),
   watchFolder: (rootPath) => ipcRenderer.invoke('folder:watch', rootPath),

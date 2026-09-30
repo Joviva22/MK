@@ -24,6 +24,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 - **Terminal integrada** (pestañas, pantalla dividida, elegir shell, buscar), **F5** para ejecutar, **Abrir con IA** (Claude Code, Gemini CLI, Codex), **bloques `run`** con confirmación.
 
 ### Interfaz
+
+- **Bienvenida** en el primer arranque: elegir qué usar (Escribir / Escribir y planificar / Todo), crear o elegir la carpeta de notas y los atajos clave.
 - **Ajustes** rediseñado (secciones, buscador), barra superior solo íconos / con texto / oculta, **Módulos** para apagar lo que no uses, barra de estado (guardado, rama de git, palabras), grafo interactivo, tokens de diseño y animaciones suaves.
 - **Accesibilidad**: contraste WCAG AA en los 26 temas, navegación con teclado, ARIA.
 

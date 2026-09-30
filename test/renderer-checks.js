@@ -4024,6 +4024,31 @@
       `v=${version} desc="${desc.textContent}" aviso=${!!cfg.updateCheck}`);
   }
 
+  // Bienvenida: en test no aparece sola; el perfil "Escribir" apaga los
+  // módulos avanzados, "Más tarde" salta la carpeta y al terminar queda
+  // marcada como vista.
+  {
+    const W = window.mdWelcome;
+    const overlay = document.querySelector('.welcome-overlay');
+    const hiddenAtStart = overlay.hidden;
+    W.open();
+    const shown = !overlay.hidden && document.activeElement && overlay.contains(document.activeElement);
+    W.selectProfile('escribir');
+    W.next();
+    await new Promise((r) => setTimeout(r, 150));
+    const writeOnly = !window.mdModules.isOn('terminal') && !window.mdModules.isOn('home') && window.mdModules.isOn('links');
+    const onFolderStep = !overlay.querySelector('.welcome-step[data-step="1"]').hidden;
+    await W.chooseFolder('later');
+    const onLast = !overlay.querySelector('.welcome-step[data-step="2"]').hidden;
+    W.next();
+    await new Promise((r) => setTimeout(r, 100));
+    const cfg = await window.mdEditor.getConfig();
+    await window.mdModules.setOff([]);
+    check('Bienvenida: perfil de módulos, carpeta "más tarde" y queda vista',
+      hiddenAtStart && shown && writeOnly && onFolderStep && onLast && overlay.hidden && cfg.onboarded === true && window.mdModules.isOn('terminal'),
+      `inicio=${hiddenAtStart} abre=${shown} perfil=${writeOnly} paso2=${onFolderStep} paso3=${onLast} cierra=${overlay.hidden} vista=${cfg.onboarded}`);
+  }
+
   // Respaldo: exportar → revisar → importar (en test sin diálogos ni recarga).
   // Importar sin elegir antes el archivo se rechaza.
   {

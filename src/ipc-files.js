@@ -11,6 +11,7 @@ const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
 const crypto = require('crypto');
+const os = require('os');
 const ctx = require('./mainctx');
 const guard = require('./pathguard');
 const { createFolderWatcher } = require('./folderwatch');
@@ -216,6 +217,50 @@ ipcMain.handle('folder:open', async () => {
   guard.grantDir(rootPath);
   ctx.saveConfig({ ...ctx.loadConfig(), lastFolder: rootPath });
   return { rootPath, tree: await readTree(rootPath) };
+});
+
+// Bienvenida (welcome.js): crea ~/Documentos/Notas MK con una nota de
+// inicio (si ya existe, la reusa sin pisar nada) y la abre como carpeta.
+const STARTER_NOTE = `# Bienvenida a MK
+
+Esta es tu carpeta de notas: cada nota es un archivo \`.md\` normal que podés abrir con cualquier programa, copiar o subir a git.
+
+## Para empezar
+
+- **Ctrl+N** crea un documento nuevo y **Ctrl+S** lo guarda (o clic derecho en la barra lateral → Nuevo archivo).
+- Escribí en Markdown: \`# título\`, \`**negrita**\`, \`- lista\`, \`- [ ] tarea\`.
+- **Ctrl+Shift+L** activa Live Preview (escribís viendo el resultado) y **Ctrl+Shift+R** el modo lectura.
+- **[[Otra nota]]** enlaza notas entre sí.
+- **Ctrl+Shift+P** abre la paleta: todo lo que hace MK, buscándolo por nombre.
+- **Ctrl+,** abre los Ajustes (tema, barra, módulos que se usan…).
+
+- [ ] Crear mi primera nota
+- [ ] Probar Live Preview con Ctrl+Shift+L
+
+Podés borrar esta nota cuando quieras.
+`;
+
+ipcMain.handle('folder:createStarter', async () => {
+  let docs;
+  try {
+    docs = app.getPath('documents');
+  } catch {
+    docs = os.homedir();
+  }
+  const rootPath = path.join(docs, 'Notas MK');
+  try {
+    await fsp.mkdir(rootPath, { recursive: true });
+    const note = path.join(rootPath, 'Bienvenida.md');
+    await fsp.writeFile(note, STARTER_NOTE, { encoding: 'utf-8', flag: 'wx' }).catch((e) => {
+      if (e.code !== 'EEXIST') throw e;
+    });
+    guard.grantDir(rootPath);
+    ctx.saveConfig({ ...ctx.loadConfig(), lastFolder: rootPath });
+    return { rootPath, tree: await readTree(rootPath), note };
+  } catch (e) {
+    ctx.reportError('folder:createStarter', e, 'No se pudo crear la carpeta de notas.');
+    return null;
+  }
 });
 
 ipcMain.handle('folder:getLast', async () => {

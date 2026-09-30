@@ -112,6 +112,14 @@ renderSettings();
   setTimeout(apply, 300);
 })();
 
-window.mdModules = { MODULES, isOn, allowsCommand, setModule };
+// Varios de una vez (perfiles de la bienvenida, welcome.js).
+async function setOff(ids) {
+  off = new Set(ids.filter((id) => MODULES.some((m) => m.id === id)));
+  apply();
+  renderSettings();
+  await window.mdEditor.setConfig({ disabledModules: Array.from(off) });
+}
+
+window.mdModules = { MODULES, isOn, allowsCommand, setModule, setOff };
 
 })();

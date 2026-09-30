@@ -4,7 +4,7 @@ Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha
 
 > Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
 
-**Estado:** 105 de 136 objetivos cumplidos · última actualización 2026-09-30.
+**Estado:** 106 de 136 objetivos cumplidos · última actualización 2026-09-30.
 
 ---
 
@@ -171,7 +171,7 @@ La revisión concluye —y coincido— que ahora toca **consolidar más que aña
 **Prioridad baja**
 - [x] ~~**Versionado semántico y CHANGELOG**~~ (2026-09-30: 2.0.0, CHANGELOG.md, versión en Ajustes → Sistema)
 - [ ] **Documentación sin cifras volátiles** (README ya corregido; revisar el resto)
-- [ ] **Primer arranque guiado**: separar claramente escribir / planificar / herramientas avanzadas
+- [x] ~~**Primer arranque guiado**: separar claramente escribir / planificar / herramientas avanzadas~~ (2026-09-30: bienvenida de 3 pasos —perfil Escribir / Escribir y planificar / Todo, carpeta «Notas MK» con nota de inicio o una propia, atajos clave—; solo en instalaciones nuevas; se vuelve a ver desde la paleta)
 
 ## Corto plazo (próximas sesiones)
 
