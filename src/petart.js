@@ -196,7 +196,7 @@ function drawLegend(mood, c) {
     front + face(32, 34, mood, 1.05);
 }
 
-function drawSpecies(key, stage, mood) {
+function drawSpecies(key, stage, mood, shiny) {
   const c = ALL[key] || SPECIES.fuego;
   let body;
   if (c.legendary) body = drawLegend(mood, c);
@@ -204,7 +204,7 @@ function drawSpecies(key, stage, mood) {
   else if (c.body === 'bean') body = drawBean(stage, mood, c);
   else if (c.body === 'ghost') body = drawGhost(stage, mood, c);
   else body = drawBiped(stage, mood, c);
-  return `<svg viewBox="0 0 64 64" width="100%" height="100%" aria-hidden="true"><ellipse class="pet-shadow" cx="32" cy="61" rx="14" ry="2.5" fill="rgba(0,0,0,0.18)"/><g class="pet-body">${body}</g></svg>`;
+  return `<svg viewBox="0 0 64 64" width="100%" height="100%" aria-hidden="true" class="${shiny ? 'pet-shiny' : ''}"><ellipse class="pet-shadow" cx="32" cy="61" rx="14" ry="2.5" fill="rgba(0,0,0,0.18)"/><g class="pet-body">${body}</g></svg>`;
 }
 
 // Huevo: normal (manchas) o legendario (dorado); progress 0..1 lo agrieta.

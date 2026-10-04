@@ -56,6 +56,22 @@ Siete líneas de 3 etapas y cuatro legendarias, todas propias:
 
 MK copia solo los sprites de cada mascota a `~/.config/md-editor-local/pet/` (nada va a tus notas ni al repositorio). Son del juego y de sus dueños: para tu uso personal.
 
+### Cualquier Pokémon, variantes regionales y especies futuras
+
+En **🐾 Mis mascotas → + Elegir mascota**, puedes elegir tanto una línea evolutiva como cada sprite individual, marcado **forma fija**. Así puedes usar una evolución final o una variante regional sin que MK la sustituya por su forma base. La forma fija conserva su apariencia al subir de nivel.
+
+El catálogo también incluye sprites que no aparecen en el PBS: no exige una lista oficial de especies. Lee nombres y formas de `PBS/pokemon.txt`, `pokemon_forms.txt` y archivos adicionales `pokemon_*.txt`; por ejemplo, `VULPIX_1.png` puede mostrarse como Vulpix (Alolan). La búsqueda acepta nombres o identificadores; **Mostrar más** permite recorrer todas las opciones, no solo las primeras.
+
+Si el Pokémon no existe en tu juego, usa **🐾 Mis mascotas → + Pokémon propio / regional**:
+
+1. Escribe su nombre, incluso si es inventado o una especie futura.
+2. Escribe una forma o región opcional, también libre.
+3. Elige una imagen propia (PNG, GIF, WebP, JPG o SVG; hasta 5 MB). Se añade una mascota nueva, sin sustituir a la líder ni reiniciar la colección.
+
+No descarga imágenes ni consulta una Pokédex online. Necesitas aportar una imagen o un sprite del juego. Para una hoja animada de caminata 4×4, usa el catálogo de `Graphics/Characters`; la importación propia muestra la imagen completa (o su GIF animado). Las evoluciones que dependen de scripts del juego no se ejecutan en MK; puedes elegir cada forma como fija. Si falta la imagen de una evolución regional declarada, no se sustituye por la imagen normal.
+
+Tras añadir una mascota propia, puedes hacerla líder y añadir imágenes de etapas 2/3 en **Ajustes → Mascota → Imágenes propias**. Si faltan etapas, se reutiliza la imagen anterior. Los nombres y la región se guardan junto con la mascota; no necesitas actualizar MK para añadir especies nuevas.
+
 ## Imágenes propias
 **Apariencia de la líder → Imágenes propias** → **Etapa 1… / 2… / 3…** (PNG, **GIF animado**, WebP, JPG o SVG; hasta 5 MB). Si falta una etapa, usa la anterior. Mejor si mira **hacia la derecha** y con fondo transparente.
 
@@ -81,11 +97,10 @@ Con una imagen tuya de keyblades (un PNG con fondo transparente, una al lado de 
 
 Con las hojas de sprites de **Sora** (Kingdom Hearts: Chain of Memories, la de 1024×2917) y **Roxas** (la de 608×2872) en Descargas: **Ajustes → Apariencia → Sora y Roxas → Buscar hojas en Descargas…**. MK las reconoce por su tamaño, les quita el fondo y recorta las animaciones (quieto, caminar, ataque con keyblade) y los retratos. Como las keyblades, se copian solo a tu configuración.
 
-- **Sora** se une a tus mascotas enseguida; **Roxas**, cuando encontraste **3 Lucky Emblems** escondidos (con el tema Kingdom Hearts).
+- **Sora y Roxas** se unen a tus mascotas al importar sus hojas; Roxas está desbloqueado sin exigir Lucky Emblems. Si ya lo tienes, se conserva el mismo personaje y su progreso, sin duplicarlo.
 - Caminan animados y, cuando tildás una tarea, dan un **golpe de keyblade**. Suben de nivel como las demás.
 - **Retratos que reaccionan**: un aviso con la cara de Sora — feliz al completar una tarea, decidido al terminar un Pomodoro, preocupado si aparecen tareas atrasadas (como mucho uno cada 15 s; se apaga en Ajustes).
 
 Otras hojas con otra distribución no se reconocen (cada hoja de fans tiene los cuadros en otro lugar).
 
 Todo se prende y apaga por separado en Ajustes → Apariencia.
-

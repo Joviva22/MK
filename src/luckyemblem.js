@@ -10,7 +10,7 @@
 
 const THEME = 'kingdom-hearts';
 const SVG = '<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="22" cy="26" r="17"/><circle cx="78" cy="26" r="17"/><circle cx="50" cy="60" r="31"/></svg>';
-let hidden = null;
+let hiddenEls = [];
 let found = 0;
 
 function isKhTheme() {
@@ -20,6 +20,14 @@ function isKhTheme() {
 function emblem(className) {
   const el = document.createElement('div');
   el.className = `lucky-emblem ${className}`;
+  el.innerHTML = SVG;
+  return el;
+}
+
+function mini() {
+  const el = document.createElement('span');
+  el.className = 'lucky-mini';
+  el.setAttribute('aria-hidden', 'true');
   el.innerHTML = SVG;
   return el;
 }
@@ -45,36 +53,35 @@ function celebrate() {
   setTimeout(() => wrap.remove(), 1900);
 }
 
-// ---- el escondido ----
+// ---- los escondidos (varios sueltos a la vez, para que sea más fácil) ----
 const SPOTS = [
   () => document.querySelector('.statusbar'),
   () => document.getElementById('sidebar-pane'),
   () => document.querySelector('.toolbar'),
-  () => document.querySelector('.preview-wrapper')
+  () => document.querySelector('.preview-wrapper'),
+  () => document.getElementById('editor-pane')
 ];
+const COUNT = 3; // cuántos hay sueltos a la vez
 
 function removeHidden() {
-  if (hidden) hidden.remove();
-  hidden = null;
+  hiddenEls.forEach((el) => el.remove());
+  hiddenEls = [];
 }
 
-function placeHidden() {
-  removeHidden();
-  if (!isKhTheme()) return;
-  const spot = SPOTS[Math.floor(Math.random() * SPOTS.length)]();
-  if (!spot) return;
-  hidden = emblem('lucky-hidden');
-  hidden.setAttribute('role', 'button');
-  hidden.tabIndex = -1; // no molesta al navegar con Tab: se encuentra mirando
-  hidden.title = '¿Qué es esto?';
-  hidden.style.setProperty('--lx', `${10 + Math.floor(Math.random() * 70)}%`);
-  hidden.addEventListener('click', async (ev) => {
+function placeOne(spot) {
+  const el = emblem('lucky-hidden');
+  el.setAttribute('role', 'button');
+  el.tabIndex = -1; // no molesta al navegar con Tab: se encuentra mirando
+  el.title = '¿Qué es esto?';
+  el.style.setProperty('--lx', `${10 + Math.floor(Math.random() * 70)}%`);
+  el.addEventListener('click', async (ev) => {
     ev.stopPropagation();
     found++;
     await window.mdEditor.setConfig({ khLuckyFound: found });
     document.dispatchEvent(new CustomEvent('mk:lucky-found', { detail: { found } })); // Roxas (khchars.js)
-    const r = hidden.getBoundingClientRect();
-    removeHidden();
+    const r = el.getBoundingClientRect();
+    el.remove();
+    hiddenEls = hiddenEls.filter((h) => h !== el);
     const pop = document.createElement('div');
     pop.className = 'lucky-found';
     pop.style.left = `${r.left + r.width / 2}px`;
@@ -83,7 +90,19 @@ function placeHidden() {
     document.body.appendChild(pop);
     setTimeout(() => pop.remove(), 1800);
   });
-  spot.appendChild(hidden);
+  spot.appendChild(el);
+  hiddenEls.push(el);
+}
+
+function placeHidden() {
+  removeHidden();
+  if (!isKhTheme()) return;
+  const spots = SPOTS.map((f) => f()).filter(Boolean);
+  for (let i = 0; i < Math.min(COUNT, spots.length); i++) {
+    const idx = Math.floor(Math.random() * spots.length);
+    placeOne(spots[idx]);
+    spots.splice(idx, 1); // sin repetir lugar
+  }
 }
 
 // El tema cambia por themes.js (menú, Ajustes, al iniciar): se sigue el
@@ -103,6 +122,6 @@ new MutationObserver(() => {
   if (wasKh) placeHidden();
 })();
 
-window.mdLuckyEmblem = { celebrate, placeHidden, found: () => found, hiddenEl: () => hidden, SVG };
+window.mdLuckyEmblem = { mini, celebrate, placeHidden, found: () => found, hiddenEl: () => hiddenEls[0] || null, hiddenEls: () => hiddenEls.slice(), SVG };
 
 })();

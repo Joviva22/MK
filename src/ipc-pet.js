@@ -14,7 +14,7 @@ const path = require('path');
 const fs = require('fs');
 const ctx = require('./mainctx');
 const guard = require('./pathguard');
-const { isDir, findCharDirs, charCatalog, ID_RE } = require('./petcatalog');
+const { isDir, findCharDirs, charCatalog, charSpritePath, ID_RE } = require('./petcatalog');
 
 const PET_DIR = path.join(app.getPath('userData'), 'pet');
 const EXTS = ['png', 'gif', 'webp', 'jpg', 'jpeg', 'svg'];
@@ -159,10 +159,15 @@ ipcMain.handle('pet:charCatalog', (event, charDir) => {
 ipcMain.handle('pet:useChars', (event, petId, charDir, ids, names) => {
   if (!PET_ID_RE.test(String(petId)) || !isDir(charDir) || !Array.isArray(ids) || !ids.length || ids.some((i) => !ID_RE.test(String(i)))) return { error: 'Selección inválida.' };
   try {
+    // Valida todas las etapas antes de sustituir imágenes existentes.
+    const sources = ids.map((id) => charSpritePath(charDir, id));
+    for (let k = 0; k < sources.length; k++) {
+      if (!sources[k] || !fs.statSync(sources[k]).isFile()) return { error: `Falta ${ids[k]}.png en esa carpeta.` };
+      if (fs.statSync(sources[k]).size > MAX_BYTES) return { error: `La imagen ${ids[k]} pesa más de 5 MB.` };
+    }
     for (let n = 1; n <= 3; n++) {
       const k = Math.min(n, ids.length) - 1;
-      const src = path.join(charDir, `${ids[k]}.png`);
-      if (!fs.existsSync(src)) return { error: `Falta ${ids[k]}.png en esa carpeta.` };
+      const src = sources[k];
       const name = Array.isArray(names) ? String(names[k] || ids[k]).slice(0, 40) : ids[k];
       const res = install(petId, n, src, { sheet: true, label: name });
       if (res.error) return res;

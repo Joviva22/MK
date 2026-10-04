@@ -109,7 +109,7 @@ function speciesName(p, stage) {
 function typeName(p) {
   if (p.kind === 'kh') return 'Kingdom Hearts';
   if (p.kind === 'game') return p.legendary ? 'Legendario · juego' : 'Del juego';
-  if (p.kind === 'custom') return 'Imágenes propias';
+  if (p.kind === 'custom') return p.pokemon ? `Pokémon propio${p.pokemon.form ? ` · ${p.pokemon.form}` : ''}` : 'Imágenes propias';
   return (ART.ALL[p.species] || ART.SPECIES.fuego).type;
 }
 
@@ -134,14 +134,15 @@ function art(p, mood, stage) {
   const st = stage || stageOf(p);
   const badge = mood === 'sad' ? '😟' : mood === 'sleep' ? '💤' : '';
   const b = badge ? `<span class="pet-mood-badge">${badge}</span>` : '';
+  const shiny = p.shiny ? ' pet-shiny' : '';
   const kh = khData(p);
-  if (kh) return `<img class="pet-img pet-kh" src="${kh.anims.idle.frames[0]}" alt="" draggable="false"/>${b}`;
+  if (kh) return `<img class="pet-img pet-kh${shiny}" src="${kh.anims.idle.frames[0]}" alt="" draggable="false"/>${b}`;
   if (p.kind === 'game' || p.kind === 'custom') {
     const sp = sprite(p, st);
-    if (sp && sp.sheet) return `<div class="pet-sheet" style="background-image:url('${sp.url}')"></div>${b}`;
-    if (sp) return `<img class="pet-img" src="${sp.url}" alt="" draggable="false"/>${b}`;
+    if (sp && sp.sheet) return `<div class="pet-sheet${shiny}" style="background-image:url('${sp.url}')"></div>${b}`;
+    if (sp) return `<img class="pet-img${shiny}" src="${sp.url}" alt="" draggable="false"/>${b}`;
   }
-  return ART.drawSpecies(ART.ALL[p.species] ? p.species : (p.mkSpecies || 'fuego'), st, mood);
+  return ART.drawSpecies(ART.ALL[p.species] ? p.species : (p.mkSpecies || 'fuego'), st, mood, p.shiny);
 }
 
 async function loadSprites(p) {
@@ -634,6 +635,60 @@ async function hatch(egg) {
   return p;
 }
 
+// Agrega directamente la criatura elegida (sin esperar un huevo al azar).
+// pick: { kind: 'mk', key, legendary } | { kind: 'game', line, dir, legendary }
+async function addChosen(pick, shiny) {
+  ensureStarter();
+  const id = `p${state.nextId++}`;
+  const p = { id, kind: pick.kind, name: '', xp: 0, legendary: !!pick.legendary, shiny: !!shiny, born: today(), mkSpecies: 'fuego' };
+  if (pick.kind === 'mk') {
+    p.species = pick.key;
+  } else {
+    p.species = 'fuego';
+    p.line = pick.line;
+    const res = await window.mdEditor.pet.useChars(id, pick.dir, pick.line.ids, pick.line.names);
+    if (res && res.error) return null;
+  }
+  state.pets.push(p);
+  if (p.kind === 'game') await loadSprites(p);
+  if (state.team.length < TEAM_MAX) state.team.push(id);
+  logEvent({ type: 'chosen', petId: id, legendary: p.legendary, shiny: p.shiny });
+  const who = speciesName(p);
+  notify(`${p.legendary ? '🌟' : shiny ? '✨' : '🐾'} ¡Se unió ${who}!`, state.team.includes(id) ? 'Ya camina con tu equipo.' : 'Está en tu colección (🐾 Mis mascotas).');
+  rebuildWalkers();
+  save();
+  if (!overlay.hidden) renderCollection();
+  return p;
+}
+
+// Especies/variantes libres: requieren una imagen elegida por el usuario,
+// no una entrada de la Pokédex ni un catálogo de un juego.
+let importingCustom = false;
+async function addCustomPokemon(species, form, testPath) {
+  if (importingCustom) throw new Error('Ya se está importando una imagen.');
+  const name = String(species || '').trim().slice(0, 80);
+  const region = String(form || '').trim().slice(0, 80);
+  if (!name) throw new Error('Escribe el nombre del Pokémon.');
+  importingCustom = true;
+  try {
+    ensureStarter();
+    const id = `p${state.nextId++}`;
+    const res = await window.mdEditor.pet.pickSprite(id, 1, testPath);
+    if (res?.error) throw new Error(res.error);
+    if (!res?.ok) return null;
+    const label = name + (region ? ` (${region})` : '');
+    const p = { id, kind: 'custom', species: 'fuego', mkSpecies: 'fuego', pokemon: { species: name, form: region }, line: { names: [label] }, name: '', xp: 0, legendary: false, born: today() };
+    state.pets.push(p);
+    await loadSprites(p);
+    if (state.team.length < TEAM_MAX) state.team.push(id);
+    logEvent({ type: 'chosen', petId: id, legendary: false, shiny: false });
+    rebuildWalkers();
+    save();
+    if (!overlay.hidden) renderCollection();
+    return p;
+  } finally { importingCustom = false; }
+}
+
 function checkAchievements() {
   ACHIEVEMENTS.forEach((a) => {
     if (state.achievements.includes(a.key) || a.value() < a.goal) return;
@@ -721,13 +776,85 @@ overlay.className = 'modal-overlay pet-collection-overlay';
 overlay.hidden = true;
 overlay.innerHTML = `<div class="pet-collection" role="dialog" aria-modal="true" aria-labelledby="pet-collection-title">
   <div class="pet-col-head"><h2 id="pet-collection-title">🐾 Mis mascotas</h2><span class="pet-col-summary"></span>
+    <button type="button" class="toolbar-button" id="pet-col-add">+ Elegir mascota</button>
+    <button type="button" class="toolbar-button" id="pet-col-custom-pokemon">+ Pokémon propio / regional</button>
     <button type="button" class="toolbar-button pet-col-close" aria-label="Cerrar">✕</button></div>
+  <div class="pet-chooser" id="pet-chooser" hidden>
+    <div class="pet-chooser-head"><b>Elegí cualquier criatura, de MK o del juego</b>
+      <label class="pet-chooser-shiny"><input type="checkbox" id="pet-chooser-shiny" /> ✨ Shiny</label></div>
+    <input type="search" id="pet-chooser-search" class="settings-text-input" placeholder="Buscar: fuego, pikachu, legendario…" aria-label="Buscar criatura" autocomplete="off" />
+    <div id="pet-chooser-list" class="pet-char-list" role="list"></div>
+    <div id="pet-chooser-status" class="dailynote-example" role="status"></div>
+  </div>
   <div class="pet-col-body"></div></div>`;
 document.body.appendChild(overlay);
 const colBody = overlay.querySelector('.pet-col-body');
 overlay.querySelector('.pet-col-close').addEventListener('click', () => { overlay.hidden = true; });
 overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) overlay.hidden = true; });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.hidden) overlay.hidden = true; });
+
+const chooserEl = overlay.querySelector('#pet-chooser');
+const chooserSearch = overlay.querySelector('#pet-chooser-search');
+const chooserList = overlay.querySelector('#pet-chooser-list');
+const chooserStatus = overlay.querySelector('#pet-chooser-status');
+const chooserShiny = overlay.querySelector('#pet-chooser-shiny');
+let chooserLimit = 80;
+overlay.querySelector('#pet-col-custom-pokemon').addEventListener('click', async (event) => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const name = await window.mdAsk('Nombre del Pokémon (también futuro o inventado)', '');
+    if (name == null) return;
+    if (!name.trim()) throw new Error('Escribe el nombre del Pokémon.');
+    const form = await window.mdAsk('Forma o región (opcional: Alola, Galar, Hisui, propia…)', '');
+    if (form == null) return;
+    chooserEl.hidden = false;
+    chooserStatus.textContent = 'Elige una imagen propia; no hace falta que esté en la Pokédex.';
+    const pet = await addCustomPokemon(name, form);
+    chooserStatus.textContent = pet ? `✔ ${speciesName(pet)} se unió a tu colección.` : 'Importación cancelada; tu colección no cambia.';
+  } catch (error) { chooserEl.hidden = false; chooserStatus.textContent = `⚠ ${error.message}`; }
+  finally { button.disabled = false; }
+});
+overlay.querySelector('#pet-col-add').addEventListener('click', () => {
+  chooserEl.hidden = !chooserEl.hidden;
+  if (!chooserEl.hidden) renderChooserList();
+});
+
+function chooserPool() {
+  const pool = [];
+  NORMAL_KEYS.forEach((k) => pool.push({ kind: 'mk', key: k, names: ART.SPECIES[k].names, legendary: false }));
+  LEGEND_KEYS.forEach((k) => pool.push({ kind: 'mk', key: k, names: ART.LEGENDS[k].names, legendary: true }));
+  if (catalog && catalog.lines.length) {
+    catalog.lines.forEach((l) => pool.push({ kind: 'game', line: { ids: l.ids, names: l.names }, dir: catalog.dir, legendary: !!l.legendary, names: l.names, single: l.single }));
+  }
+  return pool;
+}
+
+function renderChooserList() {
+  chooserList.innerHTML = '';
+  const q = chooserSearch.value.trim().toLowerCase();
+  const all = chooserPool().filter((it) => !q || [...it.names, ...(it.line?.ids || [])].join(' ').toLowerCase().includes(q));
+  const matches = all.slice(0, chooserLimit);
+  matches.forEach((it) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pet-char-option';
+    b.textContent = (it.legendary ? '🌟 ' : '') + it.names.join(' → ') + (it.kind === 'game' ? ` 🎮${it.single ? ' · forma fija' : ''}` : '');
+    b.addEventListener('click', async () => {
+      chooserStatus.textContent = 'Agregando…';
+      const shiny = chooserShiny.checked;
+      const p = await addChosen(it, shiny);
+      chooserStatus.textContent = p ? `✔ ${shiny ? '✨ ' : ''}${speciesName(p)} se unió a tu colección.` : '⚠ No se pudo agregar (¿faltan los sprites del juego?).';
+    });
+    chooserList.appendChild(b);
+  });
+  if (!matches.length) chooserList.textContent = 'Nada coincide.';
+  if (all.length > matches.length) {
+    const more = mk('button', 'toolbar-button', `Mostrar más (${matches.length} de ${all.length})`);
+    more.type = 'button'; more.addEventListener('click', () => { chooserLimit += 80; renderChooserList(); }); chooserList.append(more);
+  }
+}
+if (chooserSearch) chooserSearch.addEventListener('input', () => { chooserLimit = 80; renderChooserList(); });
 
 function openCollection() {
   ensureStarter();
@@ -761,13 +888,13 @@ function renderCollection() {
   sorted.forEach((p) => {
     const inTeam = state.team.includes(p.id);
     const isLeader = state.team[0] === p.id;
-    const c = mk('div', 'pet-col-card' + (inTeam ? ' in-team' : '') + (p.legendary ? ' legendary' : ''));
+    const c = mk('div', 'pet-col-card' + (inTeam ? ' in-team' : '') + (p.legendary ? ' legendary' : '') + (p.shiny ? ' shiny' : ''));
     c.dataset.petId = p.id;
     const artBox = mk('div', 'pet-col-art');
     artBox.innerHTML = art(p, 'normal');
     const name = mk('div', 'pet-col-name', nameOf(p));
     const sub = mk('div', 'pet-col-sub', `${p.name ? speciesName(p) + ' · ' : ''}${typeName(p)}${p.legendary ? '' : ` · etapa ${stageOf(p)}/3`}`);
-    const badges = mk('div', 'pet-col-badges', `${isLeader ? '👑 líder' : inTeam ? '👣 en el equipo' : '💤 descansa'}${p.legendary ? ' · 🌟' : ''}`);
+    const badges = mk('div', 'pet-col-badges', `${isLeader ? '👑 líder' : inTeam ? '👣 en el equipo' : '💤 descansa'}${p.legendary ? ' · 🌟' : ''}${p.shiny ? ' · ✨' : ''}`);
     const prog = mk('div');
     prog.innerHTML = progressHtml(p);
     const actions = mk('div', 'pet-col-actions');
@@ -794,6 +921,15 @@ function renderCollection() {
       renderCollection();
     });
     actions.appendChild(ren);
+    const shinyBtn = mk('button', 'toolbar-button', p.shiny ? '✨ Quitar shiny' : '✨ Volver shiny');
+    shinyBtn.type = 'button';
+    shinyBtn.addEventListener('click', () => {
+      p.shiny = !p.shiny;
+      save();
+      rebuildWalkers();
+      renderCollection();
+    });
+    actions.appendChild(shinyBtn);
     c.append(artBox, name, sub, badges, prog, actions);
     grid.appendChild(c);
   });
@@ -987,29 +1123,33 @@ async function loadCatalog(dir) {
   if (charDirEl) charDirEl.textContent = dir;
   if (charStatus) charStatus.textContent = `${res.lines.length} ${res.withEvolutions ? 'líneas evolutivas' : 'personajes'} · ${res.legendaries} legendarias (${res.total} sprites).`;
   renderCharList();
+  if (!chooserEl.hidden) renderChooserList();
 }
 
+let charLimit = 60;
 function renderCharList() {
   if (!charList) return;
   charList.innerHTML = '';
   if (!catalog) return;
   const q = (charSearch && charSearch.value.trim().toLowerCase()) || '';
-  const matches = catalog.lines.filter((l) => !q || l.names.join(' ').toLowerCase().includes(q) || l.ids.join(' ').toLowerCase().includes(q)).slice(0, 60);
+  const all = catalog.lines.filter((l) => !q || l.names.join(' ').toLowerCase().includes(q) || l.ids.join(' ').toLowerCase().includes(q));
+  const matches = all.slice(0, charLimit);
+  const dir = catalog.dir;
   matches.forEach((l) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'pet-char-option';
-    b.textContent = (l.legendary ? '🌟 ' : '') + l.names.join(' → ');
+    b.textContent = (l.legendary ? '🌟 ' : '') + l.names.join(' → ') + (l.single ? ' · forma fija' : '');
     b.title = 'Usar esta línea para tu mascota líder (conserva su nivel)';
     b.addEventListener('click', async () => {
       ensureStarter();
       const p = leader();
       if (charStatus) charStatus.textContent = 'Copiando…';
-      const res = await window.mdEditor.pet.useChars(p.id, catalog.dir, l.ids, l.names);
+      const res = await window.mdEditor.pet.useChars(p.id, dir, l.ids, l.names);
       if (res.error) { if (charStatus) charStatus.textContent = '⚠ ' + res.error; return; }
       p.kind = 'game';
       p.line = { ids: l.ids, names: l.names };
-      state.charDir = catalog.dir;
+      state.charDir = dir;
       await loadSprites(p);
       save();
       rebuildWalkers();
@@ -1019,9 +1159,13 @@ function renderCharList() {
     charList.appendChild(b);
   });
   if (!matches.length) charList.textContent = 'Nada coincide.';
+  if (all.length > matches.length) {
+    const more = mk('button', 'toolbar-button', `Mostrar más (${matches.length} de ${all.length})`);
+    more.type = 'button'; more.addEventListener('click', () => { charLimit += 60; renderCharList(); }); charList.append(more);
+  }
 }
 
-if (charSearch) charSearch.addEventListener('input', renderCharList);
+if (charSearch) charSearch.addEventListener('input', () => { charLimit = 60; renderCharList(); });
 const pickDirBtn = document.getElementById('pet-char-pick');
 if (pickDirBtn) {
   pickDirBtn.addEventListener('click', async () => {
@@ -1088,6 +1232,7 @@ function addKhPet(species) {
 }
 
 window.mdPet = {
+  addCustomPokemon,
   addKhPet,
   refreshWalkers: () => { walkers.forEach((w) => renderWalker(w, true)); if (!overlay.hidden) renderCollection(); },
   gain,

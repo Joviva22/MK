@@ -3,14 +3,13 @@
 
 // Sora y Roxas (guiño a Kingdom Hearts): con las hojas de sprites del
 // usuario (se copian solo a la configuración local, ver ipc-kh.js):
-// - Sora se une a tus mascotas al importar su hoja; Roxas, cuando
-//   encontraste 3 Lucky Emblems (luckyemblem.js). Caminan animados y dan un
+// - Sora y Roxas se unen al importar sus hojas, sin requisitos de emblemas.
+//   Caminan animados y dan un
 //   golpe de keyblade cuando tildás una tarea (pet.js, kind 'kh').
 // - Retratos que reaccionan: un aviso chico con la cara de Sora (feliz al
 //   completar, decidido con un Pomodoro, preocupado si aparecen atrasadas).
 // Ajustes → Apariencia; config.khPortraits.
 
-const ROXAS_EMBLEMS = 3;
 const PORTRAIT_GAP_MS = 15000;
 let chars = {}; // id → { name, anims, portraits }
 let portraitsOn = true;
@@ -24,17 +23,13 @@ function hasPet(species) {
   return !!(window.mdPet && window.mdPet.getState().pets.some((p) => p.kind === 'kh' && p.species === species));
 }
 
-function luckyFound() {
-  return window.mdLuckyEmblem ? window.mdLuckyEmblem.found() : 0;
-}
-
 // Quién ya puede estar en la colección.
 function syncPets() {
   if (!window.mdPet) return;
   if (chars.sora && !hasPet('sora')) window.mdPet.addKhPet('sora');
-  if (chars.roxas && !hasPet('roxas') && luckyFound() >= ROXAS_EMBLEMS) {
+  if (chars.roxas && !hasPet('roxas')) {
     window.mdPet.addKhPet('roxas');
-    portrait('roxas', 'normal', '¡Roxas se unió!', `Encontraste ${ROXAS_EMBLEMS} Lucky Emblems.`, true);
+    portrait('roxas', 'normal', '¡Roxas se unió!', 'Desbloqueado desde el inicio, sin buscar emblemas.', true);
   }
 }
 
@@ -90,7 +85,7 @@ function renderStatus() {
   const names = Object.values(chars).map((c) => c.name);
   if (!names.length) status.textContent = 'Con las hojas de sprites de Sora (Chain of Memories) y Roxas, se suman a tus mascotas.';
   else {
-    const roxas = chars.roxas ? (hasPet('roxas') ? ' Roxas ya está con vos.' : ` Roxas se une al encontrar ${ROXAS_EMBLEMS} Lucky Emblems (llevás ${luckyFound()}).`) : '';
+    const roxas = chars.roxas ? (hasPet('roxas') ? ' Roxas ya está con vos.' : ' Roxas está desbloqueado y se unirá a la colección.') : ' Roxas está desbloqueado: falta importar su hoja.';
     status.textContent = `${names.join(' y ')} listos.${roxas}`;
   }
   if (btn) btn.textContent = names.length === 2 ? 'Volver a importar' : 'Buscar hojas en Descargas…';
