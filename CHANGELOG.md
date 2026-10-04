@@ -4,6 +4,40 @@ Todas las versiones de MK. Formato: [Keep a Changelog](https://keepachangelog.co
 
 Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|menor|parche>` y `git push --follow-tags` — GitHub Actions compila el AppImage y lo publica en *Releases*.
 
+## Sin publicar
+
+- Vista de estudio dividida: editor de notas junto a PDF y pizarra editable opcional. Apertura desde paleta, asignatura o tema; PDF ajustado al ancho, citas con página sin cerrar el visor, pizarra ocultable sin perder cambios y protección al cerrar con cambios pendientes.
+
+- Comprensión por asignatura: temas pendientes, practicando o dominados, enlaces a materiales y tarjetas y señales de repaso/errores de examen. Resumen semanal con tiempo, tareas activas y archivadas, repeticiones y temas actuales para reforzar; consulta de semanas anteriores sin confundir autoevaluación con aprendizaje demostrado.
+
+- PDFs y pizarras incrustados en Markdown mediante `![[archivo.pdf#page=2]]` y `![[archivo.excalidraw]]`, en Preview y Live Preview. Inserción desde paleta, navegación del PDF y actualización de dibujos tras guardar. Carga visible limitada, liberación de recursos y protección de rutas y HTML ajeno; exportaciones conservan enlaces, no visores.
+
+- Repaso espaciado por asignatura: tarjetas manuales o desde la selección de una nota, edición, fechas según valoración y contador de pendientes en Home. Guardado confirmado y reintento sin duplicar valoraciones.
+- Modo examen: preguntas en orden aleatorio, intento antes de revelar la referencia, autoevaluación, historial persistente y práctica de errores. No altera el calendario de repaso ni modifica los apuntes.
+
+- Estudio por asignatura: materiales Markdown/PDF, próximas entregas, tareas y tiempo por categoría de Pomodoro. Plan de hoy con presupuesto de foco y prioridades por vencimiento, sin modificar tareas automáticamente.
+- Primera pizarra Excalidraw local, cargada bajo demanda: creación, apertura y guardado manual `.excalidraw`, protección ante cambios externos y aviso al descartar cambios. Sin cuenta ni servicio de pago; dibujos en panel independiente, todavía sin incrustación en notas.
+- Dependencias de la pizarra actualizadas mediante overrides y DOMPurify actualizado para corregir avisos de seguridad de producción.
+
+- Mascotas Pokémon: variantes regionales desde PBS de formas, selección individual de cualquier sprite —incluidas evoluciones y especies fuera del catálogo—, búsqueda por identificador y Mostrar más. Importación de Pokémon propios/futuros con nombre, región e imagen libres, sin reemplazar la colección. Se validan todas las imágenes de una línea antes de sustituir etapas existentes.
+
+- Contexto de estudio: focos vinculados a una nota Markdown guardada, detalle editable del trabajo, reapertura del apunte y filtros del historial/estadísticas por nota. El vínculo no cambia al pasar de pestaña; se conservan registros anteriores, categorías y tareas Home.
+
+- PDF a apuntes: selección y copia del texto original, citas en notas nuevas o al final de la nota activa, y enlaces a la página original desde preview y Live Preview. Selección en páginas giradas, aviso de escaneos sin OCR, protección de anotaciones al cambiar de archivo y descarte de renders antiguos.
+
+- Live Preview: escribir dentro de palabras con formato y espacios fuera de delimitadores ya no reconstruye toda la nota. Marcadores ocultos sin widgets vacíos, tokens reutilizados por texto/idioma, limpieza de marcas localizada y liberación del DOM de lectura oculto. Nuevas mediciones de edición con formato y entrada nativa; la optimización general sigue pendiente.
+
+- Segunda optimización de CM6: evita reconstrucciones duplicadas al cambiar de pestaña y difiere el preview oculto. Live Preview actualiza localmente filas de tablas, callouts y cuerpos de bloques de código cuando conservan su estructura. Mediciones desglosadas de apertura y reconstrucción.
+
+- Primera optimización de CM6: cachés de texto y posiciones, decoraciones agrupadas por documento y actualización local conservadora de prosa en Live Preview. El corrector descarta respuestas antiguas tras editar o cambiar de pestaña.
+
+- Pomodoros con categorías, estadísticas por periodo y asignatura, historial editable y registros manuales; tiempo efectivo sin pausas ni descansos, checkpoints y reintento de guardado.
+- Roxas disponible al importar su hoja sin exigir Lucky Emblems; conserva personajes y progreso existentes.
+
+- Editor migrado a CodeMirror 6, con historial independiente por pestaña, autocompletado nativo y compatibilidad con Live Preview, búsqueda, corrector y modo máquina de escribir.
+- Lenguajes de código empaquetados para CM6; ya no se cargan addons de CM5 al abrirlos.
+- Pruebas ampliadas para Live Preview, historial, autocompletado y limpieza de decoraciones entre pestañas. Las pruebas y el empaquetado regeneran automáticamente el bundle del editor.
+
 ## [2.0.0] — 2026-09-30
 
 ### Planificar

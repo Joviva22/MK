@@ -4,11 +4,11 @@ Abrí esta carpeta en MK (**Carpeta** → `Ejemplos/`) y después el **Home** (`
 
 ## Tareas con fecha (se ven en el Home)
 
-- [ ] Entregar el TP de Historia 📅 2026-10-02
-- [ ] Llamar al dentista para pedir turno 📅 2026-10-05
-- [ ] Pagar la luz 📅 2026-10-12 #casa
+- [x] Entregar el TP de Historia 📅 2026-10-02
+- [x] Llamar al dentista para pedir turno 📅 2026-10-05
+- [x] Pagar la luz 📅 2026-10-12 #casa
 - [x] Comprar el regalo de cumpleaños 📅 2026-09-28
-- [ ] Repasar para el parcial de Álgebra 📅 2026-10-15
+- [x] Repasar para el parcial de Álgebra 📅 2026-10-15
 
 > [!TIP]
 > Probá: en el Home, **tildá** una de estas tareas → se escribe `[x]` acá mismo. **Arrastrala** a otro día → cambia la fecha 📅 de esta línea. Si las fechas ya pasaron, cambialas por días de esta semana.

@@ -69,11 +69,13 @@ Ese base64 de las imágenes, y las tablas sin fila de encabezado (quedan como HT
 
 El editor (columna del medio) es donde escribís. A la derecha se ve el **preview**: el resultado renderizado, actualizado en vivo mientras escribís.
 
+El motor del editor es **CodeMirror 6**. Las pestañas conservan su propio historial de deshacer y rehacer; los modos de edición, Live Preview, búsqueda, corrector y autocompletado siguen disponibles.
+
 - Podés tener **varias pestañas abiertas** a la vez (fila arriba del editor). Un punto (`●`) junto al nombre indica cambios sin guardar.
 - `Ctrl+W` cierra la pestaña activa (pide confirmación si tiene cambios sin guardar). `Ctrl+Tab` / `Ctrl+Shift+Tab` cicla entre pestañas. **Clic derecho en una pestaña**: cerrar, cerrar las otras, las de la derecha, las guardadas o todas (una sola confirmación si hay cambios sin guardar), y copiar la ruta. `Ctrl+Alt+W` **reabre la última pestaña cerrada** (con el cursor donde estaba; un borrador sin título vuelve con su texto).
 - **Autoguardado**: por defecto guarda cada 1 segundo, pero solo si la pestaña ya tiene una ruta en disco (una pestaña "Sin título" no se autoguarda hasta que la guardes vos una vez). Podés cambiar el intervalo o desactivarlo del todo desde ⚙ **Ajustes** → *Autoguardado*.
 - Si cerrás MK con cambios sin guardar, al volver a abrirla te pregunta si querés **restaurar** esos cambios o **descartarlos** y volver a la versión guardada en disco.
-- **Archivos cambiados fuera de MK** (otro programa, `git pull`, una IA en la terminal): si la pestaña no tenía cambios tuyos, se recarga sola al volver a ella o a la ventana. Si tenías cambios sin guardar, la pestaña se marca con **⚠**, el autoguardado se pausa (nunca pisa la otra versión) y al guardar con `Ctrl+S` te pregunta cuál queda.
+- **Archivos cambiados fuera de MK** (otro programa, `git pull`, una IA en la terminal): si la pestaña no tenía cambios tuyos, se recarga sola al volver a ella o a la ventana. Si tenías cambios sin guardar, la pestaña se marca con **⚠** y el autoguardado se pausa. Con `Ctrl+S` se comparan la versión del disco y tus cambios: **Cancelar** conserva el conflicto, **Usar disco** descarta tus cambios, **Sobrescribir disco** guarda tu versión y **Conservar ambas** mantiene el archivo externo y abre tus cambios en una pestaña «Sin título» sin guardar. Guarda esa copia con `Ctrl+S` y un nombre diferente; también se incluye en la recuperación de sesión. Escape o un clic fuera del diálogo cancela. Si el disco cambia otra vez mientras comparas, MK pide revisar la nueva versión antes de sobrescribirla.
 - Los archivos `.tex` se abren automáticamente con resaltado de sintaxis LaTeX en vez de Markdown. También hay resaltado propio para código fuente: `.c`/`.h` (C), `.cpp`/`.cc`/`.cxx`/`.hpp` (C++), `.java`, `.py` (Python) y `.sh`/`.bash` (Shell) — se editan y guardan igual que cualquier archivo de texto (no hace falta que sea Markdown), MK solo elige el resaltado según la extensión. El nombre del lenguaje aparece en la barra de estado, abajo a la izquierda. En estos archivos el preview se oculta solo (renderizar Markdown no tiene sentido para código) y el editor pasa a ocupar todo el ancho — vuelve a aparecer al abrir un `.md`/`.tex`.
 
 **Autocompletado**: mientras escribís, MK sugiere palabras que ya usaste antes en el mismo documento (no es un diccionario ni completa sintaxis Markdown, solo palabras repetidas). Aparece solo después de 2 letras o más, o lo podés forzar vos con `Ctrl+Space`.
@@ -222,7 +224,7 @@ Los archivos `.tex` completos también se editan con resaltado de sintaxis LaTeX
 
 **Fotos, video y audio de cualquier formato común** (png, jpg, gif, webp, avif, svg, bmp, ico · mp4, webm, mkv, mov · mp3, wav, flac, ogg, opus, m4a, aac…): clic en el sidebar los abre en un visor con controles (se puede adelantar en archivos largos); `![[cancion.mp3]]` embebe un reproductor de audio en la nota. Lo que Chromium no puede mostrar (TIFF, HEIC, AVI, WMV…) ofrece **"Abrir con la aplicación del sistema"**, que también está en el clic derecho de cualquier archivo.
 
-**Ver una imagen o un PDF sueltos**: hacé clic en el archivo desde el sidebar (no hace falta que esté referenciado en ningún `.md`) — se muestra a pantalla completa en el panel de preview. Con un PDF podés navegarlo con el visor nativo; con una imagen, se centra y ajusta al espacio disponible. Se abre siempre en **modo lectura** (aunque estuvieras en modo enfoque o normal) — así nunca queda tapado detrás de otro modo ni compartiendo pantalla con un editor mostrando un archivo sin relación.
+**Ver una imagen o un PDF sueltos**: hacé clic en el archivo desde el sidebar (no hace falta que esté referenciado en ningún `.md`) — se muestra en el panel de preview. Con un PDF podés navegarlo con el visor nativo; con una imagen, se centra y ajusta al espacio disponible. Se abre en **modo lectura**, con el editor oculto y las pestañas de documentos visibles encima. Hacé clic en una pestaña para volver a ese documento. El editor «PDF: subrayar y escribir» también muestra botones de los documentos abiertos; cambiar a uno oculta el panel PDF sin borrar las anotaciones de la sesión.
 
 ## 6. Etiquetas y wikilinks
 
@@ -515,14 +517,16 @@ Botón 🗂 en la toolbar (o "Operaciones de páginas PDF..." en la paleta de co
 
 ## 21. Subrayar y escribir en PDF
 
-Botón 🖊 en la toolbar (o "PDF: subrayar y escribir" en la paleta, o clic derecho en un PDF del sidebar → "Escribir / subrayar en este PDF"): subrayá, **escribí texto en cualquier lugar de la página** y **completá formularios PDF**, todo guardado de verdad dentro de un PDF nuevo.
+Botón 🖊 en la toolbar (o "PDF: seleccionar, copiar, subrayar y escribir" en la paleta, o clic derecho en un PDF del sidebar → "Escribir / subrayar en este PDF"): seleccioná y citá texto, subrayá, **escribí texto en cualquier lugar de la página** y **completá formularios PDF**. Las anotaciones se guardan dentro de un PDF nuevo.
+
+- **Seleccionar** (modo inicial): seleccioná el texto original para copiarlo, crear una nota con la selección o añadirla al final de la nota Markdown activa. Incluye un enlace que vuelve a la página del PDF desde el preview o Live Preview (`Alt+clic` para editarlo). Usa una ruta absoluta local de MK: si movés el archivo, actualizá el enlace. La página es su posición dentro del PDF. No incluye OCR para escaneos.
 
 - **T Escribir**: clic en la página → cuadro de texto (varias líneas con Enter), con tamaño y color de letra; se mueve con la agarradera ⠿ y se borra con ×. Helvetica: acentos, ñ y ¿¡ sí; emojis salen como "?".
 - **Formulario**: si el PDF trae campos rellenables, un panel a la derecha los lista (texto, casillas, listas) para completarlos.
 - **🖍 Subrayar**, como antes:
 
 1. **Abrir PDF...**: elegí el archivo. La página 1 se renderiza en el panel (con [pdf.js](https://mozilla.github.io/pdf.js/)).
-2. **Arrastrá el mouse** sobre el texto que querés marcar — se dibuja un rectángulo amarillo semitransparente en vivo.
+2. Elegí **Subrayar** y **arrastrá el mouse** sobre el texto que querés marcar — se dibuja un rectángulo amarillo semitransparente en vivo.
 3. **◀ / ▶**: cambian de página. Los subrayados quedan guardados por página mientras el panel esté abierto.
 4. **Deshacer último subrayado**: saca el último rectángulo marcado en la página actual.
 5. **Guardar como...**: recién acá se abre el PDF original con pdf-lib y se dibujan los rectángulos de verdad encima del texto (amarillo semitransparente, mezclado tipo marcador real) — se guarda como un archivo nuevo, el original no se toca.
@@ -549,14 +553,24 @@ El sidebar, el modo enfoque/lectura del principal y este panel secundario son tr
 
 Botón ⏱ en la toolbar (o desde la paleta de comandos: "Pomodoro: iniciar/pausar").
 
-1. **Clic** arranca un ciclo de foco (25 minutos por defecto). Aparece en la barra de estado, abajo: `🍅 Foco 24:59`.
+1. **Clic** arranca un ciclo de foco (25 minutos por defecto). Aparece en la barra de estado, abajo: una Lucky Emblem dorada junto a `Foco 24:59`, con cualquier tema.
 2. **Clic de nuevo** pausa/reanuda el conteo (queda `(pausado)` en la barra de estado).
 3. Al llegar a 0, el foco pasa **solo** a un descanso (`☕ Descanso 4:59`) y avisa con una notificación del sistema — y viceversa, el descanso vuelve a pasar solo a un nuevo foco. Los ciclos siguen así indefinidamente hasta que lo canceles.
-4. **Clic en el texto de la barra de estado** cancela el Pomodoro y vuelve al estado inicial (el botón de la toolbar también lo indica).
+4. **Clic en el texto de la barra de estado** abre el panel **Tiempo de estudio**, también accesible desde la toolbar y la paleta. Para terminar, pulsa **Finalizar y guardar tiempo trabajado**; conserva el tiempo parcial y vuelve al estado inicial.
 
 Los minutos de cada fase se configuran en ⚙ **Ajustes** → "Pomodoro: minutos de foco" / "minutos de descanso" — el cambio aplica desde la próxima fase que arranque, no interrumpe la que está corriendo.
 
-**Límite:** no se combina automáticamente con el modo enfoque ni anota los pomodoros completados en la nota diaria — es solo el temporizador con notificación.
+En **Tiempo de estudio** puedes crear categorías como PCP o EC, elegir una para el foco, renombrarlas o fusionarlas. Desde una tarea del Home hereda el nombre de su categoría. Las estadísticas muestran minutos de foco y registros completos/parciales, con filtros **Hoy / Esta semana / Este mes / Todo el historial** y por categoría. Por ejemplo, dos focos de 25 minutos en PCP suman **PCP: 50 min**.
+
+El historial permite editar **fecha, categoría, minutos y estado**, eliminar un registro o añadir uno manual. Las estadísticas se recalculan sin conceder XP ni modificar tareas del Home. Un registro que todavía corresponde al foco actual se edita desde Temporizador o se finaliza primero.
+
+**Focos con apuntes:** abre una nota Markdown guardada y pulsa **Tiempo de estudio → Iniciar foco con la nota abierta** (también en la paleta). Puedes añadir un detalle del trabajo y filtrar estadísticas/historial por nota, además de categoría y periodo. Cambiar de pestaña no cambia el vínculo; **Abrir nota** en el registro vuelve al archivo. Para corregir el vínculo/detalle del foco actual, pulsa **Aplicar**; reclasifica todo el foco, no divide su tiempo. Las notas sin guardar deben guardarse primero y las rutas movidas deben corregirse. Guía: [`Guias/pomodoro-y-reproductor.md`](./Guias/pomodoro-y-reproductor.md).
+
+**Tiempo real:** no cuentan pausas ni descansos. Se guarda un checkpoint parcial cada 15 segundos, al pausar y al finalizar; los checkpoints se actualizan en un único registro por foco. Al cerrar o interrumpirse MK, el tiempo guardado queda como parcial; el temporizador no se reanuda automáticamente y puede perderse el tramo desde el último checkpoint. Para conservar todo el tramo, finaliza el foco antes de cerrar. Si falla el disco, el panel muestra cambios pendientes y ofrece **Reintentar guardado**.
+
+Puedes editar los **minutos restantes** de la fase sin fabricar tiempo trabajado; cuando está parado puedes elegir una duración de foco para esta sesión de MK o volver a usar la de Ajustes. Cambiar la categoría del temporizador reclasifica todo el foco actual.
+
+**Límite:** no se combina automáticamente con el modo enfoque ni escribe el historial en la nota diaria; este historial se guarda localmente en los ajustes y viaja con el respaldo de MK.
 
 ## 24. Controlar el reproductor multimedia
 
@@ -569,6 +583,16 @@ Usa [`playerctl`](https://github.com/altdesktop/playerctl) por debajo, así que:
 - Si falta el binario, o no hay ningún reproductor con soporte MPRIS corriendo en ese momento, el botón avisa con un mensaje claro en vez de no hacer nada.
 
 ## 25. Home: planificador semanal y mensual
+
+**Estudio** en la cabecera de Home reúne materiales, tareas y tiempo por asignatura, con un **plan de hoy** según minutos disponibles. Guía: [Estudio por asignatura](Guias/estudio-por-asignatura.md). Para dibujos: paleta → **Pizarra: nueva Excalidraw (local)**; [guía de la pizarra](Guias/excalidraw.md). Guardado manual en archivos `.excalidraw`, sin cuenta.
+
+En Estudio, **Repaso y examen** permite crear tarjetas desde una selección del apunte, programar repasos por valoración y practicar preguntas con la referencia oculta. Los intentos y errores se guardan por asignatura; la corrección es manual. Guía: [Repaso espaciado y modo examen](Guias/repaso-y-examen.md).
+
+**Comprensión por temas** permite crear temas pendientes, practicando o dominados, vincular materiales y tarjetas y ver repasos vencidos o errores del último examen. **Resumen semanal** muestra tiempo, tareas completadas (también archivadas), repeticiones y temas actuales para reforzar, con consulta de semanas anteriores. Los estados son autoevaluaciones y los minutos no prueban comprensión. Guía: [Comprensión y resumen semanal](Guias/comprension-y-resumen.md).
+
+La paleta → **Estudio: vista dividida PDF, nota y pizarra** mantiene un apunte editable junto al PDF y una pizarra opcional debajo. También se abre desde una asignatura o tema en Estudio. Puedes llevar texto seleccionado del PDF al final de la nota activa con enlace a su página sin cerrar el visor; ocultar la pizarra conserva sus cambios. Guía: [Vista de estudio](Guias/vista-de-estudio.md).
+
+Paleta → **Insertar PDF o pizarra en la nota** inserta una referencia local que se muestra en Preview y Live Preview. PDF con navegación y pizarra con botón de edición; los archivos permanecen separados. Guía: [Materiales incrustados](Guias/materiales-incrustados.md).
 
 Botón **Home** en la toolbar, `Ctrl+Shift+H` o paleta de comandos → "Home: planificador semanal y mensual". Para que se abra solo al iniciar MK: ⚙ **Ajustes** → "Abrir Home al iniciar".
 
@@ -608,6 +632,8 @@ Todo es local: sin cuenta, sin nube, sin telemetría. Al abrir un `.md` ajeno, M
 **Si algo falla al guardar** (disco lleno, sin permiso), aparece un aviso rojo abajo a la izquierda y la pestaña conserva tus cambios (el autoguardado reintenta). Bases de datos, Home, configuración y sesión se guardan de forma **atómica** (temporal + reemplazo), y un JSON que ya estuviera dañado se aparta como `….corrupt-<fecha>` en vez de pisarse. Los errores quedan en `~/.config/md-editor-local/logs/mk.log` (rota a 1 MB). Guía: [`Guias/seguridad-y-errores.md`](./Guias/seguridad-y-errores.md).
 
 ## 29. Mascotas
+
+**Pokémon regionales y propios:** en **🐾 Mis mascotas**, el selector del juego incluye cada sprite como **forma fija**, además de líneas evolutivas, y lee el PBS de formas regionales. No descarta especies que estén fuera del PBS. **+ Pokémon propio / regional** permite añadir una mascota nueva con nombre, región e imagen propios, incluso para especies inventadas o futuras: no depende de una Pokédex ni descarga arte. Se conserva la colección existente y su progreso. Necesitas proporcionar una imagen; las hojas de caminata del juego deben ser 4×4. Más detalles y límites en [`Guias/mascota.md`](./Guias/mascota.md).
 
 Un **equipo de hasta 3 criaturas** que camina al pie del sidebar (o por toda la ventana) y crece con tu trabajo: cada tarea tildada (+10, una vez por tarea y día) y cada Pomodoro (+25) dan experiencia a todo el equipo; evolucionan en el **nivel 5** y en el **10**. **Cada evolución deja un huevo** 🥚 con una criatura nueva (nace a los 60 XP) y los **logros** —7 días seguidos con tareas, 50 Pomodoros, 200 tareas, 3 mascotas en etapa final— dan **huevos legendarios** 🌟 (150 XP). **🐾 Mis mascotas** muestra la colección, el equipo (líder, al equipo / descansar, nombre), los huevos y el progreso de cada logro. Criaturas de MK: 7 líneas (Fuego, Agua, Planta, Eléctrico, Hielo, Roca, Fantasma) y 4 legendarias; o personajes de un **juego de RPG Maker / Pokémon Essentials** (líneas evolutivas y legendarios desde su `PBS/pokemon.txt`), o **imágenes propias**. Ocultarlas (Ajustes → Mascota) no pierde nada: **siguen ganando** experiencia. Guía: [`Guias/mascota.md`](./Guias/mascota.md).
 

@@ -4,6 +4,9 @@ Cada archivo de esta carpeta muestra una función distinta con contenido real, l
 
 | Archivo | Qué muestra |
 |---|---|
+| [`Estudio/vista-dividida.md`](Estudio/vista-dividida.md) | Nota editable junto a PDF y pizarra, citas con página y cambios conservados al ocultar la pizarra |
+| [`Estudio/README.md`](Estudio/README.md) | Recorrido de PCP: temas, estados de comprensión, tarjetas, errores y resumen semanal; creación manual sin modificar automáticamente tu Home |
+| [`Estudio/materiales-en-nota.md`](Estudio/materiales-en-nota.md) | PDF de demostración y una pizarra real incrustados; incluye apunte y tarjetas de ejemplo en la misma carpeta |
 | [`diagramas-mermaid.md`](diagramas-mermaid.md) | Flowchart, secuencia y Gantt con Mermaid |
 | [`ejecutar-codigo.md`](ejecutar-codigo.md) | Botón ▶ Ejecutar sobre bloques `js` |
 | [`tablero-kanban.md`](tablero-kanban.md) | Columnas y tarjetas para el tablero Kanban |

@@ -1,60 +1,155 @@
 # Objetivos y mejoras de MK
 
-Hoja de ruta de la aplicación, de corto a largo plazo. Cada objetivo se **tacha** (`- [x] ~~así~~`) cuando se termina, con la fecha.
+Hoja de ruta organizada por prioridad y dependencias. Cada objetivo pendiente aparece una sola vez; los avances parciales se describen dentro de su tarjeta.
 
-> Truco: este archivo es también un tablero. Abrilo en MK → paleta (`Ctrl+Shift+P`) → **"Ver tablero Kanban"**: cada `##` es una columna y cada objetivo una tarjeta.
+> También se puede abrir como tablero: paleta (`Ctrl+Shift+P`) → **Ver tablero Kanban**. Cada sección `##` es una columna.
 
-**Estado:** 117 de 145 objetivos cumplidos · última actualización 2026-09-30.
+**Última reorganización:** 2026-10-03. El historial conserva las fechas originales; sus entradas son registros de trabajo y pueden referirse a una misma función, por lo que no se suman como objetivos únicos.
 
----
+**Criterio:** consolidar el editor y la protección de datos, resolver los pedidos de uso diario y después ampliar la plataforma. Las secciones indican orden recomendado, no plazos prometidos.
 
-## Prioridad recomendada (según Claude)
+## Primero — Fiabilidad y consolidación
 
-Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada uno están en las secciones de abajo.
+- [ ] **Pruebas visuales.** Capturas de referencia del editor y paneles principales en claro y oscuro para detectar recortes y cambios de diseño involuntarios.
+- [ ] **Comprobar accesibilidad con Orca.** Roles, etiquetas, navegación por teclado y gestión del foco ya implementados; verificar los flujos reales con lector de pantalla y corregir lo encontrado.
+- [ ] **Documentación coherente con el código.** Actualizar revisiones antiguas, quitar cifras volátiles y distinguir funciones terminadas de avances parciales. Explicar las conexiones opcionales de correo, actualizaciones, imágenes remotas e IA.
+- [ ] **Permisos de terminal e IAs visibles.** Mostrar la carpeta de trabajo y explicar el alcance real del acceso al sistema; el directorio inicial no constituye una restricción de permisos.
 
-**P1 — Seguridad y que nada se pierda** ✅ *hecho (2026-09-29): Electron 44 sin vulnerabilidades, instalación con `npm run install-desktop`, Home opcional en la carpeta.*
+## Después — Pedidos de uso diario
 
-**P2 — Lo que más se nota en el uso diario**
-1. ~~**Escribir en PDF**~~ ✅ hecho. *(era prioridad alta)* abrir un PDF, hacer clic en cualquier lugar de la página y escribir (tamaño y color de letra), mover/borrar lo agregado, **rellenar formularios PDF** (campos de texto y casillas) y guardar como PDF nuevo. Editar el texto que ya viene impreso sigue en largo plazo.
-3. ~~**Abrir con IA (Claude Code, Gemini CLI, Codex)**~~ ✅ hecho.
-4. ~~**Gráficos en las bases de datos**~~ ✅ hecho.
-5. ~~**Búsqueda global también en bases de datos y tareas del Home**~~ ✅ hecho.
-6. ~~**Recordatorios y resumen diario por Gmail**~~ ✅ hecho (2026-09-30): ⚙ Ajustes → Correo; contraseña de aplicación cifrada con el llavero del sistema.
-7. ~~**Home: estadísticas**~~ ✅ hecho.
-8. ~~**Barra superior más limpia**~~ ✅ hecho (2026-09-30): opción en ⚙ Ajustes para mostrar los botones de la toolbar **solo con ícono** o **con texto** (hoy unos tienen texto y otros no), y ocultar la barra entera (se vuelve a mostrar con un atajo o al acercar el mouse arriba).
-9. ~~**Rediseño de ⚙ Ajustes**~~ ✅ hecho (2026-09-30): hoy es un menú desplegable largo que se armó al principio y creció a los tumbos. Pasarlo a un **panel propio con secciones** (Editor, Apariencia, Nota diaria, Terminal, Home y recordatorios, Correo, Archivos y git, Toolbar), con buscador de ajustes y descripciones cortas.
-10. ~~**El botón de modo muestra en qué modo estás**~~ ✅ hecho (2026-09-30): el botón de vista cambia de ícono y texto según el modo actual (Normal · Enfoque · Lectura · Live Preview), no solo el tooltip.
-11. ~~**Mascota virtual**~~ ✅ hecho (2026-09-30) (como *vscode-pets* / *vscode-pokemon*): un compañero animado en una esquina (o en el panel de la terminal) que camina, se puede alimentar/tirar la pelota; varias especies y temas.
-12. ~~**Mascota ligada a tus tareas y Pomodoros**~~ ✅ hecho (2026-09-30) (estilo *Digimon/Pokémon*): gana experiencia con cada tarea tildada y cada Pomodoro terminado, sube de nivel y **evoluciona**; se pone triste si hay tareas atrasadas. Depende del 11 y del 13.
-13. ~~**Categorías en las tareas del Home**~~ ✅ hecho (2026-09-30): etiqueta de color, `@categoría` al agregar y filtro. Sin estadísticas por categoría ni vínculo con las mascotas (a pedido: más simple).
+### Prioridad de estudio acordada (2026-10-04)
 
-**P3 — Comodidad**
-14. ~~**Gráficos desde tablas Markdown**~~ ✅ hecho.
-15. ~~**Bases de datos dentro de una nota**~~ ✅ hecho.
-16. ~~**Nota diaria configurable**~~ ✅ hecho.
-17. ~~**Terminal: pantalla dividida**~~ ✅ hecho.
+1. Plan de hoy por asignatura: primera propuesta implementada; siguiente ampliación, elección explícita de tareas y duración estimada por tarea.
+2. Repaso espaciado: primera entrega implementada, tarjetas desde selección de notas o manuales, programación sencilla por valoración, edición, vínculo al apunte y contador de pendientes en Home. Pendientes ampliaciones como importación de mazos y notificaciones del sistema.
+3. Modo examen: primera entrega implementada, referencia oculta hasta escribir un intento, autoevaluación, historial y práctica de errores en orden aleatorio. No altera el calendario de repasos; cronómetro y reanudación de sesión quedan fuera de esta entrega.
+4. PDF, notas y pizarra conectados: PDFs y pizarras incrustados en notas, citas a páginas, materiales por asignatura y primera vista simultánea (nota editable + PDF + pizarra opcional, ancho ajustable). Pendientes disposiciones avanzadas y edición de dibujos directamente en el bloque Markdown.
+5. Seguimiento de comprensión: primera entrega implementada, temas pendientes, practicando y dominados, vínculos a apuntes/PDF/pizarra/tarjetas y señales de repasos y errores del último examen. Autoevaluación independiente de minutos de foco.
+6. Resumen semanal: primera entrega implementada, tiempo por asignatura, tareas completadas y repeticiones marcadas, con archivo y semanas anteriores; temas actuales para reforzar. No identifica automáticamente ejercicios resueltos ni reconstruye comprensión histórica.
 
-**P4 — Mantenimiento técnico: LO PRÓXIMO** (decidido 2026-09-30: parar de sumar funciones y consolidar; no se ve, pero hace que todo lo que venga cueste la mitad y se rompa menos)
-18. ~~**Separar `main.js`** en módulos~~ ✅ hecho.
-19. **Migrar el editor a CodeMirror 6** ⭐ *primero.* MK usa CodeMirror 5, que ya solo recibe arreglos. La 6 es más rápida con notas grandes, más accesible (lectores de pantalla, móvil), y trae "decoraciones" nativas, lo que haría el Live Preview más simple y rápido. Es el cambio más grande: tocan el editor Live Preview, autocompletado, snippets, buscar/reemplazar, plegado, máquina de escribir, pestañas (un documento por pestaña) y los tests.
-20. **Migrar la ventana a módulos ES** (`import`/`export` en vez de `window.mdX` y del orden de los `<script>`: hoy un script cargado antes de tiempo rompe cosas en silencio).
-21. **Partir `home.js` (~2400 líneas), `database.js` (~2200) y `styles.css` (~5000)** por responsabilidad (vistas, avisos, archivo… / tabla, vistas, fórmulas… / un CSS por panel). Va junto con el 20.
+### Registro de trabajo — vista de estudio dividida (2026-10-04)
 
-**P4b — Plugins y temas de verdad: DESPUÉS DE P4** (decidido 2026-09-30). La app base trae lo esencial; lo que es gusto personal se instala aparte. Las mascotas y los temas extra se quedan en *tu* MK porque te gustan, pero no vienen de fábrica.
-22. **Sistema de plugins real**: cada plugin es una carpeta en `~/.config/md-editor-local/plugins/<nombre>/` con un `plugin.json` (nombre, versión, permisos) y sus archivos. Se prenden y apagan en Ajustes → Plugins. API acotada (sin `require`/`fs` libre): agregar un panel o botón, escuchar eventos (tarea hecha, Pomodoro, tema cambiado), guardar su propia configuración. Nunca se descargan solos: se instalan desde una carpeta o un `.zip` que elige el usuario.
-23. **Sacar de la base a plugins**: **Mascotas** (equipo, huevos, colección, sprites de juegos) y **Kingdom Hearts** (keyblades, Lucky Emblems, Sora y Roxas, tema KH) pasan a ser plugins; MK base funciona igual sin ellos (hoy los módulos ya se pueden apagar: es el paso siguiente). Migración: quien los usa los conserva instalados, con su progreso.
-24. **Temas instalables**: la base trae pocos (Claro, Oscuro y alguno de alto contraste); el resto (Dracula, Nord, Gruvbox… y KH) van en **paquetes de temas**: un `.json` con los 7 colores (+ extras opcionales como el editor o una imagen de fondo), instalables desde la galería de Ajustes → Apariencia (*Instalar tema…*) y exportables para compartir. El tema personalizado se puede guardar como paquete.
+- Nota editable a la izquierda; PDF y pizarra opcional en el panel secundario. Un único editor Markdown, sin copias de notas ni visores PDF duplicados.
+- Acceso desde paleta, asignatura y tema; apertura del primer material vinculado de cada tipo y selección manual de otros materiales desde la vista.
+- Citas de texto PDF con enlace a página sin cerrar el visor; conservación de página y anotaciones al reutilizar el PDF, ajuste al ancho y permisos existentes.
+- Pizarra editable acoplada, ocultar/mostrar sin desmontar; guardado manual, conflictos de disco y cancelación del cierre conservan las protecciones existentes. No permite cerrar la vista mientras abre o guarda el dibujo.
+- El panel secundario de referencia y esta vista comparten espacio; cierre restaura el modo anterior si no se eligió otro. No se restaura la disposición al reiniciar ni se guardan anotaciones PDF automáticamente.
+- Guía `Guias/vista-de-estudio.md`, ejemplo `Ejemplos/Estudio/vista-dividida.md`, índices, manual y changelog actualizados. Pruebas de disposición, conservación de nota, cita, PDF y cambios de pizarra.
+- Verificación: 236/236 comprobaciones de la app, 57/57 de CM6, 24 archivos de pruebas unitarias aprobados, lint y diff sin errores; siete enlaces locales de la guía y ejemplo comprobados. Cambio real entre pestañas y botones del visor PDF cubiertos, sin perder la cita del apunte.
+- AppImage compilado con salida correcta; ocho archivos de interfaz y lógica verificados en el ASAR contra las fuentes probadas. App instalada actualizada y comprobada idéntica al AppImage final. No se cerró la sesión del usuario ni se modificaron sus notas para aplicar la actualización.
 
-**Escalabilidad** — ver la sección "Escalabilidad y solidez": ~~índice de la carpeta~~, ~~vigilar la carpeta~~ y ~~disco asíncrono~~ hechos (2026-09-29): una carpeta con miles de notas ya no congela MK.
+### Registro de trabajo — comprensión y resumen (2026-10-04)
 
-**Consolidación** — ver la sección "Consolidación" (revisiones externas): ~~validación de rutas~~, ~~CSP~~, ~~sandbox~~ y ~~registro de errores~~ hechos (2026-09-29); quedan agrupar escrituras de bases de datos, pruebas unitarias, accesibilidad y dividir archivos grandes.
+- Temas por categoría de Home, creación, estado manual y eliminación sin borrar archivos ni tarjetas; enlaces reutilizables a materiales y tarjetas de la misma asignatura.
+- Indicadores por tema: tarjetas disponibles, vínculos no disponibles, repasos vencidos y errores de último examen. No alteran automáticamente el estado de comprensión.
+- Resumen de lunes a domingo con semanas anteriores, Pomodoro vinculado y tareas activas/archivadas deduplicadas. Distingue finalización, repeticiones y tareas sin fecha; no suma tiempos compartidos.
+- Persistencia normalizada compatible con datos anteriores y comprobación de guardado. Guía: `Guias/comprension-y-resumen.md`.
+- Pruebas unitarias de normalización, evidencia y límites semanales; recorrido de interfaz para creación, enlaces, estados, señales y persistencia.
+- Verificación final: 228/228 comprobaciones de la app, 57/57 de CM6, 24 archivos de pruebas unitarias aprobados, lint y diff sin errores. AppImage compilado; código de Estudio, lógica y Repaso verificado dentro del ASAR antes de instalar.
+- Guía paso a paso en `Guias/comprension-y-resumen.md` e índices actualizados. Recorrido práctico en `Ejemplos/Estudio/`: apunte de PCP, propuestas de tarjetas, pizarra `.excalidraw` y nota con PDF/pizarra incrustados. No se importan datos automáticamente ni se modifica el Home del usuario. Pizarra validada y 14 enlaces/referencias locales comprobados.
 
-**P5 — Proyectos grandes** (requieren decidir antes el diseño; hacerlos de a uno y con tiempo)
-14. Sincronización entre dispositivos · 15. Windows y macOS · 16. ~~Sistema de plugins~~ (pasó a P4b) · 17. Pizarra Excalidraw · 18. Dos editores escribibles · 19. Ejecutar Python en el preview · 20. YouTube embebido · 21. Editar texto dentro de un PDF.
+Estas mejoras pueden resolverse de forma independiente mientras se consolida el editor.
 
----
+- [x] **Contexto de estudio por asignatura — primera vista conjunta.** Home → Estudio reúne materiales Markdown/PDF vinculados, tareas pendientes, próximas entregas y tiempo hoy/semana/total por categoría Pomodoro. Permite abrir material e iniciar foco conservando notas modificadas. Los enlaces no copian archivos ni conceden permisos por sí solos. Guía: `Guias/estudio-por-asignatura.md`.
+- [x] **Plan de hoy — primera propuesta.** Dentro de Estudio, reúne tareas de todas las categorías y propone bloques de 25 minutos según el presupuesto de foco guardado en cada Home. Orden: atrasadas, hoy, próximos siete días, sin fecha y posteriores. No estima duración real ni modifica tareas automáticamente; el inicio de foco mantiene la duración Pomodoro configurada.
 
-## Hecho recientemente
+
+- [ ] **Atajos de teclado personalizables.** Ajustes → Atajos: cambiar combinaciones, detectar conflictos y restaurar valores predeterminados.
+- [ ] **Elegir una etapa evolutiva desbloqueada.** Mostrar cualquiera de las etapas ya alcanzadas sin perder experiencia, nivel ni progreso. No requiere esperar al sistema de plugins.
+- [ ] **Etiquetas para archivos multimedia.** Completar el explorador existente con etiquetas propias y filtros por ellas.
+
+## Rendimiento — Según mediciones
+
+Usar `npm run bench` y casos grandes reproducibles para decidir qué optimización abordar. El índice de notas, el vigilante de carpetas, la carga diferida y las escrituras agrupadas ya existen.
+
+- [ ] **Revisar rendimiento tras CM6.** Segunda pasada del 2026-10-03: apertura/cierre de 5000 líneas 819,9 → 641,2 ms; editor, 100 caracteres 586,4 → 397,4 ms; Live Preview 553,7 → 1023,6 ms. Tercera pasada: se corrige la reconstrucción innecesaria al editar texto con formato (102,9 → 22,0 ms), pero las inserciones programáticas masivas siguen lentas (1070,1 ms/100 caracteres). El perfilado sitúa el coste principal en la actualización visual/selección del navegador. Se añaden mediciones controladas y entrada nativa simulada, sin modificar la referencia histórica ni cerrar el objetivo general. Comprobaciones finales: integración 163/163, CM6 57/57, 18 archivos unitarios y lint correctos. Detalles y limitaciones en `MEDICIONES_CM6.md`.
+
+- [ ] **Live Preview incremental completo.** Prosa ordinaria y, desde la segunda pasada del 2026-10-03, ediciones que preservan la estructura de tablas, callouts y cuerpos de bloques de código cerrados se actualizan localmente. Saltos, cambios de delimitadores y otros cambios estructurales mantienen el fallback seguro; matemáticas y cobertura completa siguen pendientes. Se evita reconstruir dos veces al activar una pestaña, se fija su ruta antes del render para resolver recursos relativos y la caché incluye ruta y carpeta. El preview oculto se difiere hasta volver a mostrarlo (los archivos de código lo limpian). Se añaden pruebas de actualización local, fallback, cambio de pestaña y refresco del panel oculto, y mediciones desglosadas de apertura/reconstrucción. Ver `MEDICIONES_CM6.md`; no se afirma una mejora global de Live Preview.
+- [ ] **Sidebar por demanda y virtualizado.** Leer subcarpetas al desplegarlas y dibujar solo las filas visibles.
+- [ ] **Búsqueda sin el tope fijo de 200 resultados.** Mantener el índice existente; incorporar carga por páginas, filtros de carpeta/tipo/fecha y búsqueda aproximada.
+- [ ] **Bases de datos grandes.** Virtualizar o paginar tablas y llevar cálculos costosos de fórmulas y rollups a segundo plano.
+- [ ] **Persistencia incremental de bases de datos.** El guardado ya es atómico y agrupa cambios durante 300 ms, pero sigue exportando la base completa. Evaluar SQLite nativo con WAL frente al coste de distribución y migración.
+- [ ] **Sacar tareas pesadas de los procesos que atienden la interfaz.** Priorizar según mediciones: exportación de bases, parseo, grafo, CSV y PDF grandes; usar Workers o procesos separados.
+- [ ] **Reducir operaciones síncronas que bloquean.** Revisar exportación, configuración, sesión y Home; mantener garantías de persistencia y cierre al sustituirlas.
+- [ ] **Precalcular etiquetas y enlaces en el índice.** Completar el índice persistente si las mediciones justifican su coste.
+
+## Plataforma — Plugins y temas
+
+Empezar después de consolidar el editor. Diseñar la API y el aislamiento antes de extraer las funciones existentes.
+
+- [ ] **Sistema real de plugins locales.** Carpetas en `~/.config/md-editor-local/plugins/<nombre>/` con `plugin.json` (nombre, versión, permisos); instalar desde carpeta o ZIP elegido por el usuario, activar/desactivar en Ajustes. API limitada para paneles, botones, eventos y configuración propia, sin acceso libre a `require` o `fs`. Definir cómo se hacen cumplir los permisos.
+- [ ] **Convertir Mascotas y Kingdom Hearts en plugins.** Depende del sistema anterior. Conservar progreso, colección, imágenes y ajustes al migrar; la aplicación base debe funcionar sin ellos.
+- [ ] **Temas instalables y exportables.** Paquetes JSON con colores y extras opcionales, galería e instalación manual; guardar el tema personalizado como paquete. Base con Claro, Oscuro y alto contraste; migrar los temas extra sin perder la selección del usuario.
+
+## Más adelante — Proyectos que requieren diseño
+
+Cada proyecto debe tener alcance, formato de datos y criterios de aceptación antes de implementarse.
+
+- [ ] **Dos editores escribibles en pantalla dividida.** El panel secundario actual es de solo lectura. Revisar los módulos que asumen un único editor, preferiblemente después de CM6.
+- [ ] **Sincronización entre dispositivos sin depender de Git.** Elegir mecanismo (carpeta sincronizada, servidor propio o P2P) y definir conflictos y recuperación.
+- [ ] **Windows y macOS.** Adaptar empaquetado, instalación e integraciones del sistema, además de comprobar los flujos principales.
+- [ ] **Pizarra Excalidraw — ampliaciones.** Integración local en panel propio y vistas incrustadas en notas: crear, abrir y guardar archivos `.excalidraw`, con carga diferida, imágenes en el archivo, guardado atómico, historial y detección de conflictos. No requiere cuenta ni Excalidraw+. Pendientes: edición directamente en la nota, pestañas de dibujos, exportación de dibujos y autoguardado; el guardado actual es manual. Guías: `Guias/excalidraw.md` y `Guias/materiales-incrustados.md`.
+- [ ] **Python y otros lenguajes en bloques del preview.** Definir ejecución, permisos y aislamiento. Actualmente JS tiene Worker y los demás lenguajes pueden ejecutarse explícitamente con F5 en la terminal.
+- [ ] **Editar texto original de PDF.** Proyecto separado de las anotaciones y formularios existentes; requiere tratar fuentes, glifos y posicionamiento.
+- [ ] **Vídeos de YouTube embebidos.** Función opcional con conexión a internet; distinguirla del contenido disponible sin conexión.
+- [ ] **Traducciones.** Extraer textos a recursos de idioma y añadir selección de idioma.
+- [ ] **Actualizar el AppImage con un clic.** El aviso de versiones ya existe; falta descarga, verificación, sustitución y recuperación si falla.
+
+## Mantenimiento continuo
+
+- [ ] **Migrar los módulos restantes a ES modules.** Home y bases de datos ya están divididos y usan imports; avanzar por áreas cuando se modifiquen, manteniendo la compatibilidad con las APIs existentes. No bloquea CM6.
+- **Diseño coherente:** extender los tokens existentes a los componentes que se toquen.
+- **Calidad:** ejecutar las comprobaciones relevantes para cada cambio y comparar rendimiento cuando afecte al editor o a conjuntos grandes de datos.
+- **Mejoras condicionadas a necesidad:** índice de recordatorios por fecha y optimización adicional del lexer/DOM del preview. El archivo de tareas antiguas y la caché de bloques ya están implementados.
+- **Descartado por ahora:** reescribir el índice en Rust/C++; revisar solo si las mediciones muestran una limitación real.
+
+## Hecho — Historial conservado
+
+- [x] **2026-10-04 — Verificación e instalación de materiales incrustados.** Suite final 224/224 y CM6 57/57; 23 archivos de pruebas unitarias correctos; ESLint y `git diff --check` sin errores. Comprobados render de PDF y pizarra con texto, navegación sin cambiar el Markdown, refresco tras guardar dibujo, Live Preview, rutas bloqueadas, HTML sin registro interno, ejemplos literales en código, exportación con enlaces y liberación de controladores. AppImage generado; 12 archivos del ASAR comparados con el código probado; instalación idéntica al artefacto. La instancia del usuario no se cierra a la fuerza. Siguiente prioridad de estudio: seguimiento de comprensión y resumen semanal; edición de dibujos dentro del bloque y vista de estudio configurable siguen pendientes.
+
+- [x] **2026-10-04 — PDFs y pizarras incrustados en Markdown, primera entrega.** Sintaxis local `![[archivo.pdf#page=2]]` / `![[archivo.excalidraw]]` con leyenda opcional, inserción desde paleta y widgets en Preview y Live Preview. PDF.js muestra páginas navegables y permite abrir herramientas en la página actual; Excalidraw genera miniaturas canvas y las actualiza al guardar, manteniendo edición en su panel. Carga por cercanía a pantalla con dos trabajos simultáneos, cancelación de renders obsoletos, liberación de workers/canvas y límites por vista. Resolución relativa a la nota, permisos en IPC y registro interno para que HTML ajeno no pueda falsificar carpeta base. Ejemplos en código no cargan archivos; exportaciones conservan enlaces sin widgets vacíos. Guía: `Guias/materiales-incrustados.md`; edición inline y vista simultánea configurable siguen pendientes.
+
+- [x] **2026-10-04 — Verificación e instalación de repaso y examen.** Suite final 214/214, 22 archivos de pruebas unitarias correctos (incluyen fallos de escritura, reintento sin duplicados y cambio de Home), ESLint y revisión de whitespace sin errores. Auditoría de dependencias de producción sin vulnerabilidades reportadas. AppImage generado; seis archivos del ASAR coinciden con el código probado; instalación comparada con el artefacto. No se fuerza el cierre ni reinicio de la instancia del usuario. Siguiente entrega pendiente: PDFs y pizarras incrustados en Markdown, además de vista simultánea de materiales.
+
+- [x] **2026-10-04 — Repaso espaciado y modo examen, primera entrega.** Tarjetas por categoría Home en `study.learning`, creadas manualmente o desde selección de Markdown sin cambiar el apunte; edición, eliminación y reapertura de fuente. Programación local con Otra vez/Difícil/Bien/Fácil y fechas persistentes; contador de pendientes actualizado sin reconstruir los formularios. Examen aleatorio con intento requerido, referencia revelada, autoevaluación y registro de errores para volver a practicarlos. Los intentos se bloquean al mostrar la referencia; el examen no mueve el calendario. Historial conserva pregunta y categoría incluso si se borra la tarjeta. Guardado verificado, avance solo tras confirmar disco, reintento con destino original sin duplicar registros y protección de borradores al cerrar. Guía: `Guias/repaso-y-examen.md`; importación, notificaciones y reanudación de sesión pendientes.
+
+- [x] **2026-10-04 — Verificación e instalación de la entrega de estudio.** Suite completa final: 202/202; CM6: 57/57; 20 archivos de pruebas unitarias pasan; ESLint y `git diff --check` sin errores; auditoría de producción sin vulnerabilidades reportadas. AppImage generado, 11 archivos del ASAR comparados con el código probado y versión instalada verificada idéntica al artefacto. No se ha cerrado la instancia del usuario ni alterado sus datos para reiniciarla. Próxima prioridad: repaso espaciado, después modo examen, conexión simultánea de materiales, comprensión y resumen semanal.
+
+- [x] **2026-10-04 — Panel de estudio, plan diario y primera pizarra.** Añadidos `home-study.js` y lógica compartida probada: materiales por categoría Home, próximas entregas, tareas y totales de foco. Presupuesto diario persistido por Home con propuesta de bloques y arranque vinculado a tareas. Incorporado Excalidraw 0.18.1 + React mediante bundle diferido y fuentes locales, sin ampliar CSP ni activar servicios online; licencia MIT incluida. Archivos `.excalidraw` guardados manualmente con validación, límite de tamaño, escritura atómica, historial, serialización de escrituras y detección de conflictos. Apertura desde archivos y vinculación como material. Dependencias de producción sin avisos tras overrides específicos y actualización DOMPurify. Corregida una carrera al recargar tareas de notas para exportar el plan diario. Actualizados objetivos, changelog, manual y dos guías; futuras ampliaciones señaladas explícitamente.
+
+- [x] **2026-10-04 — Pokémon regionales, futuros y propios.** Se elimina el descarte de sprites fuera del PBS y se permite elegir cada evolución/forma como apariencia fija, además de líneas evolutivas. Lectura de PBS de formas y archivos adicionales, nombres regionales, herencia de evoluciones/rareza, búsqueda por identificador, extensión/mayúsculas reales de archivos y Mostrar más sin el tope fijo de 60/80. Importación de una mascota nueva con especie y región libres e imagen local (sin Pokédex online ni descarga de arte). Se conservan mascotas, XP, equipo y Roxas; se prueban cancelación y etapas ausentes antes de sustituir imágenes. Encabezado de colección adaptable; guía, manual y changelog actualizados. Verificación conjunta con contexto de estudio: integración 187/187, CM6 57/57, 18 archivos unitarios y lint correctos. AppImage compilado e instalado; 16 fuentes empaquetados comparados con el código probado, copia instalada idéntica al generado (209729054 bytes, permisos 755). Datos personales conservados. Cerrar con Ctrl+Q y reabrir para cargar esta entrega.
+
+- [x] **2026-10-04 — Primera entrega de contexto de estudio.** Pomodoros vinculados a una nota Markdown guardada con detalle editable del trabajo. El vínculo no cambia al pasar de pestaña; registros y estadísticas se filtran por nota, categoría y periodo. Abrir la nota desde el historial preserva pestañas con cambios sin guardar y respeta permisos; editar tiempo conserva el contexto, y detalle/vínculo se pueden corregir sin perder tareas de Home. Registros antiguos conservados, nuevas pruebas de migración y temporizador, guía y changelog actualizados. La vista conjunta por asignatura sigue pendiente; no se cierra el objetivo completo.
+
+- [x] **2026-10-03 — PDF a apuntes.** Modo Seleccionar con texto original copiable y capa alineada también en páginas giradas; crear nota con selección o añadir cita al final de la nota Markdown activa sin sustituir contenido. Enlaces locales con página original desde preview y Live Preview, con rutas que soportan espacios, acentos, paréntesis y `#`. Sin OCR; números de página físicos y rutas absolutas locales, documentados en la guía. Cambiar a una nota conserva las anotaciones de la sesión; cambiar de PDF pide confirmación si no se guardaron. Protección frente a renders/respuestas antiguas y comprobación de permisos al seguir enlaces. Guías, manual y changelog actualizados. Integración 175/175, CM6 57/57, 18 archivos unitarios y lint correctos. AppImage compilado; fuentes empaquetados comparados con el código probado. Instalación completada y copia instalada idéntica al generado (209724925 bytes, permisos 755), sin modificar datos personales. Cerrar con Ctrl+Q y reabrir MK para cargar la mejora.
+
+- [x] ~~**Corregir reconstrucciones innecesarias al escribir texto con formato en Live Preview**~~ (2026-10-03): edición local de palabras con negrita/énfasis/enlaces/código inline y espacios/puntuación lejos de delimitadores, conservando fallback ante cambios de estructura, prefijos de listas/encabezados y casos ambiguos. Marcadores ocultos nativos sin widgets vacíos, caché de tokens por texto e idioma y parseo local hasta la línea necesaria; limpieza `clearOnEnter` acotada al cursor. Se libera el DOM del preview oculto al cambiar de modo/pestaña, sin eliminar visores PDF/multimedia; exportar y volver a mostrarlo solicitan refresco. Perfilado opcional y benchmark ampliado con fixture restablecido y entrada nativa simulada. Comparación controlada: editar una palabra con negrita y mover el cursor en 5000 líneas pasa de 102,9 a 22,0 ms (0 reconstrucciones completas en 5 ediciones); entrada nativa: mediana 14,4 ms, máximo 23,9 ms. Integración 163/163, CM6 57/57, 18 archivos unitarios y lint correctos. Las pruebas temporales de CSS y la instrumentación de CPU/layout se retiraron. **No se cierra la optimización general**: inserciones programáticas masivas siguen lentas (1070,1 ms/100 caracteres); detalles y limitaciones en `MEDICIONES_CM6.md`.
+
+- [x] ~~**Entrega instalada: Pomodoros y primera optimización**~~ (2026-10-03): AppImage generado secuencialmente después de validar el código. Comparados byte a byte los fuentes empaquetados de CM6, Live Preview, corrector, temporizador, historial/panel/lógica/CSS de Pomodoros, Home y personajes. Instalación de escritorio completada y copia instalada idéntica al generado, ejecutable. Cerrar con Ctrl+Q y reabrir para cargar esta entrega. No se han modificado ni reiniciado los datos personales ni el Roxas existente. La optimización completa de Live Preview sigue pendiente; las mejoras y límites de esta pasada constan en `MEDICIONES_CM6.md`.
+
+- [x] ~~**Validación conjunta: Pomodoros, Roxas y optimización**~~ (2026-10-03): Electron 160/160, CM6 49/49, 18 archivos unitarios y lint en verde; prueba específica de Roxas con cero emblemas, incorporación una sola vez y conservación de XP existente. Panel con estado actual sin pisar campos en edición; cambiar solo categoría no reinicia lo restante. Borrador intermedio `drafts/pomodoro-history.js` retirado, sustituido por `src/pomodoro-history.js`, `src/pomodoro-panel.js` y lógica compartida. No se han borrado registros, mascotas ni datos del usuario.
+
+- [x] ~~**Primera optimización medida de CM6**~~ (2026-10-03): texto cacheado por documento, posiciones de clases cacheadas por estado, efectos agrupados por documento activo/inactivo y limpieza del corrector/Live Preview en lotes. Corrector invalida respuestas al editar o cambiar de pestaña. Eventos de cambio detallados habilitan actualización local conservadora de prosa; cambios estructurales reconstruyen todo. Tokens con petición de parseo acotada/cacheada y prueba en líneas lejanas. Suite CM6 49/49. Observaciones antes/después: apertura grande 807→672 ms; inserción de 100 caracteres 816→479 ms; Live Preview 832→812 ms, diferencia insuficiente para afirmar mejora general. Valores, limitaciones y trabajo pendiente en `MEDICIONES_CM6.md`; referencia histórica sin alterar.
+
+- [x] ~~**Roxas disponible sin requisito de emblemas**~~ (2026-10-03): se conserva la comprobación de personaje existente y no se reinician sus XP, equipo ni progreso. El usuario confirmó que ya tiene a Roxas; no se ha añadido otro a su perfil. Los nuevos perfiles pueden incorporarlo al importar su hoja sin encontrar emblemas. Guía de mascotas actualizada.
+- [x] ~~**Pomodoros por categoría e historial editable**~~ (2026-10-03): panel Tiempo de estudio y comando en la paleta; categorías nuevas y renombrado/fusión, estadísticas de minutos y focos completos/parciales filtradas por categoría y hoy/semana/mes/todo. Fecha, minutos, categoría y estado editables; registros manuales y eliminación. Desde el Home se hereda el nombre de la categoría de la tarea. Ediciones/manuales no dan XP ni completan tareas; la Lucky Emblem se conserva.
+- [x] ~~**Tiempo efectivo y persistencia de Pomodoros**~~ (2026-10-03): reloj monotónico, pausas/descansos excluidos, límite del tiempo al finalizar una fase aunque se retrase el intervalo; checkpoints cada 15 s, al pausar y finalizar, actualizando el mismo ID sin duplicar. Cambiar lo restante no fabrica minutos. Duración de foco modificable durante la sesión; opción para volver a la de Ajustes. Escrituras serializadas, validación de fechas/duración, error visible y reintento conservando datos en memoria. Cerrar/interrumpir mantiene el último checkpoint parcial, sin reanudar el temporizador: finaliza antes de salir para conservar el último tramo.
+- [x] ~~**Pruebas y documentación de Pomodoros**~~ (2026-10-03): lógica compartida y pruebas de categorías, totales PCP=50 min, normalización, edición, escrituras concurrentes, checkpoints sin duplicación, fallo/reintento de disco, exclusión de pausas/descansos, fases retrasadas y parciales. Integración Electron 160/160 con edición real a 55 min, persistencia, filtro y ausencia de XP manual; unitarias y lint pasan. Manual y guías actualizados; el panel respeta la desactivación del módulo y dispone de acceso por teclado desde la barra de estado. Pendiente de empaquetado junto con la optimización solicitada a continuación.
+
+- [x] ~~**Empaquetar, verificar e instalar CM6**~~ (2026-10-03): AppImage regenerado secuencialmente tras detectar discrepancias en un empaquetado durante compilaciones paralelas. Verificados byte a byte `index.html`, bundle, shim, carga de lenguajes y Pomodoro dentro de `app.asar`; confirmado que no se cargan scripts CM5 ni el borrador de categorías de Pomodoro. Instalación de escritorio completada; AppImage instalado idéntico al generado y ejecutable. Cerrar MK con Ctrl+Q y reabrir para usar el nuevo motor. No se borraron tareas, ajustes ni progreso de mascotas.
+
+Las entradas siguientes conservan los detalles y fechas de la hoja anterior. Las cifras son resultados históricos de esas sesiones, no garantías actuales. Las carencias mencionadas aquí tienen su tarjeta pendiente arriba.
+
+- [x] ~~**Migración funcional a CodeMirror 6**~~ (2026-10-03): `index.html` usa `cm6-bundle.js` y `cm6-shim.js`, sin scripts ni CSS del motor CM5. Los eventos se emiten después de actualizar la vista; `operation()` agrupa efectos y las decoraciones se añaden/eliminan en lotes. Los handles de línea conservan identidad y siguen inserciones; las marcas y clases se limpian en su documento propietario aunque esté inactivo. Resaltado nativo de JavaScript/TypeScript, HTML y PHP, más parsers StreamLanguage para los demás lenguajes; `lazyload.js` no inyecta addons CM5. Historial independiente y autocompletado nativo comprobados. El cuelgue antiguo de Live Preview no se reprodujo con la implementación final; no se afirma conocer su causa histórica exacta.
+- [x] ~~**Validación y documentación de CM6**~~ (2026-10-03): integración final 159/159, suite específica ampliada 46/46, 16 archivos de pruebas unitarias y ESLint pasan. Regresiones para Live Preview real con tabla/tarea, marcas de pestañas inactivas, handles, deshacer/rehacer y sugerencias. Arnés específico con límite de 30 s; diagnóstico del arnés general conservado y prueba de tema personalizado espera su apertura asíncrona. Bundle regenerado automáticamente antes de pruebas y empaquetado; manual, changelog y comentarios actualizados. Mediciones de rendimiento registradas como trabajo pendiente. Roxas y categorías de Pomodoro quedan aplazados por petición expresa; no están activos en esta entrega.
+
+- [x] ~~**Conflictos de edición con comparación y conservación de ambas versiones**~~ (2026-10-03): diálogo con texto del disco y del editor, sin interpretar HTML; Cancelar, Usar disco, Sobrescribir disco y Conservar ambas. Esta última mantiene el archivo externo y abre los cambios locales como borrador sin ruta, incluido en la recuperación de sesión; se guarda con Ctrl+S y otro nombre. Escape y clic fuera cancelan. El autoguardado continúa en pausa durante el conflicto; guardar repetidamente no abre diálogos duplicados. Se vuelve a leer el disco antes de recargar y se rechaza sobrescribir si cambió durante la comparación. Vista adaptable a ventanas estrechas y gestión de foco mediante la accesibilidad existente.
+- [x] ~~**Guardado manual: conservar cambios hechos durante una escritura y respetar la pestaña activa**~~ (2026-10-03): solo se marca guardado si el texto actual coincide con el enviado a disco; terminar un guardado de otra pestaña no cambia la ruta ni el modo de la pestaña activa.
+- [x] ~~**Pruebas y documentación de conflictos**~~ (2026-10-03): pruebas en Electron para comparación segura, cancelar, conservar ambas, recargar, sobrescribir y guardar repetidamente sin duplicar el diálogo; adaptada la prueba anterior que respondía al confirm nativo. Corregido el aislamiento del escenario «1 semana antes» del Home, que ahora selecciona hoy antes de buscar el campo de tarea. Manual actualizado con las acciones y el carácter de borrador de la copia. Suite de Electron: 156/156 comprobaciones en verde; unitarias y ESLint pasan.
+- [x] ~~**Pomodoro: sustituir el tomate por una Lucky Emblem**~~ (2026-10-03, pedido del usuario): símbolo dorado en el foco y en los contadores de las tarjetas del Home, con cualquier tema. Reutiliza el SVG existente mediante `mdLuckyEmblem.mini()`; los contadores tienen descripción accesible. Quitado el tomate del aviso textual de fin de foco. Manual y guía del Home actualizados. Comprobación del icono en Electron; suite con este cambio: 157/157 en verde.
+- [x] ~~**Pestañas accesibles mientras se ve o edita un PDF**~~ (2026-10-03, pedido del usuario): el visor conserva la barra de pestañas sobre el PDF y oculta solo el editor; al elegir un documento se sale del modo forzado de PDF. El panel de anotación muestra también botones de los documentos abiertos; cambiar de documento oculta el panel sin borrar sus anotaciones de sesión. Manual actualizado y dos comprobaciones de Electron añadidas. El escenario de prueba restablece el modo normal explícitamente después de cambiar de pestaña.
+- [x] ~~**Verificar y reinstalar los cambios de esta sesión**~~ (2026-10-03): suite conjunta de Electron 159/159 en verde, pruebas unitarias y ESLint pasan. AppImage 2.0.0 regenerado; archivos empaquetados comparados con los fuentes de guardado, conflictos, PDF y Pomodoro. `npm run install-desktop` completado: AppImage e icono instalados y lanzador del menú actualizado. Copia instalada idéntica al AppImage generado y con permiso de ejecución. La instancia que ya estuviera abierta necesita cerrarse con Ctrl+Q y volver a abrirse para cargar esta versión.
+
+- [x] ~~**Guardado atómico de notas**~~ (2026-10-03): `atomicwrite.js` escribe un temporal en el mismo directorio, sincroniza y reemplaza al finalizar; conserva permisos y enlaces simbólicos. El IPC mantiene historial, validación de rutas y avisos de error. Pruebas específicas de creación, reemplazo, fallos de escritura/sincronización/reemplazo y enlaces; unitarias y ESLint pasan. La suite completa de Electron se interrumpió en el escenario del Home «semana antes: sin quick-add»; no se considera validación completa de integración.
 
 - [x] ~~**Home**: planificador semanal y mensual con calendario, objetivos, notas, atrasadas y bandeja sin fecha~~ (2026-09-29)
 - [x] ~~**Home + Bases de datos**: las filas con columna Fecha aparecen en el calendario~~ (2026-09-29)
@@ -120,9 +215,6 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Aviso automático "1 semana antes"** (tareas del Home, 📅 de notas y fechas de bases de datos; interruptor y hora en el Home; "+ 1 semana antes" en el editor de avisos)~~ (2026-09-29)
 - [x] ~~**Terminal: elegir el shell** (⚙ Ajustes o menú ▾; lista de /etc/shells + PATH, validada en el proceso principal)~~ (2026-09-29)
 - [x] ~~**Índice guardado en disco**~~ (en `~/.config/md-editor-local/cache/`, no en la carpeta de notas; al reabrir solo verifica fecha y tamaño; lo borrado no se arrastra) (2026-09-30) — *medido: con el disco en caché del sistema no cambia nada (144 → 140 ms en 3000 notas); ayuda en el primer arranque tras reiniciar o con discos lentos. Pendiente: etiquetas y enlaces precalculados*
-
-## Pedidos nuevos (2026-09-30)
-
 - [x] ~~**Toolbar: botones solo ícono / con texto** y ocultar la barra superior~~ (Ajustes → Apariencia; `Ctrl+Shift+M`) (2026-09-30)
 - [x] ~~**Rediseño de ⚙ Ajustes** en un panel con secciones y buscador~~ (`Ctrl+,`; 7 secciones, búsqueda sin tildes, interruptores, teclado) (2026-09-30)
 - [x] ~~**Botón de modo que muestra el modo actual**~~ (ícono + nombre) (2026-09-30)
@@ -133,44 +225,24 @@ Orden sugerido para lo que falta, de más a menos urgente. Los detalles de cada 
 - [x] ~~**Más lenguajes: F5 y resaltado**~~ (F5 para TS, Rust, PHP, Perl, Lua, R, Julia, Haskell, Dart, Swift, Kotlin, zsh, fish, PowerShell, SQL, HTML y Makefile; resaltado de ~25 lenguajes más cargado al abrir) (2026-09-30)
 - [x] ~~**Mascota: XP por filas de bases de datos marcadas como hechas**~~ (cualquier casilla tildada, en la base, en el bloque o desde el aviso; una vez por fila y día) (2026-09-30)
 - [x] ~~**Categorías en tareas del Home**~~ (`@categoría` al agregar, chip de color, filtro que heredan las nuevas, administrador con color) (2026-09-30) — *las estadísticas por categoría y el vínculo con las mascotas se probaron y se quitaron a pedido: más simple*
-
-## Propuestos por Claude (2026-09-30, segunda tanda)
-
 - [x] ~~**Pegar imágenes del portapapeles** (`Ctrl+V` con una captura): se guarda junto a la nota y se inserta el enlace; también arrastrar imágenes desde el navegador~~ (2026-09-30: en `assets/`, como al arrastrar)
 - [x] ~~**Reabrir pestaña cerrada**~~ (2026-09-30: `Ctrl+Alt+W` —`Ctrl+Alt+T` abre Konsole en KDE—, menú de pestañas y paleta; 20 recordadas, cursor, borradores con su texto)
 - [x] ~~**Buscar y reemplazar en toda la carpeta**, con vista previa por archivo, confirmación y copia en el historial local~~ (2026-09-30: botón **⇄ Reemplazar…** en `Ctrl+Shift+F` y paleta; mayúsculas, palabra completa, regex con `$1`; vista −/+ por línea; salta pestañas con cambios sin guardar)
 - [x] ~~**Modo máquina de escribir**: cursor siempre centrado y párrafos que no se escriben atenuados~~ (2026-09-30: `Ctrl+Alt+M`, Ajustes → Editor y paleta; atenuar párrafos es aparte y se combina con el modo enfoque)
 - [x] ~~**Guiño a Kingdom Hearts**~~ (2026-09-30, pedido: keyblades propias —solo en la config local— como llavero de logros, golpe al tildar y cursor; tema Kingdom Hearts con Lucky Emblem al elegirlo y uno escondido para encontrar; Sora y Roxas como mascotas animadas —Roxas con 3 Lucky Emblems— y retratos de Sora que reaccionan)
 - [x] ~~**Home → Horario tipo calendario**~~ (2026-09-30, pedido: semana por horas con duración, crear arrastrando en un hueco, mover y estirar bloques, todo el día arriba, línea de ahora)
-- [ ] **Atajos de teclado personalizables** (Ajustes → Atajos: cambiar, detectar choques, restaurar)
-
-## Ideas de `MEJORAS_PROPUESTAS.md` (Gemini)
-
-Revisado el 2026-09-30. Lo que ya estaba hecho o repetido queda anotado; lo nuevo, como objetivo.
-
-**Ya hechas (ver Consolidación):** CSP estricta, `sandbox: true`, validación de rutas en el proceso principal, avisos + registro de errores. **Ya estaban en la lista:** SQLite nativo / agrupar escrituras, dividir CSS y archivos grandes, módulos ES, accesibilidad ARIA + teclado, editar texto de PDFs, sincronización entre dispositivos (P2P ≈ "Sincronización" de largo plazo).
-
-**Estética (UI/UX)**
+- [x] ~~**Mascotas: elegir cualquier criatura y shiny**~~ (2026-09-30, pedido: botón **+ Elegir mascota** en 🐾 Mis mascotas con buscador — cualquiera de MK o del catálogo del juego, no solo al azar por huevo —; casilla ✨ Shiny al agregar y botón para volver shiny/normal una mascota ya existente)
 - [x] ~~**Sistema de diseño con tokens**~~ (2026-09-30: `--radius*`, `--shadow-1..3`, `--space-1..5`, `--font-xs..xl`, `--dur*`/`--ease` en `styles.css`; los usan Ajustes, la barra y lo nuevo — el resto de componentes se migra de a poco): escala tipográfica fija (H1–H6, cuerpo, notas), radios estándar (8px tarjetas, 4px botones) y sombras suaves en vez de bordes duros — base para el rediseño de Ajustes y los temas
 - [x] ~~**Micro-interacciones**~~ (2026-09-30: menús, diálogos, avisos, hover y destello al guardar; respeta "reducir movimiento"): abrir/cerrar sidebar y panel secundario, cambio a Live Preview, hover de la toolbar, destello sutil al guardar. Respetando "reducir movimiento" del sistema
 - [x] ~~**Indicador de cambios sin guardar en el sidebar**~~ (2026-09-30) (punto de color junto al archivo, no solo en la pestaña)
 - [x] ~~**Barra de estado más útil**~~ (guardado / sin guardar / cambió afuera, rama de git con clic a commits, palabras y caracteres de la selección) (2026-09-30)
 - [x] ~~**Contraste suficiente en todos los temas**~~ (13 temas corregidos en el texto secundario y ayu-light en el acento; prueba automática WCAG AA) (2026-09-30)
-
-**Funciones**
 - [x] ~~**Bloque `database` editable**~~ (texto, número, fecha, selección y casillas en el lugar, con teclado; se redibuja respetando filtros) (2026-09-30)
 - [x] ~~**Grafo interactivo**~~ (clic derecho: abrir, panel secundario, backlinks, solo vecinas; filtros por etiqueta, carpeta y sin enlaces; buscar; resaltar vecinas; tamaño por enlaces; también cuenta links Markdown `[x](otra.md)`) (2026-09-30)
 - [x] ~~**Desactivar módulos que no uses**~~ (Ajustes → Módulos: 9 módulos; se ocultan de la barra, la paleta y los menús y sus atajos se frenan, sin borrar datos) (2026-09-30)
 - [x] ~~**Dashboards / widgets en notas**~~ (bloque `widget`: tareas hoy/semana/atrasadas tildables, progreso, total/promedio/cuenta de una base, mascotas; preview y Live Preview) (2026-09-30)
 - [x] ~~**Botones de script en una nota**~~ (bloque `run` con título opcional; en la carpeta de la nota; confirmación con el comando exacto y confianza por nota + texto) (2026-09-30)
 - [x] ~~**Explorador de multimedia**~~ (cuadrícula con miniaturas perezosas, filtros por tipo, búsqueda, abrir e insertar en la nota) (2026-09-30) — *falta: etiquetas propias para la multimedia*
-- *Descartado por ahora:* indexar en Rust/C++ — el índice en memoria ya da búsquedas de ~7 ms en 3000 notas; se revisa si hiciera falta.
-
-## Consolidación (revisión externa, `REVISION_APLICACION.md`)
-
-La revisión concluye —y coincido— que ahora toca **consolidar más que añadir**. Verificado en el código el 2026-09-29.
-
-**Prioridad alta**
 - [x] ~~**Bases de datos: guardado atómico**~~ (temporal + fsync + rename: un corte a mitad ya no deja el `.sqlite3` truncado) (2026-09-29)
 - [x] ~~**Validación de rutas central en el proceso principal**~~ (`pathguard.js`: solo lo que el usuario abrió — carpeta, diálogos, arrastrar desde el sistema, argumentos, sesión; leer/guardar/crear/mover/borrar, `md-local://`, bases de datos, git, Home, búsqueda y exportar lo validan; intentos rechazados al log. Límite: la terminal integrada puede todo, la barrera contra una ventana comprometida es CSP + sandbox) (2026-09-29)
 - [x] ~~**Content Security Policy estricta** en `index.html`~~ (scripts solo archivos locales, nada inline; sin conexiones a internet; `'unsafe-eval'` solo por las fórmulas — pasarlas a un Worker lo quitaría. `cspwatch.js` + un test que falla ante cualquier violación) (2026-09-29)
@@ -178,92 +250,60 @@ La revisión concluye —y coincido— que ahora toca **consolidar más que aña
 - [x] ~~**Registro local de errores**~~ (`userData/logs/mk.log` rotativo; guardar notas, Home y bases de datos avisan en pantalla si fallan; errores de JS no capturados al log; config/sesión/Home con escritura atómica y un JSON dañado se aparta en vez de pisarse) (2026-09-29)
 - [x] ~~**Revisar el resto de `catch` silenciosos**~~ (exportar CSV/PDF/Word/HTML/EPUB/Anki avisa si falla; abrir PDF/docx dañados queda en el log; la ventana que imprime el PDF ahora con sandbox y sin JavaScript) (2026-09-30)
 - [x] ~~**Bases de datos: agrupar escrituras**~~ (una escritura atómica 300 ms después del último cambio, y al salir; 30 cambios → 1 escritura) (2026-09-30)
-
-**Prioridad media**
-- [ ] **Dividir `database.js` (~2200 líneas), `home.js` (~1800) y `styles.css` (~4400)** por responsabilidad (va junto con la migración a módulos ES)
 - [x] ~~**Pruebas unitarias rápidas**~~ (`npm run test:unit`, node:test, 23 pruebas en ~0,3 s, también en CI: fechas/recurrencias, tareas 📅, @categoría, CSV, gráficos, rutas, JSON atómico, índice, catálogo del juego; lógica compartida en `src/shared/`) (2026-09-30) — *faltan pruebas visuales*
 - [x] ~~**Accesibilidad**: roles y etiquetas ARIA; navegación con teclado~~ (botones de ícono con nombre, pestañas y árbol con roles y flechas, diálogos que atrapan y devuelven el foco, menús con teclado, foco visible) (2026-09-30) — *falta probar con un lector de pantalla real (Orca)*
-- [ ] **Quitar los `…Sync` que quedan** en el proceso principal (exportar, config, sesión, Home)
-
-**Prioridad baja**
 - [x] ~~**Versionado semántico y CHANGELOG**~~ (2026-09-30: 2.0.0, CHANGELOG.md, versión en Ajustes → Sistema)
-- [ ] **Documentación sin cifras volátiles** (README ya corregido; revisar el resto)
 - [x] ~~**Primer arranque guiado**: separar claramente escribir / planificar / herramientas avanzadas~~ (2026-09-30: bienvenida de 3 pasos —perfil Escribir / Escribir y planificar / Todo, carpeta «Notas MK» con nota de inicio o una propia, atajos clave—; solo en instalaciones nuevas; se vuelve a ver desde la paleta)
-
-## Corto plazo (próximas sesiones)
-
-Mejoras chicas y de uso diario: se hacen en una sesión cada una. *(Todas hechas — ver "Prioridad recomendada" para lo que sigue.)*
-
-
-## Escalabilidad y solidez
-
-Lo que MK necesita para seguir andando rápido y sin sorpresas con **carpetas grandes** (miles de notas), **más datos** (años de tareas, bases de miles de filas) y **más funciones**. Basado en lo que hoy hace el código (medido el 2026-09-29).
-
-### Carpetas grandes
-- [ ] **Árbol del sidebar virtualizado y cargado por demanda**: hoy se lee la carpeta entera (recursivo) al abrirla; leer cada subcarpeta al desplegarla y dibujar solo las filas visibles
-- [ ] **Búsqueda con índice y sin tope de 200**: resultados al instante, con filtros (carpeta, tipo, fecha) y búsqueda aproximada
-
-### Datos que crecen
-- [ ] **Bases de datos: guardar solo lo que cambió** (escrituras ya agrupadas el 2026-09-30; falta motor nativo con WAL para no reescribir el archivo entero): hoy cada edición reescribe el archivo SQLite **entero** (`db.export()`); agrupar escrituras (guardar cada ~1 s) o pasar a SQLite nativo con WAL
-- [ ] **Bases de datos grandes**: tabla virtualizada (solo filas visibles), paginación y cálculo de fórmulas/rollups en segundo plano, para bases de 10.000+ filas
 - [x] ~~**Home con años de tareas**: archivar tareas terminadas viejas (siguen en búsqueda y estadísticas)~~ (2026-09-30: a `home-archive.json` después de 1/3/12 meses o nunca; en la búsqueda vuelven al Home; la racha las cuenta; los avisos recorren solo lo activo) — *pendiente si hiciera falta: índice de avisos por fecha*
 - [x] ~~**Versión en los archivos de datos** (`home.json`, `config.json`, esquema SQLite) con migraciones automáticas, para poder cambiar formatos sin romper datos viejos~~ (2026-09-30: `schemaVersion` + `datamigrate.js`, SQLite con `PRAGMA user_version`; copia `.v<N>.bak` antes de cada paso real; datos de una versión más nueva se usan sin tocar)
-- [x] ~~**Exportar / importar todo**: un solo archivo con Home, bases de datos, ajustes y snippets (respaldo y mudanza a otra computadora)~~ (2026-09-30: `.mkbackup` con ajustes —incluye snippets y mascota—, Home e imágenes de mascotas; copia automática antes de importar. Las bases de datos viven en `<carpeta>/.mk/` y viajan con la carpeta de notas)
-
-### Rendimiento de la edición
-- [x] ~~**Preview incremental**: redibujar solo los bloques que cambiaron (hoy se regenera todo el HTML en cada pausa)~~ (2026-09-30: cada bloque se convierte y sanitiza una vez y queda en caché; nota de 5000 líneas 192 → 96 ms; mismo HTML que el completo, verificado en las 55 notas del repo) — *queda: el lexer (~35 ms) y el DOM (~30 ms) siguen siendo de todo el documento*
-- [ ] **Live Preview incremental al escribir**: hoy cada cambio de texto reconstruye todas las marcas del documento; limitarlo a las líneas tocadas
-- [ ] **Migrar a CodeMirror 6**: CodeMirror 5 está en mantenimiento; la 6 es más rápida con documentos grandes, tiene mejor accesibilidad y decoraciones nativas para Live Preview
+- [x] ~~**Exportar / importar datos de usuario**: respaldo de Home, ajustes y snippets; las bases de datos viajan con la carpeta de notas (respaldo y mudanza a otra computadora)~~ (2026-09-30: `.mkbackup` con ajustes —incluye snippets y mascota—, Home e imágenes de mascotas; copia automática antes de importar. Las bases de datos viven en `<carpeta>/.mk/` y viajan con la carpeta de notas)
+- [x] ~~**Preview: caché incremental de bloques**~~ (2026-09-30: cada bloque se convierte y sanitiza una vez y queda en caché; nota de 5000 líneas 192 → 96 ms; mismo HTML que el completo, verificado en las 55 notas del repo) — *queda: el lexer (~35 ms) y el DOM (~30 ms) siguen siendo de todo el documento*
 - [x] ~~**Medición continua** (`npm run bench`): arranque, render del preview y apertura de carpeta, con valores de referencia para detectar si algo empeora~~ (2026-09-30: 9 mediciones con la app real, referencia en `test/bench-baseline.json`, `--save` / `--strict`)
-
-### Arquitectura
-- [ ] **Migrar a módulos ES** (ver Mediano/Largo plazo; `main.js` ya está separado)
 - [x] ~~**Una sola capa de acceso a archivos** con validación de rutas centralizada~~ (`pathguard.js`, 2026-09-29)
-- [ ] **Tareas pesadas fuera de la ventana** (Web Workers / proceso aparte): parseo de la carpeta, grafo, CSV grandes, PDFs grandes
-- [ ] **Traducciones (i18n)**: los textos están escritos en el código; sacarlos a archivos para poder tener MK en inglés u otros idiomas
-- [ ] **Accesibilidad: probar con lector de pantalla** (Orca) — lo de teclado y ARIA ya está (ver Consolidación, 2026-09-30)
-
-### Calidad
 - [x] ~~**Tests unitarios rápidos** (node:test)~~ (ver Consolidación, 2026-09-30)
 - [x] ~~**Registro de errores local**~~ (`logs/mk.log`, 2026-09-29)
 - [x] ~~**Botón "Reportar un problema"** que arme el informe (versión, últimas líneas del log) sin datos personales~~ (2026-09-30: Ajustes → Sistema y paleta; tapa carpeta personal, usuario, correos, ruta del AppImage y claves; se revisa y edita antes de copiar o abrir el issue)
-- [ ] **Pruebas visuales**: capturas de referencia de los paneles principales en claro/oscuro, para detectar diseño roto
-
-### Seguridad
 - [x] ~~**Content-Security-Policy** en la ventana~~ (2026-09-29)
 - [x] ~~**`sandbox: true` en el renderer**~~ (2026-09-29)
-- [ ] **Permisos de la terminal e IAs** documentados y visibles (qué carpeta ve cada una)
-
-### Distribución
 - [x] ~~**Versiones y CHANGELOG** (semver) y **releases automáticos** del AppImage en GitHub Actions~~ (2026-09-30: etiqueta `v*` → release.yml; aviso de versión nueva opcional)
-- [ ] **Actualización automática** del AppImage (avisar cuando hay versión nueva y actualizar con un clic)
-
-## Mediano plazo
-
-Funciones más grandes o que tocan varias partes de la app.
-
-- [x] ~~**Recordatorios por Gmail**~~: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: es la única función que necesita internet (hecho 2026-09-30)
+- [x] ~~**Recordatorios por Gmail**~~: además de la notificación local, mandar un correo a tu Gmail con los mismos avisos — del mismo día y anticipados ("faltan N días"), a la hora que elijas — para tareas del Home y filas de bases de datos con fecha. El asunto dice qué y cuándo (*"Faltan 3 días: Entregar TP — vie 3 oct, 18:30"*) y el cuerpo trae día, hora, notas y de dónde sale (Home, nota o base de datos). Configuración en Ajustes con tu dirección y una **contraseña de aplicación** de Google (SMTP), guardada cifrada con el llavero del sistema (`safeStorage`), nunca en texto plano. Opcional y apagado por defecto: requiere internet (hecho 2026-09-30)
 - [x] ~~**Resumen diario por Gmail**~~: un correo cada mañana con el plan del día (tareas, atrasadas y fechas de bases de datos), a la hora que elijas (hecho 2026-09-30)
 - [x] ~~**Separar `main.js`** (más de 1100 líneas) en módulos por área~~ (2026-09-29: queda en ~340 líneas; `ipc-files`, `ipc-notes`, `ipc-export`, `ipc-system`, `mainctx`, `folderwatch`, `folderindex`)
+- [x] ~~Que tenga para las feltas de ortografía~~ (2026-09-30: corrector propio offline —`nspell` + diccionario español de LibreOffice, sin depender del spellchecker nativo de Chromium ni de internet—; subraya con onda las palabras dudosas en las notas Markdown, clic derecho da hasta 5 sugerencias y "Agregar al diccionario" para que no vuelva a marcarlas)
+- [x] ~~**Diálogos de guardar/abrir en la carpeta de la izquierda**~~ (2026-09-30: "Abrir archivo", "Guardar como" de una nota nueva, "Abrir carpeta" y los guardados de CSV/HTML/PDF/Word/EPUB/Anki arrancan en la carpeta del sidebar en vez de la última del sistema; los diálogos de importar cosas externas —imágenes de mascota, personajes de RPG Maker, respaldos— siguen con su carpeta propia, tiene más sentido)
 
-## Largo plazo
+- [x] ~~**Dividir CSS por responsabilidad**~~ (2026-09-30): `styles-database.css`, `styles-home.css`, `styles-pet.css` y `styles-terminal.css`, además del núcleo.
+- [x] ~~**Dividir bases de datos en módulos ES**~~ (2026-09-30): estado, helpers, vistas, celdas, CSV, bloques en notas y núcleo.
+- [x] ~~**Dividir Home en módulos ES**~~ (2026-09-30): datos, UI, vistas, editor de tareas y núcleo; setters para estado compartido y regla ESLint `no-import-assign`.
 
-Proyectos pesados o que requieren decisiones de diseño/seguridad antes de empezar.
+## Referencia técnica — Migración a CM6
 
-- [ ] **Pizarra Excalidraw** embebida para dibujar diagramas a mano (viable con su build UMD, pero suma ~2 MB y React; decidir antes si se guarda como `.excalidraw` aparte o dentro del `.md`)
-- [ ] **Sistema de plugins** (→ ahora en **P4b**, ver Prioridad recomendada) seguro: scripts locales en `plugins/` (nunca descargados), con una API limitada de hooks (`onRender`, `onSave`) sin acceso libre a `require`/`fs`, revisados antes de habilitarse
-- [ ] **Ejecutar Python y otros lenguajes** dentro de los bloques de código del preview (hoy solo JS aislado en un Worker; para otros lenguajes está F5 en la terminal, que es explícito)
-- [ ] **Dos editores escribibles a la vez** en pantalla dividida (hoy el panel secundario es de solo lectura; varios módulos asumen un único CodeMirror)
-- [ ] **Migrar los scripts sueltos (`window.mdX`) a módulos ES** (`import`/`export`): refactor de todo `src/`, mejor hacerlo solo y con tiempo
-- [ ] **Embeber vídeos de YouTube** (fácil técnicamente, pero rompe la premisa "sin internet": habría que marcar esas notas como no-offline)
-- [ ] **Sincronización entre dispositivos** sin depender de git (carpeta en la nube / servidor propio)
-- [ ] **Versión para Windows y macOS** (hoy el empaquetado y el reproductor multimedia son solo Linux)
-- [ ] **Editar el texto dentro de un PDF** (hoy solo operaciones de página y subrayado: un PDF guarda glifos posicionados, no texto editable)
+Se conserva el registro histórico de pruebas e intentos del 2026-09-30. El avance actual está en la tarjeta principal; los fallos descritos abajo pertenecen a aquel intento y no implican que sigan ocurriendo.
 
----
+**Migrar el editor a CodeMirror 6.** CM5 ya solo recibe arreglos; CM6 es más rápida con notas grandes, más accesible y trae "decoraciones" nativas (Live Preview más simple). NO depende del 20.
+    - [x] ~~**Herramienta lista** (2026-09-30)~~: `esbuild` (devDependency) + `npm run build:cm6` juntan los paquetes de CM6 (`@codemirror/state|view|commands|search|autocomplete|language|lang-markdown|lang-python` + `legacy-modes` para LaTeX/C·C++·Java/shell) en `src/cm6-bundle.js` estático committeado (665 KB minificado), cargado con un `<script>` normal — mismo espíritu que hoy sin build en runtime (precedente: `pdfjs-loader.mjs`, único módulo ES real de la app hoy, expone `window.pdfjsLib` para scripts clásicos igual). ESLint (`sourceType: module`) y `npm test` sin romperse.
+    - [x] ~~**Capa de compatibilidad — núcleo probado**~~ (2026-09-30): `src/cm6-shim.js` expone un `window.CodeMirror` con la forma de CM5 (constructor, `Doc`/`swapDoc` con historial propio por pestaña, `getValue/setValue`, cursor/selección, `on(...)`, `markText`→decorations, `addLineClass`/`removeLineClass` que siguen la línea de contenido al editar arriba, `getSearchCursor` con `@codemirror/search`, `execCommand('selectAll')`, `findWordAt`, scroll/coords, y **`getLineTokens`**) sobre un solo `EditorView`. Un arnés aparte (`npm run test:cm6`, Electron real sin tocar `index.html`) prueba todo esto: **33/33 en verde**, incluida la parte que parecía más difícil.
+      - **Buena sorpresa (corrige lo que se pensó a la mañana):** `getLineTokens` SÍ se pudo traducir — el árbol Lezer de `@codemirror/lang-markdown` (+ `GFM` de `@lezer/markdown` para tachado/listas) da nodos (`HeaderMark`, `EmphasisMark`, `StrikethroughMark`, `CodeMark`, `QuoteMark`, `ListMark`, `LinkMark`/`URL`) que se traducen 1:1 a los mismos tipos `formatting[-x]`/`url` que esperaba `livepreview.js`. Probado con negrita/cursiva, código en línea, links (`[texto](url)`, las 4 marcas + el texto de la URL), tachado, listas con/sin orden y citas — todos correctos. **`livepreview.js` probablemente NO necesita reescribirse entero como se creía a la mañana** — falta conectarlo de verdad y confirmarlo con la app corriendo, pero la parte que se creía imposible de adaptar ya está.
+      - `handleMouseEvents` de CM5 (¿el widget maneja su propio clic, o que CodeMirror mueva el cursor ahí?) mapeado a `ignoreEvent()` de CM6 — probado con clics reales simulados en ambos casos.
+      - **Intentado el corte real (2026-09-30) y revertido a CM5**: cambiar `index.html` a `cm6-bundle.js`+`cm6-shim.js` y correr `npm test` de verdad encontró (y esto SÍ se arregló, quedó en el shim):
+        - `cm.state.completionActive.close()` (forma documentada de CM5 para cerrar el popup de autocompletado) — agregado como getter en el shim.
+        - `cm.getInputField()` (el elemento que recibe el teclado) — agregado, devuelve `view.contentDOM`.
+        - Estilos base del editor (fondo, gutter, cursor, selección, autocompletado) y de Live Preview: CM6 usa otras clases (`.cm-editor`, `.cm-gutters`, `.cm-cursor`, `.cm-selectionBackground`, `.cm-tooltip-autocomplete`, `.cm-content`) — `styles.css` ahora tiene las reglas de **los dos motores en paralelo** (una no le hace nada a la clase del otro), para no romper el CM5 activo mientras se termina la migración.
+        - Los colores de sintaxis de Markdown en Live Preview (encabezados grandes, negrita, links…) se probaron aparte con un `HighlightStyle` propio (`normalHighlight`/`liveHighlight` en `cm6-shim.js`) — confirmado con la app real armando el árbol Lezer y comparando colores calculados.
+        - **Lo que hizo frenar el corte:** al ejercitar Live Preview de verdad (`window.mdLivePreview.rebuild()` con una nota real), la app **se cuelga** (no tira error, no termina ni con 150s de margen) — más serio que los errores anteriores, que sí tenían un mensaje claro. No se llegó a diagnosticar la causa exacta. Revertido `index.html` a CM5 así la app no queda colgándose; confirmado con la suite completa (148/149, el flaky de Mermaid de siempre) que CM5 sigue andando perfecto.
+        - Dos tests (`test/renderer-checks.js`: autocompletado y Live Preview) ahora reconocen las clases de LOS DOS motores (`.CodeMirror-hints, .cm-tooltip-autocomplete` / `.CodeMirror-line, .cm-line`), para que la suite sirva de verificación tanto ahora (CM5) como en el próximo intento de corte (CM6).
+      - **Sigue pendiente:** diagnosticar el cuelgue de Live Preview con CM6 (probablemente algo en `rebuild()`/`operation()` disparando actualizaciones en cadena — revisar si `cm.operation(fn)` del shim, que hoy solo llama `fn()` directo, necesita evitar reentradas cuando `fn` dispara `view.dispatch` muchas veces seguidas). El resto de archivos "de capa fina" (`tabs.js`, `editor.js`, `statusbar.js`, `snippets.js`, `foldclutter.js`, `spellcheck.js`, `dragdrop.js`, `contextmenu.js`, `typewriter.js`, `modes.js`) no mostraron problemas hasta donde llegó la suite antes del cuelgue. Herramientas: `npm run build:cm6`, `npm run test:cm6` (sin tocar la app real), y para el corte real: en `index.html` cambiar los 9 `<script>` de `node_modules/codemirror/...` por `<script src="cm6-bundle.js">` + `<script src="cm6-shim.js">`, sacar los `<link>` de `codemirror.css`/`show-hint.css`, y correr `npm test`.
 
-## Cómo se mantiene este archivo
+**Cierre del intento actual (2026-10-03):** la conexión a CM6 y las comprobaciones funcionales anteriores ya están completadas (159/159 + 46/46). Las instrucciones de cambio a CM6 y el «sigue pendiente» del registro del 2026-09-30 son históricos. La optimización incremental de Live Preview y la revisión de rendimiento siguen siendo objetivos separados.
 
-1. Al terminar un objetivo: cambiar `- [ ]` por `- [x]`, tacharlo con `~~…~~`, agregar la fecha y moverlo a **Hecho recientemente**.
-2. Actualizar el contador de **Estado** de arriba.
-3. Ideas nuevas: agregarlas a la sección que corresponda según tamaño (corto = una sesión; mediano = varias; largo = requiere diseño previo).
+## Cómo mantener esta hoja
+
+**Entrega de la segunda pasada CM6 (2026-10-03):** AppImage recompilado e instalado conservando los datos del usuario. Se verificó que los cinco archivos del editor modificados coinciden con el contenido empaquetado. Reiniciar MK para cargar los cambios. La optimización general de Live Preview permanece pendiente según las mediciones anteriores.
+
+**Entrega de la tercera pasada Live Preview (2026-10-03):** AppImage recompilado e instalado después de terminar el empaquetado; seis archivos de editor/vista/estilos verificados contra el ASAR y copia instalada idéntica al AppImage generado, con permiso ejecutable. Se conservan los datos del usuario y no se cierra la app en ejecución. Salir con Ctrl+Q y volver a abrir para cargar la corrección de reconstrucciones innecesarias descrita en el historial.
+
+1. Añadir cada objetivo una sola vez, en la sección que indica cuándo abordarlo. Referenciar dependencias en su descripción.
+2. Describir avances parciales sin marcar completo el objetivo principal.
+3. Al terminar, marcar `- [x]`, tachar el título, añadir fecha y mover al historial.
+4. Conservar las notas técnicas útiles, separadas de las prioridades.
+5. Revisar el orden cuando aparezca un problema de datos o un pedido de uso diario. No usar porcentajes sobre registros duplicados del historial.

@@ -7,6 +7,12 @@ Una guía especializada por cada función del sistema. Cada una empieza con **pa
 
 ## Planificar y organizar el trabajo
 
+Estudio: [Plan de hoy y asignaturas](estudio-por-asignatura.md), [Repaso y examen](repaso-y-examen.md), [Comprensión y resumen semanal](comprension-y-resumen.md). Recorrido práctico: [Ejemplo de PCP](../Ejemplos/Estudio/README.md).
+
+Materiales: [Pizarra Excalidraw](excalidraw.md) y [PDFs y pizarras dentro de notas](materiales-incrustados.md).
+
+Para trabajar con los tres materiales a la vez: [Vista de estudio dividida](vista-de-estudio.md), con [ejemplo práctico](../Ejemplos/Estudio/vista-dividida.md).
+
 | Función | Cómo usarla | Para qué sirve |
 |---|---|---|
 | **Home** — planificador semanal y mensual con calendario | [home-como-usar.md](home-como-usar.md) | [home-para-que-sirve.md](home-para-que-sirve.md) |

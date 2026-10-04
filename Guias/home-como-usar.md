@@ -1,5 +1,7 @@
 # Home — cómo usarlo
 
+Para organizar apuntes, PDFs y pizarras por categoría, consultar tiempo de Pomodoro y preparar el plan de hoy: [Estudio por asignatura](estudio-por-asignatura.md), desde **Home → Estudio**.
+
 Guía paso a paso del **Home**, el planificador semanal y mensual de MK. Para ideas de *para qué* usarlo, ver [`home-para-que-sirve.md`](home-para-que-sirve.md).
 
 ## Abrir y cerrar
@@ -170,9 +172,9 @@ aparece ese día en el Home (chip con 📄), con el header **"Tareas de notas"**
 
 En el editor de tarea, **Nota enlazada**: escribí el nombre de una nota de la carpeta (se autocompleta). La tarea muestra un 📄: clic abre esa nota. Ideal para "Estudiar Álgebra" → nota `Algebra-resumen`.
 
-## Pomodoro sobre una tarea 🍅
+## Pomodoro sobre una tarea
 
-En el editor de tarea, **⏱ Pomodoro** arranca un foco con esa tarea: la barra de estado muestra `🍅 Foco 24:59 · Título`. Al terminar cada foco suma un 🍅 a la tarea y te pregunta si la terminaste — si decís que sí, se tilda sola.
+En el editor de tarea, **⏱ Pomodoro** arranca un foco con esa tarea: la barra de estado muestra una Lucky Emblem dorada junto a `Foco 24:59 · Título`. Al terminar cada foco suma un Pomodoro al contador de la tarea, también identificado con una Lucky Emblem, y te pregunta si la terminaste — si decís que sí, se tilda sola.
 
 ## Categorías 🏷
 
@@ -243,4 +245,3 @@ Las tareas comunes **terminadas** hace más de 3 meses pasan solas a un archivo 
 - las **recurrentes** (hábitos) y las **pendientes** nunca se archivan.
 
 El plazo se cambia en **Ajustes → Home y avisos → Archivar tareas terminadas**: 1 mes, 3 meses, 1 año o nunca. El archivo entra en el **respaldo** (Ajustes → Sistema).
-
