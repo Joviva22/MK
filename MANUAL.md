@@ -531,7 +531,9 @@ Botón 🖊 en la toolbar (o "PDF: seleccionar, copiar, subrayar y escribir" en 
 2. Elegí **Subrayar** y **arrastrá el mouse** sobre el texto que querés marcar — se dibuja un rectángulo amarillo semitransparente en vivo.
 3. **◀ / ▶**: cambian de página. Los subrayados quedan guardados por página mientras el panel esté abierto.
 4. **Deshacer último subrayado**: saca el último rectángulo marcado en la página actual.
-5. **Guardar como...**: recién acá se abre el PDF original con pdf-lib y se dibujan los rectángulos de verdad encima del texto (amarillo semitransparente, mezclado tipo marcador real) — se guarda como un archivo nuevo, el original no se toca.
+5. **Guardar copia…** (o `Ctrl+S` dentro del visor): recién acá se abre el PDF original con pdf-lib y se dibujan los rectángulos de verdad encima del texto (amarillo semitransparente, mezclado tipo marcador real) — se guarda como un archivo nuevo, el original no se toca.
+
+El visor muestra el nombre del archivo y el estado del guardado. Puedes saltar a una página por su número y elegir zoom o ajuste al ancho. Las opciones de texto aparecen en **Escribir**, y las acciones para llevar selecciones a notas aparecen en **Seleccionar**.
 
 **Límite:** el subrayado es un rectángulo sobre la posición donde arrastraste, no selección de texto real — si el PDF tiene la página rotada (`/Rotate` distinto de 0°), la posición puede salir desalineada.
 
@@ -585,6 +587,8 @@ Usa [`playerctl`](https://github.com/altdesktop/playerctl) por debajo, así que:
 - Si falta el binario, o no hay ningún reproductor con soporte MPRIS corriendo en ese momento, el botón avisa con un mensaje claro en vez de no hacer nada.
 
 ## 25. Home: planificador semanal y mensual
+
+Home abre en la vista **Día** y ocupa el espacio principal. **Editor** vuelve al documento conservando su posición. **Nueva tarea** permite crear sin guardar borradores cancelados; **Opciones** agrupa filtros y ajustes. Las completadas se pueden desplegar y las tareas propias ofrecen **Deshacer** al completarlas o moverlas.
 
 **Estudio** en la cabecera de Home reúne materiales, tareas y tiempo por asignatura, con un **plan de hoy** según minutos disponibles. Guía: [Estudio por asignatura](Guias/estudio-por-asignatura.md). Para dibujos: paleta → **Pizarra: nueva Excalidraw (local)**; [guía de la pizarra](Guias/excalidraw.md). Guardado manual en archivos `.excalidraw`, sin cuenta.
 

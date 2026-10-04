@@ -1,5 +1,5 @@
-import { addDays, addTask, categoryById, cursor, data, dbItemsOn, formatLong, iso, isoWeekNumber, itemsInRange, matchesFilter, mode, mondayOf, moveItem, noteItemsOn, priorityColor, setCursor, setItemDone, setMode, shownOn, todayIso, updateTask } from './home-data.js';
-import { dbChip, el, makeDropTarget, noteChip, quickAddInput, renderSide, taskCard } from './home-ui.js';
+import { addDays, addTask, categoryById, cursor, dbItemsOn, formatLong, iso, isoWeekNumber, itemsInRange, matchesFilter, mode, mondayOf, moveItem, noteItemsOn, priorityColor, setCursor, setItemDone, setMode, shownOn, todayIso, updateTaskWithUndo } from './home-data.js';
+import { appendTaskGroups, dbChip, el, makeDropTarget, noteChip, progressBar, quickAddInput, renderSide, taskCard } from './home-ui.js';
 import { openTaskEditor } from './home-taskeditor.js';
 import { mainEl, overlay, rangeLabel } from './home.js';
 
@@ -9,6 +9,49 @@ import { mainEl, overlay, rangeLabel } from './home.js';
 // Calendar, con arrastrar/estirar bloques) y mes (calendario).
 
 export const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+export function renderDay() {
+  const date = iso(cursor);
+  const today = date === todayIso();
+  const tasks = shownOn(date);
+  const notes = noteItemsOn(date);
+  const databaseItems = dbItemsOn(date);
+  const all = [...tasks, ...notes, ...databaseItems];
+  rangeLabel.textContent = formatLong(cursor);
+  renderSide(itemsInRange(iso(mondayOf(cursor)), iso(addDays(mondayOf(cursor), 6))).filter((item) => matchesFilter(item.task)));
+  mainEl.replaceChildren();
+  const agenda = el('div', 'home-agenda');
+  const welcome = el('div', 'home-agenda-welcome');
+  welcome.appendChild(el('p', 'home-eyebrow', today ? 'HOY' : 'AGENDA DEL DÍA'));
+  welcome.appendChild(el('h1', null, today ? 'Tu día, con espacio para lo importante.' : formatLong(cursor)));
+  const pending = all.filter((item) => !item.done).length;
+  welcome.appendChild(el('p', 'home-agenda-description', pending ? `${pending} ${pending === 1 ? 'tarea pendiente' : 'tareas pendientes'} para este día.` : 'Un día despejado. Añade lo que quieras organizar.'));
+  agenda.appendChild(welcome);
+  const overview = el('div', 'home-agenda-overview');
+  const progress = el('section', 'home-agenda-stat');
+  progress.appendChild(el('h2', null, 'Progreso del día'));
+  progress.appendChild(progressBar(all));
+  overview.appendChild(progress);
+  const next = tasks.filter((item) => !item.done && item.task.time && (!today || item.task.time >= new Date().toTimeString().slice(0, 5)))
+    .sort((a, b) => a.task.time.localeCompare(b.task.time))[0];
+  const nextHost = el('section', 'home-agenda-stat');
+  nextHost.appendChild(el('h2', null, 'Próxima tarea con hora'));
+  if (next) {
+    const action = el('button', 'home-next-task', `${next.task.time} · ${next.task.title}`);
+    action.addEventListener('click', () => openTaskEditor(next));
+    nextHost.appendChild(action);
+  } else nextHost.appendChild(el('p', 'home-agenda-description', 'Sin más tareas con hora para este día.'));
+  overview.appendChild(nextHost);
+  agenda.appendChild(overview);
+  const list = el('section', 'home-task-list home-agenda-list');
+  list.appendChild(el('h2', null, 'Tu agenda'));
+  appendTaskGroups(list, [...tasks].sort((a, b) => (a.task.time || '99:99').localeCompare(b.task.time || '99:99')), notes, databaseItems, date);
+  agenda.appendChild(list);
+  const add = quickAddInput(date, '+ Escribe una tarea y pulsa Enter');
+  agenda.appendChild(add);
+  makeDropTarget(agenda, () => date);
+  mainEl.appendChild(agenda);
+}
 
 export function renderWeek() {
   const monday = mondayOf(cursor);
@@ -38,10 +81,7 @@ export function renderWeek() {
     col.appendChild(header);
 
     const list = el('div', 'home-task-list');
-    dayTasks.forEach((t) => list.appendChild(taskCard(t)));
-    noteItemsOn(dayIso).forEach((it) => list.appendChild(noteChip(it)));
-    dbItemsOn(dayIso).forEach((it) => list.appendChild(dbChip(it)));
-    if (!list.childElementCount) list.appendChild(el('p', 'home-day-empty', 'Sin tareas'));
+    appendTaskGroups(list, dayTasks, noteItemsOn(dayIso), dbItemsOn(dayIso), dayIso);
     col.appendChild(list);
     col.appendChild(quickAddInput(dayIso));
     makeDropTarget(col, () => dayIso);
@@ -92,14 +132,11 @@ export function retime(item, dateIso, startMin, duration) {
   if (duration) patch.duration = duration;
   if (item.recurring && dateIso !== item.date) {
     // Otra fecha de una repetición: se desprende de la serie (como en Semana).
-    const before = data.tasks.length;
-    moveItem(item, dateIso);
-    const created = data.tasks[data.tasks.length - 1];
-    if (data.tasks.length > before && created) updateTask(created.id, patch);
+    moveItem(item, dateIso, patch);
     return;
   }
   if (!item.recurring && dateIso !== item.date) patch.date = dateIso;
-  updateTask(item.task.id, patch);
+  updateTaskWithUndo(item.task.id, patch, 'Horario actualizado');
 }
 
 export function scheduleEvent(e, dayIso, colsEl) {
@@ -345,6 +382,7 @@ export function renderMonth() {
     const cell = el('div', 'home-calendar-cell' + (inMonth ? '' : ' home-calendar-outside') + (dayIso === today ? ' home-today' : ''));
 
     const num = el('button', 'home-calendar-number', String(day.getDate()));
+    num.dataset.label = day.toLocaleDateString(undefined, { weekday: 'short', month: 'short' });
     num.title = `Ver la semana del ${formatLong(day)}`;
     num.addEventListener('click', (e) => {
       e.stopPropagation();

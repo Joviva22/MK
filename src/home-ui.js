@@ -11,6 +11,29 @@ import { openTaskEditor } from './home-taskeditor.js';
 // cargar (home.js importa de acá para armar el panel).
 import { close, mainEl, render, sideEl } from './home.js';
 
+const completedGroups = new Map();
+export function appendTaskGroups(host, items, notes, databaseItems, key, compact = false) {
+  const completed = [];
+  let pending = 0;
+  for (const [list, build] of [[items, (item) => taskCard(item, compact)], [notes, noteChip], [databaseItems, dbChip]]) {
+    for (const item of list) {
+      const node = build(item);
+      if (item.done) completed.push(node); else { host.appendChild(node); pending++; }
+    }
+  }
+  if (!pending) host.appendChild(el('p', 'home-day-empty', completed.length ? 'Todo listo por aquí.' : 'Sin tareas pendientes'));
+  if (completed.length) {
+    const group = el('details', 'home-completed');
+    group.open = completedGroups.get(key) || false;
+    group.appendChild(el('summary', null, `Completadas (${completed.length})`));
+    const list = el('div', 'home-task-list');
+    list.append(...completed);
+    group.appendChild(list);
+    group.addEventListener('toggle', () => { if (group.isConnected) completedGroups.set(key, group.open); });
+    host.appendChild(group);
+  }
+}
+
 export const CLICK_DELAY_MS = 250; // para distinguir clic (abrir editor) de doble clic (renombrar)
 
 export function el(tag, className, text) {
@@ -176,6 +199,27 @@ export function taskCard(item, compact) {
     e.preventDefault();
     openTaskEditor(item);
   });
+  if (!compact) {
+    const body = el('div', 'home-task-content');
+    const metadata = el('div', 'home-task-meta');
+    body.appendChild(titleEl);
+    card.querySelectorAll('.home-task-time, .home-priority-label, .home-task-cat, .home-task-badges').forEach((node) => metadata.appendChild(node));
+    body.appendChild(metadata);
+    card.insertBefore(body, box.nextSibling);
+    const actions = el('div', 'home-task-actions');
+    const edit = el('button', 'home-icon-button', '✎');
+    edit.title = 'Editar tarea';
+    edit.setAttribute('aria-label', `Editar ${task.title}`);
+    edit.addEventListener('click', (e) => { e.stopPropagation(); openTaskEditor(item); });
+    const tomorrow = el('button', 'home-icon-button', '→');
+    tomorrow.title = 'Pasar a mañana';
+    tomorrow.setAttribute('aria-label', `Pasar ${task.title} a mañana`);
+    tomorrow.addEventListener('click', (e) => { e.stopPropagation(); moveItem(item, iso(addDays(new Date(), 1))); });
+    const link = card.querySelector('.home-task-note');
+    if (link) actions.appendChild(link);
+    actions.append(edit, tomorrow);
+    card.appendChild(actions);
+  }
   return card;
 }
 

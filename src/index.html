@@ -622,12 +622,13 @@
     </div>
   </div>
 
-  <div id="home-panel" class="modal-overlay palette-overlay" hidden>
+  <div id="home-panel" class="home-workspace" hidden role="region" aria-labelledby="home-heading">
     <div class="command-palette home-modal">
       <div class="home-header">
-        <div class="home-title">Home</div>
+        <div id="home-heading" class="home-title">Home</div>
         <div class="home-mode-toggle">
-          <button id="home-mode-week" class="toolbar-button home-mode-active">Semana</button>
+          <button id="home-mode-day" class="toolbar-button home-mode-active" aria-pressed="true">Día</button>
+          <button id="home-mode-week" class="toolbar-button">Semana</button>
           <button id="home-mode-hours" class="toolbar-button" title="Semana por horas, estilo calendario">Horario</button>
           <button id="home-mode-month" class="toolbar-button">Mes</button>
         </div>
@@ -638,6 +639,11 @@
         </div>
         <span id="home-range-label" class="home-range-label"></span>
         <span class="toolbar-spacer"></span>
+        <button id="home-add-task" class="toolbar-button home-primary">Añadir tarea</button>
+        <button id="home-study-btn" class="toolbar-button" title="Materiales, tareas y tiempo por asignatura">Estudio</button>
+        <details id="home-options" class="home-options">
+          <summary>Opciones</summary>
+          <div class="home-options-body">
         <label class="home-db-toggle" title="Mostrar en el calendario las tareas escritas en tus notas como  - [ ] algo 📅 2026-10-03">
           <input type="checkbox" id="home-show-notes" /> Tareas de notas
         </label>
@@ -650,10 +656,12 @@
         </label>
         <select id="home-cat-filter" class="home-cat-filter" title="Mostrar solo una categoría (las tareas nuevas la heredan)" aria-label="Filtrar por categoría"></select>
         <button id="home-cats-btn" class="toolbar-button" title="Categorías: nombres y colores">🏷</button>
-        <button id="home-study-btn" class="toolbar-button" title="Materiales, tareas y tiempo por asignatura">Estudio</button>
-        <button id="home-stats-btn" class="toolbar-button" title="Estadísticas: semana, mes, racha, hábitos">📈</button>
-        <button id="home-close" class="toolbar-button" title="Cerrar (Esc)">×</button>
+        <button id="home-stats-btn" class="toolbar-button" title="Estadísticas: semana, mes, racha, hábitos">Estadísticas</button>
+          </div>
+        </details>
+        <button id="home-close" class="toolbar-button" title="Volver al documento (Esc)">Editor</button>
       </div>
+      <div id="home-feedback" class="home-feedback" role="status" aria-live="polite" hidden></div>
       <div class="home-layout">
         <aside id="home-side" class="home-side"></aside>
         <div id="home-main" class="home-main"></div>
@@ -749,31 +757,42 @@
 
   <div id="pdfhighlight-panel" class="modal-overlay palette-overlay" hidden>
     <div class="command-palette pdfhighlight-modal">
-      <div class="backlinks-title">PDF: subrayar y escribir — "Subrayar": arrastrá sobre el texto · "Escribir": clic donde quieras escribir</div>
-      <div class="pdfpages-toolbar">
-        <button id="pdfhighlight-open" class="toolbar-button">Abrir PDF...</button>
+      <div class="pdf-editor-header">
+        <div class="pdf-editor-heading"><h2>Editar PDF</h2><span id="pdfhighlight-document-name">Elige un documento para empezar</span></div>
+        <button id="pdfhighlight-open" class="toolbar-button">Abrir PDF…</button>
+        <button id="pdfhighlight-save" class="toolbar-button set-primary" disabled title="Guarda las anotaciones en una copia del PDF">Guardar copia…</button>
+        <button id="pdfhighlight-close" class="toolbar-button" aria-label="Cerrar editor PDF">Cerrar</button>
+      </div>
+      <div class="pdfpages-toolbar pdf-editor-tools">
+        <div class="pdf-editor-group" role="group" aria-label="Página">
         <button id="pdfhighlight-prev" class="toolbar-button" disabled>◀</button>
         <span id="pdfhighlight-pageinfo" class="pdfpages-filename">–</span>
+        <label class="pdf-page-jump">Ir a <input id="pdfhighlight-page-input" type="number" min="1" value="1" disabled aria-label="Número de página" /></label>
         <button id="pdfhighlight-next" class="toolbar-button" disabled>▶</button>
-        <span class="pdfhighlight-sep"></span>
+        </div>
+        <div class="pdf-editor-group" role="group" aria-label="Herramientas de anotación">
         <button id="pdfhighlight-mode-select" class="toolbar-button" title="Seleccionar y copiar texto original del PDF">Seleccionar</button>
-        <button id="pdfhighlight-mode-highlight" class="toolbar-button pdfhighlight-mode-active" title="Arrastrar sobre el texto para subrayarlo">🖍 Subrayar</button>
-        <button id="pdfhighlight-mode-text" class="toolbar-button" title="Clic en la página para escribir ahí">T Escribir</button>
+        <button id="pdfhighlight-mode-highlight" class="toolbar-button pdfhighlight-mode-active" title="Arrastrar sobre el texto para subrayarlo">Subrayar</button>
+        <button id="pdfhighlight-mode-text" class="toolbar-button" title="Clic en la página para escribir ahí">Escribir</button>
+        </div>
+        <label class="pdf-zoom-label">Zoom <select id="pdfhighlight-zoom" class="pdfhighlight-size" aria-label="Zoom del PDF"><option value="fit">Ajustar al ancho</option><option value="0.75">75 %</option><option value="1">100 %</option><option value="1.25">125 %</option><option value="1.5">150 %</option><option value="2">200 %</option></select></label>
+        <div id="pdfhighlight-text-options" class="pdf-editor-group" role="group" aria-label="Formato del texto" hidden>
+        <label for="pdfhighlight-size">Tamaño</label>
         <select id="pdfhighlight-size" class="pdfhighlight-size" title="Tamaño de letra (puntos)">
           <option value="8">8</option><option value="10">10</option><option value="12" selected>12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="24">24</option><option value="32">32</option>
         </select>
         <input id="pdfhighlight-color" type="color" value="#000000" class="pdfhighlight-color" title="Color del texto" />
-        <span class="pdfhighlight-sep"></span>
+        </div>
         <button id="pdfhighlight-undo" class="toolbar-button" disabled>Deshacer subrayado</button>
-        <button id="pdfhighlight-save" class="toolbar-button" disabled>Guardar como...</button>
       </div>
+      <p id="pdfhighlight-mode-help" class="pdf-mode-help">Selecciona texto para copiarlo o llevarlo a tus notas.</p>
       <div class="pdfhighlight-selection-actions">
         <span id="pdfhighlight-selection-info" role="status">Modo Seleccionar: arrastra sobre el texto original.</span>
         <button id="pdfhighlight-copy" class="toolbar-button" disabled>Copiar selección</button>
         <button id="pdfhighlight-new-note" class="toolbar-button" disabled>Crear nota con selección</button>
         <button id="pdfhighlight-add-note" class="toolbar-button" disabled>Añadir al final de nota abierta</button>
       </div>
-      <div id="pdfhighlight-empty" class="command-palette-empty">Abrí un PDF para empezar.</div>
+      <div id="pdfhighlight-empty" class="command-palette-empty"><strong>Subraya, escribe y completa formularios.</strong><p>Abre un PDF o usa el que tienes seleccionado en el explorador.</p><button id="pdfhighlight-empty-open" class="toolbar-button">Elegir PDF…</button></div>
       <div id="pdfhighlight-body" class="pdfhighlight-body" hidden>
         <div class="pdfhighlight-scroll">
           <div id="pdfhighlight-canvas-wrap" class="pdfhighlight-canvas-wrap">
@@ -782,6 +801,7 @@
         </div>
         <div id="pdfhighlight-form" class="pdfhighlight-form" hidden></div>
       </div>
+      <div class="pdf-editor-footer"><span id="pdfhighlight-save-status" role="status" aria-live="polite">Sin documento abierto</span><span>Se guarda una copia; el original se conserva.</span></div>
     </div>
   </div>
 

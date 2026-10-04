@@ -3,31 +3,48 @@
 let panel, engine, filePath = null, disk = null, current = '', clean = '', saving = false, opening = false;
 let dockHost = null;
 let initialized = false;
+let feedback = '';
 function dirty() { return current !== clean; }
 function status(message) {
+  if (message !== undefined) feedback = message;
   const node = panel?.querySelector('[role="status"]');
-  if (node) node.textContent = message || `${filePath || 'Pizarra sin guardar'}${dirty() ? ' · Cambios sin guardar' : ''}`;
+  const title = panel?.querySelector('.drawing-document-name');
+  if (title) { title.textContent = filePath ? filePath.split(/[\\/]/).pop() : 'Pizarra nueva'; title.title = filePath || 'Elige una ubicación al guardar'; }
+  if (node) {
+    node.textContent = saving ? 'Guardando…' : !initialized ? 'Preparando pizarra…' :
+      feedback ? `${feedback}${dirty() ? ' · Cambios sin guardar' : ''}` : dirty() ? 'Cambios sin guardar' : filePath ? 'Guardada' : 'Todavía no se ha guardado';
+    node.dataset.state = saving ? 'saving' : dirty() ? 'pending' : filePath ? 'saved' : 'new';
+  }
+  panel?.setAttribute('aria-busy', String(saving || opening));
+  panel?.querySelectorAll('.drawing-toolbar button').forEach((button) => {
+    button.disabled = saving || opening || !initialized || (button.id === 'drawing-save' && !!filePath && !dirty());
+  });
+  const saveButton = panel?.querySelector('#drawing-save');
+  if (saveButton) saveButton.textContent = saving ? 'Guardando…' : 'Guardar';
 }
 function close() {
   if (saving || (dirty() && !confirm('Hay cambios en la pizarra sin guardar. ¿Descartarlos y cerrar?'))) return false;
   engine?.unmount(); engine = null; panel?.remove(); panel = null; dockHost = null; current = clean = ''; return true;
 }
 async function save(as = false) {
-  if (!panel || saving) return;
+  if (!panel || saving || !initialized) return;
   saving = true;
+  feedback = '';
+  status();
   const snapshot = current;
   try {
     const result = await window.mdEditor.drawingSave({ content: snapshot, filePath, expected: disk, forceDialog: as });
     if (result?.error) throw new Error(result.error);
-    if (result?.path) { filePath = result.path; disk = snapshot; clean = snapshot; document.dispatchEvent(new CustomEvent('mk:drawing-saved', { detail: { path: filePath } })); }
+    if (result?.path) { filePath = result.path; disk = snapshot; clean = snapshot; feedback = 'Guardada'; document.dispatchEvent(new CustomEvent('mk:drawing-saved', { detail: { path: filePath } })); }
+    else feedback = 'Guardado cancelado';
     status();
   } catch (error) { status(error.message); }
-  finally { saving = false; }
+  finally { saving = false; status(); }
 }
 async function open(path = null) {
   if (opening || saving) return false;
   opening = true;
-  try { return await openScene(path); } finally { opening = false; }
+  try { return await openScene(path); } finally { opening = false; status(); }
 }
 async function openScene(path) {
   const host = dockHost;
@@ -46,19 +63,31 @@ async function openScene(path) {
   filePath = path; disk = source;
   current = clean = window.mdDrawingEngine.serialize(initial.elements, initial.appState || {}, initial.files || {});
   panel = document.createElement('section'); panel.id = 'drawing-panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Pizarra Excalidraw');
-  Object.assign(panel.style, { position: 'fixed', inset: '20px', zIndex: '1200', background: 'var(--bg, white)', display: 'flex', flexDirection: 'column', border: '1px solid var(--border, #888)' });
-  const toolbar = document.createElement('div'); toolbar.style.padding = '8px';
-  function button(label, action) { const b = document.createElement('button'); b.textContent = label; b.addEventListener('click', () => Promise.resolve().then(action).catch((e) => status(e.message))); toolbar.append(b); }
-  button('Nueva', () => open());
-  button('Abrir…', async () => { const p = await window.mdEditor.openFile(); if (p) await open(p); });
-  button('Guardar', () => save()); button('Guardar como…', () => save(true)); button('Cerrar', close);
-  const info = document.createElement('span'); info.setAttribute('role', 'status'); toolbar.append(info);
+  const toolbar = document.createElement('div'); toolbar.className = 'drawing-toolbar';
+  const heading = document.createElement('div'); heading.className = 'drawing-heading';
+  const name = document.createElement('span'); name.className = 'drawing-document-name';
+  const info = document.createElement('span'); info.className = 'drawing-status'; info.setAttribute('role', 'status'); info.setAttribute('aria-live', 'polite');
+  heading.append(name, info); toolbar.appendChild(heading);
+  const actions = document.createElement('div'); actions.className = 'drawing-file-actions'; toolbar.appendChild(actions);
+  function button(id, label, hint, action, primary = false) {
+    const b = document.createElement('button'); b.id = id; b.type = 'button'; b.className = `toolbar-button${primary ? ' set-primary' : ''}`;
+    b.textContent = label; b.title = hint;
+    b.addEventListener('click', () => Promise.resolve().then(action).catch((e) => status(e.message))); actions.append(b);
+  }
+  button('drawing-new', 'Nueva', 'Crear otra pizarra', () => open());
+  button('drawing-open', 'Abrir…', 'Abrir una pizarra Excalidraw', async () => { const p = await window.mdEditor.openFile(); if (p) await open(p); });
+  button('drawing-save', 'Guardar', 'Guardar esta pizarra (Ctrl+S)', () => save(), true);
+  button('drawing-save-as', 'Guardar como…', 'Elegir otro nombre o ubicación (Ctrl+Shift+S)', () => save(true));
+  button('drawing-close', 'Cerrar', 'Cerrar la pizarra', close);
   const canvas = document.createElement('div'); canvas.style.flex = '1'; canvas.style.minHeight = '0';
   panel.append(toolbar, canvas); document.body.append(panel);
-  if (host) { dockHost = host; host.append(panel); panel.classList.add('drawing-study-docked'); }
+  if (host) { dockHost = host; host.append(panel); panel.classList.add('drawing-study-docked'); panel.setAttribute('role', 'region'); }
   initialized = false;
+  feedback = '';
   engine = window.mdDrawingEngine.mount(canvas, initial, (elements, appState, files) => {
-    current = window.mdDrawingEngine.serialize(elements, appState, files);
+    const next = window.mdDrawingEngine.serialize(elements, appState, files);
+    if (next !== current) feedback = '';
+    current = next;
     if (!initialized) { clean = current; initialized = true; }
     status();
   });
@@ -72,6 +101,7 @@ window.addEventListener('beforeunload', (event) => { if (dirty() || saving) { ev
 async function dock(host, path = filePath) {
   if (!panel || path !== filePath) { if (!await open(path)) return false; }
   dockHost = host; host.append(panel); panel.classList.add('drawing-study-docked');
+  panel.setAttribute('role', 'region');
   return true;
 }
 window.mdDrawing = { open, close, save, dock, getState: () => ({ filePath, dirty: dirty(), saving, opening, ready: !!panel && initialized, docked: !!dockHost }), getAPI: () => engine?.getAPI() };

@@ -1,5 +1,6 @@
 import { el } from './home-ui.js';
-import { categoryFilter, close, homeInFolder, modeHoursBtn, modeMonthBtn, modeWeekBtn, open, render } from './home.js';
+import { categoryFilter, close, homeInFolder, mainEl, modeDayBtn, modeHoursBtn, modeMonthBtn, modeWeekBtn, open, render } from './home.js';
+import { clearUndo, offerUndo } from './home-feedback.js';
 
 'use strict';
 
@@ -67,7 +68,7 @@ export let noteItems = []; // tareas "- [ ] ... 📅 AAAA-MM-DD" encontradas en 
 
 export let saveTimer = null;
 
-export let mode = 'week'; // 'week' | 'month' | 'hours'
+export let mode = 'day'; // 'day' | 'week' | 'month' | 'hours'
 
 export let cursor = new Date(); // cualquier día dentro de la semana/mes visible
 
@@ -113,6 +114,7 @@ export function wantedRoot() {
 }
 
 export async function readStored(root) {
+  clearUndo();
   let stored = await window.mdEditor.homeLoad(root);
   let seeded = false;
   if (!stored && root) {
@@ -255,9 +257,11 @@ export function addTask(title, date, extra) {
   if (!text) return;
   // Sin @categoría, hereda la del filtro activo (si hay una elegida).
   const category = parsed.category || (categoryFilter && categoryFilter !== 'none' ? categoryFilter : null);
-  data.tasks.push({ id: newId(), title: text, date: date || null, done: false, priority: 'media', notes: '', category, ...(extra || {}) });
+  const task = { id: newId(), title: text, date: date || null, done: false, priority: 'media', notes: '', category, ...(extra || {}) };
+  data.tasks.push(task);
   save();
   render();
+  return task;
 }
 
 export function updateTask(id, patch) {
@@ -268,6 +272,39 @@ export function updateTask(id, patch) {
   render();
 }
 
+function captureFields(task, keys) {
+  return Object.fromEntries(keys.map((key) => [key, window.structuredClone(task[key])]));
+}
+
+function offerTaskUndo(message, task, before, created) {
+  const root = dataRoot;
+  const after = captureFields(task, Object.keys(before));
+  const createdState = created ? JSON.stringify(created) : null;
+  offerUndo(message, () => {
+    const current = data.tasks.find((t) => t.id === task.id);
+    if (dataRoot !== root || !current || Object.keys(after).some((key) => JSON.stringify(current[key]) !== JSON.stringify(after[key]))) return false;
+    if (created) {
+      const extra = data.tasks.find((t) => t.id === created.id);
+      if (!extra || JSON.stringify(extra) !== createdState) return false;
+      data.tasks = data.tasks.filter((t) => t.id !== created.id);
+    }
+    for (const [key, value] of Object.entries(before)) {
+      if (value === undefined) delete current[key]; else current[key] = value;
+    }
+    save();
+    render();
+    return true;
+  });
+}
+
+export function updateTaskWithUndo(id, patch, message) {
+  const task = data.tasks.find((t) => t.id === id);
+  if (!task) return;
+  const before = captureFields(task, Object.keys(patch));
+  updateTask(id, patch);
+  offerTaskUndo(message, task, before);
+}
+
 export function deleteTask(id) {
   data.tasks = data.tasks.filter((t) => t.id !== id);
   save();
@@ -275,6 +312,7 @@ export function deleteTask(id) {
 }
 
 export function setItemDone(item, done) {
+  const before = captureFields(item.task, item.recurring ? ['doneDates'] : ['done', 'doneAt']);
   // La mascota gana experiencia (una vez por tarea y día, ver pet.js).
   if (done && !item.done && window.mdPet) window.mdPet.gain('task', `home:${item.task.id}|${item.date}`);
   if (item.recurring) {
@@ -285,6 +323,7 @@ export function setItemDone(item, done) {
     // doneAt: para archivar después las terminadas sin fecha (ver archiveOld).
     updateTask(item.task.id, { done, doneAt: done ? todayIso() : null });
   }
+  offerTaskUndo(done ? 'Tarea completada' : 'Tarea marcada como pendiente', item.task, before);
 }
 
 // ---- archivo de tareas terminadas viejas ----
@@ -377,19 +416,26 @@ export function skipOccurrence(item) {
 
 // Mover una tarea de día. Si es una repetición, se "desprende" de la serie:
 // se saca ese día de la serie y se crea una tarea común en el día nuevo.
-export function moveItem(item, newDate) {
+export function moveItem(item, newDate, extra = {}) {
   if (!item.recurring) {
-    updateTask(item.task.id, { date: newDate });
+    updateTaskWithUndo(item.task.id, { date: newDate, ...extra }, 'Tarea reprogramada');
     return;
   }
-  if (newDate === item.date) return;
+  if (newDate === item.date) {
+    if (Object.keys(extra).length) updateTaskWithUndo(item.task.id, extra, 'Horario actualizado');
+    return;
+  }
   const t = item.task;
+  const before = captureFields(t, ['skipDates', 'doneDates']);
   data.tasks.push({
+    ...window.structuredClone(t), repeat: null, doneDates: undefined, skipDates: undefined,
     id: newId(), title: t.title, date: newDate, done: item.done, priority: t.priority,
     notes: t.notes || '', time: t.time || null, remind: t.remind != null ? t.remind : null,
-    advance: t.advance || []
+    advance: t.advance || [], ...extra
   });
+  const created = data.tasks[data.tasks.length - 1];
   skipOccurrence(item);
+  offerTaskUndo('Repetición reprogramada', t, before, created);
 }
 
 export function findItem(taskId, dateIso) {
@@ -977,10 +1023,14 @@ export async function sendPlanToDailyNote() {
 }
 
 export function setMode(next) {
+  if (!['day', 'week', 'month', 'hours'].includes(next)) return;
   mode = next;
-  modeWeekBtn.classList.toggle('home-mode-active', mode === 'week');
-  modeMonthBtn.classList.toggle('home-mode-active', mode === 'month');
-  if (modeHoursBtn) modeHoursBtn.classList.toggle('home-mode-active', mode === 'hours');
+  for (const [button, value] of [[modeDayBtn, 'day'], [modeWeekBtn, 'week'], [modeMonthBtn, 'month'], [modeHoursBtn, 'hours']]) {
+    if (!button) continue;
+    button.classList.toggle('home-mode-active', mode === value);
+    button.setAttribute('aria-pressed', String(mode === value));
+  }
+  mainEl.scrollTop = 0;
   render();
 }
 

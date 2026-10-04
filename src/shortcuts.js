@@ -18,7 +18,7 @@ function consume(event) { event.preventDefault(); event.stopImmediatePropagation
 function contextual(event) {
   // La terminal y Excalidraw conservan sus teclas locales (guardar dibujo,
   // buscar en terminal, etc.). No capturar escritura ni atajos de esos editores.
-  return event.target?.closest?.('#drawing-panel, #terminal-body');
+  return event.target?.closest?.('#drawing-panel, #terminal-body, .pdfhighlight-modal');
 }
 window.addEventListener('keydown', (event) => {
   const input = event.target?.closest?.('[data-shortcut]');

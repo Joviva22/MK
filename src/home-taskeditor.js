@@ -1,4 +1,4 @@
-import { PRIORITIES, REMIND_OPTIONS, REPEAT_OPTIONS, addDays, data, deleteTask, iso, moveItem, noteNames, parseIso, skipOccurrence, startPomodoroFor, todayIso, updateTask } from './home-data.js';
+import { PRIORITIES, REMIND_OPTIONS, REPEAT_OPTIONS, addDays, addTask, data, deleteTask, iso, moveItem, noteNames, parseIso, skipOccurrence, startPomodoroFor, todayIso, updateTask } from './home-data.js';
 import { el } from './home-ui.js';
 import { DAY_NAMES } from './home-views.js';
 
@@ -16,14 +16,14 @@ export function closeTaskEditor() {
   }
 }
 
-export function openTaskEditor(item) {
+export function openTaskEditor(item, { creating = false } = {}) {
   const task = item.task;
   closeTaskEditor();
   const modal = el('div', 'modal-overlay palette-overlay');
   const box = el('div', 'command-palette home-editor');
   modal.appendChild(box);
 
-  box.appendChild(el('div', 'backlinks-title', item.recurring ? 'Editar tarea recurrente' : 'Editar tarea'));
+  box.appendChild(el('div', 'backlinks-title', creating ? 'Añadir tarea' : item.recurring ? 'Editar tarea recurrente' : 'Editar tarea'));
   if (item.recurring) {
     box.appendChild(el('div', 'home-editor-hint', 'Los cambios se aplican a todas las repeticiones.'));
   }
@@ -48,6 +48,9 @@ export function openTaskEditor(item) {
 
   const titleInput = field('Título', el('input', 'home-editor-input'));
   titleInput.value = task.title;
+  titleInput.placeholder = '¿Qué tienes que hacer?';
+  titleInput.required = true;
+  titleInput.addEventListener('input', () => titleInput.setCustomValidity(''));
 
   const row1 = el('div', 'home-editor-row');
   box.appendChild(row1);
@@ -122,8 +125,17 @@ export function openTaskEditor(item) {
   const notesInput = field('Notas', el('textarea', 'home-editor-input home-editor-notes'));
   notesInput.value = task.notes || '';
 
+  if (creating) {
+    const advanced = el('details', 'home-create-advanced');
+    advanced.appendChild(el('summary', null, 'Más opciones: hora, categoría y recordatorios'));
+    // Keep title/date up front. Advanced controls retain the same data model.
+    Array.from(row1.children).slice(1).forEach((child) => advanced.appendChild(child));
+    [row2, daysWrap, advWrap, prioSelect.closest('label'), catSelect.closest('label'), noteInput.closest('label'), noteList, notesInput.closest('label')].forEach((node) => advanced.appendChild(node));
+    box.appendChild(advanced);
+  }
+
   const actions = el('div', 'home-editor-actions');
-  if (item.recurring) {
+  if (!creating && item.recurring) {
     const delOne = el('button', 'toolbar-button home-danger', 'Eliminar este día');
     delOne.addEventListener('click', () => {
       closeTaskEditor();
@@ -136,7 +148,7 @@ export function openTaskEditor(item) {
       deleteTask(task.id);
     });
     actions.append(delOne, delAll);
-  } else {
+  } else if (!creating) {
     const del = el('button', 'toolbar-button home-danger', 'Eliminar');
     del.addEventListener('click', () => {
       if (!confirm(`¿Eliminar la tarea "${task.title}"?`)) return;
@@ -147,14 +159,15 @@ export function openTaskEditor(item) {
   }
   const cancel = el('button', 'toolbar-button', 'Cancelar');
   cancel.addEventListener('click', closeTaskEditor);
-  const ok = el('button', 'toolbar-button home-primary', 'Guardar');
+  const ok = el('button', 'toolbar-button home-primary', creating ? 'Crear tarea' : 'Guardar');
   const commit = () => {
+    if (!titleInput.value.trim()) { titleInput.setCustomValidity('Escribe un título para la tarea.'); titleInput.reportValidity(); titleInput.focus(); return; }
     const freq = repeatSelect.value;
     // Una serie necesita fecha de inicio: si no hay, arranca hoy.
     const date = dateInput.value || (freq ? (item.date || todayIso()) : null);
     const days = dayBoxes.map((cb, idx) => (cb.checked ? idx : -1)).filter((i) => i >= 0);
     closeTaskEditor();
-    updateTask(task.id, {
+    const patch = {
       title: titleInput.value.trim() || task.title,
       date,
       time: timeInput.value || null,
@@ -166,7 +179,9 @@ export function openTaskEditor(item) {
       category: catSelect.value || null,
       notes: notesInput.value,
       note: noteInput.value.trim() || null
-    });
+    };
+    if (creating) { delete patch.title; addTask(titleInput.value.trim(), date, patch); }
+    else updateTask(task.id, patch);
   };
   ok.addEventListener('click', commit);
   titleInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
@@ -183,7 +198,8 @@ export function openTaskEditor(item) {
     closeTaskEditor();
     startPomodoroFor(item);
   });
-  actions.append(el('span', 'toolbar-spacer'), tomorrowBtn, pomo, cancel, ok);
+  if (creating) actions.append(el('span', 'toolbar-spacer'), cancel, ok);
+  else actions.append(el('span', 'toolbar-spacer'), tomorrowBtn, pomo, cancel, ok);
   box.appendChild(actions);
 
   modal.addEventListener('mousedown', (e) => { if (e.target === modal) closeTaskEditor(); });

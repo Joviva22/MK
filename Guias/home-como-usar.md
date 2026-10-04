@@ -11,17 +11,25 @@ Guía paso a paso del **Home**, el planificador semanal y mensual de MK. Para id
 | Botón **Home** (toolbar, arriba a la izquierda) | Abre el Home |
 | `Ctrl+Shift+H` | Abre / cierra el Home |
 | Paleta de comandos (`Ctrl+Shift+P`) → "Home: planificador semanal y mensual" | Abre el Home |
-| `Escape`, botón **×** o clic fuera del panel | Cierra el Home |
+| `Escape` o botón **Editor** | Vuelve al documento y conserva su posición |
 
 Para que aparezca solo al abrir MK: ⚙ **Ajustes** → tildá **"Abrir Home al iniciar"**.
 
 > No necesita carpeta abierta. Tus tareas son personales y se guardan en la configuración de la app (`home.json`), no dentro de tus notas — las ves igual abras la carpeta que abras.
 
+## Vista Día y acciones rápidas
+
+Home ocupa el espacio principal de trabajo y abre en **Día**. Muestra pendientes, progreso y próxima tarea con hora, junto a la agenda y el contexto lateral. **Nueva tarea** abre un formulario con título y fecha; hora, prioridad y repetición están en las opciones avanzadas. Cancelar no crea ninguna tarea. También puedes escribir directamente al pie de la agenda.
+
+Las completadas quedan en un grupo desplegable. Al completar o mover una tarea propia aparece **Deshacer** durante unos segundos. Las acciones de editar y pasar a mañana aparecen al enfocar una tarjeta o pasar el cursor.
+
+**Opciones** reúne filtros, fuentes del calendario, recordatorios, categorías y estadísticas. Puedes cambiar entre **Día / Semana / Horario / Mes**; las vistas Semana y Mes se apilan cuando falta ancho.
+
 ## Las partes de la pantalla
 
 ```
 ┌───────────────────────────────────────────────────────────────────┐
-│ Home  [Semana|Mes]  ‹ Hoy ›  Semana 40 · 28 sept – 4 oct   ☐ BD × │  ← cabecera
+│ Home  [Día|Semana|Horario|Mes]  ‹ Hoy ›  Semana 40 · 28 sept – 4 oct   ☐ BD × │  ← cabecera
 ├──────────────┬────────────────────────────────────────────────────┤
 │ Progreso     │  Lun   Mar   Mié   Jue   Vie   Sáb   Dom           │
 │ Objetivos    │  ┌──┐  ┌──┐  ...                                   │
@@ -32,7 +40,7 @@ Para que aparezca solo al abrir MK: ⚙ **Ajustes** → tildá **"Abrir Home al 
    panel lateral            vista principal (semana o calendario)
 ```
 
-- **Semana / Mes**: cambia entre la vista de 7 columnas y el calendario mensual.
+- **Día / Semana / Horario / Mes**: cambia entre agenda diaria, semana, franjas horarias y calendario mensual.
 - **‹ / ›**: semana (o mes) anterior / siguiente. **Hoy**: vuelve al período actual.
 - **Fechas de bases de datos**: muestra también las filas de tus [bases de datos](bases-de-datos-como-usar.md) que tengan una columna *Fecha* (ver más abajo).
 

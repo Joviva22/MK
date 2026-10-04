@@ -1113,7 +1113,7 @@
   check('PDF: pestañas de documentos visibles y editor oculto',
     document.getElementById('tabbar').getBoundingClientRect().height > 0 &&
     getComputedStyle(document.getElementById('editor-pane')).display === 'none');
-  window.mdPdfHighlight.open();
+  await window.mdPdfHighlight.open();
   const pdfTab = document.querySelector('.pdf-document-tabs button');
   const pdfTabsVisible = !!pdfTab && pdfTab.getBoundingClientRect().height > 0;
   if (pdfTab) pdfTab.click();
@@ -1324,6 +1324,65 @@
   );
 
   // 22j. Ocultar botones de la toolbar desde Ajustes (toolbarcustomize.js):
+  {
+    const H = window.mdHome;
+    const cm = window.mdCodeMirror;
+    const doc = cm.getDoc();
+    const content = cm.getValue();
+    const cursorBefore = cm.getCursor();
+    await H.open();
+    document.getElementById('home-today').click();
+    H.setMode('day');
+    const workspaceOk = document.body.classList.contains('home-active') && document.querySelector('.container').inert &&
+      !document.getElementById('home-panel').classList.contains('modal-overlay') && !!document.querySelector('.home-agenda');
+    const model = H.getData();
+    const before = model.tasks.slice();
+    const count = model.tasks.length;
+    document.getElementById('home-add-task').click();
+    const draft = document.querySelector('.home-editor');
+    const draftOk = !!draft && !draft.querySelector('.home-create-advanced').open && model.tasks.length === count;
+    Array.from(draft.querySelectorAll('button')).find((button) => button.textContent === 'Cancelar').click();
+    const cancelOk = model.tasks.length === count;
+    document.getElementById('home-add-task').click();
+    const create = document.querySelector('.home-editor');
+    const title = `Agenda UX ${Date.now()}`;
+    create.querySelector('input').value = title;
+    const date = create.querySelector('input[type="date"]').value;
+    Array.from(create.querySelectorAll('button')).find((button) => button.textContent === 'Crear tarea').click();
+    const created = model.tasks.find((task) => task.title === title);
+    const card = () => Array.from(document.querySelectorAll('.home-agenda .home-task')).find((node) => node.textContent.includes(title));
+    const createdOk = !!created && created.date === date && !!card();
+    card().querySelector('input[type="checkbox"]').click();
+    const group = document.querySelector('.home-agenda .home-completed');
+    const doneOk = created.done && !!group && !group.open && !document.getElementById('home-feedback').hidden;
+    document.querySelector('#home-feedback button').click();
+    const undoDone = !created.done;
+    card().querySelector('button[title="Pasar a mañana"]').click();
+    const moved = created.date !== date;
+    created.notes = 'Nota posterior que debe conservarse';
+    document.querySelector('#home-feedback button').click();
+    const undoMove = created.date === date && created.notes === 'Nota posterior que debe conservarse';
+    const recurring = { id: `agenda-repeat-${Date.now()}`, title: 'Repetición de prueba', date, priority: 'media', repeat: { freq: 'daily' }, category: 'universidad', time: '10:00', duration: 90 };
+    model.tasks.push(recurring);
+    H.setMode('day');
+    const recurringCard = Array.from(document.querySelectorAll('.home-agenda .home-task')).find((node) => node.textContent.includes(recurring.title));
+    recurringCard.querySelector('button[title="Pasar a mañana"]').click();
+    const detached = model.tasks.find((task) => task.title === recurring.title && task.id !== recurring.id);
+    const detachedOk = detached && detached.category === recurring.category && detached.duration === 90;
+    document.querySelector('#home-feedback button').click();
+    const undoRepeat = !model.tasks.some((task) => task.id === detached?.id) && !recurring.skipDates;
+    model.tasks = before;
+    await window.mdEditor.homeSave(model, H.dataLocation());
+    H.close();
+    const returnOk = !document.body.classList.contains('home-active') && !document.querySelector('.container').inert &&
+      cm.getDoc() === doc && cm.getValue() === content && JSON.stringify(cm.getCursor()) === JSON.stringify(cursorBefore);
+    check('Home: vista principal, creación sin borradores persistidos y vuelta al documento', workspaceOk && draftOk && cancelOk && createdOk && returnOk,
+      `vista=${workspaceOk} borrador=${draftOk} cancelar=${cancelOk} crear=${createdOk} volver=${returnOk}`);
+    check('Home: completadas plegables y deshacer conserva cambios posteriores y recurrencias', doneOk && undoDone && moved && undoMove && detachedOk && undoRepeat,
+      `completada=${doneOk} deshacer=${undoDone} mover=${moved} posterior=${undoMove} desprendida=${!!detachedOk} serie=${undoRepeat}`);
+    H.setMode('week');
+  }
+
   {
     const tools = document.getElementById('tools-menu');
     const trigger = document.getElementById('btn-tools');
@@ -2326,18 +2385,32 @@
   let pdfHighlightDetail = 'sin fixturesDir';
   if (fixturePdfPath) {
     await window.mdPdfHighlight.loadFromPath(fixturePdfPath);
+    await window.mdPdfHighlight.open();
+    window.mdPdfHighlight.setMode('text');
+    const formatVisible = !document.getElementById('pdfhighlight-text-options').hidden && document.querySelector('.pdfhighlight-selection-actions').hidden;
+    window.mdPdfHighlight.setMode('select');
+    const formatHidden = document.getElementById('pdfhighlight-text-options').hidden && !document.querySelector('.pdfhighlight-selection-actions').hidden;
+    const jump = document.getElementById('pdfhighlight-page-input');
+    jump.value = '2'; jump.dispatchEvent(new Event('change'));
+    await waitFor(() => window.mdPdfHighlight.getState().pageNum === 2 && window.mdPdfHighlight.getState().pageReady);
+    const jumped = window.mdPdfHighlight.getState().pageNum === 2;
+    jump.value = '999'; jump.dispatchEvent(new Event('change'));
+    const bounded = window.mdPdfHighlight.getState().pageNum === 2 && jump.value === '2';
+    const zoom = document.getElementById('pdfhighlight-zoom');
+    zoom.value = '1.5'; zoom.dispatchEvent(new Event('change'));
+    await waitFor(() => window.mdPdfHighlight.getState().pageReady);
+    const zoomed = window.mdPdfHighlight.getState().zoom === '1.5' && document.getElementById('pdfhighlight-canvas').width === 600;
+    zoom.value = 'fit'; zoom.dispatchEvent(new Event('change'));
+    await window.mdPdfHighlight.goToPage(1);
+    check('PDF: formato contextual, salto de página válido y zoom', formatVisible && formatHidden && jumped && bounded && zoomed,
+      `texto=${formatVisible} selección=${formatHidden} página=${jumped} límites=${bounded} zoom=${zoomed}`);
     const stateBefore = window.mdPdfHighlight.getState();
     window.mdPdfHighlight.addHighlightForTest(0.1, 0.4, 0.5, 0.08);
     const stateAfter = window.mdPdfHighlight.getState();
-
-    const originalAlert = window.alert;
-    let savedMsg = null;
-    window.alert = (m) => { savedMsg = m; };
-    document.getElementById('pdfhighlight-save').click();
-    await waitFor(() => savedMsg !== null);
-    window.alert = originalAlert;
-
-    const savedPath = savedMsg ? savedMsg.replace('Guardado en: ', '') : null;
+    const noteBeforePdfSave = window.mdCodeMirror.getValue();
+    document.getElementById('pdfhighlight-canvas').dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true, bubbles: true, cancelable: true }));
+    await waitFor(() => window.mdPdfHighlight.getState().savedPath);
+    const savedPath = window.mdPdfHighlight.getState().savedPath;
     let reopenedOk = false;
     if (savedPath) {
       const base64 = await window.mdEditor.pdfReadBytes(savedPath);
@@ -2348,7 +2421,9 @@
       reopenedOk = reopened.getPageCount() === 3;
     }
 
-    pdfHighlightOk = stateBefore.highlightCount === 0 && stateAfter.highlightCount === 1 && reopenedOk;
+    const feedbackOk = document.getElementById('pdfhighlight-save-status').dataset.state === 'saved' && !window.mdPdfHighlight.getState().unsaved;
+    pdfHighlightOk = stateBefore.highlightCount === 0 && stateAfter.highlightCount === 1 && reopenedOk && feedbackOk && window.mdCodeMirror.getValue() === noteBeforePdfSave;
+    window.mdPdfHighlight.close();
     pdfHighlightDetail = `antes=${stateBefore.highlightCount} despues=${stateAfter.highlightCount} guardadoOk=${reopenedOk}`;
   }
   check('Subrayar texto en PDF: agrega un rectángulo y lo hornea al guardar', pdfHighlightOk, pdfHighlightDetail);
@@ -2358,7 +2433,7 @@
   let pdfWriteOk = false;
   let pdfWriteDetail = 'sin fixturesDir';
   if (fixturesDir) {
-    window.mdPdfHighlight.open();
+    await window.mdPdfHighlight.open();
     const confirmPdf = window.confirm;
     window.confirm = () => true;
     await window.mdPdfHighlight.loadFromPath(window.mdEditor.joinPath(fixturesDir, 'formulario.pdf'));
@@ -2404,7 +2479,7 @@
     try {
       const selectedPdf = window.mdEditor.joinPath(fixturesDir, 'selección (PDF)#.pdf');
       await window.mdPdfHighlight.loadFromPath(selectedPdf);
-      window.mdPdfHighlight.open();
+      await window.mdPdfHighlight.open();
       window.mdPdfHighlight.setMode('select');
       const selectOriginal = () => {
         const span = document.querySelector('.pdf-select-text-layer span');
@@ -2446,7 +2521,7 @@
       await waitFor(() => !document.getElementById('pdfhighlight-panel').hidden && window.mdPdfHighlight.getState().pageNum === 2 && window.mdPdfHighlight.getState().pageReady);
       check('PDF: cita en Live Preview abre su página original', window.mdPdfHighlight.getState().sourcePath === selectedPdf && window.mdPdfHighlight.getState().pageNum === 2 && !document.getElementById('pdfhighlight-panel').hidden);
       window.mdModes.setLayoutMode('normal');
-      window.mdPdfHighlight.open();
+      await window.mdPdfHighlight.open();
       await window.mdPdfHighlight.goToPage(3);
       check('PDF: página sin texto explica falta de OCR y desactiva acciones', !window.mdPdfHighlight.getState().pageHasText && document.getElementById('pdfhighlight-new-note').disabled && document.getElementById('pdfhighlight-selection-info').textContent.includes('OCR'));
       await Promise.all([window.mdPdfHighlight.goToPage(2), window.mdPdfHighlight.goToPage(1)]);
@@ -5051,12 +5126,20 @@
       await window.mdEditor.saveFile(source, scenePath, false);
       await window.openFileAtPath(scenePath);
       await waitFor(() => !!D.getAPI(), 15000);
+      await waitFor(() => D.getState().ready);
       check('Excalidraw: abre archivo local en pizarra sin convertirlo a Markdown', !!document.getElementById('drawing-panel') && D.getState().filePath === scenePath && !!D.getAPI());
+      const saveButton = document.getElementById('drawing-save');
+      const cleanButton = saveButton.disabled && !document.getElementById('drawing-save-as').disabled;
       D.getAPI().updateScene({ appState: { viewBackgroundColor: '#fafafa' } });
       await waitFor(() => D.getState().dirty, 5000);
-      await D.save();
+      const dirtyButton = !saveButton.disabled;
+      saveButton.click();
+      await Promise.resolve();
+      const busyButtons = D.getState().saving && saveButton.disabled && document.getElementById('drawing-close').disabled;
+      await waitFor(() => !D.getState().saving);
       const saved = await window.mdEditor.drawingRead(scenePath);
       check('Excalidraw: guarda escena local y limpia cambios pendientes', !D.getState().dirty && JSON.parse(saved.content).appState.viewBackgroundColor === '#fafafa');
+      check('Excalidraw: guardar muestra progreso, evita acciones simultáneas y confirma el archivo', cleanButton && dirtyButton && busyButtons && saveButton.disabled && document.querySelector('.drawing-document-name').textContent === 'pizarra.excalidraw' && document.querySelector('.drawing-status').textContent === 'Guardada');
       D.getAPI().updateScene({ appState: { viewBackgroundColor: '#ffeecc' } });
       await waitFor(() => D.getState().dirty, 5000);
       window.confirm = () => false;

@@ -1,6 +1,7 @@
 import { PRIORITIES, addDays, archiveOld, categoryById, checkReminders, cursor, dailySummaryText, data, dataRoot, findItem, iso, itemFor, itemsInRange, load, loadArchive, loadDbItems, loadDbReminders, loadNoteItems, mode, mondayOf, newId, occurrencesOn, occursOn, overdueCount, overdueTasks, parseCategoryToken, parseIso, parseNoteTasks, remindersFiringToday, rootChanged, save, saveTimer, sendPlanToDailyNote, setArchiveDays, setCursor, setItemDone, setMode, showDbToggle, showNotesToggle, todayIso, unarchive, updatePetMood, weekBeforeReminders, weekBeforeTime, weekBeforeToggle } from './home-data.js';
 import { el } from './home-ui.js';
-import { layoutDay, promptNewAt, renderHours, renderMonth, renderWeek, retime, toHHMM, toMin } from './home-views.js';
+import { layoutDay, promptNewAt, renderDay, renderHours, renderMonth, renderWeek, retime, toHHMM, toMin } from './home-views.js';
+import { hideWorkspace, showWorkspace } from './home-workspace.js';
 import { closeTaskEditor, editorEl, openTaskEditor } from './home-taskeditor.js';
 import { openStudy } from './home-study.js';
 
@@ -30,6 +31,7 @@ export const mainEl = document.getElementById('home-main');
 export const rangeLabel = document.getElementById('home-range-label');
 
 export const modeWeekBtn = document.getElementById('home-mode-week');
+export const modeDayBtn = document.getElementById('home-mode-day');
 
 export const modeMonthBtn = document.getElementById('home-mode-month');
 
@@ -49,29 +51,40 @@ export let homeInFolder = false;
 export function render() {
   renderCategoryFilter();
   if (overlay.hidden) return;
-  if (mode === 'week') renderWeek();
+  const scrollTop = mainEl.scrollTop;
+  if (mode === 'day') renderDay();
+  else if (mode === 'week') renderWeek();
   else if (mode === 'hours') renderHours();
   else renderMonth();
+  mainEl.scrollTop = scrollTop;
 }
 
 export function shift(delta) {
-  if (mode === 'week' || mode === 'hours') setCursor(addDays(cursor, delta * 7));
+  if (mode === 'day') setCursor(addDays(cursor, delta));
+  else if (mode === 'week' || mode === 'hours') setCursor(addDays(cursor, delta * 7));
   else setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + delta, 1));
   render();
 }
 
 export async function open() {
-  overlay.hidden = false;
+  showWorkspace();
   await load();
   await Promise.all([loadDbItems(), loadNoteItems(), loadDbReminders()]);
   render();
+  if (!overlay.contains(document.activeElement)) modeDayBtn.focus();
 }
 
 export function close() {
   closeTaskEditor();
-  overlay.hidden = true;
+  document.getElementById('home-options').open = false;
+  hideWorkspace();
 }
 
+modeDayBtn.addEventListener('click', () => setMode('day'));
+document.getElementById('home-add-task').addEventListener('click', () => {
+  const date = iso(cursor);
+  openTaskEditor({ task: { title: '', date, priority: 'media', category: categoryFilter && categoryFilter !== 'none' ? categoryFilter : null }, date, done: false, recurring: false }, { creating: true });
+});
 modeWeekBtn.addEventListener('click', () => setMode('week'));
 modeMonthBtn.addEventListener('click', () => setMode('month'));
 if (modeHoursBtn) modeHoursBtn.addEventListener('click', () => setMode('hours'));
@@ -80,6 +93,10 @@ document.getElementById('home-next').addEventListener('click', () => shift(1));
 document.getElementById('home-today').addEventListener('click', () => { setCursor(new Date()); render(); });
 document.getElementById('home-close').addEventListener('click', close);
 document.getElementById('home-stats-btn').addEventListener('click', openStats);
+document.addEventListener('mousedown', (event) => {
+  const options = document.getElementById('home-options');
+  if (options.open && !options.contains(event.target)) options.open = false;
+});
 
 // ---- filtro y administrador de categorías ----
 const catFilterEl = document.getElementById('home-cat-filter');
@@ -95,6 +112,8 @@ export function renderCategoryFilter() {
     catFilterEl.appendChild(opt);
   });
   catFilterEl.value = categoryFilter;
+  const selected = catFilterEl.selectedOptions[0]?.textContent || '';
+  document.querySelector('#home-options > summary').textContent = categoryFilter ? `Opciones · ${selected}` : 'Opciones';
   const cat = categoryById(categoryFilter);
   catFilterEl.style.borderColor = cat ? cat.color : '';
 }
@@ -174,7 +193,7 @@ export function openCategories() {
 
 document.getElementById('home-cats-btn').addEventListener('click', openCategories);
 document.getElementById('home-study-btn').addEventListener('click', () => openStudy(categoryFilter).catch((error) => alert(error.message)));
-document.getElementById('btn-home').addEventListener('click', open);
+document.getElementById('btn-home').addEventListener('click', () => overlay.hidden ? open() : close());
 showNotesToggle.addEventListener('change', async () => {
   data.showNotes = showNotesToggle.checked;
   save();
@@ -204,6 +223,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (statsEl) { closeStats(); return; }
     if (editorEl) { closeTaskEditor(); return; }
+    const options = document.getElementById('home-options');
+    if (options.open) { options.open = false; options.querySelector('summary').focus(); return; }
     if (!overlay.hidden && !e.defaultPrevented) close();
     return;
   }

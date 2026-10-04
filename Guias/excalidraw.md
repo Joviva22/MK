@@ -4,6 +4,8 @@ Paleta (`Ctrl+Shift+P`) → **Pizarra: nueva Excalidraw (local)**. También pued
 
 Dibuja, escribe, conecta formas y añade imágenes. **Guardar** pide una ruta la primera vez; **Guardar como** permite crear otra copia. El formato `.excalidraw` conserva elementos e imágenes, para seguir editándolo después. `Ctrl+S` dentro del panel guarda; `Ctrl+Shift+S` abre Guardar como.
 
+La cabecera muestra el nombre del dibujo y si hay cambios pendientes, si está guardando o si terminó. **Guardar** es la acción principal; **Guardar como** queda separado para crear una copia. Los controles se desactivan mientras se guarda, y cancelar el diálogo conserva los cambios.
+
 El guardado es manual: guarda antes de cerrar. Cambiar de dibujo o cerrar pregunta antes de descartar cambios. Al intentar salir de MK con cambios pendientes se bloquea la salida: vuelve a la pizarra y guarda o ciérrala confirmando el descarte.
 
 Si el archivo cambió fuera de MK, el guardado avisa y no lo sobrescribe. Usa Guardar como para conservar tu versión. Se emplean las copias locales de historial y escritura atómica de MK. Límite de archivo: 25 MB; máximo 50 000 elementos.

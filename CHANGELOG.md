@@ -6,6 +6,10 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ## Sin publicar
 
+- Home como espacio principal con vista Día, resumen de agenda, creación sin guardar borradores cancelados, opciones agrupadas, tareas completadas plegables y Deshacer al completar o mover tareas propias. Semana y mes se adaptan al espacio disponible; volver al editor conserva el documento y su posición.
+- Edición PDF con herramientas por contexto, navegación directa a página, zoom y ajuste al ancho, nombre de archivo y estado de cambios. Guardar copia y Ctrl+S muestran el resultado en el panel.
+- Pizarra con Guardar destacado, Guardar como separado y estados de cambios, guardado, cancelación y error; controles protegidos durante el guardado.
+
 - Temas renovados con paletas más diferenciadas, colores propios de sintaxis compartidos entre editor, código de las notas y terminal, controles nativos claros/oscuros y texto legible sobre botones de acento. Kingdom Hearts conserva su identidad azul y dorada. Galería con muestras de sintaxis y colores; contraste comprobado en los 27 temas.
 
 - Interfaz más despejada: menú Herramientas, ancho de lectura configurable, controles coherentes y jerarquía del documento refinada. Explorador con acciones al pasar el cursor o enfocar, archivo activo destacado y acciones para carpetas vacías. Contraste del texto secundario revisado en los 27 temas. Home más amplio y adaptable, tareas con más espacio, prioridades con etiquetas y foco de teclado visible.

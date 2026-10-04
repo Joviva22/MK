@@ -42,6 +42,14 @@ const selectionInfo = document.getElementById('pdfhighlight-selection-info');
 const sizeSelect = document.getElementById('pdfhighlight-size');
 const colorInput = document.getElementById('pdfhighlight-color');
 const formPanel = document.getElementById('pdfhighlight-form');
+const documentName = document.getElementById('pdfhighlight-document-name');
+const saveStatus = document.getElementById('pdfhighlight-save-status');
+const pageInput = document.getElementById('pdfhighlight-page-input');
+const zoomSelect = document.getElementById('pdfhighlight-zoom');
+const textOptions = document.getElementById('pdfhighlight-text-options');
+const modeHelp = document.getElementById('pdfhighlight-mode-help');
+const selectionActions = modal.querySelector('.pdfhighlight-selection-actions');
+const scrollHost = modal.querySelector('.pdfhighlight-scroll');
 const ctx = canvas.getContext('2d');
 
 let originalBytes = null; // Uint8Array del PDF tal cual, sin tocar (para pdf-lib al guardar)
@@ -67,6 +75,34 @@ let pageHasText = false;
 let pageReady = false;
 let savedEdits = null;
 let saving = false;
+let loadingCount = 0;
+let savedPath = '';
+let saveError = '';
+let lastScrollWidth = 0;
+let fitTimer;
+new ResizeObserver(() => {
+  const width = scrollHost.clientWidth;
+  if (!width || width === lastScrollWidth) return;
+  lastScrollWidth = width;
+  clearTimeout(fitTimer);
+  if (pdfDoc && !loadingCount && zoomSelect.value === 'fit') fitTimer = setTimeout(() => goToPage(pageNum), 150);
+}).observe(scrollHost);
+
+function updateDocumentStatus() {
+  documentName.textContent = sourcePath ? baseName : 'Elige un documento para empezar';
+  documentName.title = sourcePath || '';
+  const dirty = hasUnsavedChanges();
+  const count = Object.values(highlights).reduce((sum, list) => sum + list.length, 0) +
+    Object.values(texts).reduce((sum, list) => sum + list.filter((text) => text.text.trim()).length, 0) + Object.keys(formValues).length;
+  modal.setAttribute('aria-busy', String(saving || loadingCount > 0));
+  saveBtn.disabled = !originalBytes || saving || loadingCount > 0 || !hasChanges();
+  saveBtn.textContent = saving ? 'Guardando…' : 'Guardar copia…';
+  document.getElementById('pdfhighlight-open').disabled = saving;
+  saveStatus.textContent = saving ? 'Guardando la copia…' : loadingCount ? 'Abriendo PDF…' : saveError ||
+    (!originalBytes ? 'Sin documento abierto' : dirty ? `${count} ${count === 1 ? 'anotación' : 'anotaciones'} sin guardar` : savedPath ? `Copia guardada: ${savedPath.split(/[\\/]/).pop()}` : 'Listo para anotar');
+  saveStatus.title = savedPath || '';
+  saveStatus.dataset.state = saveError ? 'error' : dirty ? 'pending' : savedPath ? 'saved' : 'ready';
+}
 
 function editsSnapshot() { return JSON.stringify([highlights, texts, formValues]); }
 function hasUnsavedChanges() { return hasChanges() && editsSnapshot() !== savedEdits; }
@@ -111,6 +147,7 @@ function addSelectionToNote(createNew) {
   const fragment = citation();
   if (!fragment || (createNew ? newNoteBtn.disabled : addNoteBtn.disabled)) return;
   if (!dockHost) close();
+  if (!dockHost && document.body.classList.contains('home-active')) window.mdHome.close();
   if (createNew) { window.mdTabs.newTab(''); window.mdCodeMirror.setValue(fragment); }
   else {
     document.querySelector('#tabbar .tab.active')?.click();
@@ -168,6 +205,7 @@ function redraw() {
 
 function updateUndoBtn() {
   undoBtn.disabled = !(highlights[pageNum] && highlights[pageNum].length);
+  updateDocumentStatus();
 }
 
 function hasChanges() {
@@ -202,9 +240,12 @@ function textBoxFor(t) {
   edit.style.color = t.color;
   box.append(handle, edit, del);
 
-  edit.addEventListener('input', () => { t.text = edit.innerText.replace(/\n$/, ''); });
+  edit.setAttribute('role', 'textbox');
+  edit.setAttribute('aria-label', 'Texto añadido al PDF');
+  edit.addEventListener('input', () => { t.text = edit.innerText.replace(/\n$/, ''); saveError = ''; updateDocumentStatus(); });
   edit.addEventListener('keydown', (e) => {
     e.stopPropagation(); // Escape/atajos globales: no cerrar el panel mientras se escribe
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveCopy(); }
     if (e.key === 'Escape') edit.blur();
   });
   edit.addEventListener('blur', () => {
@@ -256,12 +297,14 @@ function addText(xNorm, yNorm, initialText) {
   texts[pageNum].push(t);
   const { box, edit } = textBoxFor(t);
   canvasWrap.appendChild(box);
+  updateDocumentStatus();
   requestAnimationFrame(() => edit.focus());
   return t;
 }
 
 function removeText(id) {
   texts[pageNum] = (texts[pageNum] || []).filter((t) => t.id !== id);
+  updateDocumentStatus();
   const box = canvasWrap.querySelector(`.pdf-text-box[data-id="${id}"]`);
   if (box) box.remove();
 }
@@ -269,6 +312,7 @@ function removeText(id) {
 // ---- páginas ----
 
 async function renderPage(n) {
+  lastScrollWidth = scrollHost.clientWidth;
   const id = ++pageRenderId;
   const documentForPage = pdfDoc;
   pageReady = false;
@@ -277,8 +321,8 @@ async function renderPage(n) {
   clearSelection();
   const page = await documentForPage.getPage(n);
   const unscaled = page.getViewport({ scale: 1 });
-  const availableWidth = dockHost ? Math.max(160, dockHost.clientWidth - 42) : 700;
-  const pageScale = Math.min(availableWidth / unscaled.width, 1.4);
+  const availableWidth = Math.max(160, scrollHost.clientWidth ? scrollHost.clientWidth - 40 : 700);
+  const pageScale = zoomSelect.value === 'fit' ? availableWidth / unscaled.width : Number(zoomSelect.value) || 1;
   const viewport = page.getViewport({ scale: pageScale });
   const rendered = document.createElement('canvas');
   rendered.width = viewport.width;
@@ -316,6 +360,9 @@ async function goToPage(n) {
   pageNum = Math.max(1, Math.min(numPages, n));
   const targetPage = pageNum;
   pageInfoEl.textContent = `Página ${pageNum} / ${numPages}`;
+  pageInput.disabled = false;
+  pageInput.max = String(numPages);
+  pageInput.value = String(pageNum);
   prevBtn.disabled = pageNum <= 1;
   nextBtn.disabled = pageNum >= numPages;
   try { await renderPage(targetPage); }
@@ -337,6 +384,11 @@ function setMode(next) {
   canvasWrap.classList.toggle('pdfhighlight-text-mode', mode === 'text');
   canvasWrap.classList.toggle('pdfhighlight-select-mode', mode === 'select');
   modeSelectBtn.classList.toggle('pdfhighlight-mode-active', mode === 'select');
+  textOptions.hidden = mode !== 'text';
+  selectionActions.hidden = mode !== 'select';
+  modeHelp.textContent = mode === 'highlight' ? 'Arrastra sobre la página para subrayar. Puedes deshacer el último subrayado de esta página.' :
+    mode === 'text' ? 'Haz clic en la página para escribir. Usa el asa del cuadro para moverlo y × para borrarlo.' :
+    'Selecciona texto para copiarlo o llevarlo a tus notas.';
   [modeSelectBtn, modeHighlightBtn, modeTextBtn].forEach((button) => button.setAttribute('aria-pressed', String(button.classList.contains('pdfhighlight-mode-active'))));
   updateSelection();
 }
@@ -389,6 +441,7 @@ function applyStyleToFocused() {
   const edit = focused.querySelector('.pdf-text-edit');
   edit.style.fontSize = `${t.size * scale}px`;
   edit.style.color = t.color;
+  updateDocumentStatus();
 }
 [sizeSelect, colorInput].forEach((el) => {
   el.addEventListener('mousedown', () => {
@@ -465,13 +518,13 @@ function renderFormPanel() {
       input = document.createElement('input');
       input.type = 'checkbox';
       input.checked = !!f.value;
-      input.addEventListener('change', () => { formValues[f.name] = input.checked; });
+      input.addEventListener('change', () => { formValues[f.name] = input.checked; updateDocumentStatus(); });
       row.classList.add('pdfhighlight-form-check');
       row.append(input, name);
     } else if (f.kind === 'text') {
       input = document.createElement('input');
       input.value = f.value || '';
-      input.addEventListener('input', () => { formValues[f.name] = input.value; });
+      input.addEventListener('input', () => { formValues[f.name] = input.value; updateDocumentStatus(); });
       row.append(name, input);
     } else {
       input = document.createElement('select');
@@ -482,7 +535,7 @@ function renderFormPanel() {
         input.appendChild(opt);
       });
       input.value = f.value || '';
-      input.addEventListener('change', () => { formValues[f.name] = input.value; });
+      input.addEventListener('change', () => { formValues[f.name] = input.value; updateDocumentStatus(); });
       row.append(name, input);
     }
     input.className = 'pdfhighlight-form-input';
@@ -494,6 +547,14 @@ function renderFormPanel() {
 // ---- abrir / guardar ----
 
 async function loadFromPath(filePath) {
+  if (saving) return false;
+  loadingCount++;
+  updateDocumentStatus();
+  try { return await loadPdfFromPath(filePath); }
+  finally { loadingCount--; updateDocumentStatus(); }
+}
+
+async function loadPdfFromPath(filePath) {
   if (sourcePath && hasUnsavedChanges() && !confirm('Hay anotaciones sin guardar. ¿Abrir otro PDF y descartarlas?')) return false;
   const id = ++loadId;
   const initialEdits = editsSnapshot();
@@ -528,6 +589,7 @@ async function loadFromPath(filePath) {
   highlights = {};
   texts = {};
   savedEdits = null;
+  savedPath = saveError = '';
   clearSelection();
   if (previous) previous.loadingTask.destroy().catch(() => {});
   numPages = pdfDoc.numPages;
@@ -639,6 +701,17 @@ document.getElementById('pdfhighlight-open').addEventListener('click', async () 
   if (!paths) return;
   await loadFromPath(paths[0]);
 });
+document.getElementById('pdfhighlight-empty-open').addEventListener('click', () => document.getElementById('pdfhighlight-open').click());
+document.getElementById('pdfhighlight-close').addEventListener('click', close);
+pageInput.addEventListener('change', () => {
+  const value = Number(pageInput.value);
+  if (!Number.isInteger(value) || value < 1 || value > numPages) { pageInput.value = String(pageNum); return; }
+  goToPage(value);
+});
+pageInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') { event.preventDefault(); pageInput.dispatchEvent(new Event('change')); }
+});
+zoomSelect.addEventListener('change', () => { if (pdfDoc) goToPage(pageNum); });
 
 prevBtn.addEventListener('click', () => goToPage(pageNum - 1));
 nextBtn.addEventListener('click', () => goToPage(pageNum + 1));
@@ -653,11 +726,11 @@ undoBtn.addEventListener('click', () => {
   redraw();
 });
 
-saveBtn.addEventListener('click', async () => {
+async function saveCopy() {
   if (!originalBytes || saving) return;
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   if (!hasChanges()) {
-    alert('Todavía no agregaste nada: subrayá (arrastrando), escribí (modo "Escribir" y clic en la página) o completá el formulario.');
+    updateDocumentStatus();
     return;
   }
   const suffix = Object.values(texts).some((l) => l && l.length) || Object.keys(formValues).length ? '-editado.pdf' : '-subrayado.pdf';
@@ -665,29 +738,43 @@ saveBtn.addEventListener('click', async () => {
   const snapshot = editsSnapshot();
   const savingSource = sourcePath;
   saving = true;
-  saveBtn.disabled = true;
+  saveError = '';
+  updateDocumentStatus();
   try {
     const bytes = await buildPdf();
     const base64 = await bytesToBase64(bytes);
-    const savedPath = await window.mdEditor.pdfSaveBytes(base64, saveName);
-    if (savedPath) {
-      if (sourcePath === savingSource) savedEdits = snapshot;
-      alert(`Guardado en: ${savedPath}`);
+    const exportedPath = await window.mdEditor.pdfSaveBytes(base64, saveName);
+    if (exportedPath) {
+      if (sourcePath === savingSource) {
+        savedEdits = snapshot;
+        savedPath = exportedPath;
+      }
     }
   } catch (error) {
     window.mdEditor.logError('pdf:guardar', String(error));
-    alert('No se pudo guardar el PDF. Las anotaciones siguen en el panel.');
-  } finally { saving = false; saveBtn.disabled = !originalBytes; }
+    saveError = 'No se pudo guardar. Tus anotaciones siguen disponibles; vuelve a intentarlo.';
+  } finally { saving = false; updateDocumentStatus(); }
+}
+saveBtn.addEventListener('click', saveCopy);
+modal.addEventListener('keydown', (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+    event.preventDefault(); event.stopPropagation(); saveCopy();
+  }
 });
 
-function open() {
+async function open() {
   const box = modal;
   let tabs = box.querySelector('.pdf-document-tabs');
   if (!tabs) {
     tabs = document.createElement('nav');
     tabs.className = 'pdf-document-tabs';
     tabs.setAttribute('aria-label', 'Cambiar a un documento abierto');
-    box.prepend(tabs);
+    const links = document.createElement('details');
+    links.className = 'pdf-note-links';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Notas abiertas';
+    links.append(summary, tabs);
+    selectionActions.after(links);
   }
   tabs.replaceChildren();
   document.querySelectorAll('#tabbar .tab').forEach((tab) => {
@@ -698,12 +785,15 @@ function open() {
     button.title = tab.title;
     button.addEventListener('click', () => {
       if (!dockHost) close(); // En estudio, el PDF permanece visible al cambiar de nota.
+      if (!dockHost && document.body.classList.contains('home-active')) window.mdHome.close();
       if (tab.isConnected) tab.click();
     });
     tabs.appendChild(button);
   });
   overlay.hidden = !!dockHost;
   updateSelection();
+  updateDocumentStatus();
+  if (pdfDoc && !loadingCount && zoomSelect.value === 'fit') await goToPage(pageNum);
 }
 
 function close() {
@@ -713,7 +803,7 @@ function close() {
 async function dock(host) {
   const changed = dockHost !== host;
   dockResize.disconnect(); clearTimeout(dockResizeTimer);
-  dockHost = host; dockWidth = host.clientWidth; host.append(modal); modal.classList.add('pdf-study-docked'); open();
+  dockHost = host; dockWidth = host.clientWidth; host.append(modal); modal.classList.add('pdf-study-docked'); await open();
   dockResize.observe(host);
   if (changed && pdfDoc) await goToPage(pageNum);
 }
@@ -736,7 +826,7 @@ async function openLink(href, basePath) {
     if (!raw.startsWith('/') && !basePath) return false;
     const filePath = raw.startsWith('/') ? raw : window.mdEditor.resolveLocalPath(basePath, raw);
     if (filePath !== sourcePath && !await loadFromPath(filePath)) return true;
-    open();
+    await open();
     setMode('select');
     await goToPage(Number(match[2]) || 1);
   } catch (error) {
@@ -753,7 +843,11 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !overlay.hidden) close();
 });
 
-document.getElementById('btn-pdfhighlight').addEventListener('click', open);
+document.getElementById('btn-pdfhighlight').addEventListener('click', async () => {
+  await open();
+  const path = window.mdState.currentFilePath;
+  if (!dockHost && /\.pdf$/i.test(path || '') && path !== sourcePath) await loadFromPath(path);
+});
 
 window.mdPdfHighlight = {
   open,
@@ -773,7 +867,7 @@ window.mdPdfHighlight = {
     redraw();
   },
   addTextForTest: (xNorm, yNorm, text) => addText(xNorm, yNorm, text),
-  setFormValueForTest: (name, value) => { formValues[name] = value; },
+  setFormValueForTest: (name, value) => { formValues[name] = value; updateDocumentStatus(); },
   buildPdfForTest: () => buildPdf(),
   getState: () => (pdfDoc ? {
     pageNum,
@@ -783,6 +877,10 @@ window.mdPdfHighlight = {
     pageHasText,
     pageReady,
     numPages,
+    zoom: zoomSelect.value,
+    saving,
+    unsaved: hasUnsavedChanges(),
+    savedPath,
     highlightCount: (highlights[pageNum] || []).length,
     textCount: (texts[pageNum] || []).length,
     formFields: formFields.map((f) => f.name)
