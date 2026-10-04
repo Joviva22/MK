@@ -288,6 +288,12 @@ Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pesta
 
 **`Shift`+clic** selecciona todo el rango desde la última fila clicada. Clic derecho en cualquier archivo o carpeta también ofrece **Copiar ruta** y **Copiar ruta relativa**.
 
+### Favoritas y recientes
+
+El bloque **Acceso rápido** del explorador muestra las notas de la carpeta actual. La estrella de la cabecera marca la nota abierta; también puedes usar **Añadir a favoritas** en el menú contextual de un archivo. Las estrellas de cada fila permiten añadir o quitar favoritas. Los grupos se pueden plegar.
+
+**Recientes** muestra las últimas ocho notas disponibles de la carpeta, sin duplicados. Los accesos se guardan entre sesiones y siguen los cambios de nombre o ubicación realizados desde MK. Al eliminar una nota desde MK se retiran sus accesos. Una favorita que ya no aparece en la carpeta se muestra desactivada y puedes quitarla. Las notas sin guardar se añaden después de guardarlas en un archivo.
+
 ## 8. Buscar cosas
 
 - **Buscar y reemplazar en el archivo actual** (`Ctrl+F`, o paleta de comandos): un cuadro flotante arriba a la derecha, sin tapar el documento. Escribí para buscar — resalta todas las coincidencias en el texto y muestra "posición/total" (ej. `2/5`). `Enter`/`Shift+Enter` o los botones ↓/↑ saltan a la siguiente/anterior. El botón ⇄ despliega una segunda fila para reemplazar: "Reemplazar" cambia solo la coincidencia actual, "Todo" cambia todas de una. `Escape` (o ✕) cierra y vuelve el foco al editor. Si tenías texto seleccionado al abrirlo, arranca buscando eso. También funciona en **modo lectura** (el cuadro es independiente del editor, así que se ve y busca igual aunque el editor esté oculto).

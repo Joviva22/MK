@@ -3900,3 +3900,23 @@ ul.tree ul.tree { margin-left: 10px; padding-left: 10px; border-left: 1px solid 
 .dropdown-menu, .home-options-body { box-sizing: border-box; max-width: calc(100vw - 24px); }
 
 #drawing-panel .excalidraw .HintViewer { color: var(--text-muted); line-height: 1.5; }
+
+/* Quick access stays separate from the keyboard-driven folder tree. */
+.note-access { padding: 4px 2px 12px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+.note-access[hidden] { display: none; }
+.note-access-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 6px 6px; font-size: var(--font-sm); }
+.note-access-group > summary { cursor: pointer; padding: 6px; color: var(--text-muted); font-size: var(--font-sm); font-weight: 600; }
+.note-access-empty { color: var(--text-muted); font-size: var(--font-xs); line-height: 1.5; margin: 4px 6px 10px; }
+.note-access-row { display: flex; align-items: center; gap: 4px; border-radius: var(--radius-sm); }
+.note-access-open { flex: 1; min-width: 0; padding: 6px; border: 0; background: transparent; color: var(--text); text-align: left; font: inherit; cursor: pointer; border-radius: var(--radius-sm); }
+.note-access-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.note-access-label > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.note-access-label small { font-size: var(--font-xs); color: var(--text-muted); }
+.note-access-star { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--radius-sm); color: var(--text-muted); background: transparent; cursor: pointer; }
+.note-access-star svg { width: 15px; height: 15px; }
+.note-access-star[aria-pressed="true"] { color: var(--accent); }
+.note-access-star[aria-pressed="true"] svg { fill: color-mix(in srgb, var(--accent) 20%, transparent); }
+.note-access-row:hover, .note-access-star:hover { background: var(--surface-2); }
+.note-access-active { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.note-access-star:disabled, .note-access-open:disabled { opacity: .5; cursor: default; }
+.note-access :is(button, summary):focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }

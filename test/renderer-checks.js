@@ -5361,6 +5361,56 @@
       bad.join(' | ') || 'ok');
   }
 
+  // Acceso rápido: persistencia, alcance por carpeta y operaciones reales del explorador.
+  if (fixturesDir) {
+    const A = window.mdNoteAccess;
+    const S = window.mdSidebar;
+    const originalAsk = window.mdAsk;
+    const originalConfirm = window.confirm;
+    const previousRoot = window.mdState.rootFolder;
+    const folder = window.mdEditor.joinPath(fixturesDir, 'acceso-rapido');
+    const first = window.mdEditor.joinPath(folder, 'Primera.md');
+    const second = window.mdEditor.joinPath(folder, 'Segunda.md');
+    try {
+      await window.mdEditor.createFolder(fixturesDir, 'acceso-rapido');
+      await window.mdEditor.saveFile('# Primera', first, false);
+      await window.mdEditor.saveFile('# Segunda', second, false);
+      S.renderFolder(await window.mdEditor.readFolder(folder));
+      await window.openFileAtPath(first);
+      await A.whenIdle();
+      await A.toggle(first);
+      await window.openFileAtPath(second);
+      await window.openFileAtPath(first);
+      await A.whenIdle();
+      const stored = (await window.mdEditor.getConfig()).noteAccess;
+      const recent = stored.recent.filter(p => p === first);
+      const quick = document.querySelector('.note-access');
+      check('Acceso rápido: favoritas y recientes se guardan sin duplicados y con estado activo', stored.favorites.includes(first) && stored.recent[0] === first && recent.length === 1 && [...quick.querySelectorAll('.note-access-active')].every(el => el.dataset.path === first));
+      const open = [...quick.querySelectorAll('.note-access-open')].find(el => el.closest('.note-access-row').dataset.path === second);
+      open.click();
+      await waitFor(() => window.mdState.currentFilePath === second);
+      await A.whenIdle();
+      check('Acceso rápido: abre la nota elegida desde el explorador', window.mdCodeMirror.getValue() === '# Segunda');
+      window.mdAsk = async () => 'Renombrada.md';
+      await S.renameEntry({ ruta: first, nombre: 'Primera.md', esCarpeta: false });
+      const renamed = window.mdEditor.joinPath(folder, 'Renombrada.md');
+      const afterRename = (await window.mdEditor.getConfig()).noteAccess;
+      check('Acceso rápido: renombrar conserva la favorita y actualiza recientes', afterRename.favorites.includes(renamed) && !afterRename.favorites.includes(first) && afterRename.recent.includes(renamed) && !afterRename.recent.includes(first));
+      S.renderFolder(await window.mdEditor.readFolder(fixturesDir));
+      const foreign = window.mdEditor.joinPath('/tmp', 'otra-carpeta.md');
+      await A.record(foreign);
+      check('Acceso rápido: no muestra notas de otras carpetas', ![...document.querySelectorAll('.note-access-row')].some(el => el.dataset.path === foreign));
+      window.confirm = () => true;
+      await S.deleteEntry({ ruta: renamed, nombre: 'Renombrada.md', esCarpeta: false });
+      const afterDelete = (await window.mdEditor.getConfig()).noteAccess;
+      check('Acceso rápido: eliminar una nota retira sus accesos guardados', !afterDelete.favorites.includes(renamed) && !afterDelete.recent.includes(renamed));
+    } finally {
+      window.mdAsk = originalAsk;
+      window.confirm = originalConfirm;
+      if (previousRoot) S.renderFolder(await window.mdEditor.readFolder(previousRoot));
+    }
+  }
+
   // Ninguna función chocó con la Content Security Policy (cspwatch.js).
   {
     const v = window.__mkCspViolations || [];

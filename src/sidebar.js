@@ -245,6 +245,7 @@ async function renameEntry(node) {
     return;
   }
   await relocateEntryQuiet(node, result.path);
+  await window.mdNoteAccess.relocate(node.ruta, result.path);
   revealPath(result.path);
   await refreshTree();
   highlightPath = null;
@@ -258,6 +259,7 @@ async function moveEntry(node, destDir) {
     return;
   }
   await relocateEntryQuiet(node, result.path);
+  await window.mdNoteAccess.relocate(node.ruta, result.path);
   revealPath(result.path);
   await refreshTree();
   highlightPath = null;
@@ -274,6 +276,7 @@ async function moveEntries(nodes, destDir) {
       continue;
     }
     await relocateEntryQuiet(node, result.path);
+    await window.mdNoteAccess.relocate(node.ruta, result.path);
     revealPath(result.path); // queda resaltado el último movido, con su carpeta abierta
   }
   await refreshTree();
@@ -288,6 +291,7 @@ async function deleteEntryQuiet(node) {
     return;
   }
   const key = relKeyFor(node);
+  await window.mdNoteAccess.remove(node.ruta);
   if (fileIcons[key]) {
     delete fileIcons[key];
     await window.mdEditor.setConfig({ fileIcons });
@@ -362,6 +366,9 @@ function showSidebarMenu(x, y, node, multiNodes) {
   }
 
   if (node && !node.esCarpeta) {
+    if (/\.(md|markdown|txt|tex)$/i.test(node.ruta)) {
+      addMenuItem(window.mdNoteAccess.isFavorite(node.ruta) ? 'Quitar de favoritas' : 'Añadir a favoritas', () => window.mdNoteAccess.toggle(node.ruta));
+    }
     addMenuItem('Abrir en panel secundario', () => window.mdSecondaryPane.open(node.ruta));
     addMenuItem('Abrir con la aplicación del sistema', () => window.mdEditor.openWithSystem(node.ruta));
     if (extOf(node) === 'pdf' && window.mdPdfHighlight) {
@@ -646,6 +653,7 @@ function renderFolder(result) {
     sidebarPane.appendChild(empty);
   }
   const firstRow = treeEl.querySelector('.tree-row');
+  window.mdNoteAccess.mount(sidebarPane, result.tree);
   if (firstRow) firstRow.tabIndex = 0; // Tab entra al árbol; las flechas se mueven adentro
 
   if (window.lucide) {
