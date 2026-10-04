@@ -108,7 +108,7 @@ function mount(host) {
       if (window.mdModules && !window.mdModules.isOn('pdf')) throw new Error('Activa el módulo PDF para abrir sus herramientas.');
       await window.mdPdfHighlight.openLink(`${window.mdEditor.toLocalUrl(ctx.path)}#page=${ctx.page}`, ctx.base);
     }
-    else await window.mdDrawing.open(ctx.path);
+    else await window.mdDrawing.open(ctx.path, { preserveDocument: true });
   });
   button('Actualizar', () => { dispose(ctx); ctx.visible = true; queue(() => load(ctx)); });
   if (parsed.kind === 'pdf') {

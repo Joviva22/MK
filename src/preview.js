@@ -531,6 +531,7 @@ function renderBlocks(text) {
 }
 
 function render() {
+  if (window.mdTabs?.getActiveState()?.kind && window.mdTabs.getActiveState().kind !== 'drawing') return;
   const isCode = window.mdTabs && window.mdTabs.isActiveTabCode && window.mdTabs.isActiveTabCode();
   containerEl.classList.toggle('code-file', isCode);
   if (isCode) {
@@ -644,6 +645,7 @@ function forceReadModeForPdf(filePath) {
 }
 
 window.showPdfPreview = function (filePath) {
+  if (window.mdTabs?.trackViewer(filePath, 'pdf') === false) return;
   const url = window.mdEditor.toLocalUrl(filePath);
   previewPane.classList.add('pdf-mode');
   previewPane.innerHTML = `<embed src="${url}" type="application/pdf" class="pdf-embed">`;
@@ -653,6 +655,7 @@ window.showPdfPreview = function (filePath) {
 // Clic en una foto, video o audio del sidebar: mostrarlo en el preview (ver
 // media.js) en vez de intentar "editarlo" como texto.
 window.showMediaPreview = function (filePath) {
+  if (window.mdTabs?.trackViewer(filePath, window.mdMedia.kindOf(filePath)) === false) return;
   previewPane.classList.add('pdf-mode');
   previewPane.replaceChildren(window.mdMedia.createViewer(filePath));
   forceReadModeForPdf(filePath);
@@ -679,6 +682,7 @@ function ensureFresh() {
 
 function requestRender() {
   clearTimeout(debounceTimer);
+  if (window.mdTabs?.getActiveState()?.kind) return;
   // Actualizar también la clase que decide la visibilidad al cambiar de archivo.
   const isCode = !!window.mdTabs?.isActiveTabCode();
   containerEl.classList.toggle('code-file', isCode);

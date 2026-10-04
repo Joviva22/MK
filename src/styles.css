@@ -3756,6 +3756,29 @@ ul.tree ul.tree { margin-left: 10px; padding-left: 10px; border-left: 1px solid 
 #tabbar .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 
 /* Panel boundaries share the themes' surfaces and a visible drag handle. */
+#tabbar { overflow: hidden; padding: 0; gap: 0; min-width: 0; }
+.tab-strip { display: flex; align-items: stretch; flex: 1; min-width: 0; gap: 4px; overflow-x: auto; padding: 6px 8px 0; scrollbar-width: thin; }
+#tabbar .tab-strip .tab { min-width: min(144px, 100%); max-width: min(260px, 100%); }
+#tabbar .tab.active { background: var(--bg); box-shadow: inset 0 -3px 0 var(--accent); }
+#tabbar .tab-icon { display: inline-flex; flex: none; color: var(--text-muted); }
+#tabbar .tab.active .tab-icon { color: var(--accent); }
+#tabbar .tab-state { width: 10px; font-size: 10px; }
+#tabbar .tab-modified .tab-state { border-radius: 50%; background: var(--surface-2); }
+.tab-controls { display: flex; align-items: center; flex: none; gap: 2px; padding: 4px; border-left: 1px solid var(--border); background: var(--surface); }
+.tab-controls button { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--radius); color: var(--text-muted); background: transparent; cursor: pointer; }
+.tab-controls button:hover:not(:disabled), .tab-controls button[aria-expanded="true"] { color: var(--text); background: var(--surface-2); }
+.tab-controls button:disabled { opacity: .35; cursor: default; }
+.tab-controls button:focus-visible, .tab-picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tab-picker { position: fixed; z-index: 1100; width: min(360px, calc(100vw - 16px)); max-height: min(420px, calc(100vh - 16px)); display: flex; flex-direction: column; box-sizing: border-box; padding: 8px; gap: 8px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-lg, 12px); box-shadow: 0 12px 32px #0003; }
+.tab-picker input { box-sizing: border-box; width: 100%; min-height: 36px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); font: inherit; }
+.tab-picker input:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tab-picker-list { overflow-y: auto; min-height: 0; }
+.tab-picker-item { display: flex; align-items: center; width: 100%; gap: 10px; padding: 9px 10px; text-align: left; background: transparent; border: 0; border-radius: var(--radius); color: var(--text-muted); cursor: pointer; }
+.tab-picker-item:hover, .tab-picker-item.active { background: var(--surface-2); color: var(--text); }
+.tab-picker-item.active { box-shadow: inset 3px 0 var(--accent); }
+.tab-picker-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.tab-picker-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
+.tab-picker-text small, .tab-picker-list p { font-size: 12px; color: var(--text-muted); }
 .resizer { touch-action: none; }
 .resizer::after { transition: background-color var(--dur-fast) var(--ease); }
 .resizer::before {

@@ -4132,7 +4132,7 @@
   {
     const sym = document.getElementById('terminal-split');
     const labelOk = sym.getAttribute('aria-label') && sym.getAttribute('aria-label').startsWith('Dividir');
-    const tabOk = document.getElementById('tabbar').getAttribute('role') === 'tablist' && !!document.querySelector('#tabbar .tab[role="tab"][aria-selected="true"]');
+    const tabOk = !!document.querySelector('#tabbar .tab-strip[role="tablist"] .tab[role="tab"][aria-selected="true"]') && !document.querySelector('.tab-strip #tab-picker-button');
     let treeOk = 'sin fixtures';
     if (fixturesDir) {
       window.mdSidebar.renderFolder(await window.mdEditor.readFolder(fixturesDir));
@@ -5439,6 +5439,66 @@
       window.mdAsk = originalAsk;
       window.confirm = originalConfirm;
       if (previousRoot) S.renderFolder(await window.mdEditor.readFolder(previousRoot));
+    }
+  }
+
+  // Pestañas: cambiar de formato preserva el documento y sus cambios.
+  if (fixturesDir) {
+    const note = window.mdEditor.joinPath(fixturesDir, 'Pestañas de prueba.md');
+    const image = window.mdEditor.joinPath(fixturesDir, 'Pestañas de prueba.svg');
+    const originalAutosave = window.mdGetAutosaveInterval;
+    const originalConfirm = window.confirm;
+    window.mdGetAutosaveInterval = () => 0;
+    try {
+      await window.mdEditor.saveFile('# Original', note, false);
+      await window.mdEditor.saveFile('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="blue"/></svg>', image, false);
+      await window.openFileAtPath(note);
+      window.mdCodeMirror.setValue('# Cambios conservados');
+      await window.openFileAtPath(image);
+      await waitFor(() => document.querySelector('.media-viewer-image img')?.naturalWidth === 24);
+      const imageTab = document.querySelector('#tabbar .tab.active');
+      const imageOk = imageTab.dataset.kind === 'image' && !!imageTab.querySelector('.tab-icon svg');
+      await window.openFileAtPath(note);
+      check('Pestañas: imagen propia y nota modificada conservada al volver', imageOk && window.mdCodeMirror.getValue() === '# Cambios conservados' && document.querySelector('.tab.active').classList.contains('tab-modified') && document.querySelector('.tab.active').title.includes('Cambios sin guardar'));
+      const beforePdf = new Uint8Array(await window.mdEditor.pdfReadBytes(fixturePdfPath)).join(',');
+      await window.openFileAtPath(fixturePdfPath);
+      const count = document.querySelectorAll('#tabbar .tab').length;
+      await window.openFileAtPath(fixturePdfPath);
+      await window.mdTabs.saveActive();
+      const afterPdf = new Uint8Array(await window.mdEditor.pdfReadBytes(fixturePdfPath)).join(',');
+      check('Pestañas: PDF sin duplicados y guardar no sobrescribe el archivo', document.querySelector('.tab.active').dataset.kind === 'pdf' && document.querySelectorAll('#tabbar .tab').length === count && beforePdf === afterPdf && !!document.querySelector('.pdf-embed'));
+      document.querySelector('#tabbar .tab.active .tab-close').click();
+      document.getElementById('tab-reopen-button').click();
+      await waitFor(() => window.mdState.currentFilePath === fixturePdfPath);
+      check('Pestañas: botón visible reabre el PDF cerrado con su visor', document.querySelector('.tab.active').dataset.kind === 'pdf' && !!document.querySelector('.pdf-embed'));
+      for (let i = 0; i < 18; i++) window.mdTabs.newTab('Documento ' + i);
+      const strip = document.querySelector('.tab-strip');
+      const bounds = strip.getBoundingClientRect();
+      const active = document.querySelector('.tab.active').getBoundingClientRect();
+      check('Pestañas: muchas abiertas conservan su ancho y la activa queda visible', strip.scrollWidth > strip.clientWidth && active.width >= 144 && active.left >= bounds.left - 1 && active.right <= bounds.right + 1 && document.getElementById('tab-picker-button').getBoundingClientRect().right <= window.innerWidth);
+      document.getElementById('tab-picker-button').click();
+      const search = document.querySelector('#tab-picker input');
+      search.value = 'Pestañas de prueba.md'; search.dispatchEvent(new Event('input'));
+      search.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+      const selected = document.activeElement;
+      selected.click();
+      check('Pestañas: selector filtra y permite volver por teclado a la nota', selected.dataset.path === note && document.getElementById('tab-picker').hidden && window.mdCodeMirror.getValue() === '# Cambios conservados' && window.mdState.currentFilePath === note);
+      await window.mdDrawing.open(window.mdEditor.joinPath(fixturesDir, 'pizarra.excalidraw'));
+      await waitFor(() => window.mdDrawing.getState().ready);
+      const drawingTab = document.querySelector('.tab.active');
+      const drawingOk = drawingTab.dataset.kind === 'drawing' && !!drawingTab.querySelector('.tab-icon svg');
+      window.mdDrawing.getAPI().updateScene({ appState: { viewBackgroundColor: '#eeeeee' } });
+      await waitFor(() => window.mdDrawing.getState().dirty);
+      window.confirm = () => false;
+      document.querySelector('.tab.active .tab-close').click();
+      const protectedDrawing = !!document.getElementById('drawing-panel') && document.querySelector('.tab.active').classList.contains('tab-modified');
+      window.confirm = () => true;
+      window.mdDrawing.close();
+      check('Pestañas: pizarra con icono protege cambios y devuelve la nota al cerrar', drawingOk && protectedDrawing && window.mdState.currentFilePath === note && window.mdCodeMirror.getValue() === '# Cambios conservados');
+      document.querySelector('.tab.active .tab-close').click();
+    } finally {
+      window.mdGetAutosaveInterval = originalAutosave;
+      window.confirm = originalConfirm;
     }
   }
 

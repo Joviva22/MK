@@ -6,6 +6,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ## Sin publicar
 
+- Pestañas con iconos por formato, selección reforzada y cambios sin guardar más visibles. PDF, imágenes, audio, vídeo y pizarras guardadas tienen su propia pestaña. Barra desplazable con selector de archivos abiertos, búsqueda y navegación por teclado; botón fijo para reabrir la última cerrada. Las pizarras incrustadas y acopladas conservan la nota activa.
+
 - Recientes limitado a 20 archivos en total y acceso rápido para cualquier extensión: texto, PDF, imágenes, audio, vídeo, Word y pizarras usan su apertura habitual en MK. Favoritas disponible para todos los archivos del explorador.
 
 - Acceso rápido en el explorador con notas favoritas y recientes por carpeta. Estrella para la nota actual y menú contextual; historial sin duplicados, persistencia confirmada y actualización de accesos al renombrar, mover o eliminar desde MK.

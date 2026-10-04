@@ -2,6 +2,8 @@
 'use strict';
 let panel, engine, filePath = null, disk = null, current = '', clean = '', saving = false, opening = false;
 let dockHost = null;
+let docking = false;
+let preserveDocument = false;
 let initialized = false;
 let feedback = '';
 function dirty() { return current !== clean; }
@@ -21,10 +23,15 @@ function status(message) {
   });
   const saveButton = panel?.querySelector('#drawing-save');
   if (saveButton) saveButton.textContent = saving ? 'Guardando…' : 'Guardar';
+  if (filePath && !dockHost && !preserveDocument) window.mdTabs?.updateDrawing(filePath, dirty());
 }
 function close() {
   if (saving || (dirty() && !confirm('Hay cambios en la pizarra sin guardar. ¿Descartarlos y cerrar?'))) return false;
-  engine?.unmount(); engine = null; panel?.remove(); panel = null; dockHost = null; current = clean = ''; return true;
+  const wasActive = panel && !dockHost && !preserveDocument && window.mdTabs?.getActiveState()?.kind === 'drawing';
+  engine?.unmount(); engine = null; panel?.remove(); panel = null; dockHost = null; current = clean = '';
+  if (filePath) window.mdTabs?.updateDrawing(filePath, false);
+  if (wasActive) window.mdTabs.activatePreviousDocument();
+  return true;
 }
 async function save(as = false) {
   if (!panel || saving || !initialized) return;
@@ -35,18 +42,28 @@ async function save(as = false) {
   try {
     const result = await window.mdEditor.drawingSave({ content: snapshot, filePath, expected: disk, forceDialog: as });
     if (result?.error) throw new Error(result.error);
-    if (result?.path) { filePath = result.path; disk = snapshot; clean = snapshot; feedback = 'Guardada'; window.mdNoteAccess?.record(filePath); document.dispatchEvent(new CustomEvent('mk:drawing-saved', { detail: { path: filePath } })); }
+    if (result?.path) {
+      const oldPath = filePath;
+      filePath = result.path; disk = snapshot; clean = snapshot; feedback = 'Guardada';
+      if (!dockHost && !preserveDocument) {
+        if (oldPath) window.mdTabs?.updateTabPath(oldPath, filePath);
+        window.mdTabs?.trackViewer(filePath, 'drawing');
+        document.dispatchEvent(new CustomEvent('mk:active-file-changed'));
+      }
+      window.mdNoteAccess?.record(filePath);
+      document.dispatchEvent(new CustomEvent('mk:drawing-saved', { detail: { path: filePath } }));
+    }
     else feedback = 'Guardado cancelado';
     status();
   } catch (error) { status(error.message); }
   finally { saving = false; status(); }
 }
-async function open(path = null) {
+async function open(path = null, options = {}) {
   if (opening || saving) return false;
   opening = true;
-  try { return await openScene(path); } finally { opening = false; status(); }
+  try { return await openScene(path, !!options.preserveDocument); } finally { opening = false; status(); }
 }
-async function openScene(path) {
+async function openScene(path, keepDocument) {
   const host = dockHost;
   let initial = { elements: [], appState: {}, files: {} }, source = null;
   if (path) {
@@ -55,6 +72,7 @@ async function openScene(path) {
     source = result.content; initial = JSON.parse(source);
   }
   if (panel && !close()) return false;
+  preserveDocument = keepDocument;
   window.EXCALIDRAW_ASSET_PATH = new window.URL('drawing-assets/', document.baseURI).href;
   if (!document.getElementById('drawing-css')) {
     const css = document.createElement('link'); css.id = 'drawing-css'; css.rel = 'stylesheet'; css.href = 'drawing-assets/index.css'; document.head.append(css);
@@ -95,12 +113,17 @@ async function openScene(path) {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); event.stopPropagation(); save(event.shiftKey); }
     else if (event.key === 'Escape' && event.target.closest('button')) close();
   });
-  if (path) window.mdNoteAccess?.record(path);
+  if (path) {
+    window.mdNoteAccess?.record(path);
+    if (!host && !docking && !preserveDocument) { window.mdTabs?.trackViewer(path, 'drawing'); document.dispatchEvent(new CustomEvent('mk:active-file-changed')); }
+  }
   status(); return true;
 }
 window.addEventListener('beforeunload', (event) => { if (dirty() || saving) { event.preventDefault(); event.returnValue = false; } });
 async function dock(host, path = filePath) {
-  if (!panel || path !== filePath) { if (!await open(path)) return false; }
+  docking = true;
+  try { if (!panel || path !== filePath) { if (!await open(path, { preserveDocument: true })) return false; } }
+  finally { docking = false; }
   dockHost = host; host.append(panel); panel.classList.add('drawing-study-docked');
   panel.setAttribute('role', 'region');
   return true;

@@ -19,6 +19,7 @@ let wordsTimer = null;
 function updateWords() {
   clearTimeout(wordsTimer);
   wordsTimer = setTimeout(() => {
+    if (window.mdTabs?.getActiveState()?.kind) { wordsEl.textContent = ''; return; }
     const sel = cm.getSelection();
     const text = sel || cm.getValue();
     const words = countWords(text);
@@ -34,7 +35,8 @@ function updateSave() {
     return;
   }
   let text;
-  if (info.conflict) text = '⚠ Cambió afuera';
+  if (info.kind && info.kind !== 'drawing') text = 'Visor · Solo lectura';
+  else if (info.conflict) text = '⚠ Cambió afuera';
   else if (!info.filePath) text = info.modified ? '● Sin guardar (nuevo)' : 'Sin guardar (nuevo)';
   else text = info.modified ? '● Sin guardar' : '✓ Guardado';
   saveEl.textContent = text;

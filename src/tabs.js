@@ -8,6 +8,39 @@ let tabs = [];
 let activeId = null;
 let nextId = 1;
 let sessionTimer = null;
+let lastDocumentId = null;
+let drawingReturnId = null;
+const strip = document.createElement('div');
+strip.className = 'tab-strip';
+strip.setAttribute('role', 'tablist');
+strip.setAttribute('aria-label', 'Archivos abiertos');
+const controls = document.createElement('div');
+controls.className = 'tab-controls';
+const pickerButton = document.createElement('button');
+pickerButton.type = 'button';
+pickerButton.id = 'tab-picker-button';
+pickerButton.title = 'Elegir entre los archivos abiertos';
+pickerButton.setAttribute('aria-haspopup', 'dialog');
+pickerButton.setAttribute('aria-expanded', 'false');
+window.mdIcons.button(pickerButton, 'list');
+pickerButton.addEventListener('click', () => togglePicker());
+const reopenButton = document.createElement('button');
+reopenButton.type = 'button';
+reopenButton.id = 'tab-reopen-button';
+reopenButton.title = 'Reabrir la última pestaña cerrada';
+window.mdIcons.button(reopenButton, 'undo-2');
+reopenButton.addEventListener('click', () => reopenClosed().catch(error => window.mdErrorToast.show({ message: 'No se pudo reabrir el archivo', detail: error.message })));
+controls.append(reopenButton, pickerButton);
+tabbarEl.append(strip, controls);
+
+function iconFor(tab) {
+  if (tab.kind === 'pdf') return 'file-text';
+  if (tab.kind === 'image') return 'image';
+  if (tab.kind === 'video') return 'film';
+  if (tab.kind === 'audio') return 'music';
+  if (tab.kind === 'drawing') return 'pencil-ruler';
+  return CODE_MODES.has(tab.mode) ? 'file-code' : 'notebook-pen';
+}
 
 // Resaltado de sintaxis más allá de Markdown/LaTeX: código fuente en otros
 // lenguajes se puede abrir y editar/guardar sin problema (es texto plano),
@@ -94,7 +127,7 @@ const CODE_MODES = new Set(Object.values(MODE_BY_EXT).map((m) => m.mode).filter(
 
 function isActiveTabCode() {
   const tab = tabs.find((t) => t.id === activeId);
-  return !!tab && CODE_MODES.has(tab.mode);
+  return !!tab && !tab.kind && CODE_MODES.has(tab.mode);
 }
 
 function labelFor(tab) {
@@ -121,7 +154,7 @@ function createTab(filePath, content, diskContent) {
 let suppressChange = false; // recargas desde disco: no cuentan como edición
 
 async function readDisk(tab) {
-  if (!tab.filePath) return null;
+  if (!tab.filePath || tab.kind) return null;
   const r = await window.mdEditor.readFile(tab.filePath);
   return r && !r.binary ? r.content : null;
 }
@@ -141,7 +174,7 @@ function replaceContent(tab, text) {
 // El archivo cambió afuera: sin cambios propios → se recarga solo; con
 // cambios propios → queda marcado ⚠ (y el autoguardado no lo pisa).
 async function syncWithDisk(tab) {
-  if (!tab || !tab.filePath || tab.diskContent == null) return;
+  if (!tab || tab.kind || !tab.filePath || tab.diskContent == null) return;
   const disk = await readDisk(tab);
   if (disk === null || disk === tab.diskContent) return;
   if (!tab.modified) {
@@ -163,9 +196,7 @@ async function diskChangedSince(tab) {
 
 // Lectores de pantalla y teclado: pestañas con role="tab"; ←/→ cambian de
 // pestaña, Supr la cierra (el foco va a la pestaña activa con Tab).
-tabbarEl.setAttribute('role', 'tablist');
-tabbarEl.setAttribute('aria-label', 'Archivos abiertos');
-tabbarEl.addEventListener('keydown', (e) => {
+strip.addEventListener('keydown', (e) => {
   const idx = tabs.findIndex((t) => t.id === activeId);
   if (idx < 0) return;
   let next = null;
@@ -183,17 +214,26 @@ tabbarEl.addEventListener('keydown', (e) => {
 });
 
 function renderTabbar() {
-  const hadFocus = tabbarEl.contains(document.activeElement);
-  tabbarEl.innerHTML = '';
+  const hadFocus = strip.contains(document.activeElement);
+  const scrollLeft = strip.scrollLeft;
+  strip.innerHTML = '';
   for (const tab of tabs) {
     const el = document.createElement('div');
     el.className = 'tab' + (tab.id === activeId ? ' active' : '') + (tab.conflict ? ' tab-conflict' : '') + (tab.modified ? ' tab-modified' : '');
     el.setAttribute('role', 'tab');
     el.setAttribute('aria-selected', String(tab.id === activeId));
     el.tabIndex = tab.id === activeId ? 0 : -1;
+    el.dataset.path = tab.filePath || '';
+    el.dataset.kind = tab.kind || 'text';
     el.title = tab.conflict
       ? `${tab.filePath}\n⚠ Cambió fuera de MK mientras tenías cambios sin guardar: el autoguardado está en pausa. Guardá (Ctrl+S) para elegir qué versión queda.`
-      : (tab.filePath || 'Sin título');
+      : `${tab.filePath || 'Sin título'}${tab.modified ? '\nCambios sin guardar' : ''}`;
+
+    const icon = document.createElement('span');
+    icon.className = 'tab-icon';
+    window.mdIcons.button(icon, iconFor(tab));
+    icon.setAttribute('aria-hidden', 'true');
+    el.appendChild(icon);
 
     const label = document.createElement('span');
     label.className = 'tab-label';
@@ -229,8 +269,12 @@ function renderTabbar() {
       e.preventDefault();
       showTabMenu(e.clientX, e.clientY, tab);
     });
-    tabbarEl.appendChild(el);
+    strip.appendChild(el);
   }
+  strip.scrollLeft = scrollLeft;
+  reopenButton.disabled = !closedTabs.length;
+  pickerButton.setAttribute('aria-label', `Archivos abiertos (${tabs.length})`);
+  if (picker && !picker.hidden) renderPicker();
   if (hadFocus) {
     const active = tabbarEl.querySelector('.tab.active');
     if (active) active.focus();
@@ -240,8 +284,18 @@ function renderTabbar() {
 function activateTab(id) {
   const tab = tabs.find((t) => t.id === id);
   if (!tab) return;
+  const drawing = window.mdDrawing?.getState();
+  if (drawing?.ready && !drawing.docked && drawing.filePath !== tab.filePath && !window.mdDrawing.close()) return;
+  if (tab.kind) {
+    if (tab.kind === 'drawing') {
+      window.mdDrawing.open(tab.filePath).catch(error => window.mdErrorToast.show({ message: 'No se pudo abrir la pizarra', detail: error.message }));
+    } else if (tab.kind === 'pdf') window.showPdfPreview(tab.filePath);
+    else window.showMediaPreview(tab.filePath);
+    return;
+  }
   const started = window.performance.now();
   activeId = id;
+  lastDocumentId = id;
   window.mdState.currentFilePath = tab.filePath;
   tabCm.swapDoc(tab.doc);
   const currentMode = tabCm.getOption('mode');
@@ -253,6 +307,7 @@ function activateTab(id) {
   window.mdStatusMode.textContent = tab.modeLabel;
   if (window.mdModes) window.mdModes.releasePdfForcedReadMode();
   renderTabbar();
+  revealActive();
   if (window.mdPreview?.requestRender) window.mdPreview.requestRender();
   else if (window.renderPreview) window.renderPreview();
   const previewReady = window.performance.now();
@@ -260,6 +315,94 @@ function activateTab(id) {
   syncWithDisk(tab);
   document.dispatchEvent(new CustomEvent('mk:active-file-changed'));
   lastActivationTimings = { editor: editorReady - started, uiAndPreview: previewReady - editorReady, total: previewReady - started };
+}
+
+function revealActive() {
+  const el = strip.querySelector('.tab.active');
+  if (!el || !strip.clientWidth) return;
+  const left = el.offsetLeft - strip.offsetLeft;
+  if (left < strip.scrollLeft) strip.scrollLeft = left;
+  else if (left + el.offsetWidth > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = left + el.offsetWidth - strip.clientWidth;
+}
+new ResizeObserver(() => revealActive()).observe(strip);
+
+function trackViewer(filePath, kind) {
+  const drawing = window.mdDrawing?.getState();
+  if (drawing?.ready && !drawing.docked && drawing.filePath !== filePath && !window.mdDrawing.close()) return false;
+  if (kind === 'drawing' && tabs.find(t => t.id === activeId)?.kind !== 'drawing') drawingReturnId = activeId;
+  let tab = findTabByPath(filePath);
+  if (!tab) { tab = createTab(filePath, '', null); tab.kind = kind; tab.modeLabel = kind === 'pdf' ? 'PDF' : kind === 'drawing' ? 'Excalidraw' : kind === 'image' ? 'Imagen' : kind === 'video' ? 'Vídeo' : 'Audio'; }
+  activeId = tab.id;
+  tabCm.swapDoc(tab.doc);
+  window.mdState.currentFilePath = filePath;
+  window.mdStatusMode.textContent = tab.modeLabel;
+  renderTabbar();
+  revealActive();
+  persistSession();
+  return true;
+}
+
+let picker = null;
+function closePicker(restoreFocus = false) {
+  if (picker) picker.hidden = true;
+  pickerButton.setAttribute('aria-expanded', 'false');
+  if (restoreFocus) pickerButton.focus();
+}
+function renderPicker() {
+  const list = picker.querySelector('.tab-picker-list');
+  const focusedPath = list.contains(document.activeElement) ? document.activeElement.dataset.path : undefined;
+  const scrollTop = list.scrollTop;
+  const query = picker.querySelector('input').value.toLocaleLowerCase();
+  list.replaceChildren();
+  for (const tab of tabs.filter(t => `${labelFor(t)} ${t.filePath || ''}`.toLocaleLowerCase().includes(query))) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'tab-picker-item' + (tab.id === activeId ? ' active' : '');
+    button.dataset.path = tab.filePath || '';
+    button.title = tab.filePath || 'Sin título';
+    button.setAttribute('aria-current', String(tab.id === activeId));
+    const icon = document.createElement('span');
+    window.mdIcons.button(icon, iconFor(tab));
+    icon.setAttribute('aria-hidden', 'true');
+    const text = document.createElement('span');
+    text.className = 'tab-picker-text';
+    const name = document.createElement('strong'); name.textContent = labelFor(tab);
+    const detail = document.createElement('small'); detail.textContent = tab.conflict ? 'Conflicto · Cambios sin guardar' : tab.modified ? 'Cambios sin guardar' : tab.modeLabel;
+    text.append(name, detail);
+    button.append(icon, text);
+    button.addEventListener('click', () => { closePicker(); activateTab(tab.id); strip.querySelector('.tab.active')?.focus(); });
+    list.appendChild(button);
+  }
+  if (!list.children.length) { const empty = document.createElement('p'); empty.textContent = 'No hay archivos que coincidan.'; list.appendChild(empty); }
+  list.scrollTop = scrollTop;
+  if (focusedPath !== undefined) [...list.querySelectorAll('button')].find(b => b.dataset.path === focusedPath)?.focus();
+}
+function togglePicker() {
+  if (picker && !picker.hidden) { closePicker(true); return; }
+  if (!picker) {
+    picker = document.createElement('section');
+    picker.id = 'tab-picker'; picker.className = 'tab-picker';
+    picker.setAttribute('role', 'dialog'); picker.setAttribute('aria-label', 'Elegir archivo abierto');
+    const input = document.createElement('input'); input.type = 'search'; input.placeholder = 'Buscar entre los archivos abiertos'; input.setAttribute('aria-label', input.placeholder);
+    const list = document.createElement('div'); list.className = 'tab-picker-list';
+    picker.append(input, list); document.body.appendChild(picker);
+    input.addEventListener('input', renderPicker);
+    picker.addEventListener('keydown', e => {
+      const buttons = [...list.querySelectorAll('button')];
+      const idx = buttons.indexOf(document.activeElement);
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closePicker(true); }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const next = idx < 0 ? (e.key === 'ArrowDown' ? 0 : buttons.length - 1) : (idx + (e.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length; buttons[next]?.focus(); }
+      else if (e.key === 'Enter' && e.target === input) { e.preventDefault(); buttons[0]?.click(); }
+    });
+    document.addEventListener('mousedown', e => { if (!picker.contains(e.target) && !pickerButton.contains(e.target)) closePicker(); });
+    window.addEventListener('resize', () => closePicker());
+  }
+  picker.hidden = false; picker.querySelector('input').value = ''; renderPicker();
+  pickerButton.setAttribute('aria-expanded', 'true');
+  const rect = pickerButton.getBoundingClientRect();
+  picker.style.left = `${Math.max(8, Math.min(rect.right - picker.offsetWidth, window.innerWidth - picker.offsetWidth - 8))}px`;
+  picker.style.top = `${Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - picker.offsetHeight - 8))}px`;
+  picker.querySelector('input').focus();
 }
 
 let lastActivationTimings = null;
@@ -403,6 +546,8 @@ async function saveActive(forceDialog = false) {
 async function saveActiveOnce(forceDialog = false) {
   const tab = tabs.find((t) => t.id === activeId);
   if (!tab) return;
+  if (tab.kind === 'drawing') { await window.mdDrawing.save(forceDialog); return; }
+  if (tab.kind) return;
   clearTimeout(tab.autosaveTimer);
   if (!forceDialog && await diskChangedSince(tab)) {
     tab.conflict = true;
@@ -443,8 +588,7 @@ async function saveActiveOnce(forceDialog = false) {
   tab.conflict = false;
   tab.filePath = filePath;
   const modeInfo = modeInfoForPath(filePath);
-  tab.mode = modeInfo.mode;
-  tab.modeLabel = modeInfo.label;
+  if (!tab.kind) { tab.mode = modeInfo.mode; tab.modeLabel = modeInfo.label; }
   if (tab.id === activeId) tabCm.setOption('mode', tab.mode);
   ensureMode(tab, modeInfo); // "Guardar como" con otra extensión
   if (tab.id === activeId) {
@@ -491,8 +635,7 @@ async function reopenClosed() {
       await openTab(c.filePath);
       const tab = findTabByPath(c.filePath);
       if (!tab) continue; // ya no existe: la anterior
-      tab.doc.setCursor(c.cursor);
-      tabCm.scrollIntoView(null, 120);
+      if (!tab.kind) { tab.doc.setCursor(c.cursor); tabCm.scrollIntoView(null, 120); }
     } else {
       const tab = createTab(null, c.content);
       tab.doc.setCursor(c.cursor);
@@ -508,6 +651,7 @@ function closeTab(id) {
   const idx = tabs.findIndex((t) => t.id === id);
   if (idx === -1) return;
   const tab = tabs[idx];
+  if (tab.kind === 'drawing' && window.mdDrawing?.getState().filePath === tab.filePath && !window.mdDrawing.close()) return;
   if (tab.modified && !confirm(`"${labelFor(tab)}" tiene cambios sin guardar. ¿Cerrar de todas formas?`)) {
     return;
   }
@@ -531,11 +675,12 @@ function closeTab(id) {
 function closeTabs(ids) {
   const targets = tabs.filter((t) => ids.includes(t.id));
   if (!targets.length) return;
-  const unsaved = targets.filter((t) => t.modified);
+  const unsaved = targets.filter((t) => t.modified && t.kind !== 'drawing');
   if (unsaved.length) {
     const names = unsaved.slice(0, 5).map((t) => `• ${labelFor(t)}`).join('\n') + (unsaved.length > 5 ? '\n…' : '');
     if (!confirm(`${unsaved.length} pestaña(s) tienen cambios sin guardar:\n${names}\n\n¿Cerrarlas igual (se pierden esos cambios)?`)) return;
   }
+  if (targets.some(t => t.kind === 'drawing' && t.filePath === window.mdDrawing?.getState().filePath) && !window.mdDrawing.close()) return;
   targets.forEach((t) => { clearTimeout(t.autosaveTimer); rememberClosed(t); });
   const activeClosing = ids.includes(activeId);
   const activeIdx = tabs.findIndex((t) => t.id === activeId);
@@ -639,7 +784,7 @@ function persistSession() {
   sessionTimer = setTimeout(() => {
     const data = {
       activeIndex: tabs.findIndex((t) => t.id === activeId),
-      tabs: tabs.map((t) => ({ filePath: t.filePath, content: t.doc.getValue(), modified: t.modified }))
+      tabs: tabs.map((t) => ({ filePath: t.filePath, content: t.doc.getValue(), modified: t.modified, kind: t.kind || null }))
     };
     window.mdEditor.saveSession(data);
   }, 300);
@@ -648,7 +793,7 @@ function persistSession() {
 tabCm.on('change', () => {
   if (suppressChange) return;
   const tab = tabs.find((t) => t.id === activeId);
-  if (!tab) return;
+  if (!tab || tab.kind) return;
   markModified(tab.id, true);
   scheduleAutosave(tab);
   persistSession();
@@ -673,12 +818,12 @@ document.addEventListener('keydown', (e) => {
 // Estado liviano de la pestaña activa (barra de estado): sin copiar el texto.
 function getActiveState() {
   const tab = tabs.find((t) => t.id === activeId);
-  return tab ? { filePath: tab.filePath, modified: tab.modified, conflict: !!tab.conflict } : null;
+  return tab ? { filePath: tab.filePath, modified: tab.modified, conflict: !!tab.conflict, kind: tab.kind || null } : null;
 }
 
 function getActiveTabInfo() {
   const tab = tabs.find((t) => t.id === activeId);
-  if (!tab) return null;
+  if (!tab || tab.kind) return null;
   return { filePath: tab.filePath, modified: tab.modified, content: tab.doc.getValue() };
 }
 
@@ -724,8 +869,7 @@ function updateTabPath(oldPath, newPath) {
   if (!tab) return;
   tab.filePath = newPath;
   const modeInfo = modeInfoForPath(newPath);
-  tab.mode = modeInfo.mode;
-  tab.modeLabel = modeInfo.label;
+  if (!tab.kind) { tab.mode = modeInfo.mode; tab.modeLabel = modeInfo.label; }
   if (tab.id === activeId) {
     tabCm.setOption('mode', tab.mode);
     window.mdState.currentFilePath = newPath;
@@ -753,7 +897,8 @@ function syncPaths(paths) {
   tabs.filter((t) => t.filePath && changed.has(t.filePath)).forEach((t) => syncWithDisk(t));
 }
 
-window.mdTabs = { reopenClosed, closedCount: () => closedTabs.length, getActiveState, getModifiedPaths, syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
+window.mdTabs = { trackViewer, activatePreviousDocument: () => { const tab = tabs.find(t => t.id === drawingReturnId && t.kind !== 'drawing') || tabs.find(t => t.id === lastDocumentId && !t.kind) || tabs.find(t => !t.kind); if (tab) activateTab(tab.id); else newTab(''); }, reopenClosed, closedCount: () => closedTabs.length, getActiveState, getModifiedPaths, syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
+window.mdTabs.updateDrawing = (path, modified) => { const tab = tabs.find(t => t.kind === 'drawing' && t.filePath === path); if (tab) markModified(tab.id, modified); };
 window.mdTabs.timings = () => lastOpenTimings ? JSON.parse(JSON.stringify(lastOpenTimings)) : null;
 window.openFileAtPath = openTab;
 
@@ -769,13 +914,15 @@ window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));
       // guardado pisaba la nueva).
       let content = t.content;
       let disk;
-      if (t.filePath) {
+      const kind = ['pdf', 'image', 'video', 'audio', 'drawing'].includes(t.kind) ? t.kind : null;
+      if (t.filePath && !kind) {
         const r = await window.mdEditor.readFile(t.filePath);
         disk = r && !r.binary ? r.content : null;
         if (disk !== null && !t.modified && disk !== t.content) content = disk;
       }
       const tab = createTab(t.filePath, content, t.filePath ? (disk != null ? disk : t.content) : null);
-      tab.modified = !!t.modified;
+      if (kind) { tab.kind = kind; tab.diskContent = null; tab.modeLabel = kind === 'drawing' ? 'Excalidraw' : kind.toUpperCase(); }
+      tab.modified = !kind && !!t.modified;
     }
     const idx = Math.min(Math.max(session.activeIndex || 0, 0), tabs.length - 1);
     activateTab(tabs[idx].id);
