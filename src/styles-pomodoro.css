@@ -1,0 +1,15 @@
+.modal.pomodoro-panel { width: min(760px, calc(100vw - 32px)); max-width: 760px; max-height: 85vh; overflow-y: auto; }
+.pomodoro-section { padding: 12px 0; border-top: 1px solid var(--border); }
+.pomodoro-field { display: inline-flex; flex-direction: column; gap: 4px; margin: 4px 12px 8px 0; max-width: 100%; }
+.pomodoro-field input:not([type="checkbox"]), .pomodoro-panel select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm, 4px); padding: 7px; max-width: 100%; box-sizing: border-box; }
+.pomodoro-field input[type="checkbox"] { align-self: flex-start; }
+.pomodoro-panel .toolbar-button { margin: 3px; }
+.pomodoro-hint, .pomodoro-save-status { color: var(--text-muted); font-size: var(--font-sm, 12px); }
+.pomodoro-error { color: var(--text); border-left: 3px solid var(--accent); padding-left: 8px; }
+.pomodoro-error:empty { display: none; }
+.pomodoro-category-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; overflow-wrap: anywhere; }
+.pomodoro-record { padding: 8px 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.pomodoro-record-form { background: var(--surface-2); padding: 12px; border-radius: var(--radius, 8px); }
+.pomodoro-note-context { border-left: 2px solid var(--accent); padding-left: 8px; margin: 6px 0; overflow-wrap: anywhere; }
+.pomodoro-note-context p { margin: 4px 0; }
+@media (max-width: 600px) { .pomodoro-field { display: flex; margin-right: 0; } }

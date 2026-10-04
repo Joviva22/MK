@@ -15,7 +15,7 @@ const MODULES = [
   { id: 'links', name: 'Etiquetas y backlinks', desc: 'Paneles de #etiquetas y de qué enlaza a la nota actual.', buttons: ['btn-tags', 'btn-backlinks'], palette: /etiquetas|^Backlinks/, keys: [{ ctrl: true, shift: true, key: 't' }, { ctrl: true, shift: true, key: 'b' }] },
   { id: 'terminal', name: 'Terminal e IA', desc: 'Terminal integrada, F5 para ejecutar y abrir Claude Code / Gemini / Codex.', buttons: ['btn-terminal', 'btn-run-file', 'btn-ai'], palette: /^(Terminal:|IA:|Ejecutar archivo)/, keys: [{ ctrl: true, code: 'Backquote' }, { ctrl: true, key: 'ñ' }, { key: 'F5' }, { ctrl: true, shift: true, code: 'Digit5' }] },
   { id: 'pdf', name: 'Herramientas de PDF', desc: 'Unir, separar, rotar, firmar, subrayar y escribir en PDFs (ver PDFs sigue funcionando).', buttons: ['btn-pdfpages', 'btn-pdfhighlight'], palette: /PDF:|páginas PDF/ },
-  { id: 'pomodoro', name: 'Pomodoro', desc: 'Temporizador de foco y descanso.', buttons: ['btn-pomodoro'], palette: /^Pomodoro/ },
+  { id: 'pomodoro', name: 'Pomodoro', desc: 'Temporizador, categorías y tiempo de estudio.', buttons: ['btn-pomodoro', 'btn-pomodoro-history'], palette: /^Pomodoro/ },
   { id: 'media', name: 'Reproductor multimedia', desc: 'Controles de play/pausa del reproductor del sistema (playerctl).', buttons: ['btn-media-prev', 'btn-media-playpause', 'btn-media-next'], palette: /^Reproductor/ }
 ];
 
