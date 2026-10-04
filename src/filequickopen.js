@@ -69,7 +69,8 @@ function render(filter) {
     item.className = 'command-palette-item search-result-item' + (i === selectedIndex ? ' selected' : '');
 
     const name = document.createElement('div');
-    name.textContent = f.nombre;
+    name.className = 'search-result-name';
+    window.mdSearchPresentation.highlight(name, f.nombre, filter);
     item.appendChild(name);
 
     if (f.relDir) {
@@ -86,6 +87,7 @@ function render(filter) {
     list.appendChild(item);
   });
 
+  list.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
   return filtered;
 }
 
@@ -116,7 +118,7 @@ input.addEventListener('keydown', (e) => {
   const filtered = render(input.value);
   if (e.key === 'ArrowDown') {
     e.preventDefault();
-    selectedIndex = Math.min(selectedIndex + 1, filtered.length - 1);
+    selectedIndex = Math.max(0, Math.min(selectedIndex + 1, filtered.length - 1));
     render(input.value);
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();

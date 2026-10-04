@@ -6,6 +6,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ## Sin publicar
 
+- Búsqueda con nombres destacados, ubicación secundaria, coincidencias resaltadas y navegación con flechas/Enter. Paleta y apertura rápida con ayudas de teclado, selección siempre visible y estados vacíos más claros. Resultados antiguos descartados al cambiar de consulta o cerrar; avisos de error adaptados al tema y con contenido largo desplazable.
+
 - Pestañas con nombres largos recortados, indicador independiente de cambios, cierre discreto y selección/foco más claros. Separadores de paneles con agarre visible y acabado común de diálogos; Ajustes apila campos en ventanas estrechas y mejora el espaciado y la lectura.
 
 - Home como espacio principal con vista Día, resumen de agenda, creación sin guardar borradores cancelados, opciones agrupadas, tareas completadas plegables y Deshacer al completar o mover tareas propias. Semana y mes se adaptan al espacio disponible; volver al editor conserva el documento y su posición.

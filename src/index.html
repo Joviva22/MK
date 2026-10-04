@@ -520,25 +520,31 @@
 
   <div id="command-palette" class="modal-overlay palette-overlay" hidden>
     <div class="command-palette">
-      <input id="command-palette-input" type="text" placeholder="Escribe un comando..." autocomplete="off" spellcheck="false" />
+      <div class="palette-heading">Paleta de comandos</div>
+      <input id="command-palette-input" aria-label="Buscar un comando" type="text" placeholder="Escribe un comando..." autocomplete="off" spellcheck="false" />
       <div id="command-palette-list" class="command-palette-list"></div>
+      <div class="palette-footer"><span>↑ ↓ Elegir · Enter Ejecutar</span><span>Esc Cerrar</span></div>
     </div>
   </div>
 
   <div id="search-panel" class="modal-overlay palette-overlay" hidden>
     <div class="command-palette search-palette">
+      <div class="palette-heading">Buscar en MK</div>
       <div class="search-input-row">
-        <input id="search-input" type="text" placeholder="Buscar en los archivos de la carpeta abierta..." autocomplete="off" spellcheck="false" />
+        <input id="search-input" role="combobox" aria-autocomplete="list" aria-controls="search-results" aria-expanded="true" aria-label="Buscar en archivos, tareas y bases de datos" type="text" placeholder="Archivos, tareas y bases de datos…" autocomplete="off" spellcheck="false" />
         <button type="button" id="search-replace-btn" class="toolbar-button" title="Reemplazar en toda la carpeta (con vista previa)">⇄ Reemplazar…</button>
       </div>
-      <div id="search-results" class="command-palette-list"></div>
+      <div id="search-results" role="listbox" aria-label="Resultados de búsqueda" class="command-palette-list"></div>
+      <div class="palette-footer"><span>↑ ↓ Elegir · Enter Abrir</span><span>Esc Cerrar</span></div>
     </div>
   </div>
 
   <div id="file-open-panel" class="modal-overlay palette-overlay" hidden>
     <div class="command-palette search-palette">
-      <input id="file-open-input" type="text" placeholder="Nombre de archivo..." autocomplete="off" spellcheck="false" />
+      <div class="palette-heading">Abrir archivo</div>
+      <input id="file-open-input" aria-label="Buscar un archivo por nombre" type="text" placeholder="Nombre de archivo..." autocomplete="off" spellcheck="false" />
       <div id="file-open-results" class="command-palette-list"></div>
+      <div class="palette-footer"><span>↑ ↓ Elegir · Enter Abrir</span><span>Esc Cerrar</span></div>
     </div>
   </div>
 
@@ -882,6 +888,7 @@
   <script src="autocomplete.js"></script>
   <script src="snippets.js"></script>
   <script src="dailynote.js"></script>
+  <script src="search-presentation.js"></script>
   <script src="commandpalette.js"></script>
   <script src="drawing.js"></script>
   <script src="search.js"></script>

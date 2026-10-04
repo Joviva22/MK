@@ -304,6 +304,10 @@
   paletteInput.dispatchEvent(new Event('input'));
   const filteredOk = document.querySelectorAll('#command-palette-list .command-palette-item').length > 0 &&
     Array.from(document.querySelectorAll('#command-palette-list .command-palette-item')).every((el) => /guardar/i.test(el.textContent));
+  const marksOk = document.querySelector('#command-palette-list mark')?.textContent.toLowerCase() === 'guardar';
+  const escapedMatch = document.createElement('div');
+  window.mdSearchPresentation.highlight(escapedMatch, '<img src=x> [nota] [NOTA]', '[nota]');
+  check('Búsqueda: resaltado literal seguro y coincidencias en la paleta', marksOk && !escapedMatch.querySelector('img') && escapedMatch.querySelectorAll('mark').length === 2 && escapedMatch.textContent === '<img src=x> [nota] [NOTA]');
   paletteInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   const paletteClosedOk = paletteOverlay.hidden;
   check(
@@ -328,6 +332,9 @@
     searchInput.dispatchEvent(new Event('input'));
     const found = await waitFor(() => document.querySelector('#search-results .search-result-item'), 6000);
     searchFindsFixture = !!found && found.textContent.includes('note.md');
+    searchInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    searchInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    check('Búsqueda: separa nombre y ruta, resalta texto y navega con flechas', !!found?.querySelector('.search-result-name') && !!found?.querySelector('.search-result-path') && found?.querySelector('mark')?.textContent === 'Hola MK' && found?.classList.contains('selected'));
     searchInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   }
   check(

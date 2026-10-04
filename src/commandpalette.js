@@ -98,16 +98,23 @@ function render(filter) {
   const q = filter.trim().toLowerCase();
   const filtered = commands.filter((c) => c.label.toLowerCase().includes(q));
   list.innerHTML = '';
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.className = 'command-palette-empty';
+    empty.textContent = 'No hay comandos con ese nombre. Prueba con otra palabra.';
+    list.appendChild(empty);
+  }
   filtered.forEach((cmd, i) => {
     const item = document.createElement('div');
     item.className = 'command-palette-item' + (i === selectedIndex ? ' selected' : '');
-    item.textContent = cmd.label;
+    window.mdSearchPresentation.highlight(item, cmd.label, filter);
     item.addEventListener('mousedown', (e) => {
       e.preventDefault();
       runCommand(cmd);
     });
     list.appendChild(item);
   });
+  list.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
   return filtered;
 }
 
@@ -138,7 +145,7 @@ input.addEventListener('keydown', (e) => {
   const filtered = render(input.value);
   if (e.key === 'ArrowDown') {
     e.preventDefault();
-    selectedIndex = Math.min(selectedIndex + 1, filtered.length - 1);
+    selectedIndex = Math.max(0, Math.min(selectedIndex + 1, filtered.length - 1));
     render(input.value);
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();

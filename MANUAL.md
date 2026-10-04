@@ -295,6 +295,10 @@ Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pesta
 - **Abrir archivo rápido por nombre** (`Ctrl+P`, o paleta de comandos): tipeá parte del nombre de un archivo (no el contenido) y saltá directo con `Enter` — más rápido que navegar el sidebar cuando la carpeta tiene muchos archivos. `↑`/`↓` mueven la selección, `Escape` cierra. Cada resultado muestra el nombre y, si no está en la raíz, la carpeta donde vive.
 - **Paleta de comandos** (⌘ en la toolbar, o `Ctrl+Shift+P`): lista todo lo que podés hacer en MK — nuevo, abrir, guardar, exportar, cambiar de tema, alternar vistas, ver etiquetas/backlinks/historial/Kanban/grafo — con filtro por texto a medida que escribís. Navegás con las flechas y confirmás con Enter.
 
+### Navegar los resultados de búsqueda
+
+En la búsqueda global (`Ctrl+Shift+F`), el nombre aparece sobre la ubicación y el fragmento de texto, con las coincidencias resaltadas. Usa `↑` y `↓` para elegir, `Enter` para abrir y `Escape` para cerrar. Busca en archivos, tareas del Home y bases de datos; sin carpeta abierta están disponibles las tareas. La paleta (`Ctrl+Shift+P`) y la apertura por nombre (`Ctrl+P`) también muestran ayudas de teclado y mantienen visible la opción seleccionada.
+
 ## 9. Nota diaria
 
 Pensada para llevar un diario o un registro rápido del día, sin tener que crear el archivo a mano cada vez.
