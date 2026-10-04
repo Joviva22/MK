@@ -1,0 +1,194 @@
+import { PRIORITIES, REMIND_OPTIONS, REPEAT_OPTIONS, addDays, data, deleteTask, iso, moveItem, noteNames, parseIso, skipOccurrence, startPomodoroFor, todayIso, updateTask } from './home-data.js';
+import { el } from './home-ui.js';
+import { DAY_NAMES } from './home-views.js';
+
+'use strict';
+
+// Editor completo de una tarea (modal): título, fecha, hora, prioridad,
+// repetición, aviso, categoría, nota enlazada, Pomodoro y notas libres.
+
+export let editorEl = null;
+
+export function closeTaskEditor() {
+  if (editorEl) {
+    editorEl.remove();
+    editorEl = null;
+  }
+}
+
+export function openTaskEditor(item) {
+  const task = item.task;
+  closeTaskEditor();
+  const modal = el('div', 'modal-overlay palette-overlay');
+  const box = el('div', 'command-palette home-editor');
+  modal.appendChild(box);
+
+  box.appendChild(el('div', 'backlinks-title', item.recurring ? 'Editar tarea recurrente' : 'Editar tarea'));
+  if (item.recurring) {
+    box.appendChild(el('div', 'home-editor-hint', 'Los cambios se aplican a todas las repeticiones.'));
+  }
+
+  const field = (labelText, input, parent) => {
+    const wrap = el('label', 'home-editor-field');
+    wrap.appendChild(el('span', null, labelText));
+    wrap.appendChild(input);
+    (parent || box).appendChild(wrap);
+    return input;
+  };
+  const selectOf = (options, value) => {
+    const sel = el('select', 'home-editor-input');
+    options.forEach((o) => {
+      const opt = el('option', null, o.label);
+      opt.value = o.value;
+      sel.appendChild(opt);
+    });
+    sel.value = value;
+    return sel;
+  };
+
+  const titleInput = field('Título', el('input', 'home-editor-input'));
+  titleInput.value = task.title;
+
+  const row1 = el('div', 'home-editor-row');
+  box.appendChild(row1);
+  const dateInput = field(item.recurring ? 'Empieza' : 'Fecha', el('input', 'home-editor-input'), row1);
+  dateInput.type = 'date';
+  dateInput.value = task.date || '';
+  const timeInput = field('Hora', el('input', 'home-editor-input'), row1);
+  timeInput.type = 'time';
+  timeInput.value = task.time || '';
+  const DURATIONS = [15, 30, 45, 60, 90, 120, 180, 240, 480].map((m) => ({ value: String(m), label: m < 60 ? `${m} min` : `${m / 60} h`.replace('.5 h', ' h 30') }));
+  const durationSelect = field('Duración', selectOf(DURATIONS, String(Number(task.duration) || 60)), row1);
+  durationSelect.dataset.field = 'duration';
+  const remindSelect = field('Aviso (según la hora)', selectOf(REMIND_OPTIONS, task.remind != null ? String(task.remind) : ''), row1);
+
+  // Repetición
+  const rep = task.repeat || {};
+  const row2 = el('div', 'home-editor-row');
+  box.appendChild(row2);
+  const repeatSelect = field('Repetir', selectOf(REPEAT_OPTIONS, rep.freq || ''), row2);
+  const untilInput = field('Hasta (opcional)', el('input', 'home-editor-input'), row2);
+  untilInput.type = 'date';
+  untilInput.value = rep.until || '';
+
+  const daysWrap = el('div', 'home-editor-days');
+  const startWeekday = task.date ? (parseIso(task.date).getDay() + 6) % 7 : 0;
+  const selectedDays = new Set(Array.isArray(rep.days) && rep.days.length ? rep.days : [startWeekday]);
+  const dayBoxes = DAY_NAMES.map((name, idx) => {
+    const lbl = el('label', 'home-editor-day');
+    const cb = el('input');
+    cb.type = 'checkbox';
+    cb.checked = selectedDays.has(idx);
+    lbl.append(cb, document.createTextNode(name));
+    daysWrap.appendChild(lbl);
+    return cb;
+  });
+  box.appendChild(daysWrap);
+
+  const syncRepeatUi = () => {
+    const freq = repeatSelect.value;
+    untilInput.closest('.home-editor-field').hidden = !freq;
+    daysWrap.hidden = freq !== 'weekly';
+    remindSelect.disabled = !timeInput.value;
+    durationSelect.disabled = !timeInput.value;
+    if (!timeInput.value) remindSelect.value = '';
+  };
+  repeatSelect.addEventListener('change', syncRepeatUi);
+  timeInput.addEventListener('input', syncRepeatUi);
+  syncRepeatUi();
+
+  // Avisos anticipados: "N días antes, a las HH:MM" (ver reminderui.js).
+  const advWrap = el('div', 'home-editor-field');
+  advWrap.appendChild(el('span', null, 'Avisos anticipados (notificación "Faltan N días para…")'));
+  box.appendChild(advWrap);
+  const getAdvance = window.mdReminderUI.build(advWrap, task.advance || []);
+
+  const prioSelect = field('Prioridad', selectOf(PRIORITIES, task.priority || 'media'));
+  const catSelect = field('Categoría', selectOf([{ value: '', label: 'Sin categoría' }, ...(data.categories || []).map((c) => ({ value: c.id, label: c.name }))], task.category || ''));
+
+  const noteInput = field('Nota enlazada (opcional)', el('input', 'home-editor-input'));
+  noteInput.placeholder = 'Nombre de una nota de la carpeta';
+  noteInput.value = task.note || '';
+  const noteList = el('datalist');
+  noteList.id = 'home-note-names';
+  noteInput.setAttribute('list', noteList.id);
+  box.appendChild(noteList);
+  noteNames().then((names) => names.forEach((n) => {
+    const opt = el('option');
+    opt.value = n;
+    noteList.appendChild(opt);
+  }));
+
+  const notesInput = field('Notas', el('textarea', 'home-editor-input home-editor-notes'));
+  notesInput.value = task.notes || '';
+
+  const actions = el('div', 'home-editor-actions');
+  if (item.recurring) {
+    const delOne = el('button', 'toolbar-button home-danger', 'Eliminar este día');
+    delOne.addEventListener('click', () => {
+      closeTaskEditor();
+      skipOccurrence(item);
+    });
+    const delAll = el('button', 'toolbar-button home-danger', 'Eliminar serie');
+    delAll.addEventListener('click', () => {
+      if (!confirm(`¿Eliminar "${task.title}" y todas sus repeticiones?`)) return;
+      closeTaskEditor();
+      deleteTask(task.id);
+    });
+    actions.append(delOne, delAll);
+  } else {
+    const del = el('button', 'toolbar-button home-danger', 'Eliminar');
+    del.addEventListener('click', () => {
+      if (!confirm(`¿Eliminar la tarea "${task.title}"?`)) return;
+      closeTaskEditor();
+      deleteTask(task.id);
+    });
+    actions.append(del);
+  }
+  const cancel = el('button', 'toolbar-button', 'Cancelar');
+  cancel.addEventListener('click', closeTaskEditor);
+  const ok = el('button', 'toolbar-button home-primary', 'Guardar');
+  const commit = () => {
+    const freq = repeatSelect.value;
+    // Una serie necesita fecha de inicio: si no hay, arranca hoy.
+    const date = dateInput.value || (freq ? (item.date || todayIso()) : null);
+    const days = dayBoxes.map((cb, idx) => (cb.checked ? idx : -1)).filter((i) => i >= 0);
+    closeTaskEditor();
+    updateTask(task.id, {
+      title: titleInput.value.trim() || task.title,
+      date,
+      time: timeInput.value || null,
+      duration: Number(durationSelect.value) || 60,
+      remind: timeInput.value && remindSelect.value !== '' ? Number(remindSelect.value) : null,
+      advance: getAdvance(),
+      repeat: freq ? { freq, until: untilInput.value || null, days: freq === 'weekly' ? days : undefined } : null,
+      priority: prioSelect.value,
+      category: catSelect.value || null,
+      notes: notesInput.value,
+      note: noteInput.value.trim() || null
+    });
+  };
+  ok.addEventListener('click', commit);
+  titleInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+  // Reprogramar rápido: esta tarea (o esta repetición) pasa a mañana.
+  const tomorrowBtn = el('button', 'toolbar-button', '→ Mañana');
+  tomorrowBtn.title = 'Mover esta tarea a mañana (en una recurrente, solo este día)';
+  tomorrowBtn.addEventListener('click', () => {
+    closeTaskEditor();
+    moveItem(item, iso(addDays(new Date(), 1)));
+  });
+  const pomo = el('button', 'toolbar-button', '⏱ Pomodoro');
+  pomo.title = 'Arrancar un Pomodoro sobre esta tarea (al terminar el foco te pregunta si la terminaste)';
+  pomo.addEventListener('click', () => {
+    closeTaskEditor();
+    startPomodoroFor(item);
+  });
+  actions.append(el('span', 'toolbar-spacer'), tomorrowBtn, pomo, cancel, ok);
+  box.appendChild(actions);
+
+  modal.addEventListener('mousedown', (e) => { if (e.target === modal) closeTaskEditor(); });
+  document.body.appendChild(modal);
+  editorEl = modal;
+  titleInput.focus();
+  titleInput.select();
+}
