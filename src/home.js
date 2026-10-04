@@ -207,7 +207,7 @@ document.addEventListener('keydown', (e) => {
     if (!overlay.hidden && !e.defaultPrevented) close();
     return;
   }
-  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
+  if (!window.mdShortcuts && (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
     e.preventDefault();
     if (overlay.hidden) open(); else close();
   }

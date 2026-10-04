@@ -490,6 +490,7 @@ function buildTree(nodes) {
     const row = document.createElement('div');
     row.className = 'tree-row';
     row._node = node;
+    row.classList.toggle('tree-row-active', node.ruta === window.mdState.currentFilePath);
     if (highlightPath && node.ruta === highlightPath) {
       row.classList.add('tree-row-new');
       setTimeout(() => row.classList.remove('tree-row-new'), 1800);
@@ -505,8 +506,27 @@ function buildTree(nodes) {
     row.appendChild(iconEl);
 
     const labelEl = document.createElement('span');
+    labelEl.className = 'tree-name';
     labelEl.textContent = node.nombre;
     row.appendChild(labelEl);
+
+    const actions = document.createElement('button');
+    actions.type = 'button';
+    actions.className = 'tree-actions';
+    actions.title = `Acciones de ${node.nombre}`;
+    actions.setAttribute('aria-label', actions.title);
+    actions.innerHTML = '<i data-lucide="ellipsis"></i>';
+    actions.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const rect = actions.getBoundingClientRect();
+      if (selectedNodes.size > 1 && selectedNodes.has(node.ruta)) {
+        showSidebarMenu(rect.left, rect.bottom, null, Array.from(selectedNodes.values()));
+      } else {
+        clearSelection();
+        showSidebarMenu(rect.left, rect.bottom, node);
+      }
+    });
+    row.appendChild(actions);
 
     li.appendChild(row);
     li.setAttribute('role', 'none');
@@ -518,6 +538,7 @@ function buildTree(nodes) {
     // selección múltiple, y Shift+clic selecciona el rango desde la última
     // fila clicada, en vez de abrirla/plegarla — ver handleSelectionClick.
     if (node.esCarpeta) {
+      row.classList.add('tree-folder');
       const childrenUl = buildTree(node.hijos || []);
       const startsOpen = expandedDirs.has(node.ruta);
       if (!startsOpen) childrenUl.classList.add('collapsed');
@@ -612,6 +633,18 @@ function renderFolder(result) {
   treeEl.setAttribute('role', 'tree');
   treeEl.setAttribute('aria-label', 'Archivos de la carpeta');
   sidebarPane.appendChild(treeEl);
+  if (!result.tree.length) {
+    const empty = document.createElement('div');
+    empty.className = 'sidebar-empty';
+    const message = document.createElement('p');
+    message.textContent = 'Esta carpeta está vacía.';
+    const create = document.createElement('button');
+    create.className = 'toolbar-button';
+    create.textContent = 'Crear nota';
+    create.addEventListener('click', () => createEntry(result.rootPath, false));
+    empty.append(message, create);
+    sidebarPane.appendChild(empty);
+  }
   const firstRow = treeEl.querySelector('.tree-row');
   if (firstRow) firstRow.tabIndex = 0; // Tab entra al árbol; las flechas se mueven adentro
 
@@ -645,6 +678,12 @@ document.addEventListener('mk:modified-changed', () => {
   });
 });
 
+document.addEventListener('mk:active-file-changed', () => {
+  sidebarPane.querySelectorAll('.tree-row').forEach((row) => {
+    row.classList.toggle('tree-row-active', !!row._node && row._node.ruta === window.mdState.currentFilePath);
+  });
+});
+
 // Teclado en el árbol: ↑/↓ recorren las filas visibles, Enter/Espacio abren,
 // → despliega una carpeta, ← la pliega (o sube a la carpeta que la contiene).
 function visibleRows() {
@@ -661,7 +700,7 @@ function focusRow(row) {
 
 sidebarPane.addEventListener('keydown', (e) => {
   const row = e.target.closest && e.target.closest('.tree-row[role="treeitem"]');
-  if (!row || e.target.tagName === 'INPUT') return;
+  if (!row || e.target.closest('input, button')) return;
   const rows = visibleRows();
   const i = rows.indexOf(row);
   const expanded = row.getAttribute('aria-expanded');

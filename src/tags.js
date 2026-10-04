@@ -72,6 +72,7 @@ overlay.addEventListener('mousedown', (e) => {
 document.getElementById('btn-tags').addEventListener('click', open);
 
 document.addEventListener('keydown', (e) => {
+  if (window.mdShortcuts) return;
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 't') {
     e.preventDefault();
     if (overlay.hidden) open(); else close();

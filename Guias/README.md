@@ -28,6 +28,8 @@ Para trabajar con los tres materiales a la vez: [Vista de estudio dividida](vist
 
 ## Escribir
 
+Configura el teclado en [Atajos personalizados](atajos-personalizados.md), con [recorrido práctico](../Ejemplos/atajos-personalizados.md).
+
 | Guía | Trata |
 |---|---|
 | [primeros-pasos.md](primeros-pasos.md) | Pantalla, abrir carpeta, primera nota |

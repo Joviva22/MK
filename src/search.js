@@ -125,6 +125,7 @@ document.getElementById('search-replace-btn').addEventListener('click', () => {
 });
 
 document.addEventListener('keydown', (e) => {
+  if (window.mdShortcuts) return;
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
     e.preventDefault();
     if (overlay.hidden) openSearch(); else closeSearch();

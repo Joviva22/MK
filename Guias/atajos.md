@@ -1,6 +1,6 @@
 # Todos los atajos
 
-**Para qué sirve:** usar MK sin levantar las manos del teclado. Funcionan tenga el foco quien lo tenga.
+**Para qué sirve:** usar MK sin levantar las manos del teclado. Esta lista muestra los valores predeterminados. Puedes cambiar 23 acciones en **Ajustes → Atajos**: [guía de personalización](atajos-personalizados.md). La terminal y la pizarra conservan sus teclas locales.
 
 ## Archivos y pestañas
 | Atajo | Acción |

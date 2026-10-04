@@ -2,6 +2,7 @@
 'use strict';
 let panel, engine, filePath = null, disk = null, current = '', clean = '', saving = false, opening = false;
 let dockHost = null;
+let initialized = false;
 function dirty() { return current !== clean; }
 function status(message) {
   const node = panel?.querySelector('[role="status"]');
@@ -55,7 +56,7 @@ async function openScene(path) {
   const canvas = document.createElement('div'); canvas.style.flex = '1'; canvas.style.minHeight = '0';
   panel.append(toolbar, canvas); document.body.append(panel);
   if (host) { dockHost = host; host.append(panel); panel.classList.add('drawing-study-docked'); }
-  let initialized = false;
+  initialized = false;
   engine = window.mdDrawingEngine.mount(canvas, initial, (elements, appState, files) => {
     current = window.mdDrawingEngine.serialize(elements, appState, files);
     if (!initialized) { clean = current; initialized = true; }
@@ -73,5 +74,5 @@ async function dock(host, path = filePath) {
   dockHost = host; host.append(panel); panel.classList.add('drawing-study-docked');
   return true;
 }
-window.mdDrawing = { open, close, save, dock, getState: () => ({ filePath, dirty: dirty(), saving, opening, docked: !!dockHost }), getAPI: () => engine?.getAPI() };
+window.mdDrawing = { open, close, save, dock, getState: () => ({ filePath, dirty: dirty(), saving, opening, ready: !!panel && initialized, docked: !!dockHost }), getAPI: () => engine?.getAPI() };
 })();

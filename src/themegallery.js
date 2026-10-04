@@ -18,7 +18,7 @@ preview.setAttribute('aria-hidden', 'true');
 preview.innerHTML = `<div class="tg-preview-bar"><span>📁 Carpeta</span><span>🏠 Home</span><span>🎨 Tema</span><b class="tg-preview-name"></b></div>
   <div class="tg-preview-body">
     <div class="tg-preview-side"><span>📁 notas</span><span class="on">📄 ideas.md</span><span>📄 diario.md</span><span>📄 tareas.md</span></div>
-    <div class="tg-preview-edit"><span class="h"># Ideas</span><span>Una nota con **negrita**</span><span>- [ ] llamar a Kairi</span><span class="m">&gt; una cita</span><span>[[diario]]</span></div>
+    <div class="tg-preview-edit"><span class="h"># Ideas</span><span>Una nota con **negrita**</span><span>- [ ] llamar a Kairi</span><span class="m">&gt; una cita</span><span>[[diario]]</span><span><b class="tg-keyword">const</b> idea = <b class="tg-string">"Escribir"</b>;</span><span>tiempo = <b class="tg-number">25</b>;</span></div>
     <div class="tg-preview-view"><h4>Ideas</h4><p>Una nota con <b>negrita</b> y <code>código</code>.</p><p class="muted">Texto secundario, fechas y notas.</p><a>un enlace</a><span class="btn">Botón</span></div>
   </div>`;
 const grid = document.createElement('div');
@@ -53,7 +53,7 @@ function card(slug, label) {
   const mini = document.createElement('div');
   mini.className = 'tg-mini';
   if (slug !== 'custom') mini.setAttribute('data-theme', slug);
-  mini.innerHTML = '<i></i><div><b></b><s></s><s></s></div>';
+  mini.innerHTML = '<i></i><div><b></b><s></s><s></s></div><span class="tg-swatches"><em></em><em></em><em></em><em></em></span>';
   const name = document.createElement('span');
   name.className = 'tg-name';
   name.textContent = label;

@@ -64,6 +64,7 @@ function toggleToc() {
 document.getElementById('btn-toc').addEventListener('click', toggleToc);
 
 document.addEventListener('keydown', (e) => {
+  if (window.mdShortcuts) return;
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'o') {
     e.preventDefault();
     toggleToc();

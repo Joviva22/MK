@@ -37,7 +37,7 @@ function apply() {
     m.buttons.forEach((id) => {
       const b = document.getElementById(id);
       if (!b) return;
-      const target = b.closest('.dropdown') || b;
+      const target = b.parentElement.classList.contains('dropdown') ? b.parentElement : b;
       target.toggleAttribute('data-module-off', hidden);
       // Y su fila en "Qué botones mostrar".
       const row = document.getElementById(`toolbar-vis-${id}`);
@@ -50,6 +50,7 @@ function apply() {
 // Atajos de un módulo apagado: se frenan antes que nadie (captura en window).
 window.addEventListener('keydown', (e) => {
   if (!off.size) return;
+  if (window.mdShortcuts?.ownsEvent(e)) return;
   const ctrl = e.ctrlKey || e.metaKey;
   const blocked = MODULES.some((m) => off.has(m.id) && (m.keys || []).some((k) =>
     !!k.ctrl === ctrl && (k.shift === undefined || !!k.shift === e.shiftKey) &&

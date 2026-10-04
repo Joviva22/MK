@@ -26,6 +26,7 @@ export function renderWeek() {
     const day = addDays(monday, i);
     const dayIso = iso(day);
     const col = el('div', 'home-day' + (dayIso === today ? ' home-today' : '') + (i >= 5 ? ' home-weekend' : ''));
+    if (dayIso === today) col.setAttribute('aria-current', 'date');
     const header = el('div', 'home-day-header');
     header.appendChild(el('span', 'home-day-name', DAY_NAMES[i]));
     header.appendChild(el('span', 'home-day-number', String(day.getDate())));
@@ -40,6 +41,7 @@ export function renderWeek() {
     dayTasks.forEach((t) => list.appendChild(taskCard(t)));
     noteItemsOn(dayIso).forEach((it) => list.appendChild(noteChip(it)));
     dbItemsOn(dayIso).forEach((it) => list.appendChild(dbChip(it)));
+    if (!list.childElementCount) list.appendChild(el('p', 'home-day-empty', 'Sin tareas'));
     col.appendChild(list);
     col.appendChild(quickAddInput(dayIso));
     makeDropTarget(col, () => dayIso);

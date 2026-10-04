@@ -43,7 +43,8 @@ const MODE_SHORT = { normal: 'Normal', focus: 'Enfoque', read: 'Lectura', live: 
 function updateFocusButtonTitle() {
   const btn = document.getElementById('btn-focus');
   const next = MODE_CYCLE[(MODE_CYCLE.indexOf(currentLayoutMode) + 1) % MODE_CYCLE.length];
-  btn.title = `Modo: ${MODE_LABELS[currentLayoutMode]} → clic: ${MODE_LABELS[next]} (Enfoque Ctrl+Shift+E · Lectura Ctrl+Shift+R · Live Preview Ctrl+Shift+L)`;
+  const keys = window.mdShortcuts?.getBindings() || { focus: 'Ctrl+Shift+E', read: 'Ctrl+Shift+R', live: 'Ctrl+Shift+L' };
+  btn.title = `Modo: ${MODE_LABELS[currentLayoutMode]} → clic: ${MODE_LABELS[next]} (Enfoque ${keys.focus || 'sin atajo'} · Lectura ${keys.read || 'sin atajo'} · Live Preview ${keys.live || 'sin atajo'})`;
   btn.setAttribute('aria-label', `Modo de vista: ${MODE_LABELS[currentLayoutMode]}`);
   btn.dataset.mode = currentLayoutMode;
   btn.innerHTML = `<i data-lucide="${MODE_ICONS[currentLayoutMode]}"></i><span class="tb-label mode-label">${MODE_SHORT[currentLayoutMode]}</span>`;
@@ -64,13 +65,14 @@ function releasePdfForcedReadMode() {
 
 updateFocusButtonTitle();
 
-window.mdModes = { setLayoutMode, toggleMode, getLayoutMode: () => currentLayoutMode, releasePdfForcedReadMode };
+window.mdModes = { setLayoutMode, toggleMode, getLayoutMode: () => currentLayoutMode, releasePdfForcedReadMode, refreshShortcutHints: updateFocusButtonTitle };
 
 document.getElementById('btn-focus').addEventListener('click', () => {
   setLayoutMode(MODE_CYCLE[(MODE_CYCLE.indexOf(currentLayoutMode) + 1) % MODE_CYCLE.length]);
 });
 
 document.addEventListener('keydown', (e) => {
+  if (window.mdShortcuts) return;
   if (!(e.ctrlKey || e.metaKey) || !e.shiftKey) return;
   if (e.key.toLowerCase() === 'e') {
     e.preventDefault();
@@ -88,6 +90,7 @@ document.addEventListener('keydown', (e) => {
 // toolbar/statusbar para un modo "escritura sin distracciones". No toca
 // sidebar/modo enfoque-lectura, así vuelven tal cual estaban al salir.
 document.addEventListener('keydown', async (e) => {
+  if (window.mdShortcuts) return;
   if (e.key !== 'F11') return;
   e.preventDefault();
   const isFullscreen = await window.mdEditor.toggleFullscreen();

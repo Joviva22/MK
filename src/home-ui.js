@@ -70,6 +70,7 @@ export function makeDropTarget(node, getDate) {
 export function quickAddInput(date, placeholder) {
   const input = el('input', 'home-quick-add');
   input.placeholder = placeholder || '+ Agregar tarea';
+  input.setAttribute('aria-label', date ? `Añadir tarea para ${date}` : 'Añadir tarea sin fecha');
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const value = input.value;
@@ -92,6 +93,7 @@ export function taskCard(item, compact) {
   const task = item.task;
   const card = el('div', 'home-task' + (item.done ? ' home-task-done' : '') + (compact ? ' home-task-compact' : ''));
   card.style.borderLeftColor = priorityColor(task);
+  card.dataset.priority = task.priority || 'media';
   card.draggable = true;
   const details = [
     task.time ? `Hora: ${task.time}` : '',
@@ -123,6 +125,12 @@ export function taskCard(item, compact) {
     startInlineRename(card, titleEl, task);
   });
   card.appendChild(titleEl);
+  if (!compact) {
+    const priority = task.priority || 'media';
+    const badge = el('span', 'home-priority-label', priority === 'alta' ? 'Alta' : priority === 'baja' ? 'Baja' : 'Media');
+    badge.title = `Prioridad ${badge.textContent.toLowerCase()}`;
+    card.appendChild(badge);
+  }
   const cat = categoryById(task.category);
   if (cat) {
     const chip = el('span', 'home-task-cat', cat.name);
@@ -159,6 +167,14 @@ export function taskCard(item, compact) {
     clearTimeout(card._clickTimer);
     if (e.detail > 1) return;
     card._clickTimer = setTimeout(() => openTaskEditor(item), CLICK_DELAY_MS);
+  });
+  card.tabIndex = 0;
+  card.setAttribute('role', 'group');
+  card.setAttribute('aria-label', `Editar tarea: ${task.title}, prioridad ${task.priority || 'media'}`);
+  card.addEventListener('keydown', (e) => {
+    if (e.target !== card || !['Enter', ' '].includes(e.key)) return;
+    e.preventDefault();
+    openTaskEditor(item);
   });
   return card;
 }

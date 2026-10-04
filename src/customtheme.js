@@ -21,7 +21,7 @@ const TOKENS = [
 
 const DEFAULTS = {
   bg: '#ffffff', surface: '#f5f7fa', surface2: '#eef1f5',
-  text: '#1f2937', textMuted: '#6b7280', border: '#d8dee8', accent: '#2563eb'
+  text: '#1f2937', textMuted: '#676d7b', border: '#d8dee8', accent: '#2563eb'
 };
 
 const overlay = document.getElementById('custom-theme-panel');
@@ -63,12 +63,16 @@ function applyLive() {
   const root = document.documentElement;
   root.setAttribute('data-theme', 'custom');
   TOKENS.forEach((t) => root.style.setProperty(t.cssVar, draft[t.key]));
+  root.style.setProperty('color-scheme', relativeLuminance(draft.bg) < 0.2 ? 'dark' : 'light');
+  root.style.setProperty('--on-accent', contrastRatio('#ffffff', draft.accent) > contrastRatio('#101419', draft.accent) ? '#ffffff' : '#101419');
   renderWarning();
 }
 
 function clearInline() {
   const root = document.documentElement;
   TOKENS.forEach((t) => root.style.removeProperty(t.cssVar));
+  root.style.removeProperty('color-scheme');
+  root.style.removeProperty('--on-accent');
 }
 
 function applyStored(colors) {

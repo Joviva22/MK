@@ -6,6 +6,12 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ## Sin publicar
 
+- Temas renovados con paletas más diferenciadas, colores propios de sintaxis compartidos entre editor, código de las notas y terminal, controles nativos claros/oscuros y texto legible sobre botones de acento. Kingdom Hearts conserva su identidad azul y dorada. Galería con muestras de sintaxis y colores; contraste comprobado en los 27 temas.
+
+- Interfaz más despejada: menú Herramientas, ancho de lectura configurable, controles coherentes y jerarquía del documento refinada. Explorador con acciones al pasar el cursor o enfocar, archivo activo destacado y acciones para carpetas vacías. Contraste del texto secundario revisado en los 27 temas. Home más amplio y adaptable, tareas con más espacio, prioridades con etiquetas y foco de teclado visible.
+
+- Atajos personalizables en Ajustes: 23 acciones, grabación de combinaciones, conflictos y teclas reservadas, quitar/restaurar por acción y restauración global. Guardado confirmado, conservación de atajos anteriores si falla, respeto de módulos apagados y teclas locales de terminal/pizarra; ayudas de botones actualizadas.
+
 - Vista de estudio dividida: editor de notas junto a PDF y pizarra editable opcional. Apertura desde paleta, asignatura o tema; PDF ajustado al ancho, citas con página sin cerrar el visor, pizarra ocultable sin perder cambios y protección al cerrar con cambios pendientes.
 
 - Comprensión por asignatura: temas pendientes, practicando o dominados, enlaces a materiales y tarjetas y señales de repaso/errores de examen. Resumen semanal con tiempo, tareas activas y archivadas, repeticiones y temas actuales para reforzar; consulta de semanas anteriores sin confundir autoevaluación con aprendizaje demostrado.

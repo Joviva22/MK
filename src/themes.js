@@ -1,9 +1,8 @@
 (function () {
 'use strict';
 
-// Temas de src/styles.css, todos definidos con los mismos 7 tokens
-// (--bg, --surface, --surface-2, --text, --text-muted, --border, --accent),
-// así que sumar un tema nuevo es solo un bloque de CSS + esta entrada.
+// Paletas de src/styles.css: superficies, texto, acento, texto sobre acento
+// y colores de sintaxis compartidos por el editor, preview y terminal.
 const THEME_LIST = [
   { slug: 'light', label: 'Claro' },
   { slug: 'dark', label: 'Oscuro' },

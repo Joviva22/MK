@@ -52,6 +52,10 @@ Todo esto viene ya armado en la app, no son plugins de terceros:
 ### Personalización
 27 temas de color (incluido uno de Kingdom Hearts), tipografía y tamaño de fuente del editor (con zoom rápido por `Ctrl+scroll`), ancho de tabulación, autoguardado configurable, y cuatro modos de vista: normal, enfoque, lectura y **Live Preview** (el Markdown se ve renderizado mientras escribís, salvo en la línea del cursor). Al cerrar la ventana MK puede quedar en la bandeja (para que suenen los recordatorios) y arrancar con el sistema. ⚙ Ajustes (`Ctrl+,`) es un panel con secciones y buscador; la barra superior puede ir **solo con íconos**, con texto o mixta, u **ocultarse** hasta acercar el mouse, y los botones que no uses se esconden (y se ejecutan igual desde Ajustes).
 
+La barra superior agrupa las acciones secundarias en **Herramientas** (documento, utilidades, estudio y multimedia). En **Ajustes → Apariencia → Ancho de lectura** podés elegir un documento compacto, cómodo, amplio o a todo el ancho del panel, tanto en la vista previa como en Live Preview.
+
+Los 27 temas tienen paletas de interfaz y sintaxis coordinadas, con contraste revisado en texto, paneles y botones. La galería muestra también colores de código; Kingdom Hearts conserva su azul noche y dorado. El explorador ofrece acciones al pasar el cursor o enfocar una fila, y Home aprovecha más espacio con tareas legibles y prioridades discretas.
+
 ## Documentación
 
 | Archivo | Para qué sirve |

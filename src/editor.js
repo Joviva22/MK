@@ -31,6 +31,7 @@ document.getElementById('btn-save-as').addEventListener('click', () => window.md
 // keymap de CodeMirror) para que funcionen tenga el foco el editor u otra
 // parte de la app (sidebar, búsqueda, etc.).
 document.addEventListener('keydown', (e) => {
+  if (window.mdShortcuts) return;
   if (!(e.ctrlKey || e.metaKey)) return;
   const key = e.key.toLowerCase();
   if (key === 's' && e.shiftKey) {

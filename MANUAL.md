@@ -466,6 +466,8 @@ Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene 
 
 ## 19. Todos los atajos de teclado
 
+Estos son los valores predeterminados. En **Ajustes → Atajos** puedes personalizar 23 acciones: selecciona su campo, pulsa una combinación y guarda. Se detectan conflictos y teclas reservadas; puedes quitar atajos, restaurar uno o todos y descartar borradores. Si falla el guardado, los anteriores siguen activos para poder reintentar. Guía: [Atajos personalizados](Guias/atajos-personalizados.md).
+
 | Atajo | Acción |
 |---|---|
 | `Ctrl+B` | Ocultar/mostrar el sidebar |
@@ -497,7 +499,7 @@ Botón 🧩 en la toolbar (o desde la paleta de comandos): MK todavía no tiene 
 
 Tablero Kanban, grafo de notas y las dos herramientas de PDF no tienen atajo propio todavía — se abren desde la paleta de comandos (`Ctrl+Shift+P`) o los botones 🗂/🖊 de la toolbar.
 
-Estos atajos funcionan sin importar qué parte de la app tenga el foco (editor, sidebar, buscador, etc.), no solo con el cursor en el editor.
+Los atajos globales no requieren que el cursor esté en el editor. La terminal y la pizarra conservan sus teclas locales; las teclas de grabación en Ajustes no ejecutan acciones.
 
 ## 20. Operaciones de páginas PDF
 

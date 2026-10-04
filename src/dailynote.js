@@ -140,6 +140,7 @@ if (folderInput) {
 }
 
 document.addEventListener('keydown', (e) => {
+  if (window.mdShortcuts) return;
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'd') {
     e.preventDefault();
     openDailyNote();

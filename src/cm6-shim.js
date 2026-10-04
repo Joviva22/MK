@@ -86,7 +86,7 @@ function languageFor(modeSpec) {
 // negrita/cursiva de verdad, marcas atenuadas — mismos valores que tenía
 // styles.css para `.cm-live`).
 const normalHighlight = HighlightStyle.define([
-  { tag: tags.keyword, class: 'cm-keyword', color: 'var(--accent)' },
+  { tag: tags.keyword, class: 'cm-keyword', color: 'var(--syntax-keyword)' },
   { tag: [tags.heading1, tags.heading2, tags.heading3, tags.heading4, tags.heading5, tags.heading6], color: 'var(--accent)' },
   { tag: tags.link, color: 'var(--accent)' },
   { tag: tags.url, color: 'var(--accent)' },
@@ -117,7 +117,14 @@ function isLiveModeSpec(modeSpec) {
 }
 const codeHighlight = HighlightStyle.define([
   ...defaultHighlightStyle.specs,
-  { tag: tags.keyword, class: 'cm-keyword', color: 'var(--accent)' }
+  { tag: tags.keyword, class: 'cm-keyword', color: 'var(--syntax-keyword)' },
+  { tag: [tags.string, tags.special(tags.string)], color: 'var(--syntax-string)' },
+  { tag: [tags.number, tags.bool, tags.null], color: 'var(--syntax-number)' },
+  { tag: [tags.typeName, tags.className, tags.propertyName, tags.attributeName], color: 'var(--syntax-type)' },
+  { tag: [tags.variableName, tags.definition(tags.variableName)], color: 'var(--text)' },
+  { tag: [tags.function(tags.variableName), tags.function(tags.propertyName)], color: 'var(--syntax-type)' },
+  { tag: [tags.operator, tags.tagName], color: 'var(--syntax-keyword)' },
+  { tag: tags.comment, color: 'var(--text-muted)', fontStyle: 'italic' }
 ]);
 function highlightStyleFor(modeSpec) {
   const name = typeof modeSpec === 'string' ? modeSpec : (modeSpec && modeSpec.name) || 'text/plain';

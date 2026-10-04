@@ -13,7 +13,8 @@ const iconEl = toggleBtn.querySelector('i');
 
 function applyIcon(hidden) {
   iconEl.setAttribute('data-lucide', hidden ? 'panel-left-open' : 'panel-left-close');
-  toggleBtn.title = hidden ? 'Mostrar el panel de archivos (Ctrl+B)' : 'Ocultar el panel de archivos (Ctrl+B)';
+  const key = window.mdShortcuts ? window.mdShortcuts.getBindings().sidebar : 'Ctrl+B';
+  toggleBtn.title = `${hidden ? 'Mostrar' : 'Ocultar'} el panel de archivos (${key || 'sin atajo'})`;
   if (window.lucide) window.lucide.createIcons({ attrs: { width: 16, height: 16, 'stroke-width': 2 }, root: toggleBtn });
 }
 
@@ -32,6 +33,7 @@ async function toggle() {
 toggleBtn.addEventListener('click', toggle);
 
 document.addEventListener('keydown', (e) => {
+  if (window.mdShortcuts) return;
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'b') {
     e.preventDefault();
     toggle();

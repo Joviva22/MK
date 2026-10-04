@@ -60,7 +60,7 @@
 
 .database-list-item-active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .database-main {
@@ -120,7 +120,7 @@
 
 .database-view-tab-active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-color: var(--accent);
 }
 
@@ -204,7 +204,7 @@ tr:hover .database-row-del {
 }
 
 .database-row-del:hover {
-  color: #ef476f;
+  color: var(--danger);
 }
 
 .database-cell-input {
@@ -425,7 +425,7 @@ tr:hover .database-row-del {
 }
 
 .database-popover-danger {
-  color: #ef476f;
+  color: var(--danger);
 }
 
 .database-popover-actions {

@@ -245,6 +245,7 @@ function activateTab(id) {
   const previewReady = window.performance.now();
   persistSession();
   syncWithDisk(tab);
+  document.dispatchEvent(new CustomEvent('mk:active-file-changed'));
   lastActivationTimings = { editor: editorReady - started, uiAndPreview: previewReady - editorReady, total: previewReady - started };
 }
 
@@ -638,6 +639,7 @@ tabCm.on('change', () => {
 
 document.addEventListener('keydown', (e) => {
   const ctrl = e.ctrlKey || e.metaKey;
+  if (window.mdShortcuts) return;
   if (!ctrl) return;
   if (e.altKey && e.key.toLowerCase() === 'w') {
     e.preventDefault();

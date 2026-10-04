@@ -136,6 +136,7 @@ overlay.addEventListener('mousedown', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+  if (window.mdShortcuts) return;
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'p') {
     e.preventDefault();
     if (overlay.hidden) open(); else close();

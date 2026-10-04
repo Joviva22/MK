@@ -103,6 +103,7 @@
         <button type="button" class="set-nav-btn" data-section="pet"><i data-lucide="paw-print"></i><span>Mascota</span></button>
         <button type="button" class="set-nav-btn" data-section="modules"><i data-lucide="blocks"></i><span>Módulos</span></button>
         <button type="button" class="set-nav-btn" data-section="system"><i data-lucide="monitor-cog"></i><span>Sistema</span></button>
+        <button type="button" class="set-nav-btn" data-section="shortcuts"><i data-lucide="keyboard"></i><span>Atajos</span></button>
       </nav>
       <div class="set-main">
         <div class="set-top">
@@ -110,6 +111,15 @@
           <button type="button" id="settings-close" class="toolbar-button" title="Cerrar (Esc)" aria-label="Cerrar ajustes">✕</button>
         </div>
         <div class="set-body">
+        <section class="set-section" data-section="shortcuts" data-title="Atajos de teclado" hidden>
+          <h2 class="set-section-title">Atajos de teclado</h2>
+          <div class="set-row set-row-wide" data-keywords="atajos teclado guardar restaurar conflictos">
+            <div class="set-text"><p class="set-desc">Selecciona un campo y pulsa la combinación. Ctrl/Alt + tecla o F1–F12. Quitar desactiva el atajo. Los cambios solo se aplican al guardar. Copiar, pegar, deshacer, salir y las teclas locales de terminal/pizarra permanecen reservadas.</p></div>
+            <div class="set-control"><button id="shortcut-apply" class="toolbar-button">Guardar atajos</button><button id="shortcut-reset" class="toolbar-button">Restaurar todos</button><button id="shortcut-discard" class="toolbar-button">Descartar cambios</button></div>
+          </div>
+          <p id="shortcut-status" role="status" aria-live="polite"></p>
+          <div id="shortcut-list"></div>
+        </section>
         <section class="set-section" data-section="editor" data-title="Editor">
           <h2 class="set-section-title">Editor</h2>
           <div class="set-row" data-keywords="guardar guardado automático">
@@ -168,6 +178,15 @@
         </section>
         <section class="set-section" data-section="appearance" data-title="Apariencia" hidden>
           <h2 class="set-section-title">Apariencia</h2>
+          <div class="set-row" data-keywords="ancho lectura documento margenes preview">
+            <div class="set-text"><label class="set-title" for="reading-width-select">Ancho de lectura</label><div class="set-desc">Ancho del documento en la vista previa y Live Preview.</div></div>
+            <div class="set-control"><select id="reading-width-select">
+              <option value="compact">Compacto</option>
+              <option value="comfortable" selected>Cómodo</option>
+              <option value="wide">Amplio</option>
+              <option value="full">Todo el panel</option>
+            </select></div>
+          </div>
           <div class="set-row set-row-wide" data-keywords="tema color oscuro claro kingdom hearts dracula nord gruvbox">
             <div class="set-text"><div class="set-title">Tema</div><div class="set-desc">Pasá el mouse por un tema para verlo en la muestra; clic para usarlo.</div></div>
             <div id="theme-gallery" class="theme-gallery"></div>
@@ -409,7 +428,7 @@
   </div>
 
   <div class="container">
-    <div id="sidebar-pane"><div class="sidebar-empty">Sin carpeta abierta</div></div>
+    <div id="sidebar-pane"><div class="sidebar-empty"><p>Organiza tus notas en una carpeta.</p><button id="sidebar-empty-open" type="button" class="toolbar-button">Abrir carpeta</button></div></div>
     <div class="resizer" id="resizer-sidebar"></div>
     <div class="primary-pane">
       <div class="editor-column">
@@ -801,6 +820,7 @@
   <script src="mailsettings.js"></script>
   <script src="settingspanel.js"></script>
   <script src="toolbarstyle.js"></script>
+  <script src="appearance.js"></script>
   <script src="petart.js"></script>
   <script src="pet.js"></script>
   <script src="statusbar.js"></script>
@@ -870,5 +890,7 @@
   <script src="sidebartoggle.js"></script>
   <script src="resize.js"></script>
   <script src="icons.js"></script>
+  <script src="shared/shortcutlogic.js"></script>
+  <script src="shortcuts.js"></script>
 </body>
 </html>

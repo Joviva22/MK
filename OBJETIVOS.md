@@ -53,7 +53,18 @@ Estas mejoras pueden resolverse de forma independiente mientras se consolida el 
 - [x] **Plan de hoy — primera propuesta.** Dentro de Estudio, reúne tareas de todas las categorías y propone bloques de 25 minutos según el presupuesto de foco guardado en cada Home. Orden: atrasadas, hoy, próximos siete días, sin fecha y posteriores. No estima duración real ni modifica tareas automáticamente; el inicio de foco mantiene la duración Pomodoro configurada.
 
 
-- [ ] **Atajos de teclado personalizables.** Ajustes → Atajos: cambiar combinaciones, detectar conflictos y restaurar valores predeterminados.
+- [x] **Atajos de teclado personalizables — primera entrega.** Ajustes → Atajos: 23 acciones globales, grabación, conflictos, teclas reservadas, desactivación y restauración individual/global. Guardado confirmado y reintento sin sustituir las combinaciones activas ante fallo. Quedan fuera las teclas locales de terminal, pizarra, navegación y edición de texto. Guía: `Guias/atajos-personalizados.md`.
+
+### Registro de trabajo — atajos personalizados (2026-10-04)
+
+- Registro central de 23 acciones y asignaciones originales; preferencias normalizadas, valores por defecto seguros ante configuración inválida y guardado de diferencias en configuración de MK.
+- Panel en Ajustes, captura de combinaciones sin ejecutarlas, detección de duplicados/reservas, quitar, restaurar por campo, descartar borrador y restauración global. Tab/Escape siguen disponibles.
+- Ejecución única de las acciones: los manejadores antiguos delegan en el registro. Respeta módulos apagados, evita repeticiones mantenidas y conserva teclas locales de terminal/Excalidraw.
+- Verificación de configuración persistida antes de aplicar; ante fallo conserva borrador y combinaciones activas para reintentar. Ayudas de botones, modos, sidebar y nota diaria muestran los valores guardados.
+- Guía y ejemplo en sus carpetas, índices y changelog actualizados. Pruebas de normalización, conflictos, reservas, persistencia, rechazo de guardado, desactivación, ejecución, módulos apagados y restauración.
+- Captura limitada a los campos reales de Ajustes, no a atributos parecidos dentro de notas; normalización de pulsaciones sin repetir el trabajo por acción. Se expone el estado de inicialización de pizarra para que la prueba espere antes de editar, sin cambiar su flujo de guardado.
+- Verificación final: 245/245 comprobaciones de la app, 57/57 de CM6, 26 archivos de pruebas unitarias aprobados, lint y diff correctos. Prueba de recarga del gestor con la configuración guardada, guardado rechazado y reintento; tres enlaces locales de guía/ejemplo comprobados.
+- AppImage compilado con salida correcta; veinte archivos de código/UI verificados en ASAR contra las fuentes probadas. App instalada actualizada y comprobada idéntica al AppImage final. No se cerró la sesión ni se alteraron notas del usuario para aplicar la actualización.
 - [ ] **Elegir una etapa evolutiva desbloqueada.** Mostrar cualquiera de las etapas ya alcanzadas sin perder experiencia, nivel ni progreso. No requiere esperar al sistema de plugins.
 - [ ] **Etiquetas para archivos multimedia.** Completar el explorador existente con etiquetas propias y filtros por ellas.
 

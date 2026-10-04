@@ -4,6 +4,7 @@ Cada archivo de esta carpeta muestra una función distinta con contenido real, l
 
 | Archivo | Qué muestra |
 |---|---|
+| [`atajos-personalizados.md`](atajos-personalizados.md) | Cambiar combinaciones, probar conflictos, quitar un atajo y restaurar valores originales |
 | [`Estudio/vista-dividida.md`](Estudio/vista-dividida.md) | Nota editable junto a PDF y pizarra, citas con página y cambios conservados al ocultar la pizarra |
 | [`Estudio/README.md`](Estudio/README.md) | Recorrido de PCP: temas, estados de comprensión, tarjetas, errores y resumen semanal; creación manual sin modificar automáticamente tu Home |
 | [`Estudio/materiales-en-nota.md`](Estudio/materiales-en-nota.md) | PDF de demostración y una pizarra real incrustados; incluye apunte y tarjetas de ejemplo en la misma carpeta |

@@ -1,5 +1,7 @@
 # Comandos y atajos de MK
 
+Las combinaciones de esta referencia son las predeterminadas. Para cambiarlas abre **Ajustes → Atajos**; consulta [Atajos personalizados](Guias/atajos-personalizados.md).
+
 Referencia rápida y resumida. Para la explicación completa de cada función, ver [`MANUAL.md`](./MANUAL.md).
 
 ## Archivo y pestañas

@@ -164,6 +164,7 @@ document.getElementById('replace-one').addEventListener('click', replaceOne);
 document.getElementById('replace-all').addEventListener('click', replaceAll);
 
 document.addEventListener('keydown', (e) => {
+  if (window.mdShortcuts) return;
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'f') {
     e.preventDefault();
     open();

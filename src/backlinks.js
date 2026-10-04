@@ -87,7 +87,7 @@ overlay.addEventListener('mousedown', (e) => {
 document.getElementById('btn-backlinks').addEventListener('click', open);
 
 document.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'b') {
+  if (!window.mdShortcuts && (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'b') {
     e.preventDefault();
     if (overlay.hidden) open(); else close();
   }

@@ -84,7 +84,7 @@
 
 .terminal-tab-close:hover {
   opacity: 1;
-  color: #ef476f;
+  color: var(--danger);
 }
 
 .terminal-hint {
@@ -196,7 +196,7 @@
 
 .terminal-search-status {
   font-size: 11px;
-  color: #ef476f;
+  color: var(--danger);
 }
 
 /* ---- Terminal: renombrar pestaña ---- */

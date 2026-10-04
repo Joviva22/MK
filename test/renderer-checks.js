@@ -448,6 +448,13 @@
       tree: [{ nombre: 'note.md', esCarpeta: false, ruta: fixtureMdPath, hijos: null }]
     });
     const fileRow = document.querySelector('.tree-file');
+    const actions = fileRow.querySelector('.tree-actions');
+    const activeBeforeActions = window.mdState.currentFilePath;
+    actions.focus();
+    actions.click();
+    const actionsOpen = !!document.querySelector('.context-menu button');
+    check('Explorador: acciones accesibles sin abrir el archivo', actionsOpen && actions.getAttribute('aria-label').includes('note.md') && window.mdState.currentFilePath === activeBeforeActions);
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     fileRow.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
     const changeBtn = await waitFor(() =>
       Array.from(document.querySelectorAll('.context-menu button')).find((b) => /Cambiar icono/.test(b.textContent))
@@ -1317,6 +1324,28 @@
   );
 
   // 22j. Ocultar botones de la toolbar desde Ajustes (toolbarcustomize.js):
+  {
+    const tools = document.getElementById('tools-menu');
+    const trigger = document.getElementById('btn-tools');
+    trigger.click();
+    const opens = !tools.hidden && tools.contains(document.getElementById('btn-plugins'));
+    window.mdToolbarStyle.applyLabels('icons');
+    const readable = getComputedStyle(document.querySelector('#btn-plugins .tb-label')).display !== 'none';
+    tools.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    const closes = tools.hidden && document.activeElement === trigger;
+    window.mdToolbarStyle.applyLabels('mixed');
+    const width = document.getElementById('reading-width-select');
+    const before = width.value;
+    width.value = 'compact';
+    width.dispatchEvent(new Event('change'));
+    const persisted = (await window.mdEditor.getConfig()).readingWidth === 'compact';
+    const applied = getComputedStyle(document.getElementById('preview-pane')).maxWidth === '720px';
+    width.value = before;
+    width.dispatchEvent(new Event('change'));
+    check('Apariencia: herramientas accesibles y ancho de lectura persistente', opens && readable && closes && persisted && applied,
+      `abre=${opens} etiquetas=${readable} escape=${closes} persiste=${persisted} ancho=${applied}`);
+  }
+
   // destildar esconde el botón real (regresión [hidden] — .toolbar-button
   // tenía "display: inline-flex" sin guardar, mismo bug de siempre), y
   // "Ejecutar" corre la acción igual sin importar si está escondido o no.
@@ -2663,6 +2692,8 @@
     // Tarea del Home + plan de hoy
     const title = 'Plan ' + Date.now();
     const input = document.querySelector('#home-main .home-day.home-today .home-quick-add');
+    check('Home: día actual y campo para añadir tareas identificados',
+      input.hasAttribute('aria-label') && input.closest('.home-day').getAttribute('aria-current') === 'date');
     input.value = title;
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     await window.mdHome.sendPlanToDailyNote();
@@ -5121,9 +5152,9 @@
       check('Vista de estudio: volver a la nota conserva sus cambios y cita', window.mdCodeMirror.getValue() === citedNote);
       document.querySelector('#tabbar .tab:last-child .tab-close').click();
       await window.mdStudyWorkspace.showDrawing(window.mdEditor.joinPath(fixturesDir, 'embed.excalidraw'));
-      await waitFor(() => window.mdDrawing.getAPI());
+      await waitFor(() => window.mdDrawing.getAPI() && window.mdDrawing.getState().ready);
       const api = window.mdDrawing.getAPI(); const elements = api.getSceneElements();
-      api.updateScene({ elements: elements.map((item, i) => i ? item : { ...item, strokeColor: '#ff0000', version: item.version + 1 }) });
+      api.updateScene({ elements: elements.map((item, i) => i ? item : { ...item, strokeColor: item.strokeColor === '#ff0000' ? '#00aa00' : '#ff0000', version: item.version + 1 }) });
       await waitFor(() => window.mdDrawing.getState().dirty);
       document.getElementById('study-workspace-drawing-hide').click();
       await waitFor(() => !document.getElementById('study-workspace').classList.contains('has-drawing'));
@@ -5137,6 +5168,45 @@
     } finally {
       window.confirm = () => true; window.mdStudyWorkspace.close(); window.mdDrawing.close(); window.mdPdfHighlight.close();
       window.confirm = originalConfirm; window.mdCodeMirror.setValue(before); window.mdModes.setLayoutMode(previousMode);
+    }
+  }
+
+  // Atajos configurables: captura, conflictos, desactivación y recuperación.
+  {
+    await window.mdShortcuts.ready;
+    const originalConfig = await window.mdEditor.getConfig();
+    const record = (id, key, modifiers = {}) => document.getElementById(`shortcut-${id}`).dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...modifiers }));
+    const press = (key, modifiers = {}) => document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...modifiers }));
+    const save = async () => { document.getElementById('shortcut-apply').click(); await waitFor(() => !document.getElementById('shortcut-apply').disabled); };
+    try {
+      window.mdSettingsPanel.open('shortcuts');
+      check('Atajos: sección accesible con todos los campos y combinaciones originales', document.querySelector('[data-section="shortcuts"].set-section').hidden === false && document.querySelectorAll('[data-shortcut]').length === window.mdShortcutLogic.actions.length && document.getElementById('shortcut-quickOpen').value === 'Ctrl+P');
+      record('quickOpen', 'j', { ctrlKey: true, altKey: true }); await save();
+      const stored = await window.mdEditor.getConfig();
+      check('Atajos: grabar y guardar confirma configuración persistida', stored.shortcuts.quickOpen === 'Ctrl+Alt+J' && window.mdShortcuts.getBindings().quickOpen === 'Ctrl+Alt+J');
+      window.mdSettingsPanel.close(); window.mdFileOpen.close();
+      press('p', { ctrlKey: true });
+      check('Atajos: combinación anterior ya no abre el buscador rápido', document.getElementById('file-open-panel').hidden);
+      press('j', { ctrlKey: true, altKey: true });
+      await waitFor(() => !document.getElementById('file-open-panel').hidden);
+      check('Atajos: combinación nueva ejecuta la acción', !document.getElementById('file-open-panel').hidden); window.mdFileOpen.close();
+      window.mdSettingsPanel.open('shortcuts'); record('palette', 'j', { ctrlKey: true, altKey: true }); await save();
+      check('Atajos: conflicto rechazado sin cambiar combinaciones activas', document.getElementById('shortcut-status').textContent.includes('conflicto') && window.mdShortcuts.getBindings().palette === 'Ctrl+Shift+P');
+      document.getElementById('shortcut-discard').click(); record('quickOpen', 'q', { ctrlKey: true }); await save();
+      check('Atajos: salir y teclas reservadas no se reasignan ni ejecutan al grabar', document.getElementById('shortcut-status').textContent.includes('reservado') && window.mdShortcuts.getBindings().quickOpen === 'Ctrl+Alt+J');
+      document.getElementById('shortcut-discard').click(); record('quickOpen', 'Backspace'); await save();
+      check('Atajos: quitar conserva desactivación en disco', window.mdShortcuts.getBindings().quickOpen === '' && (await window.mdEditor.getConfig()).shortcuts.quickOpen === '');
+      record('tags', 't', { ctrlKey: true, altKey: true }); await save();
+      await window.mdModules.setOff(['links']); window.mdTags.close(); window.mdSettingsPanel.close();
+      press('t', { ctrlKey: true, altKey: true });
+      check('Atajos: combinación personalizada respeta módulos apagados', document.getElementById('tags-panel').hidden);
+      window.mdSettingsPanel.open('shortcuts'); document.getElementById('shortcut-reset').click();
+      await waitFor(() => !document.getElementById('shortcut-reset').disabled);
+      check('Atajos: restauración global recupera predeterminados y limpia cambios guardados', window.mdShortcuts.getBindings().quickOpen === 'Ctrl+P' && Object.keys((await window.mdEditor.getConfig()).shortcuts).length === 0);
+    } finally {
+      window.mdSettingsPanel.open('shortcuts'); document.getElementById('shortcut-reset').click(); await waitFor(() => !document.getElementById('shortcut-reset').disabled);
+      await window.mdEditor.setConfig({ shortcuts: originalConfig.shortcuts || {} });
+      await window.mdModules.setOff(originalConfig.disabledModules || []); window.mdSettingsPanel.close(); window.mdFileOpen.close();
     }
   }
 

@@ -109,6 +109,11 @@ function currentTheme() {
   const palette = luminance(bg) > 0.5 ? ANSI_LIGHT : ANSI_DARK;
   return {
     ...palette,
+    green: cssVar('--syntax-string', palette.green),
+    yellow: cssVar('--syntax-number', palette.yellow),
+    blue: accent,
+    magenta: cssVar('--syntax-keyword', palette.magenta),
+    cyan: cssVar('--syntax-type', palette.cyan),
     background: bg,
     foreground: cssVar('--text', '#1f2937'),
     cursor: accent,

@@ -93,7 +93,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !overlay.hidden) {
     e.preventDefault();
     close();
-  } else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === ',') {
+  } else if (!window.mdShortcuts && (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === ',') {
     e.preventDefault();
     if (overlay.hidden) open(); else close();
   }

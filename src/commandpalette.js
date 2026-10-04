@@ -160,6 +160,7 @@ overlay.addEventListener('mousedown', (e) => {
 document.getElementById('btn-command-palette').addEventListener('click', openPalette);
 
 document.addEventListener('keydown', (e) => {
+  if (window.mdShortcuts) return;
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
     e.preventDefault();
     if (overlay.hidden) openPalette(); else closePalette();
