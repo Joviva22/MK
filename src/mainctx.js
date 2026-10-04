@@ -11,5 +11,16 @@ module.exports = {
   loadConfig: null,
   saveConfig: null,
   logError: () => {},
-  reportError: () => {}
+  reportError: () => {},
+  // Carpeta abierta en el sidebar (config.lastFolder): los diálogos nativos
+  // de guardar/abrir la usan como punto de partida en vez de la última
+  // carpeta del sistema.
+  getOpenFolder() {
+    try {
+      const f = this.loadConfig && this.loadConfig().lastFolder;
+      return typeof f === 'string' && f ? f : undefined;
+    } catch {
+      return undefined;
+    }
+  }
 };

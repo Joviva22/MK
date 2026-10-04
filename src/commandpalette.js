@@ -13,6 +13,9 @@ let selectedIndex = 0;
 // desincroniza de lo que la app realmente puede hacer.
 function buildCommands() {
   const cmds = [];
+  cmds.push({ label: 'Estudio: vista dividida PDF, nota y pizarra', run: () => window.mdStudyWorkspace.open().catch((error) => alert(error.message)) });
+  cmds.push({ label: 'Insertar PDF o pizarra en la nota', run: () => window.mdStudyEmbed.insert().catch((error) => alert(error.message)) });
+  cmds.push({ label: 'Pizarra: nueva Excalidraw (local)', run: () => window.mdDrawing.open().catch((error) => alert(error.message)) });
 
   cmds.push({ label: 'Abrir carpeta', run: () => document.getElementById('btn-open-folder').click() });
   cmds.push({ label: 'Refrescar archivos (ver si hay nuevos)', run: () => document.getElementById('btn-refresh-tree').click() });
@@ -33,6 +36,8 @@ function buildCommands() {
   cmds.push({ label: 'Búsqueda global en la carpeta', run: () => window.mdSearch && window.mdSearch.open() });
   cmds.push({ label: 'Abrir archivo rápido por nombre', run: () => window.mdFileOpen && window.mdFileOpen.open() });
   cmds.push({ label: 'Pomodoro: iniciar/pausar', run: () => window.mdPomodoro && window.mdPomodoro.toggle() });
+  cmds.push({ label: 'Pomodoro: categorías, estadísticas e historial', run: () => window.mdPomodoroPanel && window.mdPomodoroPanel.open() });
+  cmds.push({ label: 'Pomodoro: iniciar foco con la nota abierta', run: () => window.mdPomodoro && window.mdPomodoro.startForNote().catch((error) => alert(error.message)) });
   cmds.push({ label: 'Pomodoro: cancelar', run: () => window.mdPomodoro && window.mdPomodoro.reset() });
   cmds.push({ label: 'Reproductor: play/pausa (playerctl)', run: () => window.mdMediaPlayer && window.mdMediaPlayer.playPause() });
   cmds.push({ label: 'Reproductor: siguiente (playerctl)', run: () => window.mdMediaPlayer && window.mdMediaPlayer.next() });
@@ -57,6 +62,9 @@ function buildCommands() {
   cmds.push({ label: 'Terminal: dividir (otra al lado)', run: () => window.mdTerminal && window.mdTerminal.splitTerminal() });
   cmds.push({ label: 'Mascotas: mi colección, huevos y logros', run: () => window.mdPet && window.mdPet.openCollection() });
   cmds.push({ label: 'Home: planificador semanal y mensual', run: () => window.mdHome && window.mdHome.open() });
+  cmds.push({ label: 'Home: estudio por asignatura', run: () => window.mdStudy && window.mdStudy.open().catch((error) => alert(error.message)) });
+  cmds.push({ label: 'Estudio: plan de hoy', run: () => window.mdStudy && window.mdStudy.open().catch((error) => alert(error.message)) });
+  cmds.push({ label: 'Estudio: tarjetas, repaso espaciado y modo examen', run: () => window.mdStudy && window.mdStudy.openLearning().catch((error) => alert(error.message)) });
   cmds.push({ label: 'Bases de datos', run: () => window.mdDatabase && window.mdDatabase.open() });
   cmds.push({ label: 'Reportar un problema…', run: () => window.mdReportDialog && window.mdReportDialog.open() });
   cmds.push({ label: 'Reemplazar en toda la carpeta…', run: () => window.mdReplaceFolder && window.mdReplaceFolder.open() });
@@ -66,7 +74,7 @@ function buildCommands() {
   cmds.push({ label: 'Multimedia: explorar fotos, videos y audio de la carpeta', run: () => window.mdMediaBrowser && window.mdMediaBrowser.open() });
   cmds.push({ label: 'Ver grafo de notas', run: () => window.mdGraph && window.mdGraph.open() });
   cmds.push({ label: 'Operaciones de páginas PDF (unir, separar, rotar...)', run: () => window.mdPdfPages && window.mdPdfPages.open() });
-  cmds.push({ label: 'PDF: subrayar y escribir (texto libre, formularios)', run: () => window.mdPdfHighlight && window.mdPdfHighlight.open() });
+  cmds.push({ label: 'PDF: seleccionar, copiar, subrayar y escribir (texto libre, formularios)', run: () => window.mdPdfHighlight && window.mdPdfHighlight.open() });
   cmds.push({ label: 'Sincronizar con git (elegir archivos y mensaje)...', run: () => window.mdGitPanel && window.mdGitPanel.open() });
 
   (window.mdThemes ? window.mdThemes.THEME_LIST : []).forEach((t) => {

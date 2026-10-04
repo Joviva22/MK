@@ -29,6 +29,14 @@ const FAIL_MESSAGES = {
   'export:anki': 'No se pudieron exportar las tarjetas.'
 };
 
+// Los diálogos de guardar solo traían un nombre de archivo (sin carpeta): el
+// sistema operativo elegía dónde abrirlos. Arrancan en la carpeta abierta en
+// el sidebar en vez de la última que usó el sistema.
+function defaultSavePath(filename) {
+  const dir = ctx.getOpenFolder();
+  return dir ? path.join(dir, filename) : filename;
+}
+
 function handle(channel, fn) {
   ipcMain.handle(channel, async (...args) => {
     try {
@@ -44,7 +52,7 @@ function handle(channel, fn) {
 // texto, acá solo los diálogos y el disco.
 handle('csv:save', async (event, { content, defaultName }) => {
   const result = await dialog.showSaveDialog(ctx.mainWindow, {
-    defaultPath: (defaultName || 'base-de-datos').replace(/[\\/:*?"<>|]/g, '_') + '.csv',
+    defaultPath: defaultSavePath((defaultName || 'base-de-datos').replace(/[\\/:*?"<>|]/g, '_') + '.csv'),
     filters: [{ name: 'CSV', extensions: ['csv'] }]
   });
   if (result.canceled || !result.filePath) return null;
@@ -78,9 +86,10 @@ ipcMain.handle('pdf:pickFiles', async (event, { multi }) => {
   return result.filePaths;
 });
 
-ipcMain.handle('pdf:readBytes', async (event, filePath) => {
+ipcMain.handle('pdf:readBytes', async (event, filePath, maxBytes) => {
   if (!guard.check(filePath, 'pdf:readBytes')) return null;
   try {
+    if (maxBytes !== undefined && (!Number.isFinite(maxBytes) || maxBytes <= 0 || (await fsp.stat(filePath)).size > Math.min(maxBytes, 50 * 1024 * 1024))) return null;
     return (await fsp.readFile(filePath)).toString('base64');
   } catch {
     return null;
@@ -160,7 +169,7 @@ ipcMain.handle('katex:getCss', () => getKatexCssInlined());
 
 handle('export:html', async (event, { html, defaultName }) => {
   const result = await dialog.showSaveDialog(ctx.mainWindow, {
-    defaultPath: defaultName || 'documento.html',
+    defaultPath: defaultSavePath(defaultName || 'documento.html'),
     filters: [{ name: 'HTML', extensions: ['html'] }]
   });
   if (result.canceled || !result.filePath) return null;
@@ -170,7 +179,7 @@ handle('export:html', async (event, { html, defaultName }) => {
 
 handle('export:pdf', async (event, { html, defaultName }) => {
   const result = await dialog.showSaveDialog(ctx.mainWindow, {
-    defaultPath: defaultName || 'documento.pdf',
+    defaultPath: defaultSavePath(defaultName || 'documento.pdf'),
     filters: [{ name: 'PDF', extensions: ['pdf'] }]
   });
   if (result.canceled || !result.filePath) return null;
@@ -204,7 +213,7 @@ async function resolveSavePath(defaultName, filters) {
   if (ctx.isTestMode) {
     return path.join(os.tmpdir(), `mk-test-export-${Date.now()}-${defaultName}`);
   }
-  const result = await dialog.showSaveDialog(ctx.mainWindow, { defaultPath: defaultName, filters });
+  const result = await dialog.showSaveDialog(ctx.mainWindow, { defaultPath: defaultSavePath(defaultName), filters });
   if (result.canceled || !result.filePath) return null;
   return result.filePath;
 }
