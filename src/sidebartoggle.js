@@ -9,10 +9,11 @@
 
 const containerEl = document.querySelector('.container');
 const toggleBtn = document.getElementById('btn-toggle-sidebar');
-const iconEl = toggleBtn.querySelector('i');
 
 function applyIcon(hidden) {
+  const iconEl = document.createElement('i');
   iconEl.setAttribute('data-lucide', hidden ? 'panel-left-open' : 'panel-left-close');
+  toggleBtn.replaceChildren(iconEl);
   const key = window.mdShortcuts ? window.mdShortcuts.getBindings().sidebar : 'Ctrl+B';
   toggleBtn.title = `${hidden ? 'Mostrar' : 'Ocultar'} el panel de archivos (${key || 'sin atajo'})`;
   if (window.lucide) window.lucide.createIcons({ attrs: { width: 16, height: 16, 'stroke-width': 2 }, root: toggleBtn });

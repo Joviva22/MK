@@ -44,7 +44,7 @@ function buildRows() {
     runBtn.type = 'button';
     runBtn.className = 'toolbar-buttons-settings-run';
     runBtn.title = 'Ejecutar ahora';
-    runBtn.textContent = '▶';
+    window.mdIcons.button(runBtn, 'play');
     runBtn.addEventListener('click', () => btn.click());
 
     row.appendChild(checkbox);

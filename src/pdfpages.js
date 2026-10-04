@@ -106,22 +106,22 @@ function render() {
 
     const btnRotateLeft = document.createElement('button');
     btnRotateLeft.className = 'toolbar-button';
-    btnRotateLeft.textContent = '⟲';
     btnRotateLeft.title = 'Rotar -90°';
+    window.mdIcons.button(btnRotateLeft, 'rotate-ccw');
     btnRotateLeft.addEventListener('click', () => rotatePage(i, -90));
     row.appendChild(btnRotateLeft);
 
     const btnRotateRight = document.createElement('button');
     btnRotateRight.className = 'toolbar-button';
-    btnRotateRight.textContent = '⟳';
     btnRotateRight.title = 'Rotar +90°';
+    window.mdIcons.button(btnRotateRight, 'rotate-cw');
     btnRotateRight.addEventListener('click', () => rotatePage(i, 90));
     row.appendChild(btnRotateRight);
 
     const btnDelete = document.createElement('button');
     btnDelete.className = 'toolbar-button';
-    btnDelete.textContent = '✕';
     btnDelete.title = 'Borrar página';
+    window.mdIcons.button(btnDelete, 'trash-2');
     btnDelete.addEventListener('click', () => deletePage(i));
     row.appendChild(btnDelete);
 

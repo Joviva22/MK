@@ -161,10 +161,12 @@ function renderTabs() {
     });
     tab.appendChild(label);
     tab.addEventListener('click', () => activate(s.id));
-    const close = document.createElement('span');
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.tabIndex = -1;
     close.className = 'terminal-tab-close';
-    close.textContent = '×';
     close.title = members.length > 1 ? `Cerrar esta pestaña (${members.length} paneles)` : 'Cerrar esta terminal';
+    window.mdIcons.button(close, 'x');
     close.addEventListener('click', (e) => {
       e.stopPropagation();
       members.forEach((m) => closeSession(m.id));
@@ -258,8 +260,8 @@ async function createSession(cwd, opts) {
   groups.get(group).classList.toggle('terminal-group-split', groupSessions(group).length > 0);
   const paneClose = document.createElement('button');
   paneClose.className = 'terminal-pane-close';
-  paneClose.textContent = '×';
   paneClose.title = 'Cerrar este panel';
+  window.mdIcons.button(paneClose, 'x');
   el.appendChild(paneClose);
 
   const term = new Terminal({

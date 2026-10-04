@@ -701,3 +701,14 @@ table.db-embed-table th {
   color: var(--text);
 }
 
+
+/* Database controls use the same scale as the document workspace. */
+.database-modal { font-size: var(--font-md); line-height: var(--ui-line-height); border-radius: var(--radius-lg); box-shadow: var(--shadow-3); }
+.database-sidebar-header { flex-wrap: wrap; gap: 6px; text-transform: none; letter-spacing: normal; font-size: var(--font-sm); }
+.database-sidebar-header > span { flex: 1 0 100%; }
+.database-sidebar-header .toolbar-button { height: 32px; padding: 0 10px; font-size: var(--font-sm); }
+.database-toolbar { flex-wrap: wrap; gap: 8px; padding: 12px 14px; }
+.database-name-input { min-width: 0; font-family: inherit; line-height: 1.4; }
+.database-filter-input { min-width: 0; font-family: inherit; }
+.database-list-item { line-height: 1.5; padding-top: 10px; padding-bottom: 10px; }
+.database-modal :is(select, textarea, input:not([type="checkbox"]):not([type="radio"])) { font-family: inherit; }

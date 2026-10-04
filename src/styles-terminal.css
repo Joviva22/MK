@@ -219,3 +219,17 @@
   flex-wrap: wrap;
 }
 
+
+/* Only terminal chrome shares UI typography; shell output keeps its own font. */
+.terminal-header { padding: 6px 10px; gap: 8px; }
+.terminal-heading { text-transform: none; letter-spacing: normal; font-size: var(--font-sm); }
+.terminal-header-btn { justify-content: center; }
+.terminal-tab-close { display: inline-flex; }
+.terminal-group-split .terminal-pane-close { display: inline-flex; }
+.terminal-tab-close, .terminal-pane-close { align-items: center; justify-content: center; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; padding: 2px; }
+.terminal-tab-close svg, .terminal-pane-close svg { width: 14px; height: 14px; stroke-width: 2; }
+.terminal-tab-close:hover, .terminal-pane-close:hover { color: var(--text); background: var(--surface-2); }
+@media (max-width: 760px) { .terminal-header { flex-wrap: wrap; } .terminal-hint { display: none; } .terminal-tabs { flex: 1; } }
+
+.terminal-group-split .terminal-instance:focus-within .terminal-pane-close { opacity: 1; }
+@media (hover: none) { .terminal-group-split .terminal-pane-close { opacity: 1; } }

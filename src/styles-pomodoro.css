@@ -13,3 +13,13 @@
 .pomodoro-note-context { border-left: 2px solid var(--accent); padding-left: 8px; margin: 6px 0; overflow-wrap: anywhere; }
 .pomodoro-note-context p { margin: 4px 0; }
 @media (max-width: 600px) { .pomodoro-field { display: flex; margin-right: 0; } }
+
+/* Match the shared dialog type scale and spacing. */
+.pomodoro-panel { font-size: var(--font-md); line-height: var(--ui-line-height); }
+.pomodoro-panel h2 { font-size: var(--font-xl); }
+.pomodoro-panel h3 { font-size: var(--font-lg); margin: 4px 0 12px; }
+.pomodoro-section { padding: 18px 0; }
+.pomodoro-field { gap: 6px; }
+.pomodoro-hint, .pomodoro-save-status { line-height: 1.6; }
+.pomodoro-panel :is(input:not([type="checkbox"]), select) { font: inherit; border-radius: var(--radius); padding: 8px 10px; }
+.pomodoro-record { padding: 12px 0; line-height: 1.55; }

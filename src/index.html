@@ -108,7 +108,7 @@
       <div class="set-main">
         <div class="set-top">
           <input type="search" id="settings-search" class="set-search" placeholder="Buscar un ajuste…" aria-label="Buscar un ajuste" autocomplete="off" />
-          <button type="button" id="settings-close" class="toolbar-button" title="Cerrar (Esc)" aria-label="Cerrar ajustes">✕</button>
+          <button type="button" id="settings-close" class="toolbar-button" title="Cerrar (Esc)" aria-label="Cerrar ajustes"><i data-lucide="x"></i></button>
         </div>
         <div class="set-body">
         <section class="set-section" data-section="shortcuts" data-title="Atajos de teclado" hidden>
@@ -447,10 +447,10 @@
         <div class="find-row">
           <input id="find-input" type="text" placeholder="Buscar..." autocomplete="off" spellcheck="false" />
           <span id="find-count" class="find-count">0/0</span>
-          <button id="find-prev" class="toolbar-button find-widget-btn" title="Anterior (Shift+Enter)">↑</button>
-          <button id="find-next" class="toolbar-button find-widget-btn" title="Siguiente (Enter)">↓</button>
-          <button id="find-toggle-replace" class="toolbar-button find-widget-btn" title="Reemplazar">⇄</button>
-          <button id="find-close" class="toolbar-button find-widget-btn" title="Cerrar (Escape)">✕</button>
+          <button id="find-prev" class="toolbar-button find-widget-btn" title="Anterior (Shift+Enter)" aria-label="Anterior (Shift+Enter)"><i data-lucide="arrow-up"></i></button>
+          <button id="find-next" class="toolbar-button find-widget-btn" title="Siguiente (Enter)" aria-label="Siguiente (Enter)"><i data-lucide="arrow-down"></i></button>
+          <button id="find-toggle-replace" class="toolbar-button find-widget-btn" title="Reemplazar" aria-label="Reemplazar"><i data-lucide="replace"></i></button>
+          <button id="find-close" class="toolbar-button find-widget-btn" title="Cerrar (Escape)" aria-label="Cerrar (Escape)"><i data-lucide="x"></i></button>
         </div>
         <div id="find-replace-row" class="find-row" hidden>
           <input id="replace-input" type="text" placeholder="Reemplazar por..." autocomplete="off" spellcheck="false" />
@@ -465,7 +465,7 @@
         <span id="secondary-pane-title"></span>
         <button id="secondary-pane-viewmode" class="toolbar-button secondary-pane-viewmode-btn" hidden></button>
         <span class="secondary-pane-hint">clic para editar acá</span>
-        <button id="secondary-pane-close" class="toolbar-button" title="Cerrar panel secundario">✕</button>
+        <button id="secondary-pane-close" class="toolbar-button" title="Cerrar panel secundario" aria-label="Cerrar panel secundario"><i data-lucide="x"></i></button>
       </div>
       <div class="secondary-pane-body" id="secondary-pane-body"></div>
     </div>
@@ -480,19 +480,19 @@
       <div id="terminal-search" class="terminal-search" hidden>
         <input id="terminal-search-input" type="text" placeholder="Buscar en la salida..." autocomplete="off" spellcheck="false" />
         <span id="terminal-search-status" class="terminal-search-status"></span>
-        <button id="terminal-search-prev" class="toolbar-button terminal-header-btn" title="Anterior (Shift+Enter)">↑</button>
-        <button id="terminal-search-next" class="toolbar-button terminal-header-btn" title="Siguiente (Enter)">↓</button>
-        <button id="terminal-search-close" class="toolbar-button terminal-header-btn" title="Cerrar (Escape)">✕</button>
+        <button id="terminal-search-prev" class="toolbar-button terminal-header-btn" title="Anterior (Shift+Enter)" aria-label="Anterior (Shift+Enter)"><i data-lucide="arrow-up"></i></button>
+        <button id="terminal-search-next" class="toolbar-button terminal-header-btn" title="Siguiente (Enter)" aria-label="Siguiente (Enter)"><i data-lucide="arrow-down"></i></button>
+        <button id="terminal-search-close" class="toolbar-button terminal-header-btn" title="Cerrar (Escape)" aria-label="Cerrar (Escape)"><i data-lucide="x"></i></button>
       </div>
       <span class="terminal-hint">Ctrl+Shift+C / Ctrl+Shift+V: copiar / pegar · Ctrl+F: buscar</span>
-      <button id="terminal-search-btn" class="toolbar-button terminal-header-btn" title="Buscar en la salida (Ctrl+F)">🔍</button>
-      <button id="terminal-new" class="toolbar-button terminal-header-btn" title="Nueva terminal (shell elegido en ⚙ Ajustes)">+</button>
+      <button id="terminal-search-btn" class="toolbar-button terminal-header-btn" title="Buscar en la salida (Ctrl+F)" aria-label="Buscar en la salida (Ctrl+F)"><i data-lucide="search"></i></button>
+      <button id="terminal-new" class="toolbar-button terminal-header-btn" title="Nueva terminal (shell elegido en ⚙ Ajustes)" aria-label="Nueva terminal (shell elegido en ⚙ Ajustes)"><i data-lucide="plus"></i></button>
       <div class="dropdown">
-        <button id="terminal-new-menu" class="toolbar-button terminal-header-btn" title="Nueva terminal con otro shell (bash, zsh, fish...)">▾</button>
+        <button id="terminal-new-menu" class="toolbar-button terminal-header-btn" title="Nueva terminal con otro shell (bash, zsh, fish...)" aria-label="Nueva terminal con otro shell (bash, zsh, fish...)"><i data-lucide="chevron-down"></i></button>
         <div id="terminal-shell-menu" class="dropdown-menu dropdown-menu-up" hidden></div>
       </div>
-      <button id="terminal-split" class="toolbar-button terminal-header-btn" title="Dividir: otra terminal al lado, en la misma pestaña (Ctrl+Shift+5)">◫</button>
-      <button id="terminal-hide" class="toolbar-button terminal-header-btn" title="Ocultar panel (Ctrl+` / Ctrl+Ñ) — las terminales siguen abiertas">✕</button>
+      <button id="terminal-split" class="toolbar-button terminal-header-btn" title="Dividir: otra terminal al lado, en la misma pestaña (Ctrl+Shift+5)" aria-label="Dividir: otra terminal al lado, en la misma pestaña (Ctrl+Shift+5)"><i data-lucide="columns-2"></i></button>
+      <button id="terminal-hide" class="toolbar-button terminal-header-btn" title="Ocultar panel (Ctrl+` / Ctrl+Ñ) — las terminales siguen abiertas" aria-label="Ocultar panel (Ctrl+` / Ctrl+Ñ) — las terminales siguen abiertas"><i data-lucide="panel-bottom-close"></i></button>
     </div>
     <div id="terminal-body" class="terminal-body"></div>
   </div>
@@ -532,7 +532,7 @@
       <div class="palette-heading">Buscar en MK</div>
       <div class="search-input-row">
         <input id="search-input" role="combobox" aria-autocomplete="list" aria-controls="search-results" aria-expanded="true" aria-label="Buscar en archivos, tareas y bases de datos" type="text" placeholder="Archivos, tareas y bases de datos…" autocomplete="off" spellcheck="false" />
-        <button type="button" id="search-replace-btn" class="toolbar-button" title="Reemplazar en toda la carpeta (con vista previa)">⇄ Reemplazar…</button>
+        <button type="button" id="search-replace-btn" class="toolbar-button" title="Reemplazar en toda la carpeta (con vista previa)"><i data-lucide="replace"></i> Reemplazar…</button>
       </div>
       <div id="search-results" role="listbox" aria-label="Resultados de búsqueda" class="command-palette-list"></div>
       <div class="palette-footer"><span>↑ ↓ Elegir · Enter Abrir</span><span>Esc Cerrar</span></div>
@@ -681,8 +681,8 @@
         <div class="database-sidebar">
           <div class="database-sidebar-header">
             <span>Bases de datos</span>
-            <button id="database-import-btn" class="toolbar-button" title="Importar CSV como base nueva">⇪ CSV</button>
-            <button id="database-new-btn" class="toolbar-button" title="Nueva base de datos">+</button>
+            <button id="database-import-btn" class="toolbar-button" title="Importar CSV como base nueva"><i data-lucide="upload"></i> CSV</button>
+            <button id="database-new-btn" class="toolbar-button" title="Nueva base de datos" aria-label="Nueva base de datos"><i data-lucide="plus"></i></button>
           </div>
           <div id="database-list" class="database-list"></div>
         </div>
@@ -691,15 +691,15 @@
           <div id="database-content" class="database-content" hidden>
             <div class="database-content-header">
               <input id="database-name-input" class="database-name-input" />
-              <button id="database-export-btn" class="toolbar-button" title="Exportar la vista actual (con sus filtros y orden) a CSV">⇩ CSV</button>
-              <button id="database-delete-btn" class="toolbar-button" title="Eliminar esta base de datos">🗑</button>
+              <button id="database-export-btn" class="toolbar-button" title="Exportar la vista actual (con sus filtros y orden) a CSV"><i data-lucide="download"></i> CSV</button>
+              <button id="database-delete-btn" class="toolbar-button" title="Eliminar esta base de datos" aria-label="Eliminar esta base de datos"><i data-lucide="trash-2"></i></button>
             </div>
             <div id="database-view-tabs" class="database-view-tabs"></div>
             <div class="database-toolbar">
               <input id="database-filter-input" class="database-filter-input" placeholder="Filtrar filas..." />
-              <button id="database-filters-btn" class="toolbar-button" title="Filtrar por campo (se guarda en esta vista)">Filtros</button>
-              <button id="database-add-column-btn" class="toolbar-button">+ Columna</button>
-              <button id="database-add-row-btn" class="toolbar-button">+ Fila</button>
+              <button id="database-filters-btn" class="toolbar-button" title="Filtrar por campo (se guarda en esta vista)"><i data-lucide="list-filter"></i> Filtros</button>
+              <button id="database-add-column-btn" class="toolbar-button"><i data-lucide="plus"></i> Columna</button>
+              <button id="database-add-row-btn" class="toolbar-button"><i data-lucide="plus"></i> Fila</button>
             </div>
             <div id="database-view-body" class="database-view-body"></div>
           </div>
@@ -726,9 +726,9 @@
     <div class="command-palette pdfpages-modal">
       <div class="backlinks-title">Operaciones de páginas PDF</div>
       <div class="pdfpages-toolbar">
-        <button id="pdfpages-open" class="toolbar-button">Abrir PDF...</button>
-        <button id="pdfpages-merge" class="toolbar-button" disabled>Unir con otro PDF...</button>
-        <button id="pdfpages-save" class="toolbar-button" disabled>Guardar como...</button>
+        <button id="pdfpages-open" class="toolbar-button"><i data-lucide="folder-open"></i> Abrir PDF…</button>
+        <button id="pdfpages-merge" class="toolbar-button" disabled><i data-lucide="files"></i> Unir con otro PDF…</button>
+        <button id="pdfpages-save" class="toolbar-button" disabled><i data-lucide="save"></i> Guardar como…</button>
         <span id="pdfpages-filename" class="pdfpages-filename"></span>
       </div>
       <div id="pdfpages-empty" class="command-palette-empty">Abrí un PDF para empezar. Arrastrá las páginas para reordenarlas.</div>
@@ -818,7 +818,7 @@
       <div id="git-file-list" class="git-file-list" hidden></div>
       <div id="git-actions" class="git-actions" hidden>
         <input id="git-commit-message" type="text" placeholder="Mensaje del commit" autocomplete="off" spellcheck="false" />
-        <button id="git-commit-btn" class="toolbar-button">Commitear seleccionados</button>
+        <button id="git-commit-btn" class="toolbar-button"><i data-lucide="git-commit-horizontal"></i> Guardar commit</button>
       </div>
     </div>
   </div>
@@ -829,6 +829,7 @@
   <script src="../node_modules/katex/dist/katex.min.js"></script>
   <script src="../node_modules/dompurify/dist/purify.js"></script>
   <script src="../node_modules/lucide/dist/umd/lucide.js"></script>
+  <script src="icons.js"></script>
   <script src="../node_modules/diff/dist/diff.js"></script>
   <script src="../node_modules/pdf-lib/dist/pdf-lib.min.js"></script>
   <script type="module" src="pdfjs-loader.mjs"></script>
@@ -916,7 +917,6 @@
   <script src="studyworkspace.js"></script>
   <script src="sidebartoggle.js"></script>
   <script src="resize.js"></script>
-  <script src="icons.js"></script>
   <script src="shared/shortcutlogic.js"></script>
   <script src="shortcuts.js"></script>
 </body>

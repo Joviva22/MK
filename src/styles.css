@@ -3838,3 +3838,39 @@ ul.tree ul.tree { margin-left: 10px; padding-left: 10px; border-left: 1px solid 
   #search-replace-btn { margin: 0 12px 10px auto; }
   .palette-overlay:has(> .search-palette), #command-palette { padding-top: 6vh; }
 }
+
+/* UI typography follows one scale; document and terminal fonts stay configurable. */
+:root { --ui-line-height: 1.5; }
+.toolbar-button, .dropdown-menu button { font-family: inherit; line-height: var(--ui-line-height); font-weight: 500; }
+.toolbar-button svg, .ui-icon-only svg { width: 16px; height: 16px; flex: none; stroke-width: 2; }
+.toolbar-button:disabled { cursor: default; }
+.modal :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+.command-palette :is(select, textarea) { font-family: inherit; font-size: var(--font-md); line-height: var(--ui-line-height); }
+:is(.plugins-body, .backlinks-title, .history-item-label, .kanban-card, .git-file-row-label, .pdfpages-page-label) { line-height: var(--ui-line-height); }
+:is(.plugins-body, .kanban-card, .git-file-row-label, .pdfpages-page-label) { font-size: var(--font-md); }
+:is(.kanban-column-title, .backlinks-title) { font-size: var(--font-lg); font-weight: 600; }
+:is(.plugins-body, .kanban-card) p { margin: 8px 0; }
+:is(.pdfpages-modal, .git-modal, .kanban-modal, .graph-modal) { border-radius: var(--radius-lg); box-shadow: var(--shadow-3); }
+:is(.pdfpages-modal, .git-modal, .kanban-modal, .graph-modal) > .backlinks-title { padding: 18px 18px 12px; color: var(--text); }
+.pdfpages-modal > .pdfpages-toolbar { padding: 12px 18px; gap: 8px; background: var(--surface-2); }
+.pdfpages-filename { overflow-wrap: anywhere; line-height: 1.5; }
+.pdfpages-page-row { padding: 10px 12px; gap: 8px; border-radius: var(--radius); background: var(--bg); }
+.pdfpages-page-row .ui-icon-only { justify-content: center; width: 32px; height: 32px; padding: 0; }
+.pdfpages-actions { padding: 16px 18px; gap: 14px; }
+.pdfpages-action-row { gap: 8px; }
+.pdfpages-action-row label { font-size: var(--font-sm); line-height: 1.5; }
+.git-actions { gap: 10px; padding: 14px 18px; flex-wrap: wrap; }
+.git-file-row { padding: 10px 14px; }
+.kanban-card { padding: 12px; border-radius: var(--radius); }
+.graph-toolbar { padding: 12px 18px; gap: 10px; }
+.graph-toolbar .settings-text-input, .graph-toolbar select { height: 34px; }
+@media (max-width: 600px) {
+  .pdfpages-action-row { align-items: stretch; }
+  .pdfpages-action-row label { flex-basis: 100%; }
+  .pdfpages-page-label { min-width: 0; overflow-wrap: anywhere; }
+  .git-actions input { box-sizing: border-box; min-width: 0; max-width: 100%; }
+}
+
+.pdfpages-modal { max-height: 76vh; }
+.pdfpages-actions { min-height: 0; overflow-y: auto; }
+.pdfpages-actions[hidden] { display: none; }
