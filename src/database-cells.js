@@ -146,15 +146,65 @@ export function renderTextCell(host, column, row, refresh) {
   host.appendChild(input);
   const value = input.value.trim();
   if (value && !/^[a-z][a-z0-9+.-]*:/i.test(value) && (value.includes('/') || /\.[a-z0-9]{1,12}$/i.test(value))) {
-    host.classList.add('database-file-cell'); host.appendChild(referenceButton(value));
+    const folder = root();
+    const locate = referencePickerButton(value, folder, async chosen => { await window.mdEditor.db.setCell(folder, row.id, column.id, chosen); await refresh(); });
+    locate.textContent = 'Localizar archivo'; locate.title = 'Localizar archivo'; locate.hidden = true;
+    host.classList.add('database-file-cell');
+    host.append(referenceButton(value, folder, status => { locate.hidden = status === 'ok'; }), locate);
   }
 }
 
+const referenceStatuses = new Map();
+const referenceChecks = new WeakMap();
+export function invalidateReferenceStatuses() {
+  referenceStatuses.clear();
+  document.querySelectorAll('.database-file-open').forEach(button => referenceChecks.get(button)?.());
+}
+function referenceStatus(folder, reference) {
+  const key = folder + '\0' + reference;
+  const cached = referenceStatuses.get(key);
+  if (cached && cached.expires > Date.now()) return cached.result;
+  const result = window.mdEditor.fileReferenceStatus(folder, reference);
+  if (referenceStatuses.size >= 500) referenceStatuses.delete(referenceStatuses.keys().next().value);
+  referenceStatuses.set(key, { result, expires: Date.now() + 2000 });
+  return result;
+}
+
+export function referencePickerButton(reference, folder, onPicked) {
+  const pick = document.createElement('button'); pick.type = 'button'; pick.className = 'database-file-action'; pick.textContent = reference ? 'Cambiar' : 'Elegir archivo'; pick.title = 'Elegir archivo';
+  pick.addEventListener('click', async () => {
+    pick.disabled = true;
+    try {
+      const chosen = await window.mdEditor.pickFileReference(); if (!chosen) return;
+      const prefix = folder.replace(/\/$/, '') + '/';
+      invalidateReferenceStatuses();
+      await onPicked(chosen.startsWith(prefix) ? chosen.slice(prefix.length) : chosen);
+    } catch (error) { window.mdErrorToast.show({ message: 'No se pudo vincular el archivo', detail: error.message }); }
+    finally { pick.disabled = false; }
+  });
+  return pick;
+}
+
 // Archivo mantiene una ruta de texto: compatible con CSV, filtros y bases existentes.
-export function referenceButton(reference, folder = root()) {
+export function referenceButton(reference, folder = root(), onStatus = () => {}) {
   const button = document.createElement('button'); button.type = 'button'; button.className = 'database-file-open';
   const name = reference.split('/').pop() || reference;
-  button.textContent = name; button.title = `Abrir ${reference}`; button.setAttribute('aria-label', `Abrir ${reference}`);
+  button.title = `Abrir ${reference}`; button.setAttribute('aria-label', `Abrir ${reference}`);
+  const target = window.mdEditor.resolveLocalPath(folder.replace(/\/$/, '') + '/.reference', reference);
+  window.mdIcons.button(button, window.mdSidebar.iconForFile(target), name);
+  const checkStatus = () => referenceStatus(folder, reference).then(({ state: status }) => {
+    if (!button.isConnected) return;
+    button.dataset.referenceState = status;
+    button.nextElementSibling?.classList.contains('database-file-status') && button.nextElementSibling.remove();
+    const broken = status !== 'ok'; button.classList.toggle('database-file-broken', broken);
+    button.title = `Abrir ${reference}`;
+    if (broken) {
+      const badge = document.createElement('small'); badge.className = 'database-file-status'; badge.textContent = status === 'unavailable' ? 'Sin acceso' : 'No encontrado'; button.after(badge);
+      button.title = `${badge.textContent}: ${reference}. Usa «Localizar archivo» para reparar el vínculo.`;
+    }
+    onStatus(status);
+  }).catch(() => {});
+  referenceChecks.set(button, checkStatus); checkStatus();
   button.addEventListener('click', async () => {
     button.disabled = true;
     try {
@@ -172,22 +222,15 @@ export function renderFileCell(host, column, row, refresh) {
   const folder = root();
   const reference = row.cells[column.id] || '';
   host.classList.add('database-file-cell');
-  if (reference) host.appendChild(referenceButton(reference));
-  const save = async value => { await window.mdEditor.db.setCell(folder, row.id, column.id, value || null); await refresh(); };
-  const pick = document.createElement('button'); pick.type = 'button'; pick.className = 'database-file-action'; pick.textContent = reference ? 'Cambiar' : 'Elegir archivo'; pick.title = 'Elegir archivo';
-  pick.addEventListener('click', async () => {
-    try {
-      const chosen = await window.mdEditor.pickFileReference(); if (!chosen) return;
-      const prefix = folder.replace(/\/$/, '') + '/';
-      await save(chosen.startsWith(prefix) ? chosen.slice(prefix.length) : chosen);
-    } catch (error) { window.mdErrorToast.show({ message: 'No se pudo vincular el archivo', detail: error.message }); }
-  });
+  const save = async value => { await window.mdEditor.db.setCell(folder, row.id, column.id, value || null); invalidateReferenceStatuses(); await refresh(); };
+  const pick = referencePickerButton(reference, folder, save);
   const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'database-file-action'; edit.textContent = 'Ruta'; edit.title = 'Escribir o quitar la ruta del archivo';
   edit.addEventListener('click', async () => {
     const value = await window.mdAsk('Ruta del archivo', reference, { context: root(), description: 'Ruta absoluta o relativa a esta carpeta. Déjala vacía para quitar el vínculo.', actionLabel: 'Guardar vínculo', inputLabel: 'Ruta' });
     if (value === null) return;
     try { await save(value.trim()); } catch (error) { window.mdErrorToast.show({ message: 'No se pudo guardar el vínculo', detail: error.message }); }
   });
+  if (reference) host.appendChild(referenceButton(reference, folder, status => { pick.textContent = status === 'ok' ? 'Cambiar' : 'Localizar archivo'; pick.title = status === 'ok' ? 'Elegir archivo' : 'Localizar archivo'; }));
   host.append(pick, edit);
 }
 

@@ -224,7 +224,7 @@ Cualquier columna **Fecha** hace que la fila aparezca en el calendario del [Home
 
 Añade una columna de tipo **Archivo**. En cada fila, pulsa **Elegir archivo** para vincular una nota, PDF, imagen o pizarra, y haz clic en su nombre para abrirlo. **Cambiar** selecciona otro archivo; **Ruta** permite escribir una ruta o dejarla vacía para quitar el vínculo. Quitar el vínculo no elimina el archivo.
 
-Las rutas relativas parten de la carpeta de la base y se conservan al mover toda esa carpeta. Los archivos externos guardan su ruta absoluta. Si cambias el nombre o mueves un archivo, corrige su ruta con **Cambiar** o **Ruta**. Las columnas de Texto con rutas también ofrecen un botón para abrirlas.
+Las rutas relativas parten de la carpeta de la base y se conservan al mover toda esa carpeta. Los archivos externos guardan su ruta absoluta. Al renombrar o mover archivos y carpetas desde MK, los vínculos se actualizan automáticamente. Si el cambio se hace fuera de MK, usa **Localizar archivo** o **Ruta** para repararlos. Los vínculos inexistentes muestran **No encontrado** y conservan la fila. Las columnas de Texto con rutas también ofrecen un botón para abrirlas.
 
 ### Ficha de cada fila
 

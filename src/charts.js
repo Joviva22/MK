@@ -34,7 +34,9 @@ function isDark() {
 }
 
 function palette() {
-  return isDark() ? CATEGORICAL.dark : CATEGORICAL.light;
+  const colors = [...(isDark() ? CATEGORICAL.dark : CATEGORICAL.light)];
+  colors[0] = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || colors[0];
+  return colors;
 }
 
 function svgEl(tag, attrs, parent) {
@@ -65,7 +67,9 @@ function niceScale(max) {
 
 // ---- tooltip compartido ----
 let tip = null;
-function showTip(e, html) {
+let tipOwner = null;
+function showTip(e, html, owner) {
+  tipOwner = owner;
   if (!tip) {
     tip = document.createElement('div');
     tip.className = 'chart-tooltip';
@@ -73,21 +77,25 @@ function showTip(e, html) {
   }
   tip.innerHTML = html;
   tip.hidden = false;
-  const x = Math.min(e.clientX + 12, window.innerWidth - tip.offsetWidth - 8);
-  const y = Math.max(8, e.clientY - tip.offsetHeight - 10);
+  const x = Math.max(8, Math.min(e.clientX + 12, window.innerWidth - tip.offsetWidth - 8));
+  const y = Math.max(8, Math.min(window.innerHeight - tip.offsetHeight - 8, e.clientY - tip.offsetHeight - 10));
   tip.style.left = `${x}px`;
   tip.style.top = `${y}px`;
 }
 function hideTip() {
   if (tip) tip.hidden = true;
+  tipOwner = null;
 }
 function escapeHtml(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 function bindTip(node, label, valueText) {
   const html = `<div class="chart-tooltip-label">${escapeHtml(label)}</div><div class="chart-tooltip-value">${escapeHtml(valueText)}</div>`;
-  node.addEventListener('mousemove', (e) => showTip(e, html));
-  node.addEventListener('mouseleave', hideTip);
+  node.addEventListener('mousemove', (e) => showTip(e, html, node));
+  node.addEventListener('mouseleave', () => { if (document.activeElement !== node) hideTip(); });
+  node.setAttribute('tabindex', '0'); node.setAttribute('aria-label', `${label}: ${valueText}`);
+  node.addEventListener('focus', () => { const rect = node.getBoundingClientRect(); showTip({ clientX: rect.left + rect.width / 2, clientY: rect.top }, html, node); });
+  node.addEventListener('blur', hideTip);
 }
 
 // ---- barras ----
@@ -119,7 +127,7 @@ function renderBars(svg, width, data, opts) {
       // Extremo de datos redondeado (4px) y base recta sobre el eje.
       const r = Math.min(4, barW / 2, h);
       const path = `M${x},${y + h} V${y + r} Q${x},${y} ${x + r},${y} H${x + barW - r} Q${x + barW},${y} ${x + barW},${y + r} V${y + h} Z`;
-      const bar = svgEl('path', { d: h > 0 ? path : `M${x},${y} h${barW}`, fill: color, class: 'chart-mark' }, svg);
+      const bar = svgEl('path', { d: h > 0 ? path : `M${x},${y} h${barW}`, fill: d.color || color, class: 'chart-mark' }, svg);
       const hit = svgEl('rect', { x: pad.left + i * band, y: pad.top, width: band, height: plotH, class: 'chart-hit' }, svg);
       bindTip(hit, d.label, `${fmt(d.value)} ${opts.valueLabel || ''}`.trim());
       hit.addEventListener('mouseenter', () => bar.classList.add('chart-mark-hover'));
@@ -133,8 +141,9 @@ function renderBars(svg, width, data, opts) {
     return;
   }
   // Barras horizontales (categorías), de mayor a menor, valor al final.
-  const rowH = 26;
-  const labelW = Math.min(180, Math.max(60, Math.max(...data.map((d) => String(d.label).length)) * 7 + 8));
+  const rowH = 34;
+  const labelW = Math.min(width * .42, 180, Math.max(60, Math.max(...data.map((d) => String(d.label).length)) * 7 + 12));
+  const labelLimit = Math.max(4, Math.floor((labelW - 12) / 7));
   const pad = { top: 6, right: 56, bottom: 6, left: labelW };
   const plotW = width - pad.left - pad.right;
   const height = pad.top + pad.bottom + rowH * data.length;
@@ -146,9 +155,9 @@ function renderBars(svg, width, data, opts) {
     const r = Math.min(4, h / 2, w);
     const x = pad.left;
     const path = `M${x},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h - r} Q${x + w},${y + h} ${x + w - r},${y + h} H${x} Z`;
-    const bar = svgEl('path', { d: w > 0 ? path : `M${x},${y} v${h}`, fill: color, class: 'chart-mark' }, svg);
+    const bar = svgEl('path', { d: w > 0 ? path : `M${x},${y} v${h}`, fill: d.color || color, class: 'chart-mark' }, svg);
     const name = svgEl('text', { x: pad.left - 8, y: y + h / 2 + 4, class: 'chart-label', 'text-anchor': 'end' }, svg);
-    name.textContent = String(d.label).length > 26 ? String(d.label).slice(0, 25) + '…' : d.label;
+    name.textContent = String(d.label).length > labelLimit ? String(d.label).slice(0, labelLimit - 1) + '…' : d.label;
     const val = svgEl('text', { x: x + w + 6, y: y + h / 2 + 4, class: 'chart-value' }, svg);
     val.textContent = fmt(d.value);
     const hit = svgEl('rect', { x: 0, y: pad.top + i * rowH, width, height: rowH, class: 'chart-hit' }, svg);
@@ -178,6 +187,7 @@ function renderLine(svg, width, data, opts) {
   });
   const step = data.length > 1 ? plotW / (data.length - 1) : 0;
   const pts = data.map((d, i) => [pad.left + (data.length > 1 ? i * step : plotW / 2), pad.top + plotH - ((d.value || 0) / scale.max) * plotH]);
+  if (pts.length > 1) svgEl('path', { d: `M${pts[0][0]},${pad.top + plotH} ` + pts.map(p => `L${p[0]},${p[1]}`).join(' ') + ` L${pts.at(-1)[0]},${pad.top + plotH} Z`, fill: color, class: 'chart-area' }, svg);
   svgEl('path', { d: pts.map((p, i) => `${i ? 'L' : 'M'}${p[0]},${p[1]}`).join(' '), class: 'chart-line', stroke: color }, svg);
   const labelEvery = Math.ceil(data.length / Math.max(1, Math.floor(plotW / 56)));
   const guide = svgEl('line', { x1: 0, x2: 0, y1: pad.top, y2: pad.top + plotH, class: 'chart-crosshair' }, svg);
@@ -239,7 +249,8 @@ function renderPie(svg, width, data, opts, host) {
     bindTip(seg, d.label, `${fmt(d.value)} ${opts.valueLabel || ''} · ${Math.round(frac * 100)}%`.replace(/\s+·/, ' ·'));
     a0 = a1;
   });
-  const center = svgEl('text', { x: cx, y: cy + 6, class: 'chart-pie-total', 'text-anchor': 'middle' }, svg);
+  const totalLabel = svgEl('text', { x: cx, y: cy - 13, class: 'chart-pie-caption', 'text-anchor': 'middle' }, svg); totalLabel.textContent = 'Total';
+  const center = svgEl('text', { x: cx, y: cy + 14, class: 'chart-pie-total', 'text-anchor': 'middle' }, svg);
   center.textContent = fmt(total);
   // Leyenda: identidad por texto además del color.
   const legend = document.createElement('div');
@@ -251,8 +262,10 @@ function renderPie(svg, width, data, opts, host) {
     sw.className = 'chart-swatch';
     sw.style.background = d.color || colors[i % colors.length];
     const txt = document.createElement('span');
-    txt.textContent = `${d.label} — ${fmt(d.value)} (${total ? Math.round((d.value / total) * 100) : 0}%)`;
-    item.append(sw, txt);
+    txt.className = 'chart-legend-label'; txt.textContent = d.label; txt.title = d.label;
+    const value = document.createElement('strong'); value.className = 'chart-legend-value'; value.textContent = fmt(d.value);
+    const share = document.createElement('small'); share.className = 'chart-legend-share'; share.textContent = `${total ? Math.round((d.value / total) * 100) : 0}%`;
+    item.append(sw, txt, value, share);
     legend.appendChild(item);
   });
   host.appendChild(legend);
@@ -286,13 +299,37 @@ function renderTable(host, data, opts) {
   host.appendChild(details);
 }
 
+// Redibujar al cambiar el ancho evita encoger las etiquetas con el SVG.
+const chartHosts = new WeakMap();
+function chartWidth(host) {
+  const style = getComputedStyle(host);
+  return Math.max(240, Math.min(900, (host.clientWidth || 640) - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0)));
+}
+function redrawChart(host, opts) {
+  const expanded = !!host.querySelector('.chart-table')?.open; render(host, opts);
+  const table = host.querySelector('.chart-table'); if (table) table.open = expanded;
+}
+const chartResize = new ResizeObserver(entries => {
+  entries.forEach(({ target }) => {
+    const saved = chartHosts.get(target);
+    if (!target.isConnected) { chartResize.unobserve(target); chartHosts.delete(target); return; }
+    if (!saved || !target.clientWidth) return;
+    const width = chartWidth(target);
+    if (Math.abs(width - saved.width) < 2) return;
+    redrawChart(target, saved.opts);
+  });
+});
+
 function render(host, opts) {
+  if (tipOwner && host.contains(tipOwner)) hideTip();
   host.innerHTML = '';
   host.classList.add('chart-host');
+  const width = chartWidth(host);
+  chartHosts.set(host, { opts, width }); chartResize.observe(host);
   const data = (opts.data || []).filter((d) => d && d.value != null && !Number.isNaN(d.value));
   if (!data.length) {
     const empty = document.createElement('div');
-    empty.className = 'command-palette-empty';
+    empty.className = 'command-palette-empty chart-empty';
     empty.textContent = opts.emptyText || 'Sin datos para graficar.';
     host.appendChild(empty);
     return;
@@ -300,7 +337,6 @@ function render(host, opts) {
   const plot = document.createElement('div');
   plot.className = 'chart-plot' + (opts.type === 'pie' ? ' chart-plot-pie' : '');
   host.appendChild(plot);
-  const width = Math.max(320, Math.min(900, host.clientWidth || 640));
   const svg = svgEl('svg', { role: 'img', 'aria-label': opts.title || 'Gráfico' });
   plot.appendChild(svg);
   if (opts.type === 'pie') renderPie(svg, width, data, opts, plot);
@@ -308,6 +344,10 @@ function render(host, opts) {
   else renderBars(svg, width, opts.time ? data : data.slice().sort((a, b) => (b.value || 0) - (a.value || 0)), opts);
   renderTable(host, data, opts);
 }
+
+document.addEventListener('mk:theme-changed', () => {
+  document.querySelectorAll('.chart-host').forEach(host => { const saved = chartHosts.get(host); if (saved) redrawChart(host, saved.opts); });
+});
 
 // ---- bloque ```chart``` en notas ----
 // Opciones "clave: valor" (español o inglés) y después una tabla Markdown:

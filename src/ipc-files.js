@@ -104,6 +104,13 @@ ipcMain.handle('file:resolveReference', async (_event, { root, reference }) => {
   catch (error) { if (error.code === 'ENOENT') throw new Error('El archivo ya no está en esa ubicación. Corrige la ruta o vuelve a elegirlo.'); throw error; }
   return target;
 });
+ipcMain.handle('file:referenceStatus', async (_event, { root, reference }) => {
+  if (typeof root !== 'string' || typeof reference !== 'string' || !reference.trim() || reference.includes('\0') || /^[a-z][a-z0-9+.-]*:/i.test(reference)) return { state: 'invalid' };
+  const target = path.resolve(root, reference.trim());
+  if (!guard.isAllowed(target)) return { state: 'unavailable' };
+  try { return { state: (await fsp.stat(target)).isFile() ? 'ok' : 'directory' }; }
+  catch (error) { return { state: error.code === 'ENOENT' ? 'missing' : 'unavailable' }; }
+});
 ipcMain.handle('file:pickReference', async () => {
   const result = await dialog.showOpenDialog(ctx.mainWindow, { title: 'Vincular archivo a la base de datos', defaultPath: ctx.getOpenFolder(), filters: [{ name: 'Todos los archivos', extensions: ['*'] }], properties: ['openFile'] });
   if (result.canceled || !result.filePaths.length) return null;
@@ -445,15 +452,23 @@ ipcMain.handle('fs:createFolder', (event, { dirPath, name }) => {
   }
 });
 
-ipcMain.handle('fs:rename', (event, { targetPath, newName }) => {
+function applyReferenceMove(update) {
+  try { if (update()) ctx.mainWindow?.webContents.send('database:referencesChanged'); }
+  catch (error) { ctx.logError('database:referencesChanged', error); return 'El archivo se movió, pero no se pudieron guardar todos sus vínculos. Revisa las bases y usa «Localizar archivo» para corregirlos.'; }
+  return null;
+}
+
+ipcMain.handle('fs:rename', async (event, { targetPath, newName }) => {
   if (!isSafeEntryName(newName)) return { error: 'Nombre inválido.' };
   if (!guard.check(targetPath, 'fs:rename')) return DENIED;
   const dest = path.join(path.dirname(targetPath), newName.trim());
   if (fs.existsSync(dest)) return { error: 'Ya existe un archivo o carpeta con ese nombre.' };
   try {
+    const updateReferences = await require('./dbengine').prepareFileReferenceMove(targetPath, dest, ctx.getOpenFolder());
     fs.renameSync(targetPath, dest);
+    const referenceWarning = applyReferenceMove(updateReferences);
     indexTouch(dest, true);
-    return { path: dest };
+    return { path: dest, referenceWarning };
   } catch (e) {
     return { error: e.message };
   }
@@ -467,7 +482,7 @@ function isInside(parent, child) {
   return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
 }
 
-ipcMain.handle('fs:move', (event, { sourcePath, destDir }) => {
+ipcMain.handle('fs:move', async (event, { sourcePath, destDir }) => {
   if (!guard.check(sourcePath, 'fs:move') || !guard.check(destDir, 'fs:move')) return DENIED;
   if (isInside(sourcePath, destDir)) {
     return { error: 'No se puede mover una carpeta dentro de sí misma.' };
@@ -476,9 +491,11 @@ ipcMain.handle('fs:move', (event, { sourcePath, destDir }) => {
   if (dest === sourcePath) return { path: sourcePath };
   if (fs.existsSync(dest)) return { error: 'Ya existe un archivo o carpeta con ese nombre ahí.' };
   try {
+    const updateReferences = await require('./dbengine').prepareFileReferenceMove(sourcePath, dest, ctx.getOpenFolder());
     fs.renameSync(sourcePath, dest);
+    const referenceWarning = applyReferenceMove(updateReferences);
     indexTouch(dest, true);
-    return { path: dest };
+    return { path: dest, referenceWarning };
   } catch (e) {
     return { error: e.message };
   }

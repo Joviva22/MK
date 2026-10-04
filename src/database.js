@@ -1,7 +1,7 @@
 import { state, root, overlay, listEl, newBtn, emptyEl, contentEl, nameInput, deleteBtn, filterInput, addColumnBtn, addRowBtn, filtersBtn } from './database-state.js';
 import { activePopover, closePopover, loadRelatedData } from './database-helpers.js';
 import { chartData, duplicateRow, openFiltersPopover, renderView, renderViewTabs } from './database-views.js';
-import { openColumnEditor, openRowEditor } from './database-cells.js';
+import { openColumnEditor, openRowEditor, invalidateReferenceStatuses } from './database-cells.js';
 import { chooseDatabase, renderWelcome } from './database-onboarding.js';
 import { exportCsv, importCsv, inferColumn, parseCsv } from './database-csv.js';
 import { openWithFilter, parseEmbedSpec, renderEmbed, searchRows, widgetTotal } from './database-embed.js';
@@ -171,3 +171,13 @@ export function close() {
 }
 
 window.mdDatabase = { widgetTotal, open, openWithFilter, searchRows, renderEmbed, parseEmbedSpec, close, parseCsv, inferColumn, duplicateRow, chartData };
+
+window.mdEditor.onFileReferencesChanged(async () => {
+  invalidateReferenceStatuses();
+  try {
+    document.querySelector('.database-row-modal')?.closest('.modal-overlay')?.remove();
+    if (!overlay.hidden && state.databaseId) await selectDatabase(state.databaseId);
+    window.renderPreview?.();
+  } catch (error) { window.mdErrorToast.show({ message: 'No se pudo actualizar la vista de vínculos', detail: error.message }); }
+});
+window.mdEditor.onFolderChanged(() => invalidateReferenceStatuses());

@@ -129,3 +129,5 @@ Primera versión: editor de Markdown y LaTeX local con pestañas, preview, búsq
 
 - Bases de datos: columnas Archivo con selector, rutas relativas, apertura por formato y avisos para referencias inexistentes; apertura también desde rutas de texto y bases incrustadas.
 - Bases de datos: fichas con acceso desde la tabla, datos y archivos separados, navegación entre filas y teclado con retorno de foco.
+- Bases de datos: renombrar y mover archivos o carpetas actualiza sus referencias, con iconos por formato, detección de vínculos rotos y acción Localizar archivo.
+- Gráficos: colores integrados con el tema, leyendas y etiquetas más claras, redibujado al cambiar el ancho y controles de bases de datos adaptados a pantallas pequeñas.

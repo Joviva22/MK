@@ -1030,6 +1030,7 @@ export function chartData(cfg) {
   return { data, time: isTime, valueLabel, groupName: col.name };
 }
 
+const chartSettingsOpen = new Map();
 export function renderChartView() {
   const view = currentViewObj();
   const cfg = parseView(view);
@@ -1058,7 +1059,7 @@ export function renderChartView() {
   };
   const groupCol = findColumn(state.columns, cfg.groupBy);
   const numericCols = state.columns.filter((c) => columnKind(c) === 'number' || c.type === 'formula');
-  select('Tipo', [['bar', 'Barras'], ['line', 'Líneas'], ['pie', 'Torta']], cfg.chartType || 'bar', (v) => save({ chartType: v }));
+  select('Tipo', [['bar', 'Barras'], ['line', 'Líneas'], ['pie', 'Anillo']], cfg.chartType || 'bar', (v) => save({ chartType: v }));
   select('Agrupar por', state.columns.filter((c) => c.type !== 'formula').map((c) => [c.id, c.name]), cfg.groupBy || '', (v) => save({ groupBy: v }));
   if (groupCol && columnKind(groupCol) === 'date') {
     select('Por', DATE_BUCKETS, cfg.dateBucket || 'month', (v) => save({ dateBucket: v }));
@@ -1075,7 +1076,11 @@ export function renderChartView() {
       save({ measure, valueCol });
     }
   });
-  wrap.appendChild(controls);
+  const settings = document.createElement('details'); settings.className = 'database-chart-settings';
+  settings.open = chartSettingsOpen.get(view.id) ?? window.innerWidth > 680;
+  const summary = document.createElement('summary'); summary.textContent = 'Configurar gráfico';
+  summary.addEventListener('click', () => chartSettingsOpen.set(view.id, !settings.open));
+  settings.append(summary, controls); wrap.appendChild(settings);
 
   const host = document.createElement('div');
   host.className = 'database-chart-host';
@@ -1083,6 +1088,10 @@ export function renderChartView() {
   viewBodyEl.appendChild(wrap);
 
   const { data, time, valueLabel, groupName } = chartData(cfg);
+  const heading = document.createElement('header'); heading.className = 'database-chart-heading';
+  const title = document.createElement('h3'); title.textContent = groupCol ? `${valueLabel.charAt(0).toUpperCase() + valueLabel.slice(1)} por ${groupName}` : 'Elige qué quieres comparar';
+  const context = document.createElement('p'); context.textContent = `${filteredRows().length} de ${state.rows.length} filas · ${data.length} grupos · Según los filtros de esta vista`;
+  heading.append(title, context); host.before(heading);
   window.mdCharts.render(host, {
     type: cfg.chartType || 'bar',
     data,

@@ -5687,6 +5687,39 @@
       await waitFor(() => document.querySelector('.database-row-modal .database-file-action'));
       check('Fichas: primer archivo se prepara desde la ficha sin crear otra fila', (await window.mdEditor.db.listColumns(folder, projectDb.id)).some(c => c.type === 'file') && (await window.mdEditor.db.listRows(folder, projectDb.id)).length === 1);
       document.querySelector('.database-row-modal-close').click();
+      const linksDb = await window.mdEditor.db.createDatabase(folder, 'Vínculos');
+      const linksText = (await window.mdEditor.db.listColumns(folder, linksDb.id))[0];
+      const linksFile = await window.mdEditor.db.createColumn(folder, linksDb.id, { name: 'Archivo', type: 'file' });
+      await window.mdEditor.createFolder(folder, 'vinculos'); await window.mdEditor.createFolder(folder, 'destino-vinculos');
+      const linkedPath = window.mdEditor.joinPath(folder, 'vinculos/original.md');
+      await window.mdEditor.saveFile('# Vinculado', linkedPath, false);
+      const linkedRow = await window.mdEditor.db.createRow(folder, linksDb.id, { [linksFile.id]: 'vinculos/original.md', [linksText.id]: linkedPath });
+      const otherRow = await window.mdEditor.db.createRow(folder, linksDb.id, { [linksFile.id]: 'vinculos2/original.md', [linksText.id]: 'Un comentario sin ruta' });
+      const otherDb = await window.mdEditor.db.createDatabase(folder, 'Otros vínculos');
+      const otherFile = await window.mdEditor.db.createColumn(folder, otherDb.id, { name: 'Referencia', type: 'file' });
+      const crossRow = await window.mdEditor.db.createRow(folder, otherDb.id, { [otherFile.id]: linkedPath });
+      const renamed = await window.mdEditor.renamePath(linkedPath, 'renombrado.md');
+      let linked = (await window.mdEditor.db.listRows(folder, linksDb.id)).find(r => r.id === linkedRow);
+      check('Vínculos: renombrar actualiza Archivo y Texto, relativos y absolutos', !renamed.error && linked.cells[linksFile.id] === 'vinculos/renombrado.md' && linked.cells[linksText.id] === window.mdEditor.joinPath(folder, 'vinculos/renombrado.md') && (await window.mdEditor.db.listRows(folder, otherDb.id)).find(r => r.id === crossRow).cells[otherFile.id] === renamed.path);
+      const movedFolder = await window.mdEditor.movePath(window.mdEditor.joinPath(folder, 'vinculos'), window.mdEditor.joinPath(folder, 'destino-vinculos'));
+      linked = (await window.mdEditor.db.listRows(folder, linksDb.id)).find(r => r.id === linkedRow);
+      const untouched = (await window.mdEditor.db.listRows(folder, linksDb.id)).find(r => r.id === otherRow);
+      check('Vínculos: mover carpeta conserva referencias internas sin tocar prefijos similares ni comentarios', !movedFolder.error && linked.cells[linksFile.id] === 'destino-vinculos/vinculos/renombrado.md' && untouched.cells[linksFile.id] === 'vinculos2/original.md' && untouched.cells[linksText.id] === 'Un comentario sin ruta');
+      const movedFile = await window.mdEditor.movePath(window.mdEditor.joinPath(movedFolder.path, 'renombrado.md'), folder);
+      linked = (await window.mdEditor.db.listRows(folder, linksDb.id)).find(r => r.id === linkedRow);
+      check('Vínculos: mover archivo actualiza referencias en todas las bases', !movedFile.error && linked.cells[linksFile.id] === 'renombrado.md' && (await window.mdEditor.db.listRows(folder, otherDb.id)).find(r => r.id === crossRow).cells[otherFile.id] === movedFile.path && await window.mdEditor.resolveFileReference(folder, linked.cells[linksFile.id]) === movedFile.path);
+      await window.mdEditor.saveFile('ocupado', window.mdEditor.joinPath(folder, 'ocupado.md'), false);
+      const failed = await window.mdEditor.renamePath(movedFile.path, 'ocupado.md');
+      check('Vínculos: renombrado fallido conserva la ruta y el archivo original', !!failed.error && (await window.mdEditor.db.listRows(folder, linksDb.id)).find(r => r.id === linkedRow).cells[linksFile.id] === 'renombrado.md' && (await window.mdEditor.readFile(movedFile.path)).content.includes('Vinculado'));
+      await window.mdDatabase.open(linksDb.id);
+      await waitFor(() => document.querySelector('.database-file-open[data-reference-state="missing"]'));
+      const broken = document.querySelector('.database-file-open[data-reference-state="missing"]');
+      check('Vínculos: archivo inexistente muestra aviso discreto y acción para localizarlo', broken.classList.contains('database-file-broken') && broken.parentElement.textContent.includes('No encontrado') && [...broken.parentElement.querySelectorAll('button')].some(b => b.textContent === 'Localizar archivo'));
+      const good = [...document.querySelectorAll('.database-file-open')].find(b => b.textContent === 'renombrado.md');
+      await waitFor(() => good.dataset.referenceState === 'ok');
+      check('Vínculos: formato usa el icono del explorador y el archivo existente no se marca roto', !!good.querySelector('svg') && !good.classList.contains('database-file-broken'));
+      const statuses = await Promise.all(['renombrado.md', 'no-existe.pdf', '.', '/etc/shadow', 'https://example.com/a.pdf'].map(ref => window.mdEditor.fileReferenceStatus(folder, ref)));
+      check('Vínculos: estados distinguen existente, desaparecido, carpeta, sin acceso y URL', statuses.map(s => s.state).join('|') === 'ok|missing|directory|unavailable|invalid');
       const before = (await window.mdEditor.db.listDatabases(folder)).length;
       let invalid = false; try { await window.mdEditor.db.createDatabase(folder, 'Inválida', { template: 'no-existe' }); } catch { invalid = true; }
       check('Bases guiadas: plantilla inválida no deja una base incompleta', invalid && (await window.mdEditor.db.listDatabases(folder)).length === before);
@@ -5695,6 +5728,37 @@
     } finally {
       window.mdDatabase.close();
       if (previousRoot) window.mdSidebar.renderFolder(await window.mdEditor.readFolder(previousRoot));
+    }
+  }
+
+  // Gráficos: redibujado real y datos exactos conservados, también con teclado.
+  {
+    const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:16px;top:70px;width:480px;background:var(--surface);z-index:5000'; document.body.appendChild(host);
+    const oldAccent = document.documentElement.style.getPropertyValue('--accent');
+    const oldPriority = document.documentElement.style.getPropertyPriority('--accent');
+    try {
+      const data = [{ label: 'Una categoría larga que necesita espacio', value: 12 }, { label: 'Otro grupo', value: 3 }];
+      window.mdCharts.render(host, { type: 'bar', data, title: 'Comparación', valueLabel: 'filas' });
+      host.querySelector('.chart-table').open = true;
+      const oldWidth = Number(host.querySelector('svg').getAttribute('viewBox').split(' ')[2]);
+      host.style.width = '260px';
+      await waitFor(() => Number(host.querySelector('svg').getAttribute('viewBox').split(' ')[2]) < oldWidth);
+      check('Gráficos: cambio de ancho redibuja y conserva tabla abierta con valores exactos', Number(host.querySelector('svg').getAttribute('viewBox').split(' ')[2]) <= 260 && host.querySelector('.chart-table').open && [...host.querySelectorAll('.chart-table td:last-child')].map(td => td.textContent).join('|') === '12|3');
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      const hit = host.querySelector('.chart-hit'); hit.getBoundingClientRect(); hit.focus();
+      // En segundo plano Chromium conserva activeElement sin emitir foco nativo.
+      if (!document.hasFocus()) hit.dispatchEvent(new window.FocusEvent('focus'));
+      const tooltip = await waitFor(() => { const tip = document.querySelector('.chart-tooltip'); return tip && !tip.hidden ? tip : null; });
+      check('Gráficos: foco muestra etiqueta completa y valor sin depender del ratón', !!tooltip && tooltip.textContent.includes(data[0].label) && tooltip.textContent.includes('12 filas'), `foco=${document.activeElement.tagName} tooltip=${!!tooltip}`);
+      document.documentElement.style.setProperty('--accent', '#ffcc00'); document.dispatchEvent(new CustomEvent('mk:theme-changed'));
+      check('Gráficos: cambio del tema actualiza el color de la serie y conserva los datos', host.querySelector('.chart-mark').getAttribute('fill') === '#ffcc00' && host.querySelector('.chart-table').open && host.querySelectorAll('.chart-table td').length === 4);
+      window.mdCharts.render(host, { type: 'pie', data: Array.from({ length: 10 }, (_, i) => ({ label: 'Grupo ' + i, value: i + 1 })) });
+      check('Gráficos: anillo agrupa categorías sin perder total ni tabla detallada', host.querySelector('.chart-pie-total').textContent === '55' && host.querySelectorAll('.chart-slice').length === 8 && host.querySelectorAll('.chart-legend-value').length === 8 && host.querySelectorAll('.chart-table tr').length === 11 && host.querySelector('.chart-pie-caption').textContent === 'Total');
+    } finally {
+      host.remove();
+      if (oldAccent) document.documentElement.style.setProperty('--accent', oldAccent, oldPriority); else document.documentElement.style.removeProperty('--accent');
+      document.dispatchEvent(new CustomEvent('mk:theme-changed'));
+      document.querySelector('.chart-tooltip')?.setAttribute('hidden', '');
     }
   }
 

@@ -295,6 +295,46 @@ async function reorderDatabases(root, orderedIds) {
   persist(root, db);
 }
 
+// Preparar antes de mover: no crea bases nuevas y actualiza todas las bases cargadas.
+async function prepareFileReferenceMove(from, to, activeRoot) {
+  if (activeRoot && !DB_CACHE.has(activeRoot) && fs.existsSync(dbPathFor(activeRoot))) await getDb(activeRoot);
+  const plans = [];
+  for (const [root, db] of DB_CACHE) {
+    const newRoot = root === from || root.startsWith(from + path.sep) ? to + root.slice(from.length) : root;
+    const changes = [];
+    const cells = all(db, "SELECT c.row_id, c.column_id, c.value, col.type FROM mk_cells c JOIN mk_columns col ON col.id=c.column_id WHERE col.type IN ('file','text') AND c.value IS NOT NULL");
+    for (const cell of cells) {
+      const value = cell.value.trim();
+      if (!value || /^[a-z][a-z0-9+.-]*:/i.test(value)) continue;
+      if (cell.type === 'text' && !value.includes('/') && !/\.[a-z0-9]{1,12}$/i.test(value)) continue;
+      const original = path.resolve(root, value);
+      const affected = original === from || original.startsWith(from + path.sep);
+      if (!affected && newRoot === root) continue;
+      const target = affected ? to + original.slice(from.length) : original;
+      const updated = path.isAbsolute(value) ? target : path.relative(newRoot, target);
+      if (updated !== cell.value) changes.push({ ...cell, updated });
+    }
+    if (changes.length || newRoot !== root) plans.push({ root, newRoot, db, changes });
+  }
+  return () => {
+    let count = 0;
+    for (const { root, newRoot, db, changes } of plans) {
+      db.run('BEGIN');
+      try {
+        for (const cell of changes) db.run('UPDATE mk_cells SET value=? WHERE row_id=? AND column_id=?', [cell.updated, cell.row_id, cell.column_id]);
+        db.run('COMMIT');
+      } catch (error) { db.run('ROLLBACK'); throw error; }
+      if (newRoot !== root) {
+        clearTimeout(pendingWrites.get(root)); pendingWrites.delete(root);
+        DB_CACHE.delete(root); DB_CACHE.set(newRoot, db);
+      }
+      persist(newRoot); flush(newRoot);
+      count += changes.length;
+    }
+    return count;
+  };
+}
+
 // ---- Columnas ----
 
 async function listColumns(root, databaseId) {
@@ -584,4 +624,4 @@ function registerDatabaseIpc(realIpcMain, allowRoot, onError) {
   ipcMain.handle('db:reorderViews', (e, { root, databaseId, orderedIds }) => reorderViews(root, databaseId, orderedIds));
 }
 
-module.exports = { registerDatabaseIpc, flushAll, DB_VERSION, stats: () => ({ writes: writeCount, pending: pendingWrites.size }) };
+module.exports = { prepareFileReferenceMove, registerDatabaseIpc, flushAll, DB_VERSION, stats: () => ({ writes: writeCount, pending: pendingWrites.size }) };

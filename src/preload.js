@@ -55,6 +55,8 @@ const posix = (() => {
 const path = posix;
 
 contextBridge.exposeInMainWorld('mdEditor', {
+  fileReferenceStatus: (root, reference) => ipcRenderer.invoke('file:referenceStatus', { root, reference }),
+  onFileReferencesChanged: callback => ipcRenderer.on('database:referencesChanged', () => callback()),
   pickFileReference: () => ipcRenderer.invoke('file:pickReference'),
   resolveFileReference: (root, reference) => ipcRenderer.invoke('file:resolveReference', { root, reference }),
   openFile: () => ipcRenderer.invoke('file:open'),

@@ -1,7 +1,7 @@
 import { state, root, parseOptions, parseView, parseJsonArray, findChoice, displayText, filterInput } from './database-state.js';
 import { cellDisplayValue } from './database-helpers.js';
 import { chartData, filteredRows, renderView } from './database-views.js';
-import { petXpForCheck, referenceButton } from './database-cells.js';
+import { petXpForCheck, referenceButton, referencePickerButton } from './database-cells.js';
 import { open } from './database.js';
 
 'use strict';
@@ -76,7 +76,11 @@ export function embedCell(column, row, shown, r, onSaved) {
   const stop = (e) => e.stopPropagation();
   td.addEventListener('mousedown', stop);
   if (column.type === 'file') {
-    if (row.cells[column.id]) td.appendChild(referenceButton(row.cells[column.id], r));
+    if (row.cells[column.id]) {
+      const locate = referencePickerButton(row.cells[column.id], r, async chosen => { await window.mdEditor.db.setCell(r, row.id, column.id, chosen); onSaved(); });
+      locate.textContent = 'Localizar archivo'; locate.title = 'Localizar archivo'; locate.hidden = true;
+      td.append(referenceButton(row.cells[column.id], r, status => { locate.hidden = status === 'ok'; }), locate);
+    }
     return td;
   }
   if (!EMBED_EDITABLE.has(column.type)) {

@@ -13,7 +13,7 @@ const ICONS_BY_EXT = {
   html: 'code-2',
   css: 'palette',
   json: 'file-json',
-  pdf: 'file',
+  pdf: 'file', excalidraw: 'pen-tool',
   docx: 'file-type-2',
   svg: 'image'
 };
@@ -257,6 +257,7 @@ async function renameEntry(node, initialName = node.nombre) {
     fileError('No se pudo renombrar ' + node.nombre, result.error, () => renameEntry(node, newName));
     return;
   }
+  if (result.referenceWarning) window.mdErrorToast.show({ message: 'Revisa los vínculos de tus bases', detail: result.referenceWarning });
   await relocateEntryQuiet(node, result.path);
   await window.mdNoteAccess.relocate(node.ruta, result.path);
   revealPath(result.path);
@@ -285,6 +286,7 @@ async function moveEntry(node, destDir) {
     fileError('No se pudo mover ' + node.nombre, result.error, () => chooseMoveDestination([node]));
     return;
   }
+  if (result.referenceWarning) window.mdErrorToast.show({ message: 'Revisa los vínculos de tus bases', detail: result.referenceWarning });
   await relocateEntryQuiet(node, result.path);
   await window.mdNoteAccess.relocate(node.ruta, result.path);
   revealPath(result.path);
@@ -305,6 +307,7 @@ async function moveEntries(nodes, destDir) {
       fileError('No se pudo mover ' + node.nombre, result.error, () => chooseMoveDestination([node]));
       continue;
     }
+    if (result.referenceWarning) window.mdErrorToast.show({ message: 'Revisa los vínculos de tus bases', detail: result.referenceWarning });
     await relocateEntryQuiet(node, result.path);
     await window.mdNoteAccess.relocate(node.ruta, result.path);
     revealPath(result.path); // queda resaltado el último movido, con su carpeta abierta
@@ -764,6 +767,7 @@ sidebarPane.addEventListener('keydown', (e) => {
 });
 
 window.mdSidebar = {
+  iconForFile: filePath => iconFor({ nombre: filePath.split('/').pop(), ruta: filePath, esCarpeta: false }),
   renderFolder, setFileIcon, createEntry, renameEntry, deleteEntry, moveEntry, goToParent, refreshTree,
   moveEntries, deleteEntries, chooseMoveDestination,
   // Solo para test/renderer-checks.js: togglear selección sin simular
