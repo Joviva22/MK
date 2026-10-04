@@ -6,6 +6,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ## Sin publicar
 
+- Revisión visual en claro, oscuro y Kingdom Hearts: más espacio para notas en ventanas estrechas, Home con desplazamiento único, PDF con controles compactos y pizarra que sigue el tema sin modificar la escena. Menús recolocados para permanecer dentro de la ventana, foco visible en Opciones y estados desactivados más claros. Centrado nativo del cursor en modo máquina de escribir, incluso al saltar a líneas fuera de pantalla.
+
 - Tipografía y controles coordinados en Pomodoro, Kanban, Git, grafo, bases de datos y operaciones PDF. Iconos Lucide coherentes para búsqueda, cierre, terminal, rotación y acciones de datos, con nombres accesibles; se conservan los emojis personales. Barras y campos adaptados a ventanas pequeñas.
 
 - Búsqueda con nombres destacados, ubicación secundaria, coincidencias resaltadas y navegación con flechas/Enter. Paleta y apertura rápida con ayudas de teclado, selección siempre visible y estados vacíos más claros. Resultados antiguos descartados al cambiar de consulta o cerrar; avisos de error adaptados al tema y con contenido largo desplazable.

@@ -600,6 +600,7 @@ function CodeMirrorCtor(el, options) {
       const range = to === from ? from : EditorSelection.range(from, to);
       view.dispatch({ effects: EditorView.scrollIntoView(range, { yMargin: margin || 0 }) });
     },
+    centerCursor: () => view.dispatch({ effects: EditorView.scrollIntoView(view.state.selection.main.head, { y: 'center' }) }),
     refresh: () => view.requestMeasure(),
     focus: () => view.focus(),
     getWrapperElement: () => view.dom,

@@ -5147,6 +5147,15 @@
       const saved = await window.mdEditor.drawingRead(scenePath);
       check('Excalidraw: guarda escena local y limpia cambios pendientes', !D.getState().dirty && JSON.parse(saved.content).appState.viewBackgroundColor === '#fafafa');
       check('Excalidraw: guardar muestra progreso, evita acciones simultáneas y confirma el archivo', cleanButton && dirtyButton && busyButtons && saveButton.disabled && document.querySelector('.drawing-document-name').textContent === 'pizarra.excalidraw' && document.querySelector('.drawing-status').textContent === 'Guardada');
+      const originalTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      const previousAPI = D.getAPI();
+      window.mdThemes.applyTheme('kingdom-hearts');
+      await waitFor(() => document.querySelector('#drawing-panel .excalidraw.theme--dark'));
+      const darkDrawing = !!document.querySelector('#drawing-panel .excalidraw.theme--dark');
+      window.mdThemes.applyTheme('light');
+      await waitFor(() => !document.querySelector('#drawing-panel .excalidraw.theme--dark'));
+      check('Excalidraw: sigue el tema de MK sin perder la escena ni crear cambios pendientes', darkDrawing && previousAPI === D.getAPI() && !D.getState().dirty && D.getAPI().getAppState().viewBackgroundColor === '#fafafa');
+      window.mdThemes.applyTheme(originalTheme);
       D.getAPI().updateScene({ appState: { viewBackgroundColor: '#ffeecc' } });
       await waitFor(() => D.getState().dirty, 5000);
       window.confirm = () => false;

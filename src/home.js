@@ -487,3 +487,7 @@ export function widgetSetDone(taskId, dateIso, done) {
 }
 
 window.mdHome = { hoursApi: { layoutDay, retime, promptNewAt, toMin, toHHMM }, archiveOld, unarchive, loadArchive: async () => { await load(); return loadArchive(); }, setArchiveDays, getData: () => data, widgetItems, widgetSetDone, openCategories, setCategoryFilter: (v) => { categoryFilter = v || ''; render(); }, parseCategoryToken, overdueCount, updatePetMood, dailySummaryText, weekBeforeReminders, open, close, setMode, checkReminders, searchTasks, revealTask, computeStats, openStats, rootChanged, dataLocation: () => dataRoot, getSnoozes: () => data.snoozes, loadDbReminders, remindersFiringToday, sendPlanToDailyNote, parseNoteTasks };
+
+document.getElementById('home-options').addEventListener('toggle', (event) => {
+  if (event.target.open) window.mdFitPopover(event.target.querySelector('.home-options-body'));
+});

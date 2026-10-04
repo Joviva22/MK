@@ -17,6 +17,8 @@ const CLASS = 'mk-current-para';
 
 function center() {
   if (!typewriter || cm.somethingSelected()) return;
+  // Native scrolling can measure lines outside the virtualized viewport.
+  if (cm.centerCursor) { cm.centerCursor(); return; }
   const info = cm.getScrollInfo();
   const { top, bottom } = cm.charCoords(cm.getCursor(), 'local');
   cm.scrollTo(null, Math.max(0, (top + bottom) / 2 - info.clientHeight / 2));

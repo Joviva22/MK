@@ -7,7 +7,8 @@ window.mdDrawingEngine = {
   mount(container, initialData, onChange) {
     const root = createRoot(container);
     let api;
-    root.render(React.createElement(Excalidraw, {
+    const render = () => root.render(React.createElement(Excalidraw, {
+      theme: getComputedStyle(document.documentElement).colorScheme === 'dark' ? 'dark' : 'light',
       initialData, langCode: 'es-ES', aiEnabled: false, validateEmbeddable: false,
       handleKeyboardGlobally: false, autoFocus: true,
       UIOptions: { canvasActions: { loadScene: false, saveToActiveFile: false, export: false } },
@@ -17,7 +18,10 @@ window.mdDrawingEngine = {
     }, React.createElement(MainMenu, null,
       React.createElement(MainMenu.DefaultItems.ClearCanvas),
       React.createElement(MainMenu.DefaultItems.ChangeCanvasBackground))));
-    return { unmount: () => root.unmount(), getAPI: () => api };
+    render();
+    const observer = new MutationObserver(render);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'style'] });
+    return { unmount: () => { observer.disconnect(); root.unmount(); }, getAPI: () => api };
   },
   serialize: (elements, appState, files) => serializeAsJSON(elements, appState, files, 'local')
 };

@@ -3874,3 +3874,29 @@ ul.tree ul.tree { margin-left: 10px; padding-left: 10px; border-left: 1px solid 
 .pdfpages-modal { max-height: 76vh; }
 .pdfpages-actions { min-height: 0; overflow-y: auto; }
 .pdfpages-actions[hidden] { display: none; }
+
+/* Visual review: reserve useful document width in smaller windows. */
+@media (max-width: 900px) {
+  .container:not(.sidebar-hidden) { --gt-sidebar: min(var(--sidebar-w, 260px), 180px); }
+  #preview-pane:not(.pdf-mode) { padding: 20px; }
+  #preview-pane h1 { font-size: 1.85em; }
+  .pdfhighlight-modal .pdf-editor-tools { gap: 6px; }
+  .pdfhighlight-modal .pdfhighlight-selection-actions { padding: 0 10px 8px; gap: 6px; }
+  .pdfhighlight-modal .pdfhighlight-selection-actions .toolbar-button { height: 30px; padding: 0 8px; font-size: var(--font-sm); }
+  .pdfhighlight-modal #pdfhighlight-selection-info { flex-basis: 100%; }
+  .pdfhighlight-modal .pdf-mode-help { display: none; }
+  .pdfhighlight-modal:has(.pdfhighlight-selection-actions[hidden]) .pdf-mode-help { display: block; }
+  .pdfhighlight-modal .pdfhighlight-scroll { padding: 12px; }
+}
+.toolbar-button:disabled { opacity: 0.55; }
+.home-options > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 600px) {
+  .container:not(.sidebar-hidden) { --gt-sidebar: min(var(--sidebar-w, 260px), 140px); }
+  .pdf-editor-header { gap: 6px; }
+  .pdf-editor-heading { flex-basis: 100%; }
+  .pdf-editor-footer > :last-child { display: none; }
+}
+
+.dropdown-menu, .home-options-body { box-sizing: border-box; max-width: calc(100vw - 24px); }
+
+#drawing-panel .excalidraw .HintViewer { color: var(--text-muted); line-height: 1.5; }

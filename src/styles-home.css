@@ -970,3 +970,11 @@ body.home-active .container { display: none; }
 @media (hover: none) { .home-task-actions { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .home-task-actions { transition: none; } }
 .study-dialog .toolbar-button { margin: 3px; }
+
+/* Small Home uses one scroll area instead of competing agenda/sidebar panes. */
+@media (max-width: 760px) {
+  .home-workspace .home-layout { overflow-y: auto; display: flex; }
+  .home-workspace .home-main { overflow: visible; min-height: 0; flex: 0 0 auto; order: 1; }
+  .home-workspace .home-side { width: auto; max-height: none; overflow: visible; border-right: 0; flex: 0 0 auto; order: 2; }
+  .home-workspace .home-agenda { padding: 14px 6px; }
+}
