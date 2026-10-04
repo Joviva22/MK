@@ -245,16 +245,16 @@ function runAction(action, value) {
     case 'tableAddRow': insertTableRow(cm, clickPos); break;
     case 'tableAlign': alignTableAt(cm, clickPos); break;
     case 'spellfix': insertSpellSuggestion(cm, value); break;
-    case 'spellAddWord': window.mdEditor.addWordToDictionary(value); break;
+    case 'spellAddWord': window.mdSpellcheck.learn(value); break;
     default: break;
   }
 }
 
 function buildItems() {
   const items = [];
-  if (pendingSpellcheck && pendingSpellcheck.misspelledWord && clickWordRange) {
-    const word = pendingSpellcheck.misspelledWord;
-    const suggestions = (pendingSpellcheck.dictionarySuggestions || []).slice(0, 5);
+  if (pendingSpellcheck && pendingSpellcheck.word && clickWordRange) {
+    const word = pendingSpellcheck.word;
+    const suggestions = (pendingSpellcheck.suggestions || []).slice(0, 5);
     if (suggestions.length) {
       suggestions.forEach((s) => items.push({ label: s, action: 'spellfix', value: s }));
     } else {
@@ -322,14 +322,16 @@ document.getElementById('editor-pane').addEventListener('contextmenu', (e) => {
   clickWordRange = word && word.anchor.ch !== word.head.ch ? { anchor: word.anchor, head: word.head } : null;
   clickPos = pos;
   showContextMenu(e.clientX, e.clientY);
-});
-
-// Llega async desde main.js (evento 'context-menu' de webContents) — casi
-// siempre después de que el menú ya se mostró, así que si sigue abierto lo
-// volvemos a dibujar para sumarle las sugerencias arriba.
-window.mdEditor.onSpellcheckSuggestions((data) => {
-  pendingSpellcheck = data;
-  if (!contextMenuEl.hidden) renderMenuItems();
+  // El corrector (spellcheck.js) responde async — casi siempre después de
+  // que el menú ya se mostró, así que si sigue abierto lo volvemos a dibujar
+  // para sumarle las sugerencias arriba.
+  const clicked = clickWordRange && cm.getRange(clickWordRange.anchor, clickWordRange.head);
+  if (clicked && window.mdSpellcheck) {
+    window.mdSpellcheck.suggestionsFor(clicked).then((data) => {
+      pendingSpellcheck = data;
+      if (data && !contextMenuEl.hidden) renderMenuItems();
+    });
+  }
 });
 
 document.addEventListener('click', (e) => {

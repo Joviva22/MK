@@ -58,6 +58,8 @@ contextBridge.exposeInMainWorld('mdEditor', {
   openFile: () => ipcRenderer.invoke('file:open'),
   saveFile: (content, filePath, forceDialog = false) => ipcRenderer.invoke('file:save', { content, filePath, forceDialog }),
   readFile: (filePath) => ipcRenderer.invoke('file:read', filePath),
+  drawingRead: (filePath) => ipcRenderer.invoke('drawing:read', filePath),
+  drawingSave: (payload) => ipcRenderer.invoke('drawing:save', payload),
   openFolder: () => ipcRenderer.invoke('folder:open'),
   replacePreview: (root, find, replacement, opts) => ipcRenderer.invoke('replace:preview', { root, find, replacement, opts }),
   replaceApply: (root, find, replacement, opts, files, skip) => ipcRenderer.invoke('replace:apply', { root, find, replacement, opts, files, skip }),
@@ -127,7 +129,7 @@ contextBridge.exposeInMainWorld('mdEditor', {
   pickEpubCover: () => ipcRenderer.invoke('epub:pickCover'),
   exportAnki: (cards, defaultName) => ipcRenderer.invoke('export:anki', { cards, defaultName }),
   pdfPickFiles: (multi = false) => ipcRenderer.invoke('pdf:pickFiles', { multi }),
-  pdfReadBytes: (filePath) => ipcRenderer.invoke('pdf:readBytes', filePath),
+  pdfReadBytes: (filePath, maxBytes) => ipcRenderer.invoke('pdf:readBytes', filePath, maxBytes),
   pdfSaveBytes: (base64, defaultName) => ipcRenderer.invoke('pdf:saveBytes', { base64, defaultName }),
   docxReadBytes: (filePath) => ipcRenderer.invoke('docx:readBytes', filePath),
   assetReadBytes: (filePath) => ipcRenderer.invoke('asset:readBytes', filePath),
@@ -145,8 +147,11 @@ contextBridge.exposeInMainWorld('mdEditor', {
   mediaPrevious: () => ipcRenderer.invoke('media:previous'),
   mediaStatus: () => ipcRenderer.invoke('media:status'),
   buildGraph: (root) => ipcRenderer.invoke('graph:build', root),
-  addWordToDictionary: (word) => ipcRenderer.invoke('spellcheck:addWord', word),
-  onSpellcheckSuggestions: (callback) => ipcRenderer.on('spellcheck:suggestions', (event, data) => callback(data)),
+  spell: {
+    check: (words) => ipcRenderer.invoke('spellcheck:check', words),
+    suggest: (word) => ipcRenderer.invoke('spellcheck:suggest', word),
+    learn: (word) => ipcRenderer.invoke('spellcheck:learn', word)
+  },
   onOpenExternalFile: (callback) => ipcRenderer.on('open-external-file', (event, filePath) => callback(filePath)),
   resolveLocalPath: (baseFilePath, relativePath) => {
     if (!baseFilePath) return relativePath;
