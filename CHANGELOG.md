@@ -6,6 +6,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ## Sin publicar
 
+- Bases de datos con bienvenida y creación guiada desde Lecturas, Proyectos, Estudio o una base vacía. Vista previa y filas de ejemplo opcionales, guía integrada de filas/columnas/vistas, explicaciones de tipos y opciones avanzadas agrupadas. La vista activa muestra cantidades y filtros legibles, con acceso para ver todas las filas. Creación completa en una transacción y selección correcta al cambiar de carpeta.
+
 - Diálogos de archivos unificados para crear, renombrar, elegir destino al mover y confirmar eliminaciones, con ubicación visible, validación de nombres, foco y cancelación con Escape. Avisos breves de guardado con nombre, carpeta y copia de ruta; errores sin duplicados, explicaciones y acciones para reintentar o copiar detalles.
 
 - Pestañas con iconos por formato, selección reforzada y cambios sin guardar más visibles. PDF, imágenes, audio, vídeo y pizarras guardadas tienen su propia pestaña. Barra desplazable con selector de archivos abiertos, búsqueda y navegación por teclado; botón fijo para reabrir la última cerrada. Las pizarras incrustadas y acopladas conservan la nota activa.

@@ -11,10 +11,16 @@ import { renderView } from './database-views.js';
 // Editor simple de fila completa, usado desde tablero/galería (la vista
 // tabla ya edita celda por celda inline).
 export function openRowEditor(row) {
+  if (!row) return;
+  const previousFocus = document.activeElement;
   const modal = document.createElement('div');
   modal.className = 'modal-overlay palette-overlay';
   const box = document.createElement('div');
   box.className = 'command-palette database-row-modal';
+  const heading = document.createElement('h2'); heading.id = 'database-row-title'; heading.textContent = 'Datos de la fila';
+  box.setAttribute('role', 'dialog'); box.setAttribute('aria-labelledby', heading.id);
+  const hint = document.createElement('p'); hint.className = 'database-muted'; hint.textContent = 'Completa los datos. Los cambios se guardan automáticamente al salir de cada campo.';
+  box.append(heading, hint);
   modal.appendChild(box);
 
   state.columns.forEach((col) => {
@@ -33,11 +39,14 @@ export function openRowEditor(row) {
   const closeBtn = document.createElement('button');
   closeBtn.className = 'toolbar-button database-row-modal-close';
   closeBtn.textContent = 'Cerrar';
-  closeBtn.addEventListener('click', () => { modal.remove(); renderView(); });
+  function finish() { modal.remove(); renderView(); if (previousFocus?.isConnected) previousFocus.focus(); }
+  closeBtn.addEventListener('click', finish);
   box.appendChild(closeBtn);
 
-  modal.addEventListener('mousedown', (e) => { if (e.target === modal) { modal.remove(); renderView(); } });
+  modal.addEventListener('mousedown', (e) => { if (e.target === modal) finish(); });
+  modal.addEventListener('keydown', e => { if (e.key !== 'Tab') e.stopPropagation(); if (e.key === 'Escape') { e.preventDefault(); finish(); } });
   document.body.appendChild(modal);
+  box.querySelector('input, button')?.focus();
 }
 
 export function renderCell(host, column, row, onChange) {
@@ -83,6 +92,7 @@ export function renderTextCell(host, column, row, refresh) {
   const input = document.createElement('input');
   input.className = 'database-cell-input';
   input.type = 'text';
+  input.setAttribute('aria-label', column.name);
   input.value = row.cells[column.id] || '';
   input.addEventListener('change', async () => {
     await window.mdEditor.db.setCell(root(), row.id, column.id, input.value);
@@ -95,6 +105,7 @@ export function renderNumberCell(host, column, row, refresh) {
   const input = document.createElement('input');
   input.className = 'database-cell-input';
   input.type = 'number';
+  input.setAttribute('aria-label', column.name);
   input.value = row.cells[column.id] != null ? row.cells[column.id] : '';
   input.addEventListener('change', async () => {
     await window.mdEditor.db.setCell(root(), row.id, column.id, input.value === '' ? null : input.value);
@@ -107,6 +118,7 @@ export function renderDateCell(host, column, row, refresh) {
   const input = document.createElement('input');
   input.className = 'database-cell-input';
   input.type = 'date';
+  input.setAttribute('aria-label', column.name);
   input.value = row.cells[column.id] || '';
   input.addEventListener('change', async () => {
     await window.mdEditor.db.setCell(root(), row.id, column.id, input.value || null);
@@ -125,6 +137,7 @@ export function petXpForCheck(row, column, checked) {
 export function renderCheckboxCell(host, column, row, refresh) {
   const input = document.createElement('input');
   input.type = 'checkbox';
+  input.setAttribute('aria-label', column.name);
   input.checked = row.cells[column.id] === '1';
   input.addEventListener('change', async () => {
     petXpForCheck(row, column, input.checked);
@@ -299,19 +312,25 @@ export function openColumnEditor(anchorEl, column) {
     const nameField = document.createElement('input');
     nameField.className = 'database-cell-input';
     nameField.placeholder = 'Nombre';
+    nameField.setAttribute('aria-label', 'Nombre de la columna');
     nameField.value = column ? column.name : '';
     pop.appendChild(nameField);
 
     const typeSelect = document.createElement('select');
     typeSelect.className = 'database-cell-input';
+    typeSelect.setAttribute('aria-label', 'Tipo de columna');
+    const basic = document.createElement('optgroup'); basic.label = 'Datos básicos';
+    const advanced = document.createElement('optgroup'); advanced.label = 'Avanzado: relaciones y cálculos';
     COLUMN_TYPES.forEach((t) => {
       const opt = document.createElement('option');
       opt.value = t.value;
       opt.textContent = t.label;
-      typeSelect.appendChild(opt);
+      (['relation', 'formula', 'rollup'].includes(t.value) ? advanced : basic).appendChild(opt);
     });
+    typeSelect.append(basic, advanced);
     typeSelect.value = column ? column.type : 'text';
     pop.appendChild(typeSelect);
+    const typeHelp = document.createElement('p'); typeHelp.className = 'database-popover-hint'; typeHelp.id = 'database-column-type-help'; typeSelect.setAttribute('aria-describedby', typeHelp.id); pop.appendChild(typeHelp);
 
     const configHost = document.createElement('div');
     configHost.className = 'database-column-config';
@@ -319,6 +338,8 @@ export function openColumnEditor(anchorEl, column) {
 
     let getConfig = () => ({});
     function renderConfig() {
+      const tips = { text: 'Texto libre, como un título, autor o comentario.', number: 'Una cantidad: minutos, precio, puntuación… Se puede ordenar y sumar.', date: 'Un día concreto, como una entrega o un repaso. Se puede usar en una vista Calendario.', checkbox: 'Sí o no: hecho, pagado, revisado…', select: 'Una opción por fila. Por ejemplo: Pendiente, En curso o Terminado.', multiselect: 'Varias opciones por fila, como etiquetas o temas.', relation: 'Enlaza esta fila con elementos de otra base. Úsala cuando ya tengas dos bases organizadas.', formula: 'Calcula un valor a partir de otras columnas. No se escribe manualmente en las filas.', rollup: 'Resume datos de las filas enlazadas mediante una Relación, por ejemplo su suma o cantidad.', created_time: 'Registra automáticamente cuándo se creó cada fila.' };
+      typeHelp.textContent = tips[typeSelect.value] || '';
       configHost.innerHTML = '';
       getConfig = buildColumnConfigEditor(configHost, typeSelect.value, column);
     }

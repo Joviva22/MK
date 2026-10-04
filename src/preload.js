@@ -201,7 +201,7 @@ contextBridge.exposeInMainWorld('mdEditor', {
   db: {
     writeStats: () => ipcRenderer.invoke('db:writeStats'),
     listDatabases: (root) => ipcRenderer.invoke('db:listDatabases', { root }),
-    createDatabase: (root, name) => ipcRenderer.invoke('db:createDatabase', { root, name }),
+    createDatabase: (root, name, setup) => ipcRenderer.invoke('db:createDatabase', { root, name, setup }),
     renameDatabase: (root, id, name) => ipcRenderer.invoke('db:renameDatabase', { root, id, name }),
     setDatabaseIcon: (root, id, icon) => ipcRenderer.invoke('db:setDatabaseIcon', { root, id, icon }),
     deleteDatabase: (root, id) => ipcRenderer.invoke('db:deleteDatabase', { root, id }),

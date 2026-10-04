@@ -40,6 +40,16 @@
     await waitFor(() => !document.querySelector('.ask-dialog'));
     return true;
   }
+  async function answerDatabaseCreate(template = 'blank', name, examples = false) {
+    const card = await waitFor(() => document.querySelector(`.database-template-card[data-template="${template}"]`));
+    if (!card) return false;
+    card.click();
+    if (name) document.getElementById('database-create-name').value = name;
+    document.getElementById('database-create-examples').checked = examples;
+    document.getElementById('database-create-submit').click();
+    await waitFor(() => !document.querySelector('.database-create-dialog'));
+    return true;
+  }
 
   const params = new URLSearchParams(window.location.search);
   const fixturesDir = params.get('mkTestFixtures') || '';
@@ -2123,6 +2133,7 @@
 
     // Base 1: "Tareas Test"
     document.getElementById('database-new-btn').click();
+    await answerDatabaseCreate();
     await waitFor(() => !document.getElementById('database-content').hidden);
     const dbNameInput = document.getElementById('database-name-input');
     dbNameInput.value = 'Tareas Test';
@@ -2131,6 +2142,7 @@
 
     // Base 2: "Etiquetas Test", con una fila "Urgente"
     document.getElementById('database-new-btn').click();
+    await answerDatabaseCreate();
     await waitFor(() => document.querySelectorAll('.database-list-item').length === 2);
     dbNameInput.value = 'Etiquetas Test';
     dbNameInput.dispatchEvent(new Event('change', { bubbles: true }));
@@ -2210,6 +2222,7 @@
     const originalConfirmDb = window.confirm;
     window.confirm = () => true;
     document.getElementById('database-delete-btn').click();
+    await answerConfirm();
     await waitFor(async () => (await window.mdEditor.db.listDatabases(fixturesDir)).length === 1);
     window.confirm = originalConfirmDb;
     const dbDeleteOk = (await window.mdEditor.db.listDatabases(fixturesDir)).length === 1;
@@ -4555,7 +4568,11 @@
     await T.set({ typewriter: true, dim: true });
     cm.focus();
     cm.setCursor({ line: 60, ch: 0 });
-    await new Promise((r) => setTimeout(r, 150));
+    await waitFor(() => {
+      const scroll = cm.getScrollInfo();
+      const coords = cm.charCoords({ line: 60, ch: 0 }, 'local');
+      return scroll.clientHeight > 0 && Math.abs((coords.top + coords.bottom) / 2 - scroll.top - scroll.clientHeight / 2) < 30;
+    }, 2000);
     const info = cm.getScrollInfo();
     const { top, bottom } = cm.charCoords({ line: 60, ch: 0 }, 'local');
     const offCenter = Math.abs((top + bottom) / 2 - info.top - info.clientHeight / 2);
@@ -5562,6 +5579,59 @@
     const errors = [...document.querySelectorAll('.app-error-toast')].filter(t => t.dataset.key === 'probe');
     check('Avisos: errores sin duplicados y explicación de espacio insuficiente', errors.length === 1 && errors[0].textContent.includes('Libera espacio') && document.querySelectorAll('.app-error-toast').length <= Math.min(5, oldCount + 1));
     document.querySelectorAll('.app-error-toast').forEach(t => t.remove());
+  }
+
+  // Bases guiadas: cancelación, plantillas reales, filtros y primeros pasos.
+  if (fixturesDir) {
+    const previousRoot = window.mdState.rootFolder;
+    const folder = window.mdEditor.joinPath(fixturesDir, 'bases-guiadas');
+    await window.mdEditor.createFolder(fixturesDir, 'bases-guiadas');
+    window.mdSidebar.renderFolder(await window.mdEditor.readFolder(folder));
+    try {
+      await window.mdDatabase.open();
+      check('Bases guiadas: bienvenida explica filas y columnas con una acción útil', document.getElementById('database-empty').textContent.includes('Cada fila') && !!document.querySelector('#database-empty button') && getComputedStyle(document.getElementById('database-content')).display === 'none');
+      document.querySelector('#database-empty button').click();
+      await waitFor(() => document.querySelector('.database-create-dialog'));
+      const preview = document.querySelector('.database-template-preview').textContent;
+      document.querySelector('.database-create-dialog input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      await waitFor(() => !document.querySelector('.database-create-dialog'));
+      check('Bases guiadas: cancelar la plantilla conserva el panel y no crea datos', preview.includes('Título') && preview.includes('Ejemplo:') && !document.getElementById('database-panel').hidden && (await window.mdEditor.db.listDatabases(folder)).length === 0);
+      document.getElementById('database-new-btn').click(); await answerDatabaseCreate('reading', 'Mis lecturas', true);
+      await waitFor(() => document.getElementById('database-name-input').value === 'Mis lecturas');
+      const db = (await window.mdEditor.db.listDatabases(folder)).find(d => d.name === 'Mis lecturas');
+      const columns = await window.mdEditor.db.listColumns(folder, db.id);
+      const rows = await window.mdEditor.db.listRows(folder, db.id);
+      const views = await window.mdEditor.db.listViews(folder, db.id);
+      const status = columns.find(c => c.name === 'Estado');
+      check('Bases guiadas: Lecturas crea columnas, ejemplos y vistas enlazadas correctamente', rows.length === 2 && columns.some(c => c.name === 'Fecha' && c.type === 'date') && JSON.parse(views.find(v => v.type === 'board').config).groupBy === status.id && JSON.parse(status.options).choices.some(c => c.label === 'Por leer'));
+      [...document.querySelectorAll('.database-view-tab')].find(b => b.textContent.includes('Pendientes')).click();
+      check('Bases guiadas: Pendientes filtra sin borrar y explica el filtro activo', document.querySelectorAll('#database-view-body tbody tr').length === 1 && document.getElementById('database-view-summary').textContent.includes('1 de 2') && document.querySelector('.database-filter-summary').textContent.includes('Estado no es Terminado') && (await window.mdEditor.db.listRows(folder, db.id)).length === 2);
+      document.querySelector('.database-clear-filters').click(); await waitFor(() => document.querySelectorAll('#database-view-body tbody tr').length === 2);
+      check('Bases guiadas: mostrar todas las filas retira filtros sin perder registros', !document.querySelector('.database-filter-summary') && document.querySelectorAll('#database-view-body tbody tr').length === 2);
+      document.getElementById('database-help-btn').click();
+      check('Bases guiadas: guía visible explica guardado y las distintas vistas', !document.getElementById('database-guide').hidden && document.getElementById('database-guide').textContent.includes('sin borrarlas'));
+      document.getElementById('database-add-column-btn').click();
+      await waitFor(() => document.querySelector('.database-column-popover'));
+      const type = document.querySelector('.database-column-popover select'); type.value = 'number'; type.dispatchEvent(new Event('change'));
+      check('Bases guiadas: tipos básicos explicados y relaciones/cálculos en Avanzado', type.querySelector('optgroup[label^="Avanzado"] option[value="relation"]') && document.getElementById('database-column-type-help').textContent.includes('minutos'));
+      type.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      for (const template of ['projects', 'study']) {
+        document.getElementById('database-new-btn').click(); await answerDatabaseCreate(template, 'Plantilla ' + template, false);
+        await waitFor(() => document.getElementById('database-name-input').value === 'Plantilla ' + template);
+        const created = (await window.mdEditor.db.listDatabases(folder)).find(d => d.name === 'Plantilla ' + template);
+        const createdViews = await window.mdEditor.db.listViews(folder, created.id);
+        const createdColumns = await window.mdEditor.db.listColumns(folder, created.id);
+        check('Bases guiadas: ' + template + ' sin ejemplos conserva calendario y tipos', (await window.mdEditor.db.listRows(folder, created.id)).length === 0 && createdColumns.some(c => c.type === 'date') && createdViews.some(v => v.type === 'calendar' && JSON.parse(v.config).dateColumn === createdColumns.find(c => c.type === 'date').id));
+      }
+      const before = (await window.mdEditor.db.listDatabases(folder)).length;
+      let invalid = false; try { await window.mdEditor.db.createDatabase(folder, 'Inválida', { template: 'no-existe' }); } catch { invalid = true; }
+      check('Bases guiadas: plantilla inválida no deja una base incompleta', invalid && (await window.mdEditor.db.listDatabases(folder)).length === before);
+      window.mdDatabase.close(); window.mdState.rootFolder = null; await window.mdDatabase.open();
+      check('Bases guiadas: sin carpeta ofrece abrirla y evita crear en otra ubicación', document.getElementById('database-new-btn').disabled && document.getElementById('database-empty').textContent.includes('Cada carpeta') && document.querySelector('#database-empty button').textContent === 'Abrir carpeta');
+    } finally {
+      window.mdDatabase.close();
+      if (previousRoot) window.mdSidebar.renderFolder(await window.mdEditor.readFolder(previousRoot));
+    }
   }
 
   // Ninguna función chocó con la Content Security Policy (cspwatch.js).

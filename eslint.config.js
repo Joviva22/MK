@@ -109,7 +109,7 @@ module.exports = [
     // src/*.js son <script> del renderer; test/renderer-checks.js corre
     // dentro de esa misma ventana vía executeJavaScript (no es Node).
     files: ['src/*.js', 'test/renderer-checks.js', 'test/bench-checks.js', 'test/cm6-shim-checks.js'],
-    ignores: ['src/atomicwrite.js', 'src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/pathguard.js', 'src/petcatalog.js', 'src/spellchecker.js', 'src/backupbundle.js', 'src/problemreport.js', 'src/datamigrate.js', 'src/khslice.js', 'src/khsprites.js', 'src/ipc-*.js', 'src/database.js', 'src/database-state.js', 'src/database-helpers.js', 'src/database-views.js', 'src/database-cells.js', 'src/database-csv.js', 'src/database-embed.js', 'src/home.js', 'src/home-*.js'],
+    ignores: ['src/atomicwrite.js', 'src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/pathguard.js', 'src/petcatalog.js', 'src/spellchecker.js', 'src/backupbundle.js', 'src/problemreport.js', 'src/datamigrate.js', 'src/khslice.js', 'src/khsprites.js', 'src/ipc-*.js', 'src/database.js', 'src/database-state.js', 'src/database-helpers.js', 'src/database-views.js', 'src/database-cells.js', 'src/database-csv.js', 'src/database-embed.js', 'src/database-onboarding.js', 'src/home.js', 'src/home-*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',
@@ -127,7 +127,7 @@ module.exports = [
   {
     // Bases de datos y Home: partidos en módulos ES (ver OBJETIVOS.md) —
     // cargan con <script type="module">, import/export real en vez de window.mdX.
-    files: ['src/database.js', 'src/database-state.js', 'src/database-helpers.js', 'src/database-views.js', 'src/database-cells.js', 'src/database-csv.js', 'src/database-embed.js', 'src/home.js', 'src/home-*.js', 'src/cm6-entry.js', 'src/drawing-entry.js'],
+    files: ['src/database.js', 'src/database-state.js', 'src/database-helpers.js', 'src/database-views.js', 'src/database-cells.js', 'src/database-csv.js', 'src/database-embed.js', 'src/database-onboarding.js', 'src/home.js', 'src/home-*.js', 'src/cm6-entry.js', 'src/drawing-entry.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',

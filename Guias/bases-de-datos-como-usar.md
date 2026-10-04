@@ -25,9 +25,12 @@ Paleta de comandos (`Ctrl+Shift+P`) → **"Bases de datos"**. `Escape` o clic af
 
 ## 1. Crear una base
 
-1. Botón **+** arriba de la lista de la izquierda.
-2. Escribí el nombre en el cuadro de arriba (se guarda al salir del cuadro).
-3. Para borrarla entera: **🗑** (pide confirmación, no se puede deshacer).
+1. Pulsa **Nueva** en la lista de la izquierda, o **Crear mi primera base** si todavía no tienes ninguna.
+2. Elige **Lecturas**, **Proyectos**, **Estudio** o **Base vacía**, escribe un nombre y revisa la tabla de ejemplo. Puedes desmarcar **Incluir dos filas de ejemplo** para empezar sin registros.
+3. Pulsa **Crear base**. Cancelar o Escape no crea datos. Después puedes cambiar el nombre en la cabecera y añadir o editar columnas.
+4. **Guía rápida** explica filas, columnas, vistas y guardado. Para borrar la base entera usa **🗑**: pide confirmación y no se puede deshacer.
+
+Una plantilla de **Lecturas** ya trae Título, Autor, Estado y Fecha. Añade una fila por libro o apunte. **Todo** muestra todos los registros; **Por estado** agrupa esos mismos registros en un tablero; **Pendientes** oculta los terminados. Los filtros no eliminan datos: el resumen indica cuántas filas coinciden y **Mostrar todas las filas** permite retirar el filtro.
 
 ## 2. Columnas (propiedades)
 

@@ -17,6 +17,8 @@ export function renderViewTabs() {
     const tab = document.createElement('button');
     tab.className = 'toolbar-button database-view-tab' + (v.id === state.viewId ? ' database-view-tab-active' : '');
     tab.textContent = viewTypeIcon(v.type) + ' ' + v.name;
+    tab.setAttribute('aria-pressed', String(v.id === state.viewId));
+    tab.title = `${v.name}: otra forma de ver las mismas filas. Clic derecho para configurar.`;
     tab.addEventListener('click', () => { state.viewId = v.id; renderViewTabs(); renderView(); });
     tab.addEventListener('contextmenu', (e) => {
       e.preventDefault();
@@ -506,11 +508,41 @@ export function renderView() {
   const view = currentViewObj();
   if (!view) return;
   updateFiltersButton();
+  renderViewSummary(view);
   if (view.type === 'board') renderBoardView();
   else if (view.type === 'gallery') renderGalleryView();
   else if (view.type === 'calendar') renderCalendarView();
   else if (view.type === 'chart') renderChartView();
   else renderTableView();
+}
+
+function renderViewSummary(view) {
+  const summary = document.getElementById('database-view-summary');
+  if (!summary) return;
+  summary.replaceChildren();
+  const descriptions = { table: 'Tabla: edita cada dato en su celda.', board: 'Tablero: organiza las mismas filas por estado.', gallery: 'Galería: cada tarjeta corresponde a una fila.', calendar: 'Calendario: muestra las filas que tienen fecha.', chart: 'Gráfico: resume los datos de las filas.' };
+  const text = document.createElement('span');
+  text.textContent = `${descriptions[view.type] || descriptions.table} ${filteredRows().length} de ${state.rows.length} filas.`;
+  summary.appendChild(text);
+  const filters = currentViewConfig().filters || [];
+  filters.forEach(filter => {
+    const col = findColumn(state.columns, filter.columnId);
+    if (!col) return;
+    const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'database-filter-summary';
+    const operation = (FILTER_OPS[columnKind(col)] || FILTER_OPS.text).find(([op]) => op === filter.op)?.[1] || filter.op;
+    const choice = parseOptions(col).choices?.find(c => c.id === filter.value);
+    chip.textContent = `${col.name} ${operation}${OPS_WITH_VALUE.has(filter.op) ? ' ' + (choice?.label || filter.value || '…') : ''}`;
+    chip.title = 'Editar los filtros de esta vista'; chip.addEventListener('click', openFiltersPopover); summary.appendChild(chip);
+  });
+  if (filters.length || state.filter) {
+    const clear = document.createElement('button'); clear.type = 'button'; clear.className = 'toolbar-button database-clear-filters'; clear.textContent = 'Mostrar todas las filas';
+    clear.addEventListener('click', async () => { state.filter = ''; document.getElementById('database-filter-input').value = ''; await saveViewConfig({ filters: [] }); renderView(); });
+    summary.appendChild(clear);
+  }
+  if (view.type === 'calendar') {
+    const missing = state.rows.filter(row => !row.cells[currentViewConfig().dateColumn]).length;
+    if (missing) { const note = document.createElement('small'); note.textContent = `${missing} filas sin fecha no aparecen en el calendario.`; summary.appendChild(note); }
+  }
 }
 
 export function renderTableView() {
@@ -610,6 +642,7 @@ export function renderTableView() {
   const tbody = document.createElement('tbody');
   rows.forEach((row) => {
     const tr = document.createElement('tr');
+    tr.dataset.rowId = row.id;
     // Con un orden activo, arrastrar para reordenar a mano no tendría efecto
     // visible (el orden lo decide la columna), así que se desactiva.
     tr.draggable = !sorts.length;

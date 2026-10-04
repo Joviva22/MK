@@ -24,6 +24,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const initSqlJs = require('sql.js');
+const DATABASE_TEMPLATES = require('./shared/database-templates');
 
 const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS mk_databases (
@@ -229,15 +230,35 @@ async function listDatabases(root) {
   return all(db, 'SELECT * FROM mk_databases ORDER BY order_idx');
 }
 
-async function createDatabase(root, name) {
+async function createDatabase(root, name, setup = {}) {
+  const template = DATABASE_TEMPLATES.find(t => t.id === (setup.template || 'blank'));
+  if (!template) throw new Error('La plantilla elegida no existe.');
   const db = await getDb(root);
   const id = uid();
-  db.run('INSERT INTO mk_databases (id, name, icon, order_idx, created_at) VALUES (?, ?, NULL, ?, ?)', [
-    id, name || 'Sin título', nextOrder(db, 'mk_databases', '1', '1'), Date.now()
-  ]);
-  const colId = uid();
-  db.run('INSERT INTO mk_columns (id, database_id, name, type, options, order_idx) VALUES (?, ?, ?, ?, NULL, 0)', [colId, id, 'Nombre', 'text']);
-  db.run('INSERT INTO mk_views (id, database_id, name, type, config, order_idx) VALUES (?, ?, ?, ?, ?, 0)', [uid(), id, 'Tabla', 'table', '{}']);
+  db.run('BEGIN');
+  try {
+    db.run('INSERT INTO mk_databases (id, name, icon, order_idx, created_at) VALUES (?, ?, NULL, ?, ?)', [
+      id, name || (setup.template ? template.name : 'Sin título'), nextOrder(db, 'mk_databases', '1', '1'), Date.now()
+    ]);
+    const columnIds = {};
+    template.columns.forEach((column, order) => {
+      const colId = uid(); columnIds[column.key] = colId;
+      db.run('INSERT INTO mk_columns (id, database_id, name, type, options, order_idx) VALUES (?, ?, ?, ?, ?, ?)', [colId, id, column.name, column.type, column.options ? JSON.stringify(column.options) : null, order]);
+    });
+    template.views.forEach((view, order) => {
+      const config = {};
+      if (view.groupBy) config.groupBy = columnIds[view.groupBy];
+      if (view.dateColumn) config.dateColumn = columnIds[view.dateColumn];
+      if (view.filters) config.filters = view.filters.map(f => ({ columnId: columnIds[f.column], op: f.op, value: f.value }));
+      db.run('INSERT INTO mk_views (id, database_id, name, type, config, order_idx) VALUES (?, ?, ?, ?, ?, ?)', [uid(), id, view.name, view.type, JSON.stringify(config), order]);
+    });
+    if (setup.includeExamples === true) template.examples.forEach((cells, order) => {
+      const rowId = uid();
+      db.run('INSERT INTO mk_rows (id, database_id, order_idx, created_at) VALUES (?, ?, ?, ?)', [rowId, id, order, Date.now()]);
+      Object.entries(cells).forEach(([key, value]) => db.run('INSERT INTO mk_cells (row_id, column_id, value) VALUES (?, ?, ?)', [rowId, columnIds[key], String(value)]));
+    });
+    db.run('COMMIT');
+  } catch (error) { db.run('ROLLBACK'); throw error; }
   persist(root, db);
   return one(db, 'SELECT * FROM mk_databases WHERE id = ?', [id]);
 }
@@ -536,7 +557,7 @@ function registerDatabaseIpc(realIpcMain, allowRoot, onError) {
     })
   };
   ipcMain.handle('db:listDatabases', (e, { root }) => listDatabases(root));
-  ipcMain.handle('db:createDatabase', (e, { root, name }) => createDatabase(root, name));
+  ipcMain.handle('db:createDatabase', (e, { root, name, setup }) => createDatabase(root, name, setup));
   ipcMain.handle('db:renameDatabase', (e, { root, id, name }) => renameDatabase(root, id, name));
   ipcMain.handle('db:setDatabaseIcon', (e, { root, id, icon }) => setDatabaseIcon(root, id, icon));
   ipcMain.handle('db:deleteDatabase', (e, { root, id }) => deleteDatabase(root, id));

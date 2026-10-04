@@ -682,24 +682,28 @@
           <div class="database-sidebar-header">
             <span>Bases de datos</span>
             <button id="database-import-btn" class="toolbar-button" title="Importar CSV como base nueva"><i data-lucide="upload"></i> CSV</button>
-            <button id="database-new-btn" class="toolbar-button" title="Nueva base de datos" aria-label="Nueva base de datos"><i data-lucide="plus"></i></button>
+            <button id="database-new-btn" class="toolbar-button" title="Crear una base de datos desde una plantilla" aria-label="Nueva base de datos"><i data-lucide="plus"></i> Nueva</button>
           </div>
+          <div id="database-location" class="database-location"></div>
           <div id="database-list" class="database-list"></div>
         </div>
         <div class="database-main">
-          <div id="database-empty" class="command-palette-empty">Elegí una base de datos de la izquierda, o creá una nueva. (Hace falta una carpeta abierta: se guardan en <code>.mk/databases.sqlite3</code> dentro de ella.)</div>
+          <div id="database-empty" class="command-palette-empty"></div>
           <div id="database-content" class="database-content" hidden>
             <div class="database-content-header">
-              <input id="database-name-input" class="database-name-input" />
+              <input id="database-name-input" class="database-name-input" aria-label="Nombre de la base de datos" />
+              <button id="database-help-btn" class="toolbar-button" aria-expanded="false">Guía rápida</button>
               <button id="database-export-btn" class="toolbar-button" title="Exportar la vista actual (con sus filtros y orden) a CSV"><i data-lucide="download"></i> CSV</button>
               <button id="database-delete-btn" class="toolbar-button" title="Eliminar esta base de datos" aria-label="Eliminar esta base de datos"><i data-lucide="trash-2"></i></button>
             </div>
+            <div id="database-guide" class="database-guide" hidden></div>
             <div id="database-view-tabs" class="database-view-tabs"></div>
+            <div id="database-view-summary" class="database-view-summary"></div>
             <div class="database-toolbar">
               <input id="database-filter-input" class="database-filter-input" placeholder="Filtrar filas..." />
               <button id="database-filters-btn" class="toolbar-button" title="Filtrar por campo (se guarda en esta vista)"><i data-lucide="list-filter"></i> Filtros</button>
-              <button id="database-add-column-btn" class="toolbar-button"><i data-lucide="plus"></i> Columna</button>
-              <button id="database-add-row-btn" class="toolbar-button"><i data-lucide="plus"></i> Fila</button>
+              <button id="database-add-column-btn" class="toolbar-button" title="Añade un dato que quieras guardar en cada registro"><i data-lucide="plus"></i> Añadir columna</button>
+              <button id="database-add-row-btn" class="toolbar-button" title="Añade un libro, proyecto, tema u otro registro"><i data-lucide="plus"></i> Añadir fila</button>
             </div>
             <div id="database-view-body" class="database-view-body"></div>
           </div>
@@ -903,6 +907,7 @@
   <script src="kanban.js"></script>
   <script src="charts.js"></script>
   <script src="reminderui.js"></script>
+  <script src="shared/database-templates.js"></script>
   <script type="module" src="database.js"></script>
   <script type="module" src="home.js"></script>
   <script src="terminal.js"></script>
