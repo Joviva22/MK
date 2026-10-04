@@ -187,8 +187,18 @@ async function goToParent() {
   renderFolder(result);
 }
 
-async function createEntry(dirPath, isFolder) {
-  let name = await window.mdAsk(isFolder ? 'Nombre de la nueva carpeta:' : 'Nombre del nuevo archivo:', isFolder ? '' : 'nota.md');
+function validateName(name) {
+  if (!name?.trim()) return 'Escribe un nombre para continuar.';
+  if (/[/\\\0]/.test(name) || ['.', '..'].includes(name.trim())) return 'Usa un nombre sin barras ni rutas de carpetas.';
+  return '';
+}
+function fileError(message, detail, retry) {
+  window.mdErrorToast.show({ message, detail, actionLabel: 'Volver a intentarlo', onAction: retry });
+}
+function focusPath(path) { focusRow([...sidebarPane.querySelectorAll('.tree-row')].find(row => row._node?.ruta === path) || visibleRows()[0]); }
+
+async function createEntry(dirPath, isFolder, initialName = isFolder ? '' : 'nota.md') {
+  let name = await window.mdAsk(isFolder ? 'Nueva carpeta' : 'Nuevo archivo', initialName, { context: `Ubicación: ${dirPath}`, description: isFolder ? 'Crea una carpeta para organizar tus archivos.' : 'Si no indicas una extensión, se creará una nota Markdown (.md).', actionLabel: 'Crear', validate: validateName });
   if (!name || !name.trim()) return;
   // "Mi nota" → "Mi nota.md": sin extensión el archivo no se abría como Markdown.
   if (!isFolder && !/\.[a-z0-9]{1,8}$/i.test(name.trim())) name = name.trim() + '.md';
@@ -196,14 +206,17 @@ async function createEntry(dirPath, isFolder) {
     ? await window.mdEditor.createFolder(dirPath, name.trim())
     : await window.mdEditor.createFile(dirPath, name.trim());
   if (result.error) {
-    alert(result.error);
+    fileError('No se pudo crear ' + name, result.error, () => createEntry(dirPath, isFolder, name));
     return;
   }
   revealPath(result.path);
   if (isFolder) expandedDirs.add(result.path);
   await refreshTree();
   highlightPath = null;
-  if (!isFolder) window.openFileAtPath(result.path);
+  if (!isFolder) await window.openFileAtPath(result.path);
+  focusPath(result.path);
+  if (!isFolder && window.mdCodeMirror.getWrapperElement().getClientRects().length) window.mdCodeMirror.focus();
+  window.mdNotify.success(isFolder ? 'Carpeta creada' : 'Archivo creado', result.path, 'file-created');
 }
 
 // Común a renombrar y mover: el archivo/carpeta pasó de node.ruta a
@@ -236,12 +249,12 @@ async function relocateEntryQuiet(node, newPath) {
   }
 }
 
-async function renameEntry(node) {
-  const newName = await window.mdAsk('Nuevo nombre:', node.nombre);
+async function renameEntry(node, initialName = node.nombre) {
+  const newName = await window.mdAsk('Renombrar ' + node.nombre, initialName, { context: `Ubicación: ${window.mdEditor.dirName(node.ruta)}`, actionLabel: 'Renombrar', validate: validateName });
   if (!newName || !newName.trim() || newName.trim() === node.nombre) return;
   const result = await window.mdEditor.renamePath(node.ruta, newName.trim());
   if (result.error) {
-    alert(result.error);
+    fileError('No se pudo renombrar ' + node.nombre, result.error, () => renameEntry(node, newName));
     return;
   }
   await relocateEntryQuiet(node, result.path);
@@ -249,13 +262,27 @@ async function renameEntry(node) {
   revealPath(result.path);
   await refreshTree();
   highlightPath = null;
+  focusPath(result.path);
+  window.mdNotify.success('Nombre actualizado', result.path, 'file-renamed');
+}
+
+async function chooseMoveDestination(nodes) {
+  const root = currentTreeResult?.rootPath;
+  if (!root) return;
+  const dirs = [root];
+  const walk = tree => tree.forEach(node => { if (node.esCarpeta) { dirs.push(node.ruta); walk(node.hijos || []); } });
+  walk(currentTreeResult.tree);
+  const choices = dirs.filter(path => !nodes.some(node => node.esCarpeta && (path === node.ruta || path.startsWith(node.ruta + '/')))).map(path => ({ value: path, label: path === root ? root.split('/').pop() + ' (carpeta principal)' : window.mdEditor.relativeToRoot(root, path) }));
+  const dest = await window.mdAsk(nodes.length === 1 ? 'Mover ' + nodes[0].nombre : `Mover ${nodes.length} elementos`, window.mdEditor.dirName(nodes[0].ruta), { context: nodes.map(node => node.ruta).join('\n'), description: 'Elige la carpeta de destino dentro del proyecto.', inputLabel: 'Carpeta de destino', actionLabel: 'Mover', choices, validate: path => !path ? 'Elige una carpeta.' : nodes.every(node => window.mdEditor.dirName(node.ruta) === path) ? 'Los archivos ya están aquí. Elige otra carpeta.' : '' });
+  if (!dest) return;
+  if (nodes.length === 1) await moveEntry(nodes[0], dest); else await moveEntries(nodes, dest);
 }
 
 async function moveEntry(node, destDir) {
   if (window.mdEditor.dirName(node.ruta) === destDir) return; // ya está ahí
   const result = await window.mdEditor.movePath(node.ruta, destDir);
   if (result.error) {
-    alert(result.error);
+    fileError('No se pudo mover ' + node.nombre, result.error, () => chooseMoveDestination([node]));
     return;
   }
   await relocateEntryQuiet(node, result.path);
@@ -263,32 +290,37 @@ async function moveEntry(node, destDir) {
   revealPath(result.path);
   await refreshTree();
   highlightPath = null;
+  focusPath(result.path);
+  window.mdNotify.success('Archivo movido', result.path, 'file-moved');
 }
 
 // Arrastre de una selección múltiple: mismo movePath uno por uno, un solo
 // refreshTree al final.
 async function moveEntries(nodes, destDir) {
+  let moved = 0;
   for (const node of nodes) {
     if (window.mdEditor.dirName(node.ruta) === destDir) continue;
     const result = await window.mdEditor.movePath(node.ruta, destDir);
     if (result.error) {
-      alert(`${node.nombre}: ${result.error}`);
+      fileError('No se pudo mover ' + node.nombre, result.error, () => chooseMoveDestination([node]));
       continue;
     }
     await relocateEntryQuiet(node, result.path);
     await window.mdNoteAccess.relocate(node.ruta, result.path);
     revealPath(result.path); // queda resaltado el último movido, con su carpeta abierta
+    moved++;
   }
   await refreshTree();
   highlightPath = null;
   clearSelection();
+  if (moved) window.mdNotify.success(`${moved} elementos movidos`, destDir, 'files-moved');
 }
 
 async function deleteEntryQuiet(node) {
   const result = await window.mdEditor.deletePath(node.ruta, node.esCarpeta);
   if (result.error) {
-    alert(`${node.nombre}: ${result.error}`);
-    return;
+    fileError('No se pudo eliminar ' + node.nombre, result.error, () => deleteEntry(node));
+    return false;
   }
   const key = relKeyFor(node);
   await window.mdNoteAccess.remove(node.ruta);
@@ -296,20 +328,25 @@ async function deleteEntryQuiet(node) {
     delete fileIcons[key];
     await window.mdEditor.setConfig({ fileIcons });
   }
+  return true;
 }
 
 async function deleteEntry(node) {
   const label = node.esCarpeta ? `la carpeta "${node.nombre}" y todo su contenido` : `el archivo "${node.nombre}"`;
-  if (!confirm(`¿Eliminar ${label}? Se intenta mandar a la papelera del sistema (se puede restaurar desde ahí); si no hay papelera disponible, se borra directo.`)) return;
-  await deleteEntryQuiet(node);
+  if (!await window.mdConfirm(`Eliminar ${node.nombre}`, { context: node.ruta, description: `Se eliminará ${label}. Se enviará a la papelera; si no está disponible, se eliminará definitivamente.`, actionLabel: 'Eliminar', danger: true })) return;
+  const deleted = await deleteEntryQuiet(node);
   await refreshTree();
+  focusPath(window.mdEditor.dirName(node.ruta));
+  if (deleted) window.mdNotify.success('Elemento eliminado', node.nombre, 'file-deleted');
 }
 
 async function deleteEntries(nodes) {
-  if (!confirm(`¿Eliminar ${nodes.length} elementos seleccionados? Se intenta mandar a la papelera del sistema (se puede restaurar desde ahí); si no hay papelera disponible, se borra directo.`)) return;
-  for (const node of nodes) await deleteEntryQuiet(node);
+  if (!await window.mdConfirm(`Eliminar ${nodes.length} elementos`, { context: nodes.map(node => node.nombre).join('\n'), description: 'Las carpetas incluyen todo su contenido. Se enviarán a la papelera; si no está disponible, se eliminarán definitivamente.', actionLabel: 'Eliminar', danger: true })) return;
+  let deleted = 0;
+  for (const node of nodes) if (await deleteEntryQuiet(node)) deleted++;
   await refreshTree();
   clearSelection();
+  if (deleted) window.mdNotify.success(`${deleted} elementos eliminados`, null, 'files-deleted');
 }
 
 // Menú contextual del árbol: iconos (solo archivos) + crear/renombrar/borrar.
@@ -353,6 +390,7 @@ function showSidebarMenu(x, y, node, multiNodes) {
   sidebarMenuEl.innerHTML = '';
 
   if (multiNodes && multiNodes.length > 1) {
+    addMenuItem(`Mover ${multiNodes.length} elementos...`, () => chooseMoveDestination(multiNodes));
     addMenuItem(`Eliminar ${multiNodes.length} elementos seleccionados`, () => deleteEntries(multiNodes));
     positionSidebarMenu(x, y);
     return;
@@ -405,6 +443,7 @@ function showSidebarMenu(x, y, node, multiNodes) {
 
   if (node) {
     addMenuItem('Renombrar...', () => renameEntry(node));
+    addMenuItem('Mover...', () => chooseMoveDestination([node]));
     addMenuItem('Eliminar', () => deleteEntry(node));
   }
 
@@ -726,7 +765,7 @@ sidebarPane.addEventListener('keydown', (e) => {
 
 window.mdSidebar = {
   renderFolder, setFileIcon, createEntry, renameEntry, deleteEntry, moveEntry, goToParent, refreshTree,
-  moveEntries, deleteEntries,
+  moveEntries, deleteEntries, chooseMoveDestination,
   // Solo para test/renderer-checks.js: togglear selección sin simular
   // Ctrl+clic de verdad.
   toggleSelectionForTest: (node) => {

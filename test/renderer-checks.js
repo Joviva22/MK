@@ -33,6 +33,13 @@
     await waitFor(() => !document.querySelector('.ask-dialog'));
     return true;
   }
+  async function answerConfirm() {
+    const button = await waitFor(() => document.querySelector('.ask-dialog .ask-danger'));
+    if (!button) return false;
+    button.click();
+    await waitFor(() => !document.querySelector('.ask-dialog'));
+    return true;
+  }
 
   const params = new URLSearchParams(window.location.search);
   const fixturesDir = params.get('mkTestFixtures') || '';
@@ -607,7 +614,9 @@
       const oldGone = await window.mdEditor.readFile(createdPath);
 
       window.confirm = () => true;
-      await window.mdSidebar.deleteEntry({ nombre: renamedName, ruta: renamedPath, esCarpeta: false });
+      const deleting = window.mdSidebar.deleteEntry({ nombre: renamedName, ruta: renamedPath, esCarpeta: false });
+      await answerConfirm();
+      await deleting;
       const deletedGone = await window.mdEditor.readFile(renamedPath);
 
       fileMgmtOk = createdOnDisk !== null && !!createdInTree && renamedOnDisk !== null &&
@@ -735,7 +744,7 @@
     // descarte: el .context-menu visible que no es el del editor.
     const sidebarMenuVisible = Array.from(document.querySelectorAll('.context-menu')).find((el) => el.id !== 'context-menu' && !el.hidden);
     const bulkDeleteBtn = sidebarMenuVisible && Array.from(sidebarMenuVisible.querySelectorAll('button')).find((b) => b.textContent === 'Eliminar 2 elementos seleccionados');
-    if (bulkDeleteBtn) bulkDeleteBtn.click();
+    if (bulkDeleteBtn) { bulkDeleteBtn.click(); await answerConfirm(); }
     await waitFor(async () => (await window.mdEditor.readFile(multiAPath)) === null && (await window.mdEditor.readFile(multiBPath)) === null);
     window.confirm = originalConfirmMulti;
 
@@ -5366,6 +5375,7 @@
     const A = window.mdNoteAccess;
     const S = window.mdSidebar;
     const originalAsk = window.mdAsk;
+    const originalFileConfirm = window.mdConfirm;
     const originalConfirm = window.confirm;
     const previousRoot = window.mdState.rootFolder;
     const folder = window.mdEditor.joinPath(fixturesDir, 'acceso-rapido');
@@ -5401,6 +5411,7 @@
       await A.record(foreign);
       check('Acceso rápido: no muestra notas de otras carpetas', ![...document.querySelectorAll('.note-access-row')].some(el => el.dataset.path === foreign));
       window.confirm = () => true;
+      window.mdConfirm = async () => true;
       await S.deleteEntry({ ruta: renamed, nombre: 'Renombrada.md', esCarpeta: false });
       const afterDelete = (await window.mdEditor.getConfig()).noteAccess;
       check('Acceso rápido: eliminar una nota retira sus accesos guardados', !afterDelete.favorites.includes(renamed) && !afterDelete.recent.includes(renamed));
@@ -5437,6 +5448,7 @@
       check('Acceso rápido: limita el historial global a 20 archivos de cualquier extensión', capped.recent.length === 20 && capped.recent[0].endsWith('historial-24.bin') && capped.recent[19].endsWith('historial-5.bin'));
     } finally {
       window.mdAsk = originalAsk;
+      window.mdConfirm = originalFileConfirm;
       window.confirm = originalConfirm;
       if (previousRoot) S.renderFolder(await window.mdEditor.readFolder(previousRoot));
     }
@@ -5500,6 +5512,56 @@
       window.mdGetAutosaveInterval = originalAutosave;
       window.confirm = originalConfirm;
     }
+  }
+
+  // Diálogos de archivos y avisos: acciones reales y teclado.
+  if (fixturesDir) {
+    const S = window.mdSidebar;
+    const parent = window.mdEditor.joinPath(fixturesDir, 'dialogos');
+    await window.mdEditor.createFolder(fixturesDir, 'dialogos');
+    await window.mdEditor.createFolder(parent, 'Destino');
+    S.renderFolder(await window.mdEditor.readFolder(parent));
+    const opener = document.getElementById('btn-open'); opener.focus();
+    const creating = S.createEntry(parent, false);
+    const input = await waitFor(() => document.querySelector('.ask-input'));
+    input.value = '../incorrecto.md';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    check('Diálogos: validación mantiene el nombre y muestra la ubicación', input.getAttribute('aria-invalid') === 'true' && document.querySelector('.ask-context').textContent.includes(parent) && !document.querySelector('.ask-error').hidden);
+    document.querySelector('.ask-ok').focus();
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await creating;
+    check('Diálogos: Escape desde los botones cancela y devuelve el foco', !document.querySelector('.ask-dialog') && document.activeElement === opener);
+    const file = window.mdEditor.joinPath(parent, 'Apunte.md');
+    const existing = window.mdEditor.joinPath(parent, 'Ocupado.md');
+    await window.mdEditor.saveFile('# Apunte', file, false); await window.mdEditor.saveFile('# Ocupado', existing, false);
+    const node = { ruta: file, nombre: 'Apunte.md', esCarpeta: false };
+    const deleting = S.deleteEntry(node);
+    await waitFor(() => document.querySelector('.ask-danger'));
+    const safeFocus = document.activeElement.textContent === 'Cancelar';
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); await deleting;
+    check('Diálogos: eliminar enfoca Cancelar y Escape conserva el archivo', safeFocus && !!await window.mdEditor.readFile(file));
+    const renaming = S.renameEntry(node); await answerAsk('Ocupado.md'); await renaming;
+    const failure = [...document.querySelectorAll('.app-error-toast')].find(t => t.textContent.includes('No se pudo renombrar Apunte.md'));
+    failure.querySelector('.app-toast-action').click();
+    await waitFor(() => document.querySelector('.ask-input'));
+    check('Avisos: error de nombre ocupado permite reintentar sin perder lo escrito', document.querySelector('.ask-input').value === 'Ocupado.md');
+    document.querySelector('.ask-input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await waitFor(() => !document.querySelector('.ask-dialog'));
+    const moving = S.chooseMoveDestination([node]);
+    const select = await waitFor(() => document.querySelector('.ask-dialog select'));
+    select.value = window.mdEditor.joinPath(parent, 'Destino'); select.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); await moving;
+    const movedPath = window.mdEditor.joinPath(parent, 'Destino/Apunte.md');
+    check('Diálogos: selector de destino mueve el archivo y conserva contenido', (await window.mdEditor.readFile(movedPath))?.content === '# Apunte' && !await window.mdEditor.readFile(file));
+    opener.focus();
+    const toast = window.mdNotify.saved(movedPath);
+    const quiet = document.activeElement === opener && toast.getAttribute('role') === 'status' && toast.textContent.includes('Apunte.md') && toast.textContent.includes('Destino');
+    toast.querySelector('.app-toast-action').click(); await waitFor(() => !toast.isConnected);
+    check('Avisos: guardado muestra nombre y ubicación sin robar foco y copia la ruta', quiet && await window.mdEditor.clipboardReadText() === movedPath);
+    const oldCount = document.querySelectorAll('.app-error-toast').length;
+    window.mdErrorToast.show({ message: 'Error repetido', detail: 'ENOSPC', key: 'probe' }); window.mdErrorToast.show({ message: 'Error repetido', detail: 'ENOSPC', key: 'probe' });
+    const errors = [...document.querySelectorAll('.app-error-toast')].filter(t => t.dataset.key === 'probe');
+    check('Avisos: errores sin duplicados y explicación de espacio insuficiente', errors.length === 1 && errors[0].textContent.includes('Libera espacio') && document.querySelectorAll('.app-error-toast').length <= Math.min(5, oldCount + 1));
+    document.querySelectorAll('.app-error-toast').forEach(t => t.remove());
   }
 
   // Ninguna función chocó con la Content Security Policy (cspwatch.js).

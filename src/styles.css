@@ -3795,6 +3795,17 @@ ul.tree ul.tree { margin-left: 10px; padding-left: 10px; border-left: 1px solid 
 .modal-actions { flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--border); gap: 8px; }
 .ask-dialog { box-sizing: border-box; padding: 20px; gap: 14px; border-radius: var(--radius-lg); }
 .ask-message { font-size: var(--font-md); line-height: 1.55; overflow-wrap: anywhere; }
+.ask-dialog { width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto; }
+.ask-dialog .ask-message { margin: 0; font-size: 18px; font-weight: 600; }
+.ask-description { margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+.ask-context { padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text-muted); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; max-height: 110px; overflow-y: auto; }
+.ask-field-label { font-size: 12px; font-weight: 600; color: var(--text); }
+.ask-dialog .ask-input { box-sizing: border-box; width: 100%; min-height: 40px; font: inherit; border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; background: var(--bg); color: var(--text); }
+.ask-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ask-input[aria-invalid="true"] { border-color: var(--danger); }
+.ask-error { margin: 0; color: var(--danger); font-size: 12px; line-height: 1.5; }
+.ask-ok.ask-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.ask-actions { flex-wrap: wrap; margin-top: 4px; }
 .ask-actions { gap: 8px; padding-top: 4px; flex-wrap: wrap; }
 .set-body { scrollbar-width: thin; }
 .set-section-title { line-height: 1.35; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
@@ -3855,6 +3866,9 @@ ul.tree ul.tree { margin-left: 10px; padding-left: 10px; border-left: 1px solid 
 .app-error-toast-close:focus-visible { outline: 2px solid var(--accent); }
 .app-error-toast-body { max-height: 160px; overflow-y: auto; scrollbar-width: thin; }
 .app-error-toasts { max-height: min(50vh, 420px); overflow-y: auto; scrollbar-width: thin; }
+.app-error-toast.app-toast-success { border-left-color: var(--accent); }
+.app-toast-success .app-error-toast-title { font-weight: 500; }
+.app-toast-action { margin-top: 10px; font-size: 12px; min-height: 30px; }
 @media (max-width: 540px) {
   #search-panel .search-input-row { flex-wrap: wrap; }
   #search-input { flex-basis: 100%; }

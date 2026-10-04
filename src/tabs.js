@@ -597,6 +597,7 @@ async function saveActiveOnce(forceDialog = false) {
   }
   markModified(tab.id, tab.doc.getValue() !== content);
   persistSession();
+  window.mdNotify.saved(filePath);
   // Guardado a mano: un destello sutil en la pestaña confirma que se guardó.
   document.dispatchEvent(new CustomEvent('mk:active-file-changed'));
   const activeTabEl = document.querySelector('#tabbar .tab.active');

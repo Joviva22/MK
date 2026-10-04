@@ -291,6 +291,8 @@ Si renombrás o movés un archivo que tenías abierto en una pestaña, esa pesta
 
 ### Favoritas y recientes
 
+Crear, renombrar, mover y eliminar usan diálogos de MK con la ubicación visible. Los nombres inválidos se corrigen en el mismo campo. **Mover...** en el menú contextual permite elegir una carpeta sin arrastrar. Enter acepta el nombre o destino; Escape cancela desde cualquier control. Al eliminar, el foco empieza en **Cancelar**. Los avisos de éxito son breves; los errores permanecen hasta cerrarlos y permiten reintentar o copiar sus detalles. Un guardado manual muestra el nombre y la carpeta, con **Copiar ruta**.
+
 El bloque **Acceso rápido** del explorador muestra los archivos de la carpeta actual, con cualquier extensión. La estrella de la cabecera marca el archivo abierto; también puedes usar **Añadir a favoritas** en el menú contextual de un archivo. Las estrellas de cada fila permiten añadir o quitar favoritas. Los grupos se pueden plegar.
 
 **Recientes** muestra los últimos ocho archivos disponibles de la carpeta, sin duplicados. El historial guarda hasta 20 archivos en total. Los accesos se guardan entre sesiones y siguen los cambios de nombre o ubicación realizados desde MK. Al eliminar un archivo desde MK se retiran sus accesos. Un favorito que ya no aparece en la carpeta se muestra desactivado y puedes quitarlo. Las notas sin guardar se añaden después de guardarlas en un archivo.

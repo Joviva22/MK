@@ -174,7 +174,8 @@ ipcMain.handle('file:save', async (event, { content, filePath, forceDialog }) =>
   let target = filePath;
   if (!target || forceDialog) {
     const result = await dialog.showSaveDialog(ctx.mainWindow, {
-      defaultPath: target || ctx.getOpenFolder(),
+      title: target ? `Guardar como: ${path.basename(target)}` : 'Guardar nota',
+      defaultPath: target || path.join(ctx.getOpenFolder() || app.getPath('documents'), 'Sin título.md'),
       filters: [
         { name: 'Markdown', extensions: ['md'] },
         { name: 'LaTeX', extensions: ['tex'] }

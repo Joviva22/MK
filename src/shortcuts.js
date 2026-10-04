@@ -21,6 +21,7 @@ function contextual(event) {
   return event.target?.closest?.('#drawing-panel, #terminal-body, .pdfhighlight-modal');
 }
 window.addEventListener('keydown', (event) => {
+  if (event.target?.closest?.('.ask-overlay')) return;
   const input = event.target?.closest?.('[data-shortcut]');
   if (input && list.contains(input)) {
     if (event.key === 'Tab' || event.key === 'Escape') return;

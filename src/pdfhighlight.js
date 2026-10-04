@@ -746,6 +746,7 @@ async function saveCopy() {
     const base64 = await bytesToBase64(bytes);
     const exportedPath = await window.mdEditor.pdfSaveBytes(base64, saveName);
     if (exportedPath) {
+      window.mdNotify.saved(exportedPath);
       if (sourcePath === savingSource) {
         savedEdits = snapshot;
         savedPath = exportedPath;
@@ -754,6 +755,7 @@ async function saveCopy() {
   } catch (error) {
     window.mdEditor.logError('pdf:guardar', String(error));
     saveError = 'No se pudo guardar. Tus anotaciones siguen disponibles; vuelve a intentarlo.';
+    window.mdErrorToast.show({ message: 'No se pudo guardar el PDF', detail: error.message, actionLabel: 'Volver a intentarlo', onAction: saveCopy });
   } finally { saving = false; updateDocumentStatus(); }
 }
 saveBtn.addEventListener('click', saveCopy);

@@ -51,11 +51,12 @@ async function save(as = false) {
         document.dispatchEvent(new CustomEvent('mk:active-file-changed'));
       }
       window.mdNoteAccess?.record(filePath);
+      window.mdNotify.saved(filePath);
       document.dispatchEvent(new CustomEvent('mk:drawing-saved', { detail: { path: filePath } }));
     }
     else feedback = 'Guardado cancelado';
     status();
-  } catch (error) { status(error.message); }
+  } catch (error) { status(error.message); window.mdErrorToast.show({ message: 'No se pudo guardar la pizarra', detail: error.message, actionLabel: 'Volver a intentarlo', onAction: () => save(as) }); }
   finally { saving = false; status(); }
 }
 async function open(path = null, options = {}) {

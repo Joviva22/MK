@@ -6,6 +6,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ## Sin publicar
 
+- Diálogos de archivos unificados para crear, renombrar, elegir destino al mover y confirmar eliminaciones, con ubicación visible, validación de nombres, foco y cancelación con Escape. Avisos breves de guardado con nombre, carpeta y copia de ruta; errores sin duplicados, explicaciones y acciones para reintentar o copiar detalles.
+
 - Pestañas con iconos por formato, selección reforzada y cambios sin guardar más visibles. PDF, imágenes, audio, vídeo y pizarras guardadas tienen su propia pestaña. Barra desplazable con selector de archivos abiertos, búsqueda y navegación por teclado; botón fijo para reabrir la última cerrada. Las pizarras incrustadas y acopladas conservan la nota activa.
 
 - Recientes limitado a 20 archivos en total y acceso rápido para cualquier extensión: texto, PDF, imágenes, audio, vídeo, Word y pizarras usan su apertura habitual en MK. Favoritas disponible para todos los archivos del explorador.
