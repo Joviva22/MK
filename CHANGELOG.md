@@ -6,6 +6,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ## Sin publicar
 
+- Pestañas con nombres largos recortados, indicador independiente de cambios, cierre discreto y selección/foco más claros. Separadores de paneles con agarre visible y acabado común de diálogos; Ajustes apila campos en ventanas estrechas y mejora el espaciado y la lectura.
+
 - Home como espacio principal con vista Día, resumen de agenda, creación sin guardar borradores cancelados, opciones agrupadas, tareas completadas plegables y Deshacer al completar o mover tareas propias. Semana y mes se adaptan al espacio disponible; volver al editor conserva el documento y su posición.
 - Edición PDF con herramientas por contexto, navegación directa a página, zoom y ajuste al ancho, nombre de archivo y estado de cambios. Guardar copia y Ctrl+S muestran el resultado en el panel.
 - Pizarra con Guardar destacado, Guardar como separado y estados de cambios, guardado, cancelación y error; controles protegidos durante el guardado.

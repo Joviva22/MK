@@ -187,7 +187,7 @@ function renderTabbar() {
   tabbarEl.innerHTML = '';
   for (const tab of tabs) {
     const el = document.createElement('div');
-    el.className = 'tab' + (tab.id === activeId ? ' active' : '') + (tab.conflict ? ' tab-conflict' : '');
+    el.className = 'tab' + (tab.id === activeId ? ' active' : '') + (tab.conflict ? ' tab-conflict' : '') + (tab.modified ? ' tab-modified' : '');
     el.setAttribute('role', 'tab');
     el.setAttribute('aria-selected', String(tab.id === activeId));
     el.tabIndex = tab.id === activeId ? 0 : -1;
@@ -197,13 +197,20 @@ function renderTabbar() {
 
     const label = document.createElement('span');
     label.className = 'tab-label';
-    label.textContent = (tab.conflict ? '⚠ ' : '') + labelFor(tab) + (tab.modified ? ' ●' : '');
+    label.textContent = (tab.conflict ? '⚠ ' : '') + labelFor(tab);
     el.appendChild(label);
+    el.setAttribute('aria-label', `${labelFor(tab)}${tab.modified ? ', cambios sin guardar' : ''}${tab.conflict ? ', conflicto con el archivo' : ''}`);
+    const state = document.createElement('span');
+    state.className = 'tab-state';
+    state.textContent = tab.modified ? '●' : '';
+    state.setAttribute('aria-hidden', 'true');
+    el.appendChild(state);
 
-    const closeBtn = document.createElement('span');
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.tabIndex = -1;
     closeBtn.className = 'tab-close';
     closeBtn.textContent = '×';
-    closeBtn.setAttribute('role', 'button');
     closeBtn.setAttribute('aria-label', `Cerrar ${labelFor(tab)}`);
     closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -212,6 +219,12 @@ function renderTabbar() {
     el.appendChild(closeBtn);
 
     el.addEventListener('click', () => activateTab(tab.id));
+    el.addEventListener('keydown', (e) => {
+      if (e.target === el && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        activateTab(tab.id);
+      }
+    });
     el.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       showTabMenu(e.clientX, e.clientY, tab);
