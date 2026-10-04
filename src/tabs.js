@@ -64,6 +64,7 @@ const MODE_BY_EXT = {
 // CodeMirror ignora setOption('mode') con el mismo valor, por eso se pasa
 // primero por 'text/plain' (tab.modeStale: se repinta al activarla).
 function ensureMode(tab, modeInfo) {
+  if (window.mdCM6) return; // paquetes preparados: no invalidar el parser nativo
   if (!modeInfo.load || !window.mdLoadCmMode) return;
   window.mdLoadCmMode(modeInfo.load).then(() => {
     tab.modeStale = true;
@@ -226,18 +227,29 @@ function renderTabbar() {
 function activateTab(id) {
   const tab = tabs.find((t) => t.id === id);
   if (!tab) return;
+  const started = window.performance.now();
   activeId = id;
+  window.mdState.currentFilePath = tab.filePath;
   tabCm.swapDoc(tab.doc);
-  tabCm.setOption('mode', tab.mode);
+  const currentMode = tabCm.getOption('mode');
+  const liveMarkdown = tab.mode === 'markdown' && currentMode?.name === 'markdown' && window.mdLivePreview?.isEnabled();
+  if (currentMode !== tab.mode && !liveMarkdown) tabCm.setOption('mode', tab.mode);
+  const editorReady = window.performance.now();
   refreshMode(tab);
   window.mdState.currentFilePath = tab.filePath;
   window.mdStatusMode.textContent = tab.modeLabel;
   if (window.mdModes) window.mdModes.releasePdfForcedReadMode();
   renderTabbar();
-  if (window.renderPreview) window.renderPreview();
+  if (window.mdPreview?.requestRender) window.mdPreview.requestRender();
+  else if (window.renderPreview) window.renderPreview();
+  const previewReady = window.performance.now();
   persistSession();
   syncWithDisk(tab);
+  lastActivationTimings = { editor: editorReady - started, uiAndPreview: previewReady - editorReady, total: previewReady - started };
 }
+
+let lastActivationTimings = null;
+let lastOpenTimings = null;
 
 function markModified(id, value) {
   const tab = tabs.find((t) => t.id === id);
@@ -262,6 +274,8 @@ function newTab(content) {
 }
 
 async function openTab(filePath) {
+  if (/\.excalidraw$/i.test(filePath)) return window.mdDrawing.open(filePath);
+  const started = window.performance.now();
   const existing = findTabByPath(filePath);
   if (existing) {
     activateTab(existing.id);
@@ -275,6 +289,7 @@ async function openTab(filePath) {
     return;
   }
   const result = await window.mdEditor.readFile(filePath);
+  const readReady = window.performance.now();
   if (result === null) return;
   if (result.binary) {
     // No se abre como pestaña real de ese archivo (filePath: null) para que
@@ -289,7 +304,9 @@ async function openTab(filePath) {
     return;
   }
   const tab = createTab(filePath, result.content, result.content);
+  const docReady = window.performance.now();
   activateTab(tab.id);
+  lastOpenTimings = { read: readReady - started, createDoc: docReady - readReady, activate: window.performance.now() - docReady, activation: lastActivationTimings };
 }
 
 async function openViaDialog() {
@@ -298,14 +315,93 @@ async function openViaDialog() {
   await openTab(filePath);
 }
 
+let savingActive = false;
+
+function chooseConflict(tab, disk) {
+  return new Promise((resolve) => {
+    const previousFocus = document.activeElement;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay conflict-overlay';
+    const box = document.createElement('div');
+    box.className = 'modal conflict-dialog';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+    box.setAttribute('aria-labelledby', 'conflict-title');
+    const heading = document.createElement('h2');
+    heading.id = 'conflict-title';
+    heading.textContent = `Conflicto en ${labelFor(tab)}`;
+    const description = document.createElement('p');
+    description.textContent = 'El archivo cambió fuera de MK. Compara las versiones antes de decidir. Conservar ambas abre tus cambios como una copia sin guardar y mantiene el archivo del disco.';
+    const versions = document.createElement('div');
+    versions.className = 'conflict-versions';
+    for (const [title, text] of [['Versión del disco', disk], ['Tus cambios', tab.doc.getValue()]]) {
+      const section = document.createElement('section');
+      const label = document.createElement('h3');
+      label.textContent = title;
+      const pre = document.createElement('pre');
+      pre.tabIndex = 0;
+      pre.setAttribute('aria-label', title);
+      pre.textContent = text.length > 100000 ? text.slice(0, 100000) + '\n… Vista limitada a 100.000 caracteres; la versión completa se conserva.' : text;
+      section.append(label, pre);
+      versions.appendChild(section);
+    }
+    const actions = document.createElement('div');
+    actions.className = 'modal-actions';
+    function finish(action) {
+      overlay.remove();
+      if (previousFocus && previousFocus.isConnected) previousFocus.focus();
+      resolve(action);
+    }
+    for (const [action, label] of [['cancel', 'Cancelar'], ['reload', 'Usar disco'], ['overwrite', 'Sobrescribir disco'], ['keep', 'Conservar ambas']]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'toolbar-button';
+      button.dataset.conflictAction = action;
+      button.textContent = label;
+      button.addEventListener('click', () => finish(action));
+      actions.appendChild(button);
+    }
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); finish('cancel'); }
+      if (e.key !== 'Tab') e.stopPropagation();
+    });
+    overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) finish('cancel'); });
+    box.append(heading, description, versions, actions);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    actions.firstElementChild.focus();
+  });
+}
+
 async function saveActive(forceDialog = false) {
+  if (savingActive) return;
+  savingActive = true;
+  try {
+    await saveActiveOnce(forceDialog);
+  } finally {
+    savingActive = false;
+  }
+}
+
+async function saveActiveOnce(forceDialog = false) {
   const tab = tabs.find((t) => t.id === activeId);
   if (!tab) return;
   clearTimeout(tab.autosaveTimer);
   if (!forceDialog && await diskChangedSince(tab)) {
-    const reload = !confirm(`"${labelFor(tab)}" cambió fuera de MK desde que lo abriste (otro programa, git, el Home...).\n\nAceptar: guardar TU versión encima de la otra.\nCancelar: descartar tus cambios y cargar la versión del disco.`);
-    if (reload) {
-      const disk = await readDisk(tab);
+    tab.conflict = true;
+    renderTabbar();
+    let disk = await readDisk(tab);
+    if (disk === null) return;
+    const action = await chooseConflict(tab, disk);
+    if (action === 'cancel') return;
+    if (action === 'reload' || action === 'keep') {
+      disk = await readDisk(tab);
+      if (disk === null) return; // no descartar cambios si ahora no se puede leer
+      let copy;
+      if (action === 'keep') {
+        copy = createTab(null, tab.doc.getValue());
+        markModified(copy.id, true);
+      }
       if (disk !== null) {
         replaceContent(tab, disk);
         tab.diskContent = disk;
@@ -313,6 +409,13 @@ async function saveActive(forceDialog = false) {
         markModified(tab.id, false);
         renderTabbar();
       }
+      if (copy) activateTab(copy.id);
+      persistSession();
+      return;
+    }
+    // No sobrescribir cambios nuevos que llegaron mientras se comparaba.
+    if (await readDisk(tab) !== disk) {
+      alert('El archivo volvió a cambiar mientras comparabas. Guarda otra vez para revisar la nueva versión.');
       return;
     }
   }
@@ -325,11 +428,13 @@ async function saveActive(forceDialog = false) {
   const modeInfo = modeInfoForPath(filePath);
   tab.mode = modeInfo.mode;
   tab.modeLabel = modeInfo.label;
-  tabCm.setOption('mode', tab.mode);
+  if (tab.id === activeId) tabCm.setOption('mode', tab.mode);
   ensureMode(tab, modeInfo); // "Guardar como" con otra extensión
-  window.mdState.currentFilePath = filePath;
-  window.mdStatusMode.textContent = tab.modeLabel;
-  markModified(tab.id, false);
+  if (tab.id === activeId) {
+    window.mdState.currentFilePath = filePath;
+    window.mdStatusMode.textContent = tab.modeLabel;
+  }
+  markModified(tab.id, tab.doc.getValue() !== content);
   persistSession();
   // Guardado a mano: un destello sutil en la pestaña confirma que se guardó.
   const activeTabEl = document.querySelector('#tabbar .tab.active');
@@ -630,6 +735,7 @@ function syncPaths(paths) {
 }
 
 window.mdTabs = { reopenClosed, closedCount: () => closedTabs.length, getActiveState, getModifiedPaths, syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
+window.mdTabs.timings = () => lastOpenTimings ? JSON.parse(JSON.stringify(lastOpenTimings)) : null;
 window.openFileAtPath = openTab;
 
 window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));

@@ -104,6 +104,7 @@ async function renderContent(filePath) {
 }
 
 async function open(filePath) {
+  if (window.mdStudyWorkspace?.isOpen() && !window.mdStudyWorkspace.close()) return false;
   currentPath = filePath;
   viewMode = 'read';
   titleEl.textContent = filePath.split(/[\\/]/).pop();
@@ -115,6 +116,7 @@ async function open(filePath) {
 }
 
 function close() {
+  if (window.mdStudyWorkspace?.isOpen()) return window.mdStudyWorkspace.close();
   currentPath = null;
   containerEl.classList.remove('has-secondary');
   paneEl.hidden = true;
@@ -128,6 +130,7 @@ function close() {
 // "clic para editar acá") es el que garantiza que SIEMPRE se pueda
 // promover sin importar el tipo de archivo.
 async function promote() {
+  if (window.mdStudyWorkspace?.isOpen()) return;
   if (!currentPath) return;
   const promoted = currentPath;
   const previousPrimary = window.mdState.currentFilePath;

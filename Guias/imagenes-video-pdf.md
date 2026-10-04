@@ -50,3 +50,6 @@ Por seguridad, el preview solo muestra archivos **dentro de la carpeta abierta**
 
 ## Ver también
 Editar PDFs (unir, rotar, firmar, subrayar): [herramientas-pdf.md](herramientas-pdf.md).
+## PDFs y pizarras dentro de Markdown
+
+Para páginas navegables de PDF y miniaturas de Excalidraw en Preview y Live Preview, consulta [Materiales incrustados](materiales-incrustados.md). Paleta → **Insertar PDF o pizarra en la nota**.

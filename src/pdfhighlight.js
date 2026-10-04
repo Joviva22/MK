@@ -14,6 +14,15 @@
 // campos. Se guarda como archivo nuevo: el original no se toca.
 
 const overlay = document.getElementById('pdfhighlight-panel');
+const modal = overlay.querySelector('.pdfhighlight-modal');
+let dockHost = null;
+let dockWidth = 0, dockResizeTimer = null;
+const dockResize = new ResizeObserver(() => {
+  if (!dockHost || Math.abs(dockHost.clientWidth - dockWidth) < 8) return;
+  dockWidth = dockHost.clientWidth;
+  clearTimeout(dockResizeTimer);
+  dockResizeTimer = setTimeout(() => { if (dockHost && pdfDoc) goToPage(pageNum); }, 120);
+});
 const emptyEl = document.getElementById('pdfhighlight-empty');
 const bodyEl = document.getElementById('pdfhighlight-body');
 const canvasWrap = document.getElementById('pdfhighlight-canvas-wrap');
@@ -25,6 +34,11 @@ const undoBtn = document.getElementById('pdfhighlight-undo');
 const saveBtn = document.getElementById('pdfhighlight-save');
 const modeHighlightBtn = document.getElementById('pdfhighlight-mode-highlight');
 const modeTextBtn = document.getElementById('pdfhighlight-mode-text');
+const modeSelectBtn = document.getElementById('pdfhighlight-mode-select');
+const copyBtn = document.getElementById('pdfhighlight-copy');
+const newNoteBtn = document.getElementById('pdfhighlight-new-note');
+const addNoteBtn = document.getElementById('pdfhighlight-add-note');
+const selectionInfo = document.getElementById('pdfhighlight-selection-info');
 const sizeSelect = document.getElementById('pdfhighlight-size');
 const colorInput = document.getElementById('pdfhighlight-color');
 const formPanel = document.getElementById('pdfhighlight-form');
@@ -45,6 +59,82 @@ let mode = 'highlight'; // 'highlight' | 'text'
 let dragStart = null;
 let dragCurrent = null;
 let nextTextId = 1;
+let sourcePath = null;
+let pageRenderId = 0;
+let loadId = 0;
+let selectedText = '';
+let pageHasText = false;
+let pageReady = false;
+let savedEdits = null;
+let saving = false;
+
+function editsSnapshot() { return JSON.stringify([highlights, texts, formValues]); }
+function hasUnsavedChanges() { return hasChanges() && editsSnapshot() !== savedEdits; }
+
+function clearSelection() {
+  selectedText = '';
+  const selection = window.getSelection();
+  if (selection?.anchorNode && canvasWrap.contains(selection.anchorNode)) selection.removeAllRanges();
+  updateSelection();
+}
+
+function updateSelection() {
+  copyBtn.disabled = newNoteBtn.disabled = !selectedText || mode !== 'select' || !pageReady;
+  const info = window.mdTabs?.getActiveTabInfo();
+  const activeMode = window.mdCodeMirror?.getOption('mode');
+  const isMarkdown = (typeof activeMode === 'string' ? activeMode : activeMode?.name) === 'markdown';
+  addNoteBtn.disabled = newNoteBtn.disabled || !info || !isMarkdown;
+  addNoteBtn.title = info && isMarkdown ? `Añadir al final de ${info.filePath?.split(/[\\/]/).pop() || 'Sin título'}` : 'Abre una nota Markdown primero';
+  selectionInfo.textContent = selectedText ? `${selectedText.length} caracteres seleccionados · página ${pageNum}` :
+    !pdfDoc ? 'Abre un PDF para seleccionar texto.' : !pageReady ? 'Cargando página…' : !pageHasText ? 'Esta página no tiene texto extraíble; puede ser una imagen escaneada (sin OCR).' :
+      mode === 'select' ? 'Arrastra sobre el texto original. Ctrl+C para copiar.' : 'Activa Seleccionar para copiar texto o llevarlo a una nota.';
+}
+
+document.addEventListener('selectionchange', () => {
+  if ((!dockHost && overlay.hidden) || mode !== 'select' || !pageReady) return;
+  const selection = window.getSelection();
+  const layer = canvasWrap.querySelector('.pdf-select-text-layer');
+  if (!layer || !selection?.anchorNode || !layer.contains(selection.anchorNode) || !layer.contains(selection.focusNode)) return;
+  selectedText = selection.toString().replace(/\r\n?/g, '\n').trim();
+  updateSelection();
+});
+
+function citation() {
+  if (!selectedText || !sourcePath) return null;
+  const target = sourcePath.split('/').map((part) => encodeURIComponent(part).replace(/\(/g, '%28').replace(/\)/g, '%29')).join('/');
+  const label = baseName.replace(/[\r\n]/g, ' ').replace(/[\\[\]]/g, '\\$&');
+  return selectedText.split('\n').map((line) => `> ${line}`).join('\n') + `\n\n[${label} — página ${pageNum}](md-local://file${target}#page=${pageNum})\n`;
+}
+
+function addSelectionToNote(createNew) {
+  updateSelection();
+  const fragment = citation();
+  if (!fragment || (createNew ? newNoteBtn.disabled : addNoteBtn.disabled)) return;
+  if (!dockHost) close();
+  if (createNew) { window.mdTabs.newTab(''); window.mdCodeMirror.setValue(fragment); }
+  else {
+    document.querySelector('#tabbar .tab.active')?.click();
+    const cm = window.mdCodeMirror;
+    const line = cm.lineCount() - 1;
+    cm.replaceRange(`\n\n${fragment}`, { line, ch: cm.getLine(line).length });
+  }
+  const cm = window.mdCodeMirror;
+  if (window.mdModes?.getLayoutMode() === 'read') window.mdModes.setLayoutMode('normal');
+  const last = cm.lineCount() - 1;
+  cm.setCursor({ line: last, ch: cm.getLine(last).length });
+  cm.scrollIntoView(cm.getCursor());
+  cm.focus();
+}
+
+copyBtn.addEventListener('mousedown', (e) => e.preventDefault());
+copyBtn.addEventListener('click', async () => {
+  if (!selectedText) return;
+  try { await window.mdEditor.clipboardWriteText(selectedText); selectionInfo.textContent = 'Selección copiada.'; }
+  catch { alert('No se pudo copiar la selección.'); }
+});
+[newNoteBtn, addNoteBtn].forEach((button) => button.addEventListener('mousedown', (e) => e.preventDefault()));
+newNoteBtn.addEventListener('click', () => addSelectionToNote(true));
+addNoteBtn.addEventListener('click', () => addSelectionToNote(false));
 
 function base64ToBytes(base64) {
   const binary = atob(base64);
@@ -179,40 +269,80 @@ function removeText(id) {
 // ---- páginas ----
 
 async function renderPage(n) {
-  const page = await pdfDoc.getPage(n);
+  const id = ++pageRenderId;
+  const documentForPage = pdfDoc;
+  pageReady = false;
+  canvasWrap.classList.add('pdf-page-loading');
+  canvasWrap.querySelector('.pdf-select-text-layer')?.remove();
+  clearSelection();
+  const page = await documentForPage.getPage(n);
   const unscaled = page.getViewport({ scale: 1 });
-  scale = Math.min(700 / unscaled.width, 1.4);
-  const viewport = page.getViewport({ scale });
+  const availableWidth = dockHost ? Math.max(160, dockHost.clientWidth - 42) : 700;
+  const pageScale = Math.min(availableWidth / unscaled.width, 1.4);
+  const viewport = page.getViewport({ scale: pageScale });
+  const rendered = document.createElement('canvas');
+  rendered.width = viewport.width;
+  rendered.height = viewport.height;
+  await page.render({ canvasContext: rendered.getContext('2d'), viewport }).promise;
+  const content = await page.getTextContent();
+  const layer = document.createElement('div');
+  layer.className = 'pdf-select-text-layer';
+  layer.style.setProperty('--total-scale-factor', String(pageScale * (page.userUnit || 1)));
+  layer.style.setProperty('--scale-round-x', '1px');
+  layer.style.setProperty('--scale-round-y', '1px');
+  const textLayer = new window.pdfjsLib.TextLayer({ textContentSource: content, container: layer, viewport });
+  await textLayer.render();
+  if (id !== pageRenderId || documentForPage !== pdfDoc || n !== pageNum) return;
+  scale = pageScale;
   canvas.width = viewport.width;
   canvas.height = viewport.height;
   canvasWrap.style.width = `${viewport.width}px`;
   canvasWrap.style.height = `${viewport.height}px`;
-  baseCanvas = document.createElement('canvas');
-  baseCanvas.width = viewport.width;
-  baseCanvas.height = viewport.height;
-  await page.render({ canvasContext: baseCanvas.getContext('2d'), viewport }).promise;
+  baseCanvas = rendered;
+  canvasWrap.querySelector('.pdf-select-text-layer')?.remove();
+  canvasWrap.appendChild(layer);
+  pageHasText = content.items.some((item) => item.str?.trim());
+  pageReady = true;
+  canvasWrap.classList.remove('pdf-page-loading');
+  updateSelection();
   redraw();
   renderTexts();
 }
 
 async function goToPage(n) {
   if (!pdfDoc) return;
+  dragStart = dragCurrent = null;
+  const targetDoc = pdfDoc;
   pageNum = Math.max(1, Math.min(numPages, n));
+  const targetPage = pageNum;
   pageInfoEl.textContent = `Página ${pageNum} / ${numPages}`;
   prevBtn.disabled = pageNum <= 1;
   nextBtn.disabled = pageNum >= numPages;
-  await renderPage(pageNum);
+  try { await renderPage(targetPage); }
+  catch (error) {
+    if (targetDoc !== pdfDoc || targetPage !== pageNum) return;
+    window.mdEditor.logError('pdf:pagina', String(error));
+    alert('No se pudo dibujar esta página del PDF.');
+  }
   updateUndoBtn();
 }
 
 function setMode(next) {
+  if (!['highlight', 'text', 'select'].includes(next)) return;
+  dragStart = dragCurrent = null;
+  clearSelection();
   mode = next;
   modeHighlightBtn.classList.toggle('pdfhighlight-mode-active', mode === 'highlight');
   modeTextBtn.classList.toggle('pdfhighlight-mode-active', mode === 'text');
   canvasWrap.classList.toggle('pdfhighlight-text-mode', mode === 'text');
+  canvasWrap.classList.toggle('pdfhighlight-select-mode', mode === 'select');
+  modeSelectBtn.classList.toggle('pdfhighlight-mode-active', mode === 'select');
+  [modeSelectBtn, modeHighlightBtn, modeTextBtn].forEach((button) => button.setAttribute('aria-pressed', String(button.classList.contains('pdfhighlight-mode-active'))));
+  updateSelection();
 }
 
 canvas.addEventListener('mousedown', (e) => {
+  if (!pageReady || mode === 'select' || e.button !== 0) return;
   const rect = canvas.getBoundingClientRect();
   if (mode === 'text') {
     e.preventDefault();
@@ -288,10 +418,12 @@ function fieldKind(field) {
 }
 
 async function loadFormFields() {
+  const bytesForForm = originalBytes;
   formFields = [];
   formValues = {};
   try {
-    const doc = await PDFLib.PDFDocument.load(originalBytes);
+    const doc = await PDFLib.PDFDocument.load(bytesForForm);
+    if (bytesForForm !== originalBytes) return;
     doc.getForm().getFields().forEach((f) => {
       const kind = fieldKind(f);
       if (!kind) return;
@@ -362,6 +494,9 @@ function renderFormPanel() {
 // ---- abrir / guardar ----
 
 async function loadFromPath(filePath) {
+  if (sourcePath && hasUnsavedChanges() && !confirm('Hay anotaciones sin guardar. ¿Abrir otro PDF y descartarlas?')) return false;
+  const id = ++loadId;
+  const initialEdits = editsSnapshot();
   if (!window.pdfjsLib) {
     alert('El visor de PDF todavía está cargando, probá de nuevo en un segundo.');
     return;
@@ -371,23 +506,38 @@ async function loadFromPath(filePath) {
     alert('No se pudo leer el PDF.');
     return;
   }
-  originalBytes = base64ToBytes(base64);
-  baseName = filePath.split(/[\\/]/).pop();
-  highlights = {};
-  texts = {};
+  const bytes = base64ToBytes(base64);
+  let loaded;
   try {
-    pdfDoc = await window.pdfjsLib.getDocument({ data: originalBytes.slice() }).promise;
+    loaded = await window.pdfjsLib.getDocument({ data: bytes.slice() }).promise;
   } catch (e) {
     window.mdEditor.logError('pdf:abrir', (e && e.stack) || String(e));
     alert('Ese archivo no parece ser un PDF válido.');
     return;
   }
+  if (id !== loadId) { await loaded.loadingTask.destroy(); return false; }
+  if (initialEdits !== editsSnapshot() && hasUnsavedChanges() && !confirm('Has cambiado anotaciones mientras se abría el PDF. ¿Descartarlas?')) {
+    await loaded.loadingTask.destroy();
+    return false;
+  }
+  const previous = pdfDoc;
+  pdfDoc = loaded;
+  originalBytes = bytes;
+  sourcePath = filePath;
+  baseName = filePath.split(/[\\/]/).pop();
+  highlights = {};
+  texts = {};
+  savedEdits = null;
+  clearSelection();
+  if (previous) previous.loadingTask.destroy().catch(() => {});
   numPages = pdfDoc.numPages;
   emptyEl.hidden = true;
   bodyEl.hidden = false;
   saveBtn.disabled = false;
   await loadFormFields();
+  if (id !== loadId) return false;
   await goToPage(1);
+  return true;
 }
 
 // Helvetica (fuente estándar de PDF) cubre los acentos, ñ, ¿¡ del español
@@ -411,15 +561,17 @@ function hexToRgb(hex) {
 }
 
 async function buildPdf() {
-  const pdfLibDoc = await PDFLib.PDFDocument.load(originalBytes);
+  const [savedHighlights, savedTexts, savedForm] = JSON.parse(editsSnapshot());
+  const bytesForSave = originalBytes;
+  const pdfLibDoc = await PDFLib.PDFDocument.load(bytesForSave);
   const pages = pdfLibDoc.getPages();
   const font = await pdfLibDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
-  Object.keys(highlights).map(Number).forEach((n) => {
+  Object.keys(savedHighlights).map(Number).forEach((n) => {
     const page = pages[n - 1];
     if (!page) return;
     const { width, height } = page.getSize();
-    (highlights[n] || []).forEach((h) => {
+    (savedHighlights[n] || []).forEach((h) => {
       page.drawRectangle({
         x: h.x * width,
         y: height - (h.y + h.h) * height,
@@ -432,11 +584,11 @@ async function buildPdf() {
     });
   });
 
-  Object.keys(texts).map(Number).forEach((n) => {
+  Object.keys(savedTexts).map(Number).forEach((n) => {
     const page = pages[n - 1];
     if (!page) return;
     const { width, height } = page.getSize();
-    (texts[n] || []).forEach((t) => {
+    (savedTexts[n] || []).forEach((t) => {
       if (!t.text.trim()) return;
       // Misma caja que en pantalla: esquina superior izquierda en (x, y),
       // interlineado 1.2; la línea base queda ~0.8 del tamaño abajo del borde.
@@ -452,11 +604,11 @@ async function buildPdf() {
     });
   });
 
-  const formNames = Object.keys(formValues);
+  const formNames = Object.keys(savedForm);
   if (formNames.length) {
     const form = pdfLibDoc.getForm();
     formNames.forEach((name) => {
-      const v = formValues[name];
+      const v = savedForm[name];
       try {
         const field = form.getField(name);
         const kind = fieldKind(field);
@@ -492,6 +644,7 @@ prevBtn.addEventListener('click', () => goToPage(pageNum - 1));
 nextBtn.addEventListener('click', () => goToPage(pageNum + 1));
 modeHighlightBtn.addEventListener('click', () => setMode('highlight'));
 modeTextBtn.addEventListener('click', () => setMode('text'));
+modeSelectBtn.addEventListener('click', () => setMode('select'));
 
 undoBtn.addEventListener('click', () => {
   if (!highlights[pageNum] || !highlights[pageNum].length) return;
@@ -501,25 +654,96 @@ undoBtn.addEventListener('click', () => {
 });
 
 saveBtn.addEventListener('click', async () => {
-  if (!originalBytes) return;
+  if (!originalBytes || saving) return;
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   if (!hasChanges()) {
     alert('Todavía no agregaste nada: subrayá (arrastrando), escribí (modo "Escribir" y clic en la página) o completá el formulario.');
     return;
   }
-  const bytes = await buildPdf();
-  const base64 = await bytesToBase64(bytes);
   const suffix = Object.values(texts).some((l) => l && l.length) || Object.keys(formValues).length ? '-editado.pdf' : '-subrayado.pdf';
-  const savedPath = await window.mdEditor.pdfSaveBytes(base64, baseName.replace(/\.pdf$/i, '') + suffix);
-  if (savedPath) alert(`Guardado en: ${savedPath}`);
+  const saveName = baseName.replace(/\.pdf$/i, '') + suffix;
+  const snapshot = editsSnapshot();
+  const savingSource = sourcePath;
+  saving = true;
+  saveBtn.disabled = true;
+  try {
+    const bytes = await buildPdf();
+    const base64 = await bytesToBase64(bytes);
+    const savedPath = await window.mdEditor.pdfSaveBytes(base64, saveName);
+    if (savedPath) {
+      if (sourcePath === savingSource) savedEdits = snapshot;
+      alert(`Guardado en: ${savedPath}`);
+    }
+  } catch (error) {
+    window.mdEditor.logError('pdf:guardar', String(error));
+    alert('No se pudo guardar el PDF. Las anotaciones siguen en el panel.');
+  } finally { saving = false; saveBtn.disabled = !originalBytes; }
 });
 
 function open() {
-  overlay.hidden = false;
+  const box = modal;
+  let tabs = box.querySelector('.pdf-document-tabs');
+  if (!tabs) {
+    tabs = document.createElement('nav');
+    tabs.className = 'pdf-document-tabs';
+    tabs.setAttribute('aria-label', 'Cambiar a un documento abierto');
+    box.prepend(tabs);
+  }
+  tabs.replaceChildren();
+  document.querySelectorAll('#tabbar .tab').forEach((tab) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'toolbar-button';
+    button.textContent = tab.querySelector('.tab-label').textContent;
+    button.title = tab.title;
+    button.addEventListener('click', () => {
+      if (!dockHost) close(); // En estudio, el PDF permanece visible al cambiar de nota.
+      if (tab.isConnected) tab.click();
+    });
+    tabs.appendChild(button);
+  });
+  overlay.hidden = !!dockHost;
+  updateSelection();
 }
 
 function close() {
+  if (dockHost) undock();
   overlay.hidden = true;
+}
+async function dock(host) {
+  const changed = dockHost !== host;
+  dockResize.disconnect(); clearTimeout(dockResizeTimer);
+  dockHost = host; dockWidth = host.clientWidth; host.append(modal); modal.classList.add('pdf-study-docked'); open();
+  dockResize.observe(host);
+  if (changed && pdfDoc) await goToPage(pageNum);
+}
+function undock() {
+  const wasDocked = !!dockHost;
+  dockResize.disconnect(); clearTimeout(dockResizeTimer);
+  dockHost = null; overlay.append(modal); modal.classList.remove('pdf-study-docked'); overlay.hidden = true;
+  if (wasDocked && pdfDoc) goToPage(pageNum);
+}
+// Las pestañas se reconstruyen al editar o cambiar de nota: no conservar
+// botones que apunten a nodos antiguos mientras el PDF siga visible.
+new MutationObserver(() => { if (dockHost || !overlay.hidden) open(); }).observe(document.getElementById('tabbar'), { childList: true, subtree: true });
+
+async function openLink(href, basePath) {
+  if (/^[a-z][a-z0-9+.-]*:/i.test(href) && !href.startsWith('md-local://file/')) return false;
+  const match = /^(.+\.pdf)(?:#page=(\d+))?$/i.exec(href);
+  if (!match) return false;
+  try {
+    const raw = decodeURIComponent(match[1].replace(/^md-local:\/\/file/, ''));
+    if (!raw.startsWith('/') && !basePath) return false;
+    const filePath = raw.startsWith('/') ? raw : window.mdEditor.resolveLocalPath(basePath, raw);
+    if (filePath !== sourcePath && !await loadFromPath(filePath)) return true;
+    open();
+    setMode('select');
+    await goToPage(Number(match[2]) || 1);
+  } catch (error) {
+    window.mdEditor.logError('pdf:referencia', String(error));
+    alert('No se pudo abrir la referencia PDF. Comprueba la ruta y abre su carpeta o el archivo primero.');
+  }
+  return true;
 }
 
 overlay.addEventListener('mousedown', (e) => {
@@ -533,9 +757,13 @@ document.getElementById('btn-pdfhighlight').addEventListener('click', open);
 
 window.mdPdfHighlight = {
   open,
+  dock,
+  undock,
   close,
   loadFromPath,
   setMode,
+  openLink,
+  goToPage,
   // Solo para test/renderer-checks.js: marca un subrayado / texto / campo
   // directo, sin simular el mouse real.
   addHighlightForTest: (xNorm, yNorm, wNorm, hNorm) => {
@@ -549,11 +777,18 @@ window.mdPdfHighlight = {
   buildPdfForTest: () => buildPdf(),
   getState: () => (pdfDoc ? {
     pageNum,
+    sourcePath,
+    mode,
+    selectedText,
+    pageHasText,
+    pageReady,
     numPages,
     highlightCount: (highlights[pageNum] || []).length,
     textCount: (texts[pageNum] || []).length,
     formFields: formFields.map((f) => f.name)
   } : null)
 };
+
+setMode('select');
 
 })();

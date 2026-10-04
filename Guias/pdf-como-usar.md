@@ -1,6 +1,6 @@
 # PDF — cómo usarlo
 
-Guía paso a paso de todo lo que MK hace con PDFs: **escribir encima, completar formularios, subrayar** y **operaciones de páginas** (unir, separar, rotar, marca de agua). Para ideas de *para qué* sirve cada cosa, ver [`pdf-para-que-sirve.md`](pdf-para-que-sirve.md).
+Guía paso a paso de todo lo que MK hace con PDFs: **seleccionar texto y llevarlo a apuntes, escribir encima, completar formularios, subrayar** y **operaciones de páginas** (unir, separar, rotar, marca de agua). Para ideas de *para qué* sirve cada cosa, ver [`pdf-para-que-sirve.md`](pdf-para-que-sirve.md).
 
 > **Regla de oro:** MK nunca modifica tu PDF original. Todo termina en **"Guardar como..."**, que crea un PDF nuevo.
 
@@ -8,10 +8,20 @@ Guía paso a paso de todo lo que MK hace con PDFs: **escribir encima, completar 
 
 | Herramienta | Botón | Para |
 |---|---|---|
-| **PDF: subrayar y escribir** | 🖊 en la barra, paleta → "PDF: subrayar y escribir", o **clic derecho en un PDF del sidebar → "Escribir / subrayar en este PDF"** | Escribir texto encima, completar formularios, subrayar |
+| **PDF: seleccionar, copiar, subrayar y escribir** | 🖊 en la barra, paleta → "PDF: seleccionar, copiar, subrayar y escribir", o **clic derecho en un PDF del sidebar → "Escribir / subrayar en este PDF"** | Seleccionar y citar texto, escribir encima, completar formularios, subrayar |
 | **Operaciones de páginas** | 🗂 en la barra, o paleta → "Operaciones de páginas PDF..." | Unir, separar, rotar, reordenar, borrar páginas, marca de agua, firma en una esquina |
 
 ## 1. Escribir en un PDF
+
+### Seleccionar texto y llevarlo a apuntes
+
+En la herramienta 🖊, **Seleccionar** es el modo inicial. Arrastrá sobre el texto original y elegí **Copiar selección**, **Crear nota con selección** o **Añadir al final de nota abierta**. La última opción conserva todo el contenido previo de la nota Markdown activa.
+
+Las notas reciben una cita y un enlace al PDF con su página. Al pulsarlo en el preview o en Live Preview, MK vuelve a esa página; en Live Preview, `Alt+clic` permite editar el enlace. El número corresponde a la posición de la página en el archivo, no a la numeración impresa.
+
+Los enlaces usan una ruta absoluta local de MK (`md-local://file…#page=N`): si movés el PDF o llevás la nota a otro equipo, tendrás que actualizar la ruta. Los PDFs escaneados sin texto no permiten selección: **no hay OCR**. Seleccionar no crea subrayados ni cambia el PDF.
+
+### Añadir texto
 
 1. Abrí el PDF (**Abrir PDF...**, o clic derecho en el archivo del sidebar).
 2. Arriba, elegí **T Escribir**.
@@ -55,7 +65,7 @@ Al guardar, los valores quedan **dentro de los campos** del formulario (siguen s
 
 - Nombre sugerido: `tu-archivo-editado.pdf` (o `-subrayado.pdf` si solo subrayaste).
 - Si todavía no agregaste nada, te avisa en vez de guardar una copia igual.
-- Lo que no guardaste se pierde al cerrar el panel o abrir otro PDF.
+- Cerrar el panel o ir a una nota conserva las anotaciones durante la sesión. Al cambiar de PDF, MK pide confirmación si hay cambios sin guardar. Guardalos antes de cerrar la aplicación.
 
 ## 5. Operaciones de páginas (🗂)
 

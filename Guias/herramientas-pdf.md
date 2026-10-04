@@ -19,7 +19,9 @@ Paleta → "Operaciones de páginas PDF...". Todo en memoria; el original no se 
 | Guardar | "Guardar como..." a un archivo nuevo |
 
 ## Subrayar y escribir (🖊)
-Botón 🖊, paleta → "PDF: subrayar y escribir", o **clic derecho en un PDF del sidebar → "Escribir / subrayar en este PDF"**.
+Botón 🖊, paleta → "PDF: seleccionar, copiar, subrayar y escribir", o **clic derecho en un PDF del sidebar → "Escribir / subrayar en este PDF"**.
+
+**Seleccionar** permite copiar texto original, crear una nota con una cita o añadirla al final de la nota Markdown activa. La cita enlaza con la página original y funciona en preview y Live Preview. Sin OCR: los escaneos sin texto no se pueden seleccionar. La ruta es absoluta y local de MK; si movés el PDF hay que actualizarla.
 
 | Modo | Cómo |
 |---|---|

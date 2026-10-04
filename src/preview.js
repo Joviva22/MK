@@ -28,8 +28,10 @@ function restoreCode(text, store) {
   });
 }
 
-function embedMediaSyntax(text) {
+function embedMediaSyntax(text, exportMode = false) {
   return text.replace(/!\[\[(.+?)\]\]/g, (match, filename) => {
+    const embed = window.mdEmbedLogic?.parse(filename);
+    if (embed) return exportMode ? `<a href="${window.mdEmbedLogic.escape(filename.split('|')[0].trim())}">${window.mdEmbedLogic.escape(embed.label)}</a>` : window.mdStudyEmbed.html(filename);
     const kind = window.mdMedia && window.mdMedia.kindOf(filename);
     if (kind === 'video') return `<video controls preload="metadata" src="${filename}"></video>`;
     if (kind === 'audio') return `<audio controls preload="metadata" src="${filename}"></audio>`;
@@ -183,7 +185,7 @@ function transformCallouts(html) {
 // nunca se muestran en pantalla antes de empaquetarse.
 function renderMarkdownForExport(markdownText, filePath, root) {
   const { text: codeProtected, store: codeStore } = extractCode(markdownText);
-  const tagged = embedTagSyntax(embedWikilinkSyntax(embedHighlightSyntax(embedMediaSyntax(codeProtected))));
+  const tagged = embedTagSyntax(embedWikilinkSyntax(embedHighlightSyntax(embedMediaSyntax(codeProtected, true))));
   const preprocessed = restoreCode(tagged, codeStore);
   const { text, store } = extractMath(preprocessed);
   let html = marked.parse(text);
@@ -601,6 +603,7 @@ previewPane.addEventListener('click', async (e) => {
   e.preventDefault();
   const href = link.getAttribute('href');
   if (!href || href === '#') return;
+  if (window.mdPdfHighlight && await window.mdPdfHighlight.openLink(href, window.mdState.currentFilePath)) return;
 
   if (/^https?:|^mailto:/i.test(href)) {
     window.mdEditor.openExternal(href);
@@ -673,6 +676,26 @@ function ensureFresh() {
   render();
 }
 
+function requestRender() {
+  clearTimeout(debounceTimer);
+  // Actualizar también la clase que decide la visibilidad al cambiar de archivo.
+  const isCode = !!window.mdTabs?.isActiveTabCode();
+  containerEl.classList.toggle('code-file', isCode);
+  if (isCode) previewPane.replaceChildren();
+  stale = true;
+  if (previewVisible()) ensureFresh(); else onLayoutChange();
+}
+
+function onLayoutChange() {
+  if (previewVisible()) { ensureFresh(); return; }
+  // El DOM de lectura puede tener miles de nodos aunque esté oculto.
+  // No conservarlo mientras se escribe; se reconstruye al mostrarlo.
+  if (previewPane.classList.contains('pdf-mode')) return;
+  clearTimeout(debounceTimer);
+  previewPane.replaceChildren();
+  stale = true;
+}
+
 window.mdCodeMirror.on('change', () => {
   clearTimeout(debounceTimer);
   if (!previewVisible()) {
@@ -682,7 +705,7 @@ window.mdCodeMirror.on('change', () => {
   debounceTimer = setTimeout(render, 150);
 });
 
-window.mdPreview = { timings: () => lastTimings, mode: () => lastMode, setIncremental: (on) => { incremental = !!on; blockCache = new Map(); }, renderWholeForTest: (t) => renderWhole(t), renderBlocksForTest: (t) => renderBlocks(t), whenHighlighted: () => highlightDone, ensureFresh, isStale: () => stale };
+window.mdPreview = { timings: () => lastTimings, mode: () => lastMode, setIncremental: (on) => { incremental = !!on; blockCache = new Map(); }, renderWholeForTest: (t) => renderWhole(t), renderBlocksForTest: (t) => renderBlocks(t), whenHighlighted: () => highlightDone, ensureFresh, requestRender, onLayoutChange, isStale: () => stale };
 
 render();
 

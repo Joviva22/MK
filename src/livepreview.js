@@ -14,7 +14,8 @@
 //     son "bloques": se muestran crudos si el
 //     cursor está en cualquiera de sus líneas.
 //
-// Cada cambio de texto reconstruye todo (con un pequeño debounce); mover el
+// La prosa sin cambios estructurales actualiza líneas vecinas; el resto
+// reconstruye todo con debounce. Mover el
 // cursor de línea solo redibuja las unidades afectadas. Las marcas (a diferencia de clases CSS
 // por línea) hacen que CodeMirror vuelva a medir la línea, así el cursor
 // no queda desfasado cuando aparecen/desaparecen los marcadores.
@@ -29,6 +30,9 @@ let lineClasses = []; // [line handle, where, className]
 let lastActiveKey = '';
 let lastLineClassKey = '';
 let rebuildTimer = null;
+let structureDirty = false;
+const dirtyUnits = new Set();
+const metrics = { rebuilds: 0, incrementalUpdates: 0, decoratedUnits: 0 };
 const htmlCache = new Map();
 
 function isMarkdownDoc() {
@@ -53,6 +57,10 @@ function addLineClass(line, where, cls) {
 }
 
 function hideRange(line, from, to) {
+  if (window.mdCM6) {
+    marks.push(cm.markText({ line, ch: from }, { line, ch: to }, { collapsed: true, inclusiveLeft: false, inclusiveRight: false }));
+    return;
+  }
   const span = document.createElement('span');
   span.className = 'mk-live-hidden';
   marks.push(cm.markText({ line, ch: from }, { line, ch: to }, { replacedWith: span, inclusiveLeft: false, inclusiveRight: false }));
@@ -81,7 +89,8 @@ function el(tag, className, text) {
 }
 
 function renderMarkdown(src) {
-  if (htmlCache.has(src)) return htmlCache.get(src);
+  const key = JSON.stringify([window.mdState.currentFilePath, window.mdState.rootFolder, src]);
+  if (htmlCache.has(key)) return htmlCache.get(key);
   let html = '';
   try {
     html = window.mdRenderMarkdownForExport
@@ -90,7 +99,7 @@ function renderMarkdown(src) {
   } catch {
     html = '';
   }
-  htmlCache.set(src, html);
+  htmlCache.set(key, html);
   if (htmlCache.size > 300) htmlCache.delete(htmlCache.keys().next().value);
   return html;
 }
@@ -164,6 +173,25 @@ function renderMermaid(code) {
 // ---- widgets de una línea ----
 
 const INLINE_PATTERNS = [
+  {
+    re: /!\[\[([^\]\n]+\.(?:pdf|excalidraw)(?:#page=[1-9]\d{0,5})?(?:\|[^\]\n]+)?)\]\]/gi,
+    build: (m) => window.mdEmbedLogic?.parse(m[1]) ? { node: window.mdStudyEmbed.create(m[1]), cursorOnClick: false } : null
+  },
+  {
+    re: /(?<!!)\[([^\]\n]+)\]\((md-local:\/\/file[^\s)]+\.pdf#page=\d+)\)/gi,
+    build: (m) => {
+      const a = el('a', 'mk-live-pdf-link', m[1]);
+      a.href = m[2];
+      a.title = 'Abrir PDF en la página citada · Alt+clic para editar';
+      a.addEventListener('mousedown', (e) => {
+        if (e.button !== 0 || e.altKey) return;
+        e.preventDefault();
+        e.stopPropagation();
+        window.mdPdfHighlight?.openLink(m[2], window.mdState.currentFilePath);
+      });
+      return { node: a, cursorOnClick: true };
+    }
+  },
   {
     re: /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,
     build: (m) => {
@@ -405,6 +433,7 @@ function blockEnd(u) {
 }
 
 function decorateUnit(u, active) {
+  metrics.decoratedUnits++;
   // Los helpers (hideRange, replaceWith, addLineClass...) escriben en
   // marks/lineClasses: se apuntan a los de esta unidad.
   marks = u.marks;
@@ -497,8 +526,11 @@ function refreshIfLineClassesChanged() {
 
 // Reconstrucción completa (cambió el texto).
 function rebuild() {
+  metrics.rebuilds++;
   clearTimeout(rebuildTimer);
   rebuildTimer = null;
+  structureDirty = false;
+  dirtyUnits.clear();
   cm.operation(() => {
     clearAll();
     if (!enabled || !isMarkdownDoc()) return;
@@ -506,6 +538,7 @@ function rebuild() {
     lastActive = active;
     lastActiveKey = Array.from(active).join(',');
     scanUnits();
+    if (cm.prepareLineTokens) cm.prepareLineTokens();
     units.forEach((u) => decorateUnit(u, active));
   });
   refreshIfLineClassesChanged();
@@ -536,8 +569,77 @@ function updateActive() {
 }
 
 function scheduleRebuild() {
+  structureDirty = true;
   clearTimeout(rebuildTimer);
   rebuildTimer = setTimeout(rebuild, 120);
+}
+
+// Texto ordinario sin saltos ni cambios de delimitadores: las unidades y
+// sus números de línea siguen siendo válidos. El resto (bloques, pegados,
+// Markdown estructural, líneas nuevas) conserva el camino completo seguro.
+function canUpdateLocally(change) {
+  if (!change || change.from.line !== change.to.line || change.text.length !== 1 || change.removed.length !== 1) return false;
+  if (typeof change.lineBefore !== 'string' || typeof change.lineAfter !== 'string') return false;
+  const unit = units[lineUnit[change.from.line]];
+  if (!unit) return false;
+  // Un bloque con los mismos límites puede volver a renderizarse entero
+  // sin reconstruir las demás unidades del documento.
+  if (unit.kind === 'fence' && unit.data.closed && change.from.line > unit.from && change.from.line < unit.to) {
+    return !/^\s{0,3}(?:`{3,}|~{3,})/.test(change.lineBefore) && !/^\s{0,3}(?:`{3,}|~{3,})/.test(change.lineAfter);
+  }
+  if (unit.kind === 'table') {
+    const divider = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+    if (change.from.line === unit.from + 1) return divider.test(change.lineBefore) && divider.test(change.lineAfter);
+    return /^\s*\|/.test(change.lineBefore) && /^\s*\|/.test(change.lineAfter);
+  }
+  if (unit.kind === 'callout') {
+    const prefix = change.from.line === unit.from ? /^\s{0,3}>\s*\[!(NOTE|TIP|WARNING|IMPORTANT|CAUTION)\]/i : /^\s{0,3}>/;
+    return prefix.test(change.lineBefore) && prefix.test(change.lineAfter);
+  }
+  const prefix = change.lineBefore.match(/^\s*(?:#{1,6}\s+|(?:[-*+]|\d+[.)])\s+(?:\[[ xX]\]\s*)?)/);
+  if (prefix && change.from.ch < prefix[0].length) return false;
+  if (!/^[\p{L}\p{N} ,.;:!?]*$/u.test(change.text[0] + change.removed[0])) return false;
+  // Editar dentro de una palabra no cambia delimitadores ni su flanqueo.
+  // También es seguro en texto con énfasis, enlaces o código inline:
+  // las marcas siguen en su sitio y solo se redibuja la unidad afectada.
+  const word = /[\p{L}\p{N}]/u;
+  const left = change.lineBefore.slice(change.from.ch - 1, change.from.ch);
+  const right = change.lineBefore.slice(change.to.ch, change.to.ch + 1);
+  const leftWord = word.test(left);
+  const rightWord = word.test(right);
+  const wordEdit = /^[\p{L}\p{N}]*$/u.test(change.text[0] + change.removed[0]) ? leftWord || rightWord : leftWord && rightWord;
+  // Espacios y puntuación fuera de delimitadores no cambian su flanqueo.
+  // Los enlaces pueden tener destinos/títulos multilínea: mantener para
+  // esos casos la regla más estricta de editar letras dentro de una palabra.
+  const plainEdit = !/[`*_~[\]()<>\\$|]/.test(left + right) && !/[\[\]()]/.test(change.lineBefore) &&
+    change.lineBefore.match(/^\s*/)[0] === change.lineAfter.match(/^\s*/)[0] &&
+    !!change.lineBefore.trim() === !!change.lineAfter.trim();
+  if (unit.kind === 'line' && unit.from === unit.to &&
+      (wordEdit || plainEdit) && !/[<>]/.test(change.lineBefore) && !/^\s*\[[^\]]+\]:/.test(change.lineBefore)) return true;
+  // Delimitadores inline pueden cambiar el parseo más allá de una línea
+  // (énfasis/enlaces/código multilínea): no asumir que el daño es local.
+  if (/[`*_~[\]<>\\$|]/.test(change.lineBefore + change.lineAfter)) return false;
+  if (change.lineBefore.match(/^\s*/)[0] !== change.lineAfter.match(/^\s*/)[0]) return false;
+  const structural = /^\s{0,3}(?:`{3,}|~{3,}|\$\$|>|\||[-=]{2,}\s*$)/;
+  if (structural.test(change.lineBefore) || structural.test(change.lineAfter)) return false;
+  return !!unit && unit.kind === 'line' && unit.from === unit.to;
+}
+
+function updateDirtyUnits() {
+  clearTimeout(rebuildTimer);
+  rebuildTimer = null;
+  if (structureDirty) { rebuild(); return; }
+  if (!enabled || !isMarkdownDoc()) return;
+  const active = activeLines();
+  [...lastActive, ...active].forEach((line) => { const idx = lineUnit[line]; if (idx != null) dirtyUnits.add(idx); });
+  const touched = [...dirtyUnits];
+  dirtyUnits.clear();
+  lastActive = active;
+  lastActiveKey = Array.from(active).join(',');
+  metrics.incrementalUpdates++;
+  cm.operation(() => {
+    touched.forEach((idx) => { const unit = units[idx]; clearUnit(unit); decorateUnit(unit, active); });
+  });
 }
 
 function applyLiveMode() {
@@ -547,14 +649,25 @@ function applyLiveMode() {
   cm.setOption('lineNumbers', !isMarkdownDoc());
 }
 
-cm.on('changes', () => { if (enabled) scheduleRebuild(); });
+cm.on('changes', (_instance, changes) => {
+  if (!enabled) return;
+  if (!structureDirty && changes?.length && units.length && changes.every(canUpdateLocally)) {
+    changes.forEach((change) => {
+      for (let line = Math.max(0, change.from.line - 1); line <= Math.min(cm.lineCount() - 1, change.from.line + 1); line++) {
+        const idx = lineUnit[line]; if (idx != null) dirtyUnits.add(idx);
+      }
+    });
+    clearTimeout(rebuildTimer);
+    rebuildTimer = setTimeout(updateDirtyUnits, 120);
+  } else scheduleRebuild();
+});
 cm.on('cursorActivity', () => {
   if (!enabled) return;
   const key = Array.from(activeLines()).join(',');
   if (key === lastActiveKey) return;
   // Con texto recién cambiado (rebuild pendiente), la estructura puede estar
   // vieja: rehacer todo. Si no, alcanza con las unidades afectadas.
-  if (rebuildTimer) rebuild(); else updateActive();
+  if (rebuildTimer) updateDirtyUnits(); else updateActive();
 });
 // Cambio de pestaña o de modo (tabs.js vuelve a poner mode: 'markdown').
 cm.on('swapDoc', () => { if (enabled) { applyLiveMode(); rebuild(); } });
@@ -580,7 +693,9 @@ function disable() {
   enabled = false;
   clearTimeout(rebuildTimer);
   rebuildTimer = null;
-  clearAll();
+  structureDirty = false;
+  dirtyUnits.clear();
+  cm.operation(clearAll);
   wrapper.classList.remove('cm-live');
   const mode = cm.getOption('mode');
   if (mode && typeof mode === 'object' && mode.name === 'markdown') cm.setOption('mode', 'markdown');
@@ -588,6 +703,6 @@ function disable() {
   cm.refresh();
 }
 
-window.mdLivePreview = { enable, disable, isEnabled: () => enabled, rebuild, updateActive };
+window.mdLivePreview = { enable, disable, isEnabled: () => enabled, rebuild, updateActive, metrics: () => ({ ...metrics }) };
 
 })();
