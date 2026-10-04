@@ -36,6 +36,7 @@ const browserGlobals = {
   clearInterval: 'readonly',
   Notification: 'readonly',
   requestAnimationFrame: 'readonly',
+  performance: 'readonly',
   getComputedStyle: 'readonly',
   Event: 'readonly',
   MouseEvent: 'readonly',
@@ -68,6 +69,7 @@ const browserGlobals = {
   crypto: 'readonly',
   ResizeObserver: 'readonly',
   MutationObserver: 'readonly',
+  IntersectionObserver: 'readonly',
   Terminal: 'readonly',
   FitAddon: 'readonly',
   SearchAddon: 'readonly'
@@ -78,10 +80,11 @@ const sharedGlobals = { ...browserGlobals, module: 'writable', self: 'readonly' 
 
 module.exports = [
   {
-    ignores: ['node_modules/**', 'dist/**', 'build/**']
+    // cm6-bundle.js: generado por esbuild (npm run build:cm6), no se edita a mano.
+    ignores: ['node_modules/**', 'dist/**', 'build/**', 'src/cm6-bundle.js', 'src/drawing-bundle.js']
   },
   {
-    files: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/pathguard.js', 'src/petcatalog.js', 'src/backupbundle.js', 'src/problemreport.js', 'src/datamigrate.js', 'src/khslice.js', 'src/khsprites.js', 'src/ipc-*.js', 'scripts/*.js', 'test/run.js', 'test/bench.js', 'eslint.config.js'],
+    files: ['src/atomicwrite.js', 'src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/pathguard.js', 'src/petcatalog.js', 'src/spellchecker.js', 'src/backupbundle.js', 'src/problemreport.js', 'src/datamigrate.js', 'src/khslice.js', 'src/khsprites.js', 'src/ipc-*.js', 'scripts/*.js', 'test/run.js', 'test/run-cm6-shim.js', 'test/bench.js', 'eslint.config.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',
@@ -105,8 +108,8 @@ module.exports = [
   {
     // src/*.js son <script> del renderer; test/renderer-checks.js corre
     // dentro de esa misma ventana vía executeJavaScript (no es Node).
-    files: ['src/*.js', 'test/renderer-checks.js', 'test/bench-checks.js'],
-    ignores: ['src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/pathguard.js', 'src/petcatalog.js', 'src/backupbundle.js', 'src/problemreport.js', 'src/datamigrate.js', 'src/khslice.js', 'src/khsprites.js', 'src/ipc-*.js'],
+    files: ['src/*.js', 'test/renderer-checks.js', 'test/bench-checks.js', 'test/cm6-shim-checks.js'],
+    ignores: ['src/atomicwrite.js', 'src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/pathguard.js', 'src/petcatalog.js', 'src/spellchecker.js', 'src/backupbundle.js', 'src/problemreport.js', 'src/datamigrate.js', 'src/khslice.js', 'src/khsprites.js', 'src/ipc-*.js', 'src/database.js', 'src/database-state.js', 'src/database-helpers.js', 'src/database-views.js', 'src/database-cells.js', 'src/database-csv.js', 'src/database-embed.js', 'src/home.js', 'src/home-*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',
@@ -117,6 +120,27 @@ module.exports = [
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       // Electron no soporta prompt(): rompía plantillas, "Insertar tabla" y el
       // sidebar sin que se notara. Usar window.mdAsk (askdialog.js).
+      'no-restricted-properties': ['error', { object: 'window', property: 'prompt', message: 'Electron no soporta prompt(): usá window.mdAsk().' }],
+      'no-restricted-globals': ['error', { name: 'prompt', message: 'Electron no soporta prompt(): usá window.mdAsk().' }]
+    }
+  },
+  {
+    // Bases de datos y Home: partidos en módulos ES (ver OBJETIVOS.md) —
+    // cargan con <script type="module">, import/export real en vez de window.mdX.
+    files: ['src/database.js', 'src/database-state.js', 'src/database-helpers.js', 'src/database-views.js', 'src/database-cells.js', 'src/database-csv.js', 'src/database-embed.js', 'src/home.js', 'src/home-*.js', 'src/cm6-entry.js', 'src/drawing-entry.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: browserGlobals
+    },
+    rules: {
+      'no-undef': 'error',
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      // Un módulo solo puede reasignar sus propios `let`: reasignar uno
+      // importado de otro módulo es un TypeError en tiempo de ejecución que
+      // ESLint no marcaría como error de sintaxis si no fuera por esta regla
+      // (ya atajó dos bugs reales al partir home.js en módulos).
+      'no-import-assign': 'error',
       'no-restricted-properties': ['error', { object: 'window', property: 'prompt', message: 'Electron no soporta prompt(): usá window.mdAsk().' }],
       'no-restricted-globals': ['error', { name: 'prompt', message: 'Electron no soporta prompt(): usá window.mdAsk().' }]
     }

@@ -112,7 +112,7 @@ function run() {
         worse++;
       }
     }
-    console.log(`${pad(r.name, 44)} ${pad(`${r.ms} ms`, 10)} ${pad(typeof ref === 'number' ? `${ref} ms` : '—', 12)} ${change}`);
+    console.log(`${pad(r.name, 44)} ${pad(`${r.ms} ms`, 10)} ${pad(typeof ref === 'number' ? `${ref} ms` : '—', 12)} ${change}${r.detail ? ` · ${r.detail}` : ''}`);
   }
   if (args.includes('--save')) {
     const data = { saved: new Date().toISOString(), machine: `${os.cpus()[0].model} · ${os.platform()} ${os.release()}`, results: Object.fromEntries(results.map((r) => [r.name, r.ms])) };

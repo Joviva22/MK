@@ -45,6 +45,7 @@
   await waitFor(() => document.querySelectorAll('#tabbar .tab').length > 0);
 
   // 1. El puente de preload existe con los métodos clave
+
   check(
     'mdEditor expone el puente de preload completo',
     window.mdEditor &&
@@ -241,7 +242,7 @@
   // 9b. Tema personalizado: color pickers aplican en vivo (--accent inline),
   // avisa si el contraste texto/fondo queda bajo, y "Guardar" persiste en
   // config.json bajo customTheme.
-  window.mdCustomTheme.open();
+  await window.mdCustomTheme.open();
   await waitFor(() => !document.getElementById('custom-theme-panel').hidden);
   const customPanelOpenOk = !document.getElementById('custom-theme-panel').hidden;
 
@@ -432,7 +433,7 @@
   window.mdCodeMirror.setCursor({ line: 1, ch: 0 });
   window.mdCodeMirror.replaceSelection('palabrau');
   window.mdAutocomplete.show();
-  const hintsShown = await waitFor(() => document.querySelector('.CodeMirror-hints'));
+  const hintsShown = await waitFor(() => document.querySelector('.CodeMirror-hints, .cm-tooltip-autocomplete'));
   const hintMatchesOk = !!hintsShown && /palabraunica/.test(hintsShown.textContent);
   if (window.mdCodeMirror.state.completionActive) window.mdCodeMirror.state.completionActive.close();
   check('Autocompletado (Ctrl+Space) sugiere palabras ya usadas en el documento', hintMatchesOk);
@@ -1102,8 +1103,18 @@
   const containerCls = document.querySelector('.container').className;
   const pdfForcesReadOk = containerCls.includes('mode-read') && !containerCls.includes('mode-focus') && !containerCls.includes('code-file');
   const previewVisibleForPdfOk = getComputedStyle(document.querySelector('.preview-wrapper')).display !== 'none';
+  check('PDF: pestañas de documentos visibles y editor oculto',
+    document.getElementById('tabbar').getBoundingClientRect().height > 0 &&
+    getComputedStyle(document.getElementById('editor-pane')).display === 'none');
+  window.mdPdfHighlight.open();
+  const pdfTab = document.querySelector('.pdf-document-tabs button');
+  const pdfTabsVisible = !!pdfTab && pdfTab.getBoundingClientRect().height > 0;
+  if (pdfTab) pdfTab.click();
+  check('Editor PDF: muestra documentos abiertos y permite cambiar de pestaña',
+    pdfTabsVisible && document.getElementById('pdfhighlight-panel').hidden &&
+    !document.querySelector('.container').classList.contains('pdf-reading'));
 
-  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'R', ctrlKey: true, shiftKey: true })); // limpiar, volver a normal
+  window.mdModes.setLayoutMode('normal'); // el clic de pestaña ya salió del PDF
   window.renderPreview();
 
   check(
@@ -1174,6 +1185,8 @@
   window.mdPomodoro.toggle();
   await waitFor(() => !pomodoroStatusEl.hidden && window.mdPomodoro.getState().phase === 'focus');
   const pomodoroStartsFocusOk = window.mdPomodoro.getState().phase === 'focus' && window.mdPomodoro.getState().running;
+  check('Pomodoro: Lucky Emblem en lugar del tomate con cualquier tema',
+    !!pomodoroStatusEl.querySelector('.lucky-mini svg') && !pomodoroStatusEl.textContent.includes('🍅'));
   const pomodoroShowsInStatusbarOk = !pomodoroStatusEl.hidden && pomodoroStatusEl.textContent.includes('Foco');
 
   await waitFor(() => window.mdPomodoro.getState().phase === 'break', 5000);
@@ -1187,6 +1200,99 @@
     pomodoroStartsFocusOk && pomodoroShowsInStatusbarOk && pomodoroSwitchesToBreakOk && pomodoroResetOk,
     `arrancaFocoOk=${pomodoroStartsFocusOk} muestraEnStatusbarOk=${pomodoroShowsInStatusbarOk} pasaADescansoOk=${pomodoroSwitchesToBreakOk} cancelarOk=${pomodoroResetOk}`
   );
+
+  {
+    const history = window.mdPomodoroHistory;
+    await history.settled();
+    const before = history.getState().records.map((r) => r.id);
+    const statsBefore = JSON.stringify(window.mdPet.getState().stats);
+    await history.record({ category: 'PCP_TEST', seconds: 1500, completed: true });
+    await history.record({ category: 'PCP_TEST', seconds: 1500, completed: true });
+    await window.mdPomodoroPanel.open();
+    const panel = document.getElementById('pomodoro-history-panel');
+    const fifty = panel.querySelector('#pomodoro-totals').textContent.includes('PCP_TEST: 50 min');
+    const row = Array.from(panel.querySelectorAll('.pomodoro-record')).find((row) => row.textContent.includes('PCP_TEST'));
+    row.querySelector('button').click();
+    row.querySelector('.pomodoro-record-form input[type="number"]').value = '30';
+    Array.from(row.querySelectorAll('.pomodoro-record-form button')).find((btn) => btn.textContent === 'Guardar registro').click();
+    await waitFor(() => panel.querySelector('#pomodoro-totals').textContent.includes('PCP_TEST: 55 min'));
+    const edited = panel.querySelector('#pomodoro-totals').textContent.includes('PCP_TEST: 55 min');
+    const saved = await window.mdEditor.getConfig();
+    const persisted = saved.pomodoroHistory.records.filter((r) => r.category === 'PCP_TEST').reduce((sum, r) => sum + r.seconds, 0) === 3300;
+    const filter = panel.querySelector('#pomodoro-filter-category');
+    filter.value = 'PCP_TEST'; filter.dispatchEvent(new Event('change'));
+    const filtered = panel.querySelectorAll('.pomodoro-record').length === 2;
+    panel.querySelector('#pomodoro-new-category').value = 'EC_TEST';
+    panel.querySelector('#pomodoro-add-category').click();
+    await waitFor(() => history.getState().categories.includes('EC_TEST') && !document.getElementById('pomodoro-add-category').disabled);
+    const categoryCreated = history.getState().categories.includes('EC_TEST');
+    panel.querySelector('#pomodoro-close').click();
+    check('Pomodoros: PCP 50 min, edición a 55 min persistida, categorías y filtros, sin XP manual', fifty && edited && persisted && filtered && categoryCreated && statsBefore === JSON.stringify(window.mdPet.getState().stats), `50=${fifty} edita=${edited} persiste=${persisted} filtra=${filtered} categoría=${categoryCreated}`);
+    for (const r of history.getState().records) if (!before.includes(r.id)) await history.remove(r.id);
+  }
+
+  // Contexto de estudio: nota estable durante el foco, edición y filtros.
+  if (fixtureMdPath && fixtureOtherPath) {
+    const H = window.mdPomodoroHistory;
+    const before = new Set(H.getState().records.map((r) => r.id));
+    const configBefore = await window.mdEditor.getConfig();
+    await window.mdEditor.setConfig({ pomodoroFocusMinutes: 25, pomodoroBreakMinutes: 5 });
+    await window.openFileAtPath(fixtureMdPath);
+    await window.mdPomodoroPanel.open();
+    document.getElementById('pomodoro-active-category').value = 'CONTEXT_TEST';
+    document.getElementById('pomodoro-active-detail').value = 'Ejercicio de contexto';
+    document.getElementById('pomodoro-start-note').click();
+    await waitFor(() => window.mdPomodoro.getState().phase === 'focus' && window.mdPomodoro.getState().detail === 'Ejercicio de contexto');
+    document.getElementById('pomodoro-close').click();
+    const session = window.mdPomodoro.getState().sessionId;
+    await window.openFileAtPath(fixtureOtherPath);
+    const originalOtherContent = window.mdCodeMirror.getValue();
+    window.mdCodeMirror.setValue(originalOtherContent + '\nCambio pendiente del contexto de estudio\n');
+    await window.mdPomodoro.toggle();
+    await H.settled();
+    const liveRecord = H.getState().records.find((r) => r.id === session);
+    check('Estudio: iniciar desde el panel y cambiar pestaña conserva nota, categoría y detalle en disco', liveRecord?.notePath === fixtureMdPath && liveRecord.category === 'CONTEXT_TEST' && liveRecord.detail === 'Ejercicio de contexto' && (await window.mdEditor.getConfig()).pomodoroHistory.records.find((r) => r.id === session)?.notePath === fixtureMdPath);
+    await window.mdPomodoro.reset();
+    await H.record({ id: 'study-note-a', category: 'STUDY_TEST', seconds: 60, notePath: fixtureMdPath, detail: 'Repaso A' });
+    await H.record({ id: 'study-note-b', category: 'STUDY_TEST', seconds: 120, notePath: fixtureOtherPath, detail: 'Repaso B' });
+    await window.mdPomodoroPanel.open();
+    let panel = document.getElementById('pomodoro-history-panel');
+    function filterStudy(id, value) { const field = panel.querySelector(id); field.value = value; field.dispatchEvent(new Event('change')); }
+    filterStudy('#pomodoro-filter-category', 'STUDY_TEST');
+    filterStudy('#pomodoro-filter-note', fixtureMdPath);
+    check('Estudio: filtro por nota aplica a registros y estadísticas sin mezclar apuntes', panel.querySelectorAll('.pomodoro-record').length === 1 && panel.querySelector('#pomodoro-totals').textContent.includes('STUDY_TEST: 1 min'));
+    const contentA = window.mdTabs.getActiveTabInfo().content;
+    let row = panel.querySelector('.pomodoro-record');
+    Array.from(row.querySelectorAll('button')).find((b) => b.textContent === 'Abrir nota').click();
+    await waitFor(() => !document.getElementById('pomodoro-history-panel'));
+    check('Estudio: abrir la nota desde el historial conserva la otra pestaña', window.mdTabs.getActiveTabInfo().filePath === fixtureMdPath);
+    await window.openFileAtPath(fixtureOtherPath);
+    check('Estudio: volver al apunte no sustituye sus cambios sin guardar', window.mdCodeMirror.getValue() === contentA && window.mdTabs.getActiveTabInfo().modified);
+    await window.mdPomodoroPanel.open();
+    panel = document.getElementById('pomodoro-history-panel');
+    row = panel.querySelector('.pomodoro-record');
+    Array.from(row.querySelectorAll('button')).find((b) => b.textContent === 'Editar').click();
+    row.querySelector('.pomodoro-record-detail').value = 'Repaso corregido';
+    Array.from(row.querySelectorAll('button')).find((b) => b.textContent === 'Quitar vínculo').click();
+    Array.from(row.querySelectorAll('button')).find((b) => b.textContent === 'Guardar registro').click();
+    await waitFor(() => H.getState().records.find((r) => r.id === 'study-note-a')?.detail === 'Repaso corregido' && !panel.querySelector('.pomodoro-record-form'));
+    const edited = H.getState().records.find((r) => r.id === 'study-note-a');
+    check('Estudio: detalle y vínculo editables con persistencia y sin alterar minutos', edited?.detail === 'Repaso corregido' && edited.notePath === '' && edited.seconds === 60 && panel.querySelectorAll('.pomodoro-record').length === 0);
+    filterStudy('#pomodoro-filter-note', '*');
+    panel.querySelector('#pomodoro-close').click();
+    await H.record({ id: 'study-denied', category: 'STUDY_TEST', seconds: 60, notePath: '/etc/no-autorizado.md' });
+    await window.mdPomodoroPanel.open();
+    panel = document.getElementById('pomodoro-history-panel');
+    row = panel.querySelector('[data-id="study-denied"]');
+    Array.from(row.querySelectorAll('button')).find((b) => b.textContent === 'Abrir nota').click();
+    await waitFor(() => panel.querySelector('.pomodoro-error').textContent);
+    check('Estudio: los vínculos del historial respetan permisos y muestran errores sin borrar registros', !!panel.querySelector('.pomodoro-error').textContent && H.getState().records.some((r) => r.id === 'study-denied') && window.mdTabs.getActiveTabInfo().filePath === fixtureOtherPath);
+    filterStudy('#pomodoro-filter-category', '*');
+    panel.querySelector('#pomodoro-close').click();
+    for (const r of H.getState().records) if (!before.has(r.id)) await H.remove(r.id);
+    window.mdCodeMirror.setValue(originalOtherContent);
+    await window.mdEditor.setConfig({ pomodoroFocusMinutes: configBefore.pomodoroFocusMinutes, pomodoroBreakMinutes: configBefore.pomodoroBreakMinutes });
+  }
 
   // 22i. Control del reproductor multimedia (playerctl, solo Linux): el IPC
   // siempre devuelve {ok:boolean,...} sin tirar excepción, esté o no
@@ -2224,7 +2330,10 @@
   let pdfWriteDetail = 'sin fixturesDir';
   if (fixturesDir) {
     window.mdPdfHighlight.open();
+    const confirmPdf = window.confirm;
+    window.confirm = () => true;
     await window.mdPdfHighlight.loadFromPath(window.mdEditor.joinPath(fixturesDir, 'formulario.pdf'));
+    window.confirm = confirmPdf;
     const st = window.mdPdfHighlight.getState();
     const fieldsOk = st && st.formFields.join(',') === 'nombre,acepto,pais' && document.querySelectorAll('.pdfhighlight-form-field').length === 3;
 
@@ -2256,6 +2365,76 @@
     pdfWriteDetail = `campos=${fieldsOk} cuadro=${boxOk} formulario=${formOk} texto=${textOk} ("${allText.slice(0, 60)}")`;
   }
   check('Escribir en PDF: texto libre (acentos/ñ) y formulario (texto, casilla, lista) quedan en el PDF guardado', pdfWriteOk, pdfWriteDetail);
+
+  // Selección PDF, referencia a página, texto girado y páginas sin OCR.
+  if (fixturesDir) {
+    const originalConfirmPdf = window.confirm;
+    const originalAlertPdf = window.alert;
+    window.confirm = () => true;
+    window.alert = () => {};
+    try {
+      const selectedPdf = window.mdEditor.joinPath(fixturesDir, 'selección (PDF)#.pdf');
+      await window.mdPdfHighlight.loadFromPath(selectedPdf);
+      window.mdPdfHighlight.open();
+      window.mdPdfHighlight.setMode('select');
+      const selectOriginal = () => {
+        const span = document.querySelector('.pdf-select-text-layer span');
+        const range = document.createRange();
+        range.selectNodeContents(span);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        document.dispatchEvent(new Event('selectionchange'));
+        return span;
+      };
+      const span = selectOriginal();
+      const rect = span.getBoundingClientRect();
+      check('PDF: texto original seleccionable con capa alineada y acciones de copia', window.mdPdfHighlight.getState().selectedText === 'Selección para una nota' && rect.width > 0 && rect.height > 0 && !document.getElementById('pdfhighlight-copy').disabled);
+      const beforeHighlights = window.mdPdfHighlight.getState().highlightCount;
+      document.getElementById('pdfhighlight-canvas').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0, clientX: 10, clientY: 10 }));
+      window.dispatchEvent(new MouseEvent('mouseup'));
+      check('PDF: seleccionar no crea subrayados', window.mdPdfHighlight.getState().highlightCount === beforeHighlights);
+      await window.mdPdfHighlight.goToPage(2);
+      const rotatedSpan = selectOriginal();
+      const rotatedRect = rotatedSpan.getBoundingClientRect();
+      const canvasRect = document.getElementById('pdfhighlight-canvas').getBoundingClientRect();
+      check('PDF: texto girado seleccionable dentro de la página', rotatedSpan.textContent.includes('página dos') && rotatedRect.left >= canvasRect.left - 2 && rotatedRect.right <= canvasRect.right + 2 && rotatedRect.top >= canvasRect.top - 2 && rotatedRect.bottom <= canvasRect.bottom + 2);
+      document.getElementById('pdfhighlight-new-note').click();
+      const fragment = window.mdCodeMirror.getValue();
+      check('PDF: crear nota conserva cita, página y ruta con espacios/acentos/#', fragment.includes('> Texto girado página dos') && fragment.includes('%23.pdf#page=2') && window.mdTabs.getActiveState().modified && document.getElementById('pdfhighlight-panel').hidden);
+      window.renderPreview();
+      const link = document.querySelector('#preview-pane a[href*="#page=2"]');
+      link.click();
+      await waitFor(() => !document.getElementById('pdfhighlight-panel').hidden && window.mdPdfHighlight.getState().pageNum === 2 && window.mdPdfHighlight.getState().pageReady);
+      check('PDF: enlace de una nota vuelve a la página original', window.mdPdfHighlight.getState().sourcePath === selectedPdf && window.mdPdfHighlight.getState().pageNum === 2);
+      selectOriginal();
+      document.getElementById('pdfhighlight-add-note').click();
+      check('PDF: añadir al final de nota abierta preserva su contenido anterior', window.mdCodeMirror.getValue().startsWith(fragment) && window.mdCodeMirror.getValue().length > fragment.length);
+      window.mdModes.setLayoutMode('live');
+      window.mdCodeMirror.setCursor({ line: 0, ch: 0 });
+      await waitFor(() => document.querySelector('.mk-live-pdf-link'));
+      document.querySelector('.mk-live-pdf-link').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }));
+      await waitFor(() => !document.getElementById('pdfhighlight-panel').hidden && window.mdPdfHighlight.getState().pageNum === 2 && window.mdPdfHighlight.getState().pageReady);
+      check('PDF: cita en Live Preview abre su página original', window.mdPdfHighlight.getState().sourcePath === selectedPdf && window.mdPdfHighlight.getState().pageNum === 2 && !document.getElementById('pdfhighlight-panel').hidden);
+      window.mdModes.setLayoutMode('normal');
+      window.mdPdfHighlight.open();
+      await window.mdPdfHighlight.goToPage(3);
+      check('PDF: página sin texto explica falta de OCR y desactiva acciones', !window.mdPdfHighlight.getState().pageHasText && document.getElementById('pdfhighlight-new-note').disabled && document.getElementById('pdfhighlight-selection-info').textContent.includes('OCR'));
+      await Promise.all([window.mdPdfHighlight.goToPage(2), window.mdPdfHighlight.goToPage(1)]);
+      check('PDF: cambios rápidos de página conservan solo el último render y su selección', window.mdPdfHighlight.getState().pageNum === 1 && document.querySelector('.pdf-select-text-layer').textContent.includes('Selección para una nota'));
+      let deniedAlert = false;
+      window.alert = () => { deniedAlert = true; };
+      await window.mdPdfHighlight.openLink('md-local://file/etc/no-autorizado.pdf#page=1', null);
+      check('PDF: referencias no conceden acceso a rutas no autorizadas', deniedAlert && window.mdPdfHighlight.getState().sourcePath === selectedPdf);
+      window.alert = () => {};
+      check('PDF: referencias externas no se interceptan como archivos locales', await window.mdPdfHighlight.openLink('https://example.com/archivo.pdf#page=2', null) === false);
+      window.mdPdfHighlight.addHighlightForTest(0.1, 0.1, 0.2, 0.1);
+      window.confirm = () => false;
+      const rejected = await window.mdPdfHighlight.loadFromPath(fixturePdfPath);
+      check('PDF: cancelar cambio de archivo preserva anotaciones sin guardar', rejected === false && window.mdPdfHighlight.getState().sourcePath === selectedPdf && window.mdPdfHighlight.getState().highlightCount === 1);
+      window.mdPdfHighlight.close();
+    } finally { window.confirm = originalConfirmPdf; window.alert = originalAlertPdf; }
+  }
 
   // Bases de datos: ordenar por columna (menú del encabezado) y filtrar por
   // campo (popover "Filtros"), ambos guardados en la config de la vista.
@@ -2603,6 +2782,26 @@
   check('Corto plazo: duplicar fila, ancho de columna, buscar en la terminal y renombrar tarea con doble clic', short2Ok, short2Detail);
 
   // Modo Live Preview: marcadores ocultos fuera de la línea del cursor,
+  {
+    window.mdTabs.newTab('# Primera\n\ntexto');
+    const first = document.querySelector('#tabbar .tab.active');
+    window.mdModes.setLayoutMode('live');
+    check('Live Preview: libera el DOM de lectura oculto sin perder la nota', window.mdPreview.isStale() && !document.getElementById('preview-pane').childNodes.length && window.mdCodeMirror.getValue().includes('Primera'));
+    const before = window.mdLivePreview.metrics().rebuilds;
+    window.mdTabs.newTab('# Segunda\n\ntexto');
+    const onlyOnce = window.mdLivePreview.metrics().rebuilds - before === 1;
+    const deferred = window.mdPreview.isStale();
+    window.mdModes.setLayoutMode('normal');
+    const refreshed = !window.mdPreview.isStale() && document.getElementById('preview-pane').textContent.includes('Segunda');
+    check('Pestañas: preview oculto diferido y actualizado al volver al modo normal', deferred && refreshed);
+    first.click();
+    const normalRestored = window.mdCodeMirror.getOption('mode') === 'markdown' && !window.mdCodeMirror.getWrapperElement().classList.contains('cm-live');
+    check('Pestañas CM6: Live Preview se construye una vez y restaura el modo normal de otra pestaña', onlyOnce && normalRestored, `unaVez=${onlyOnce} normal=${normalRestored}`);
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+    document.querySelector('#tabbar .tab.active .tab-close').click();
+  }
+
+  // Modo Live Preview: marcadores ocultos fuera de la línea del cursor,
   // widgets (casilla clicable, tabla) y vuelta limpia a los otros modos.
   {
     window.mdTabs.newTab('# Título\n\nTexto **negrita**.\n\n- [ ] tarea\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\nfin');
@@ -2612,7 +2811,7 @@
     window.mdLivePreview.rebuild();
     const container = document.querySelector('.container');
     const layoutOk = container.classList.contains('mode-live') && !cm.getOption('lineNumbers');
-    const lineText = (n) => (cm.display.view.find((v) => v.line === cm.getLineHandle(n)) || {}).text;
+    const lineText = (n) => document.querySelectorAll('#editor-pane .CodeMirror-line, #editor-pane .cm-line')[n];
     const headingEl = lineText(0);
     const hashHidden = !!headingEl && !headingEl.textContent.includes('#') && headingEl.textContent.includes('Título');
     const boldEl = lineText(2);
@@ -2748,6 +2947,7 @@
       await window.mdEditor.saveFile(`# Pendientes\n\n- [ ] Entregar maqueta 📅 ${in7}\n`, notePath, false);
       await window.mdHome.open();
       window.mdHome.setMode('week');
+      document.getElementById('home-today').click(); // aislar de la semana seleccionada por pruebas anteriores
       const title = 'Examen final ' + Date.now();
       const qa = await waitFor(() => document.querySelector('#home-main .home-day.home-today .home-quick-add'));
       if (!qa) throw new Error('semana antes: sin quick-add; home-main=' + (document.getElementById('home-main') || {}).className + ' días=' + document.querySelectorAll('#home-main .home-day').length);
@@ -2963,7 +3163,8 @@
     window.mdCodeMirror.setCursor({ line: 9, ch: 0 });
     window.mdLivePreview.rebuild();
     const calloutOk = !!document.querySelector('.cm-live .mk-live-callout .callout');
-    const mermaidOk = !!(await waitFor(() => document.querySelector('.cm-live .mk-live-mermaid svg'), 5000));
+    const mermaidOk = !!(await waitFor(() => document.querySelector('.cm-live .mk-live-mermaid svg'), 10000));
+    const mermaidError = mermaidOk ? '' : document.querySelector('.cm-live .mk-live-mermaid')?.textContent || 'widget ausente';
     window.mdModes.setLayoutMode('normal');
     const originalConfirm2 = window.confirm;
     window.confirm = () => true;
@@ -2971,7 +3172,7 @@
     window.confirm = originalConfirm2;
 
     variosOk = rangeOk && copyOk && renameTabOk && multiSortOk && tomorrowOk && calloutOk && mermaidOk;
-    variosDetail = `shiftRango=${rangeOk} copiarRuta=${copyOk} renombrarTerminal=${renameTabOk} ordenMultiple=${multiSortOk}(${names()} ${arrows}) manana=${tomorrowOk} callout=${calloutOk} mermaid=${mermaidOk}`;
+    variosDetail = `shiftRango=${rangeOk} copiarRuta=${copyOk} renombrarTerminal=${renameTabOk} ordenMultiple=${multiSortOk}(${names()} ${arrows}) manana=${tomorrowOk} callout=${calloutOk} mermaid=${mermaidOk}${mermaidError ? ` (${mermaidError})` : ''}`;
   }
   check('Mejoras: Shift+clic, copiar ruta, renombrar terminal, orden múltiple, "→ Mañana", callout y Mermaid en Live Preview', variosOk, variosDetail);
 
@@ -3099,6 +3300,55 @@
     check('Abrir con IA: comandos de Claude Code / Gemini CLI / Codex con el archivo como contexto, pestaña con nombre', cmdOk && tabOk && menuOk, `comandos=${cmdOk} pestaña=${tabOk} menu=${menuOk} | ${c} | ${g} | ${x}`);
   }
 
+  if (fixturesDir) {
+    const conflictPath = window.mdEditor.joinPath(fixturesDir, 'conflicto.md');
+    async function prepareConflict() {
+      await window.mdEditor.saveFile('original\n', conflictPath, false);
+      await window.mdTabs.openTab(conflictPath);
+      await window.mdTabs.syncActiveWithDisk();
+      window.mdCodeMirror.setValue('mis cambios <img src=x onerror=alert(1)>\n');
+      await window.mdEditor.saveFile('versión externa\n', conflictPath, false);
+    }
+    async function choose(action) {
+      const saving = window.mdTabs.saveActive(false);
+      const button = await waitFor(() => document.querySelector(`[data-conflict-action="${action}"]`));
+      if (!button) throw new Error('No apareció el diálogo de conflicto');
+      button.click();
+      await saving;
+    }
+    await prepareConflict();
+    const pending = window.mdTabs.saveActive(false);
+    const overlay = await waitFor(() => document.querySelector('.conflict-overlay'));
+    await window.mdTabs.saveActive(false);
+    check('Conflictos: guardar otra vez no duplica el diálogo', document.querySelectorAll('.conflict-overlay').length === 1);
+
+    check('Conflictos: comparación de texto sin interpretar HTML', overlay &&
+      overlay.querySelectorAll('pre').length === 2 && !overlay.querySelector('img') &&
+      overlay.textContent.includes('versión externa') && overlay.textContent.includes('mis cambios'));
+    overlay.querySelector('[data-conflict-action="cancel"]').click();
+    await pending;
+    check('Conflictos: cancelar conserva cambios y disco, con autoguardado pausado',
+      window.mdTabs.getActiveState().conflict && window.mdCodeMirror.getValue().startsWith('mis cambios') &&
+      (await window.mdEditor.readFile(conflictPath)).content === 'versión externa\n');
+    await choose('keep');
+    const copy = window.mdTabs.getActiveTabInfo();
+    check('Conflictos: conservar ambas crea borrador y deja intacto el disco',
+      copy.filePath === null && copy.modified && copy.content.startsWith('mis cambios') &&
+      (await window.mdEditor.readFile(conflictPath)).content === 'versión externa\n');
+    await window.mdTabs.openTab(conflictPath);
+    check('Conflictos: la pestaña original muestra la versión externa',
+      window.mdCodeMirror.getValue() === 'versión externa\n' && !window.mdTabs.getActiveState().conflict);
+    await prepareConflict();
+    await choose('reload');
+    check('Conflictos: usar disco recarga y limpia el estado de cambios',
+      window.mdCodeMirror.getValue() === 'versión externa\n' && !window.mdTabs.getActiveState().modified);
+    await prepareConflict();
+    await choose('overwrite');
+    check('Conflictos: sobrescribir guarda la versión local',
+      (await window.mdEditor.readFile(conflictPath)).content.startsWith('mis cambios') &&
+      !window.mdTabs.getActiveState().conflict);
+  }
+
   // Archivo cambiado FUERA de la pestaña (bug real: una pestaña vieja pisó
   // OBJETIVOS.md): sin cambios propios se recarga; con cambios, el
   // autoguardado no pisa la versión del disco (⚠); guardar a mano pregunta.
@@ -3120,11 +3370,12 @@
     const notOverwritten = diskAfterAutosave === 'versión 3 (desde afuera)\n';
     const warned = !!document.querySelector('#tabbar .tab.active.tab-conflict');
 
-    const originalConfirm = window.confirm;
-    let asked = false;
-    window.confirm = () => { asked = true; return true; }; // "guardar mi versión"
-    await window.mdTabs.saveActive();
-    window.confirm = originalConfirm;
+    const saving = window.mdTabs.saveActive();
+    const overwrite = await waitFor(() => document.querySelector('[data-conflict-action="overwrite"]'));
+    const asked = !!overwrite;
+    if (!overwrite) throw new Error('Cambio externo: no apareció el diálogo de conflicto');
+    overwrite.click();
+    await saving;
     const diskAfterSave = (await window.mdEditor.readFile(p)).content;
     const savedMine = asked && diskAfterSave === 'mi cambio\nversión 2 (desde afuera)\n' && !document.querySelector('#tabbar .tab.active.tab-conflict');
     document.querySelector('#tabbar .tab.active .tab-close').click();
@@ -3701,16 +3952,16 @@
       const rs = window.mdEditor.joinPath(fixturesDir, 'hola.rs');
       await window.mdEditor.saveFile('fn main() {\n    let x = 5;\n    println!("{}", x);\n}\n', rs, false);
       await window.openFileAtPath(rs);
-      const kw = await waitFor(() => document.querySelector('#editor-pane .CodeMirror .cm-keyword'), 4000);
+      const kw = await waitFor(() => document.querySelector('#editor-pane .cm-keyword'), 4000);
       const info = window.mdTabs.getActiveTabInfo();
-      hlOk = !!kw && window.mdTabs.isActiveTabCode() && typeof CodeMirror.modes.rust === 'function';
+      hlOk = !!kw && window.mdTabs.isActiveTabCode() && (window.mdCM6 ? !!window.mdCM6.legacyModes.rust : typeof CodeMirror.modes.rust === 'function');
       const php = window.mdEditor.joinPath(fixturesDir, 'x.php');
       await window.mdEditor.saveFile('<?php echo "hola"; ?>\n', php, false);
       await window.openFileAtPath(php);
-      const phpOk = !!(await waitFor(() => CodeMirror.modes.php && document.querySelector('#editor-pane .CodeMirror .cm-keyword'), 4000));
+      const phpOk = !!(await waitFor(() => (window.mdCM6 ? window.mdCM6.php : CodeMirror.modes.php) && document.querySelector('#editor-pane .cm-keyword'), 4000));
       hlOk = hlOk && phpOk && !!info;
     }
-    const dbg = `modoRust=${typeof CodeMirror.modes.rust} modoPhp=${typeof CodeMirror.modes.php} tab=${(window.mdTabs.getActiveTabInfo() || {}).filePath} opt=${window.mdCodeMirror.getOption('mode')} csp=${(window.__mkCspViolations || []).slice(-2).join(';')}`;
+    const dbg = `motor=${window.mdCM6 ? 'CM6' : 'CM5'} tab=${(window.mdTabs.getActiveTabInfo() || {}).filePath} opt=${window.mdCodeMirror.getOption('mode')} csp=${(window.__mkCspViolations || []).slice(-2).join(';')}`;
     check('Más lenguajes: F5 para Rust/TypeScript/SQL/Makefile y resaltado cargado al abrir (Rust, PHP)', cmdsOk && hlOk === true,
       `comandos=${cmdsOk} (${rsCmd} | ${mkCmd}) resaltado=${hlOk} ${hlOk === true ? '' : dbg}`);
   }
@@ -4011,7 +4262,7 @@
     const n0 = window.mdLuckyEmblem.found();
     if (hiddenEl) hiddenEl.click();
     await new Promise((r) => setTimeout(r, 150));
-    const foundOk = window.mdLuckyEmblem.found() === n0 + 1 && !window.mdLuckyEmblem.hiddenEl();
+    const foundOk = window.mdLuckyEmblem.found() === n0 + 1 && !window.mdLuckyEmblem.hiddenEls().includes(hiddenEl);
     const cfg = await window.mdEditor.getConfig();
     window.mdThemes.applyTheme(before || 'light');
     await window.mdEditor.setConfig({ theme: before || 'light' });
@@ -4187,7 +4438,7 @@
     const { top, bottom } = cm.charCoords({ line: 60, ch: 0 }, 'local');
     const offCenter = Math.abs((top + bottom) / 2 - info.top - info.clientHeight / 2);
     const centered = offCenter < 30;
-    const marked = () => Array.from(document.querySelectorAll('#editor-pane .mk-current-para')).map((el) => el.querySelector('.CodeMirror-line').textContent);
+    const marked = () => Array.from(document.querySelectorAll('#editor-pane .mk-current-para')).map((el) => (el.querySelector('.CodeMirror-line') || el).textContent);
     const para1 = marked().join('|');
     cm.setCursor({ line: 1, ch: 0 });
     await new Promise((r) => setTimeout(r, 100));
@@ -4529,6 +4780,364 @@
     const ok = !bad.ok && pw.ok && st.hasPassword && noLeak && testOk && reminderOk && summaryOk && off.reason === 'disabled' && !forgot.hasPassword;
     check('Correo: guarda la contraseña sin devolverla, prueba, aviso y resumen a tu propia dirección, apagado no envía', ok,
       `dirMala=${!bad.ok} guardada=${st.hasPassword} sinFuga=${noLeak} prueba=${testOk} aviso=${reminderOk} resumen=${summaryOk} apagado=${off.reason} olvidada=${!forgot.hasPassword}`);
+  }
+
+  // Vista de estudio: misma fuente de datos que Home y Pomodoros.
+  if (fixtureMdPath && fixturePdfPath) {
+    await window.mdHome.open(); window.mdHome.close();
+    const home = window.mdHome.getData();
+    const savedHome = JSON.parse(JSON.stringify(home));
+    const H = window.mdPomodoroHistory;
+    const previousRecords = new Set(H.getState().records.map((r) => r.id));
+    const previousConfig = await window.mdEditor.getConfig();
+    const originalConfirm = window.confirm;
+    let originalNote;
+    try {
+      await window.mdPomodoro.reset();
+      await window.mdEditor.setConfig({ pomodoroFocusMinutes: 25 });
+      const today = window.mdHomeLogic.iso(new Date());
+      const tomorrow = window.mdHomeLogic.iso(window.mdHomeLogic.addDays(new Date(), 1));
+      home.categories.push({ id: 'study_dash', name: 'Asignatura Test', color: '#3b82f6' });
+      home.tasks.push(
+        { id: 'dash-today', category: 'study_dash', title: 'Entrega de hoy', date: today },
+        { id: 'dash-none', category: 'study_dash', title: 'Repasar sin fecha' },
+        { id: 'dash-done', category: 'study_dash', title: 'Terminada', done: true, date: today },
+        { id: 'dash-old', category: 'study_dash', title: 'Entrega atrasada', date: window.mdHomeLogic.iso(window.mdHomeLogic.addDays(new Date(), -1)) },
+        { id: 'dash-repeat', category: 'study_dash', title: 'Serie diaria', date: today, repeat: { freq: 'daily' }, doneDates: [today] },
+        { id: 'dash-other', category: 'personal', title: 'No mezclar asignaturas', date: today }
+      );
+      await H.record({ id: 'dashboard-time', category: 'DASH_TIME_TEST', seconds: 1500, date: new Date().toISOString() });
+      await H.record({ id: 'dashboard-other', category: 'OTHER_TIME_TEST', seconds: 900 });
+      await window.openFileAtPath(fixtureMdPath);
+      originalNote = window.mdCodeMirror.getValue();
+      window.mdCodeMirror.setValue(originalNote + '\nCambios sin guardar del dashboard\n');
+      await window.mdStudy.open('study_dash');
+      let panel = document.getElementById('study-panel');
+      check('Estudio por asignatura: pendientes, atrasadas y próxima repetición sin mezclar categorías', panel.querySelectorAll('#study-pending .study-row').length === 4 && panel.querySelectorAll('#study-upcoming .study-row').length === 2 && panel.querySelector('#study-pending').textContent.includes('Atrasada') && panel.querySelector('#study-pending').textContent.includes(tomorrow) && !panel.querySelector('#study-pending').textContent.includes('No mezclar asignaturas'));
+      const expectedPlan = window.mdStudyLogic.todayPlan(home.tasks, home.categories, today, window.mdHomeLogic, 25);
+      panel.querySelector('#study-plan-minutes').value = '25'; panel.querySelector('#study-plan-update').click();
+      await waitFor(() => !panel.querySelector('#study-close').disabled && window.mdStudy.getState().planMinutes === 25);
+      const planRows = [...panel.querySelectorAll('#study-today .study-row')];
+      const storedPlan = await window.mdEditor.homeLoad(window.mdHome.dataLocation());
+      check('Plan de hoy: respeta presupuesto, prioriza vencimientos y guarda por Home', planRows.length === 1 && planRows[0].dataset.taskId === expectedPlan.items[0].task.id && storedPlan.study.planMinutes === 25);
+      panel.querySelector('#study-focus-category').value = 'DASH_TIME_TEST';
+      panel.querySelector('#study-save-mapping').click();
+      await waitFor(() => panel.querySelector('#study-time-today').textContent === '25 min' && !panel.querySelector('#study-close').disabled);
+      check('Estudio por asignatura: reutiliza minutos registrados de la categoría elegida', panel.querySelector('#study-time-today').textContent === '25 min' && panel.querySelector('#study-time-week').textContent === '25 min');
+      panel.querySelector('#study-link-active').click();
+      await waitFor(() => panel.querySelectorAll('#study-materials .study-row').length === 1 && !panel.querySelector('#study-close').disabled);
+      await window.mdStudy.linkMaterial(fixtureMdPath); await window.mdStudy.linkMaterial(fixturePdfPath); window.mdStudy.refresh();
+      const stored = await window.mdEditor.homeLoad(window.mdHome.dataLocation());
+      check('Estudio por asignatura: materiales deduplicados persistidos en el Home sin copiar archivos', stored.study.subjects.study_dash.materials.length === 2 && stored.study.subjects.study_dash.pomodoroCategory === 'DASH_TIME_TEST' && panel.querySelectorAll('#study-materials .study-row').length === 2);
+      const row = Array.from(panel.querySelectorAll('#study-materials .study-row')).find((r) => r.dataset.path === fixtureMdPath);
+      Array.from(row.querySelectorAll('button')).find((b) => b.textContent === 'Abrir e iniciar foco').click();
+      await waitFor(() => !document.getElementById('study-panel'));
+      check('Estudio por asignatura: abrir apunte e iniciar foco conserva cambios y asigna su contexto', window.mdCodeMirror.getValue().includes('Cambios sin guardar del dashboard') && window.mdTabs.getActiveTabInfo().modified && window.mdPomodoro.getState().category === 'DASH_TIME_TEST' && window.mdPomodoro.getState().notePath === fixtureMdPath);
+      await window.mdStudy.open('study_dash'); panel = document.getElementById('study-panel');
+      const session = window.mdPomodoro.getState().sessionId;
+      window.confirm = () => false;
+      panel.querySelector('#study-start-focus').click();
+      await waitFor(() => !panel.querySelector('#study-start-focus').disabled);
+      check('Estudio por asignatura: cancelar otro foco no sustituye el temporizador actual', window.mdPomodoro.getState().sessionId === session);
+      window.confirm = () => true; await window.mdPomodoro.reset();
+      const pdfRow = Array.from(panel.querySelectorAll('#study-materials .study-row')).find((r) => r.dataset.path === fixturePdfPath);
+      Array.from(pdfRow.querySelectorAll('button')).find((b) => b.textContent === 'Abrir').click();
+      await waitFor(() => !document.getElementById('study-panel'));
+      check('Estudio por asignatura: PDF vinculado se abre en selección sin perder materiales', !document.getElementById('pdfhighlight-panel').hidden && window.mdPdfHighlight.getState().sourcePath === fixturePdfPath && window.mdPdfHighlight.getState().mode === 'select');
+      window.mdPdfHighlight.close();
+      await window.mdStudy.open('study_dash'); panel = document.getElementById('study-panel');
+      await window.mdStudy.linkMaterial('/etc/no-autorizado.md'); window.mdStudy.refresh();
+      const blocked = Array.from(panel.querySelectorAll('#study-materials .study-row')).find((r) => r.dataset.path === '/etc/no-autorizado.md');
+      Array.from(blocked.querySelectorAll('button')).find((b) => b.textContent === 'Abrir').click();
+      await waitFor(() => panel.querySelector('.study-error').textContent);
+      check('Estudio por asignatura: enlaces no autorizan rutas y el error conserva los materiales', !!panel.querySelector('.study-error').textContent && window.mdStudy.getState().subjects.study_dash.materials.length === 3);
+      home.categories.find((c) => c.id === 'study_dash').name = 'Asignatura renombrada'; window.mdStudy.refresh();
+      check('Estudio por asignatura: renombrar Home conserva materiales y vínculo del historial', panel.querySelector('#study-subject').selectedOptions[0].textContent === 'Asignatura renombrada' && panel.querySelectorAll('#study-materials .study-row').length === 3 && panel.querySelector('#study-time-today').textContent === '25 min');
+    } finally {
+      window.confirm = originalConfirm;
+      window.mdStudy.close(); window.mdPdfHighlight.close(); await window.mdPomodoro.reset();
+      for (const record of H.getState().records) if (!previousRecords.has(record.id)) await H.remove(record.id);
+      Object.keys(home).forEach((key) => { if (!(key in savedHome)) delete home[key]; }); Object.assign(home, savedHome);
+      await window.mdEditor.homeSave(home, window.mdHome.dataLocation());
+      await window.mdEditor.setConfig({ pomodoroFocusMinutes: previousConfig.pomodoroFocusMinutes });
+      await window.openFileAtPath(fixtureMdPath); if (originalNote != null) window.mdCodeMirror.setValue(originalNote);
+    }
+  }
+
+  // Repaso y examen: tarjetas desde notas, solución oculta, programación y errores.
+  if (fixtureMdPath) {
+    await window.mdStudy.open(); window.mdStudy.close();
+    const home = window.mdHome.getData(), savedHome = JSON.parse(JSON.stringify(home));
+    const M = window.mdLearning, originalConfirm = window.confirm;
+    const click = async (id, next) => {
+      document.getElementById(id).click();
+      await waitFor(() => document.getElementById(next) && !document.getElementById(next).disabled, 5000);
+    };
+    const input = (id, value) => { const node = document.getElementById(id); node.value = value; node.dispatchEvent(new Event('input', { bubbles: true })); };
+    try {
+      home.categories.push({ id: 'learn_test', name: 'PCP Repaso', color: '#55aaff' });
+      home.study = window.mdStudyLogic.normalize(home.study); home.study.learning = { cards: [], reviews: [] };
+      await window.openFileAtPath(fixtureMdPath);
+      const noteBefore = window.mdCodeMirror.getValue();
+      window.mdCodeMirror.setSelection({ line: 0, ch: 0 }, { line: 0, ch: 3 });
+      const selected = window.mdCodeMirror.getSelection();
+      M.open('learn_test');
+      await click('learning-from-note', 'learning-save-card');
+      check('Repaso: crea borrador desde selección de nota sin modificar el apunte', document.getElementById('learning-answer').value === selected && window.mdCodeMirror.getValue() === noteBefore);
+      await click('learning-save-card', 'learning-save-card');
+      check('Repaso: rechaza pregunta vacía conservando borrador y sin crear duplicados', M.getState().cards.length === 0 && document.getElementById('learning-answer').value === selected && document.querySelector('#learning-panel [role="alert"]').textContent.includes('pregunta'));
+      input('learning-question', '¿Qué es una caché?'); input('learning-answer', '<b>Referencia literal</b>');
+      await click('learning-save-card', 'learning-review');
+      const stored = await window.mdEditor.homeLoad(window.mdHome.dataLocation());
+      check('Repaso: tarjeta y nota de origen quedan guardadas en su Home', stored.study.learning.cards.length === 1 && stored.study.learning.cards[0].notePath === fixtureMdPath && stored.study.learning.cards[0].category === 'learn_test');
+      await click('learning-new', 'learning-save-card'); input('learning-question', 'Borrador no guardado');
+      window.confirm = () => false;
+      check('Repaso: cancelar cierre conserva borrador sin crear tarjeta', !M.close() && document.getElementById('learning-question').value === 'Borrador no guardado' && M.getState().cards.length === 1);
+      await click('learning-cancel-edit', 'learning-review');
+      await click('learning-review', 'learning-reveal');
+      check('Repaso: la respuesta permanece oculta antes de revelarla', !document.getElementById('learning-solution') && !document.getElementById('learning-good'));
+      await click('learning-reveal', 'learning-good');
+      check('Repaso: respuesta tratada como texto y no como HTML', document.getElementById('learning-solution').textContent === '<b>Referencia literal</b>' && !document.querySelector('#learning-solution b') && document.getElementById('learning-attempt').readOnly);
+      await click('learning-good', 'learning-finish');
+      const reviewed = M.getState(), due = reviewed.cards[0].due;
+      check('Repaso: valorar programa próxima fecha y guarda exactamente un resultado', reviewed.reviews.length === 1 && reviewed.reviews[0].mode === 'review' && Date.parse(due) > Date.now());
+      await click('learning-finish', 'learning-exam'); await click('learning-exam', 'learning-reveal');
+      await click('learning-reveal', 'learning-reveal');
+      check('Examen: obliga a intentar responder antes de mostrar referencia', !document.getElementById('learning-solution') && document.querySelector('#learning-panel [role="alert"]').textContent.includes('Intenta responder'));
+      input('learning-attempt', 'Respuesta equivocada de prueba');
+      await click('learning-reveal', 'learning-wrong'); await click('learning-wrong', 'learning-finish');
+      const failed = M.getState();
+      check('Examen: guarda intento y error sin alterar calendario de repaso', failed.reviews.length === 2 && failed.reviews[1].attempt === 'Respuesta equivocada de prueba' && failed.reviews[1].grade === 0 && failed.cards[0].due === due);
+      await click('learning-finish', 'learning-errors'); await click('learning-errors', 'learning-reveal');
+      input('learning-attempt', 'Respuesta corregida'); await click('learning-reveal', 'learning-correct'); await click('learning-correct', 'learning-finish');
+      await click('learning-finish', 'learning-exam');
+      check('Examen: practicar y acertar retira el error pendiente conservando historial', document.getElementById('learning-errors').disabled && M.getState().reviews.length === 3);
+      window.confirm = () => true; M.close();
+      const homeModule = await import('./home-data.js');
+      await homeModule.readStored(window.mdHome.dataLocation());
+      await window.mdStudy.open('learn_test'); document.getElementById('study-learning').click();
+      await waitFor(() => document.getElementById('learning-panel'));
+      check('Repaso y examen: reapertura mantiene tarjeta, fechas y resultados', M.getState().cards.length === 1 && M.getState().reviews.length === 3 && M.getState().cards[0].due === due);
+      M.close(); window.mdHome.getData().categories.find((c) => c.id === 'learn_test').name = 'PCP renombrada'; M.open('learn_test');
+      check('Repaso: renombrar categoría mantiene sus tarjetas e historial', document.querySelector('#learning-panel h3').textContent === 'PCP renombrada' && M.getState().cards.length === 1 && M.getState().reviews.length === 3);
+    } finally {
+      window.confirm = () => true; M.close(); window.mdStudy.close(); window.confirm = originalConfirm;
+      const target = window.mdHome.getData(); Object.keys(target).forEach((key) => { if (!(key in savedHome)) delete target[key]; }); Object.assign(target, savedHome);
+      await window.mdEditor.homeSave(target, window.mdHome.dataLocation());
+    }
+  }
+
+  // Comprensión: temas persistentes, vínculos y resumen de tareas reales.
+  if (fixtureMdPath && fixturePdfPath) {
+    await window.mdStudy.open(); window.mdStudy.close();
+    const home = window.mdHome.getData(); const savedHome = JSON.parse(JSON.stringify(home));
+    try {
+      home.categories.push({ id: 'topic_test', name: 'Comprensión Test', color: '#3b82f6' });
+      home.study = window.mdStudyLogic.normalize(home.study);
+      home.study.subjects.topic_test = { materials: [{ path: fixtureMdPath, label: 'Apunte' }, { path: fixturePdfPath, label: 'PDF' }], topics: [], pomodoroCategory: 'Comprensión Test' };
+      home.study.learning.cards.push({ id: 'topic_card', category: 'topic_test', question: '¿Qué es exclusión mutua?', answer: 'Referencia', due: '2020-01-01T00:00:00.000Z', interval: 0, repetitions: 0, notePath: '' });
+      home.study.learning.reviews.push({ id: 'topic_error', cardId: 'topic_card', category: 'topic_test', question: '¿Qué es exclusión mutua?', mode: 'exam', grade: 0, date: new Date().toISOString(), attempt: 'Intento' });
+      home.tasks.push({ id: 'topic_done', category: 'topic_test', title: 'Ejercicio', done: true, doneAt: window.mdHomeLogic.iso(new Date()), date: '2020-01-01' });
+      await window.mdEditor.homeSave(home, window.mdHome.dataLocation());
+      await window.mdStudy.open('topic_test');
+      const input = document.getElementById('study-topic-name'); input.value = 'Semáforos'; input.dispatchEvent(new Event('input', { bubbles: true }));
+      document.getElementById('study-topic-create').click();
+      await waitFor(() => document.querySelector('#study-topics [data-topic-id]'));
+      const getRow = () => document.querySelector('#study-topics [data-topic-id]');
+      const clickLabel = (label) => [...getRow().querySelectorAll('button')].find((b) => b.textContent === label).click();
+      getRow().querySelector('select[aria-label^="Material"]').value = fixturePdfPath; clickLabel('Vincular material');
+      await waitFor(() => window.mdStudy.getState().subjects.topic_test.topics[0].materials.includes(fixturePdfPath) && !document.getElementById('study-topic-create').disabled);
+      getRow().querySelector('select[aria-label^="Tarjeta"]').value = 'topic_card'; clickLabel('Vincular tarjeta');
+      await waitFor(() => getRow().textContent.includes('1 repasos pendientes') && !document.getElementById('study-topic-create').disabled);
+      check('Comprensión: vincula PDF y tarjeta, muestra repaso y último error de examen', getRow().textContent.includes('1 errores de último examen') && window.mdStudy.getState().subjects.topic_test.topics[0].materials[0] === fixturePdfPath);
+      const state = getRow().querySelector('select[aria-label^="Estado"]'); state.value = 'mastered'; state.dispatchEvent(new Event('change', { bubbles: true }));
+      await waitFor(() => !document.getElementById('study-topic-create').disabled);
+      check('Comprensión: dominar es autoevaluación y conserva señales de refuerzo', window.mdStudy.getState().subjects.topic_test.topics[0].status === 'mastered' && document.querySelector('#study-weekly [data-category-id="topic_test"]').textContent.includes('Semáforos'));
+      check('Resumen semanal: cuenta finalización aunque vencimiento sea antiguo', document.querySelector('#study-weekly [data-category-id="topic_test"]').textContent.includes('1 tareas completadas'));
+      window.mdStudy.close();
+      const stored = await window.mdEditor.homeLoad(window.mdHome.dataLocation());
+      check('Comprensión: temas, estado y enlaces confirmados en disco', stored.study.subjects.topic_test.topics[0].status === 'mastered' && stored.study.subjects.topic_test.topics[0].cardIds[0] === 'topic_card');
+    } finally {
+      window.mdStudy.close(); const target = window.mdHome.getData();
+      Object.keys(target).forEach((key) => { if (!(key in savedHome)) delete target[key]; }); Object.assign(target, savedHome);
+      await window.mdEditor.homeSave(target, window.mdHome.dataLocation());
+    }
+  }
+
+  // Pokémon regionales, especies fuera del PBS y mascotas propias libres.
+  if (fixturesDir) {
+    const P = window.mdPet;
+    const before = P.getState();
+    const created = [];
+    const dir = window.mdEditor.joinPath(`${fixturesDir}-pokemon`, 'Graphics', 'Characters');
+    const col = document.querySelector('.pet-collection-overlay');
+    try {
+      await P.setState({ pets: [{ id: 'p1', kind: 'mk', species: 'agua', xp: 200 }, { id: 'p2', kind: 'kh', species: 'roxas', xp: 145 }], team: ['p1', 'p2'], nextId: 3, source: 'mk' });
+      await P.loadCatalog(dir);
+      P.openCollection();
+      const chooser = col.querySelector('#pet-chooser');
+      if (chooser.hidden) col.querySelector('#pet-col-add').click();
+      const more = Array.from(col.querySelectorAll('#pet-chooser-list button')).find((b) => b.textContent.startsWith('Mostrar más'));
+      const initialCount = col.querySelectorAll('.pet-char-option').length;
+      more?.click();
+      check('Pokémon: catálogo completo accesible con Mostrar más, sin tope fijo de opciones', !!more && col.querySelectorAll('.pet-char-option').length > initialCount);
+      const search = col.querySelector('#pet-chooser-search');
+      search.value = 'vulpix_1'; search.dispatchEvent(new Event('input'));
+      const regional = Array.from(col.querySelectorAll('.pet-char-option')).find((b) => b.textContent.includes('Vulpix (Alolan)') && b.textContent.includes('forma fija'));
+      regional.click();
+      await waitFor(() => P.getState().pets.some((p) => p.kind === 'game' && p.line?.ids[0] === 'vulpix_1'));
+      const pet = P.getState().pets.find((p) => p.kind === 'game' && p.line?.ids[0] === 'vulpix_1'); created.push(pet.id);
+      const sprites = await window.mdEditor.pet.sprites(pet.id);
+      check('Pokémon: regional seleccionable con nombre y sprite real, sin modificar a Roxas', sprites[1]?.label === 'Vulpix (Alolan)' && P.getState().pets.find((p) => p.species === 'roxas')?.xp === 145 && P.getState().pets.find((p) => p.id === 'p1')?.xp === 200);
+      const failed = await window.mdEditor.pet.useChars(pet.id, dir, ['FUTURE_MON', 'MISSING'], ['Otro', 'Falta']);
+      check('Pokémon: una etapa ausente no sustituye las imágenes actuales', !!failed.error && (await window.mdEditor.pet.sprites(pet.id))[1]?.label === sprites[1].label);
+      search.value = 'FUTURE_MON'; search.dispatchEvent(new Event('input'));
+      check('Pokémon: sprites ausentes del PBS también se pueden elegir', Array.from(col.querySelectorAll('.pet-char-option')).some((b) => b.textContent.includes('FUTURE_MON')));
+      const petsBeforeCancel = JSON.stringify(P.getState().pets);
+      col.querySelector('#pet-col-custom-pokemon').click();
+      await answerAsk('Pokémon del futuro'); await answerAsk('Región propia');
+      await waitFor(() => col.querySelector('#pet-chooser-status').textContent.includes('cancelada'));
+      check('Pokémon: cancelar importación propia conserva toda la colección', JSON.stringify(P.getState().pets) === petsBeforeCancel);
+      const imagePath = window.mdEditor.joinPath(`${fixturesDir}-kh`, 'keyblades.png');
+      const custom = await P.addCustomPokemon('Pokémon futuro', 'Región inventada', imagePath); created.push(custom.id);
+      const saved = await waitFor(async () => { const config = await window.mdEditor.getConfig(); return config.pet?.pets.find((p) => p.id === custom.id); });
+      check('Pokémon: especie y región libres con imagen propia persisten sin exigir Pokédex', custom.kind === 'custom' && saved?.pokemon?.species === 'Pokémon futuro' && saved.pokemon.form === 'Región inventada' && !!(await window.mdEditor.pet.sprites(custom.id))[1] && P.getState().pets.find((p) => p.species === 'roxas')?.xp === 145);
+    } finally {
+      col.hidden = true;
+      for (const id of created) await window.mdEditor.pet.clearSprites(id);
+      await P.setState(before);
+    }
+  }
+
+  // Excalidraw local: carga diferida, guardado, conflictos y rechazo de rutas.
+  if (fixturesDir) {
+    const D = window.mdDrawing;
+    const scenePath = window.mdEditor.joinPath(fixturesDir, 'pizarra.excalidraw');
+    const source = JSON.stringify({ type: 'excalidraw', version: 2, source: 'MK', elements: [], appState: { viewBackgroundColor: '#ffffff' }, files: {} });
+    const originalConfirm = window.confirm;
+    try {
+      check('Excalidraw: no carga el motor durante el arranque', !window.mdDrawingEngine);
+      await window.mdEditor.saveFile(source, scenePath, false);
+      await window.openFileAtPath(scenePath);
+      await waitFor(() => !!D.getAPI(), 15000);
+      check('Excalidraw: abre archivo local en pizarra sin convertirlo a Markdown', !!document.getElementById('drawing-panel') && D.getState().filePath === scenePath && !!D.getAPI());
+      D.getAPI().updateScene({ appState: { viewBackgroundColor: '#fafafa' } });
+      await waitFor(() => D.getState().dirty, 5000);
+      await D.save();
+      const saved = await window.mdEditor.drawingRead(scenePath);
+      check('Excalidraw: guarda escena local y limpia cambios pendientes', !D.getState().dirty && JSON.parse(saved.content).appState.viewBackgroundColor === '#fafafa');
+      D.getAPI().updateScene({ appState: { viewBackgroundColor: '#ffeecc' } });
+      await waitFor(() => D.getState().dirty, 5000);
+      window.confirm = () => false;
+      check('Excalidraw: cancelar cierre conserva la pizarra modificada', !D.close() && !!document.getElementById('drawing-panel') && D.getState().dirty);
+      await window.mdEditor.saveFile(source, scenePath, false);
+      await D.save();
+      check('Excalidraw: conflicto en disco conserva cambios y evita sobrescritura', D.getState().dirty && (await window.mdEditor.drawingRead(scenePath)).content === source && document.querySelector('#drawing-panel [role="status"]').textContent.includes('cambió en disco'));
+      const denied = await window.mdEditor.drawingRead('/etc/no-autorizado.excalidraw');
+      const bad = await window.mdEditor.drawingSave({ filePath: scenePath, content: '# No es pizarra', expected: source });
+      check('Excalidraw: niega rutas externas y contenido que no es escena', denied === null && !!bad.error);
+    } finally { window.confirm = () => true; D.close(); window.confirm = originalConfirm; }
+  }
+
+  // Materiales dentro del Markdown: PDF.js, pizarra guardada y widgets Live Preview.
+  if (fixtureMdPath && fixturePdfPath) {
+    const scenePath = window.mdEditor.joinPath(fixturesDir, 'embed.excalidraw');
+    const scene = JSON.stringify({ type: 'excalidraw', version: 2, elements: [
+      { id: 'shape', type: 'rectangle', x: 0, y: 0, width: 160, height: 80, strokeColor: '#123456', backgroundColor: '#eeeeee', fillStyle: 'solid', roughness: 0, opacity: 100 },
+      { id: 'text', type: 'text', x: 10, y: 20, width: 100, height: 25, text: 'PCP', originalText: 'PCP', fontSize: 20, fontFamily: 1, textAlign: 'left', verticalAlign: 'top', lineHeight: 1.25, opacity: 100 }
+    ], appState: { viewBackgroundColor: '#ffffff' }, files: {} });
+    await window.mdEditor.saveFile(scene, scenePath, false);
+    await window.openFileAtPath(fixtureMdPath);
+    const before = window.mdCodeMirror.getValue();
+    const source = '# Materiales\n\n![[prueba.pdf#page=1|Apuntes]]\n\n![[embed.excalidraw|Esquema]]\n\nFin';
+    const firstPdf = () => document.querySelector('#preview-pane .md-study-embed[data-embed-target*="prueba.pdf"]');
+    const drawing = () => document.querySelector('#preview-pane .md-study-embed[data-embed-target*="embed.excalidraw"]');
+    const button = (host, label) => [...host.querySelectorAll('button')].find((b) => b.textContent === label);
+    try {
+      check('PDF incrustado: lectura limitada no afecta al visor normal', await window.mdEditor.pdfReadBytes(fixturePdfPath, 1) === null && !!await window.mdEditor.pdfReadBytes(fixturePdfPath));
+      window.mdModes.setLayoutMode('normal'); window.mdCodeMirror.setValue(source); window.renderPreview();
+      await waitFor(() => firstPdf()?.querySelector('canvas') && drawing()?.querySelector('canvas'), 20000);
+      check('Materiales incrustados: PDF y pizarra con texto se renderizan dentro del apunte', !!firstPdf()?.querySelector('canvas') && !!drawing()?.querySelector('canvas'), `${firstPdf()?.textContent} / ${drawing()?.textContent}`);
+      if (firstPdf()?.querySelector('canvas')) {
+        const next = button(firstPdf(), 'Siguiente');
+        if (!next.disabled) { next.click(); await waitFor(() => firstPdf()?.textContent.includes('Página 2 de')); }
+        check('PDF incrustado: navegación no cambia el Markdown ni el contexto del archivo', window.mdCodeMirror.getValue() === source && window.mdState.currentFilePath === fixtureMdPath && (!next.disabled || firstPdf().textContent.includes('Página')));
+      }
+      if (drawing()?.querySelector('canvas')) {
+        const oldCanvas = drawing().querySelector('canvas');
+        button(drawing(), 'Editar pizarra').click(); await waitFor(() => window.mdDrawing.getAPI());
+        window.mdDrawing.getAPI().updateScene({ appState: { viewBackgroundColor: '#f0eeee' } });
+        await waitFor(() => window.mdDrawing.getState().dirty);
+        await window.mdDrawing.save(); await waitFor(() => drawing()?.querySelector('canvas') && drawing().querySelector('canvas') !== oldCanvas, 10000);
+        check('Pizarra incrustada: guardar edición actualiza vista sin modificar la nota', drawing().querySelector('canvas') !== oldCanvas && window.mdCodeMirror.getValue() === source);
+        window.mdDrawing.close();
+      }
+      window.mdCodeMirror.setCursor({ line: 6, ch: 0 }); window.mdModes.setLayoutMode('live'); window.mdLivePreview.rebuild();
+      await waitFor(() => document.querySelector('.cm-live .md-study-embed canvas'), 15000);
+      check('Live Preview: materiales incrustados conservan controles y sintaxis editable', document.querySelectorAll('.cm-live .md-study-embed').length === 2 && !!document.querySelector('.cm-live .md-study-embed canvas') && window.mdCodeMirror.getValue() === source);
+      window.mdModes.setLayoutMode('normal'); window.mdCodeMirror.setValue('![[../../etc/no-autorizado.pdf]]\n\nFin'); window.renderPreview();
+      await waitFor(() => document.querySelector('#preview-pane .md-study-embed')?.textContent.includes('fuera de la carpeta'), 5000);
+      check('Materiales incrustados: rutas fuera del proyecto se bloquean antes de leer', document.querySelector('#preview-pane .md-study-embed').textContent.includes('fuera de la carpeta') && !document.querySelector('#preview-pane .md-study-embed canvas'));
+      window.mdCodeMirror.setValue('```md\n![[prueba.pdf]]\n![[embed.excalidraw]]\n```'); window.renderPreview();
+      check('Materiales incrustados: ejemplos dentro de código permanecen literales', !document.querySelector('#preview-pane .md-study-embed') && document.querySelector('#preview-pane code').textContent.includes('![[embed.excalidraw]]'));
+      window.mdCodeMirror.setValue('<span class="md-study-embed" data-embed-target="prueba.pdf" data-embed-base="/etc/falsa.md" data-embed-root="/etc"></span>'); window.renderPreview();
+      await waitFor(() => document.querySelector('#preview-pane .md-study-embed')?.textContent.includes('Inserción no válida'));
+      check('Materiales incrustados: HTML ajeno no puede falsificar la ruta base ni los permisos', document.querySelector('#preview-pane .md-study-embed').textContent.includes('Inserción no válida') && !document.querySelector('#preview-pane canvas'));
+      const exported = window.mdRenderMarkdownForExport(source, fixtureMdPath, fixturesDir);
+      check('Exportación: materiales conservan enlaces sin widgets vacíos ni scripts', !exported.includes('md-study-embed') && exported.includes('prueba.pdf#page=1') && exported.includes('embed.excalidraw'));
+    } finally {
+      const originalConfirm = window.confirm; window.confirm = () => true; window.mdDrawing.close(); window.confirm = originalConfirm;
+      window.mdModes.setLayoutMode('normal'); window.mdCodeMirror.setValue(before); window.renderPreview();
+      await waitFor(() => window.mdStudyEmbed.activeCount() === 0);
+      check('Materiales incrustados: retirar widgets libera sus controladores', window.mdStudyEmbed.activeCount() === 0);
+    }
+  }
+
+  // Vista de estudio: un único editor y materiales acoplados sin perder estado.
+  if (fixturesDir && fixtureMdPath) {
+    const originalConfirm = window.confirm; window.confirm = () => true;
+    const previousMode = window.mdModes.getLayoutMode();
+    await window.openFileAtPath(fixtureMdPath);
+    const before = window.mdCodeMirror.getValue();
+    try {
+      window.mdCodeMirror.setValue('Nota modificada sin guardar\n');
+      const pdfPath = window.mdEditor.joinPath(fixturesDir, 'selección (PDF)#.pdf');
+      await window.mdStudyWorkspace.open({ notePath: fixtureMdPath, pdfPath });
+      check('Vista de estudio: PDF junto al editor y nota modificada intacta', document.querySelector('#study-workspace-pdf .pdfhighlight-modal') && document.getElementById('pdfhighlight-panel').hidden && window.mdCodeMirror.getValue() === 'Nota modificada sin guardar\n' && window.mdModes.getLayoutMode() === 'focus');
+      await window.mdPdfHighlight.goToPage(2);
+      window.mdPdfHighlight.addHighlightForTest(0.1, 0.1, 0.2, 0.1);
+      await window.mdStudyWorkspace.open({ pdfPath });
+      check('Vista de estudio: reabrir el mismo PDF conserva página y anotaciones', window.mdPdfHighlight.getState().pageNum === 2 && window.mdPdfHighlight.getState().highlightCount === 1);
+      const span = document.querySelector('#study-workspace-pdf .pdf-select-text-layer span');
+      const range = document.createRange(); range.selectNodeContents(span);
+      const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range); document.dispatchEvent(new Event('selectionchange'));
+      document.getElementById('pdfhighlight-add-note').click();
+      check('Vista de estudio: cita selección con página sin cerrar el PDF ni sobrescribir nota', window.mdStudyWorkspace.isOpen() && window.mdCodeMirror.getValue().startsWith('Nota modificada sin guardar') && window.mdCodeMirror.getValue().includes('> Texto girado página dos') && window.mdCodeMirror.getValue().includes('%23.pdf#page=2') && document.querySelector('#study-workspace-pdf canvas'));
+      const citedNote = window.mdCodeMirror.getValue();
+      window.mdTabs.newTab('Otra nota para estudiar');
+      check('Vista de estudio: cambiar de pestaña mantiene PDF visible, página y anotaciones', document.querySelector('#study-workspace-pdf canvas') && window.mdPdfHighlight.getState().pageNum === 2 && window.mdPdfHighlight.getState().highlightCount === 1);
+      await waitFor(() => [...document.querySelectorAll('#study-workspace .pdf-document-tabs button')].some((b) => b.title === fixtureMdPath));
+      [...document.querySelectorAll('#study-workspace .pdf-document-tabs button')].find((b) => b.title === fixtureMdPath).click();
+      check('Vista de estudio: volver a la nota conserva sus cambios y cita', window.mdCodeMirror.getValue() === citedNote);
+      document.querySelector('#tabbar .tab:last-child .tab-close').click();
+      await window.mdStudyWorkspace.showDrawing(window.mdEditor.joinPath(fixturesDir, 'embed.excalidraw'));
+      await waitFor(() => window.mdDrawing.getAPI());
+      const api = window.mdDrawing.getAPI(); const elements = api.getSceneElements();
+      api.updateScene({ elements: elements.map((item, i) => i ? item : { ...item, strokeColor: '#ff0000', version: item.version + 1 }) });
+      await waitFor(() => window.mdDrawing.getState().dirty);
+      document.getElementById('study-workspace-drawing-hide').click();
+      await waitFor(() => !document.getElementById('study-workspace').classList.contains('has-drawing'));
+      document.getElementById('study-workspace-drawing-show').click();
+      await waitFor(() => document.getElementById('study-workspace').classList.contains('has-drawing'));
+      check('Vista de estudio: pizarra acoplada editable, ocultar conserva cambios', window.mdDrawing.getState().docked && window.mdDrawing.getState().dirty && document.querySelector('#study-workspace-drawing #drawing-panel') && window.mdCodeMirror.getValue().includes('Nota modificada'));
+      window.confirm = () => false;
+      check('Vista de estudio: cancelar cierre protege la pizarra modificada', window.mdStudyWorkspace.close() === false && window.mdStudyWorkspace.isOpen() && window.mdDrawing.getState().dirty);
+      window.confirm = () => true; window.mdStudyWorkspace.close();
+      check('Vista de estudio: cerrar restaura visor y conserva página y anotaciones PDF', !document.getElementById('study-workspace') && document.querySelector('#pdfhighlight-panel .pdfhighlight-modal') && window.mdPdfHighlight.getState().pageNum === 2 && window.mdPdfHighlight.getState().highlightCount === 1);
+    } finally {
+      window.confirm = () => true; window.mdStudyWorkspace.close(); window.mdDrawing.close(); window.mdPdfHighlight.close();
+      window.confirm = originalConfirm; window.mdCodeMirror.setValue(before); window.mdModes.setLayoutMode(previousMode);
+    }
   }
 
   // Rutas: el proceso principal solo deja tocar lo que el usuario abrió

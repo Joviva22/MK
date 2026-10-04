@@ -11,7 +11,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { PDFDocument, StandardFonts } = require('pdf-lib');
+const { PDFDocument, StandardFonts, degrees } = require('pdf-lib');
 
 const root = path.join(__dirname, '..');
 const electronBin = path.join(root, 'node_modules', '.bin', 'electron');
@@ -73,6 +73,17 @@ const corpusDir = path.join(os.tmpdir(), `${runId}-corpus`);
   ihdr2.writeUInt32BE(sw, 0); ihdr2.writeUInt32BE(sh, 4); ihdr2[8] = 8; ihdr2[9] = 6;
   fs.writeFileSync(path.join(`${fixturesDir}-kh`, 'sora.png'), Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr2), chunk('IDAT', zlib.deflateSync(sraw)), chunk('IEND', Buffer.alloc(0))]));
 })();
+// Catálogo de mascotas separado de las notas: regionales y especies futuras.
+const pokemonGame = `${fixturesDir}-pokemon`;
+const pokemonChars = path.join(pokemonGame, 'Graphics', 'Characters');
+fs.mkdirSync(pokemonChars, { recursive: true });
+fs.mkdirSync(path.join(pokemonGame, 'PBS'));
+for (const id of ['VULPIX', 'NINETALES', 'vulpix_1', 'NINETALES_1', 'FUTURE_MON', ...Array.from({ length: 90 }, (_, i) => `EXTRA_${i}`)]) {
+  fs.copyFileSync(path.join(`${fixturesDir}-kh`, 'keyblades.png'), path.join(pokemonChars, `${id}.${id === 'vulpix_1' ? 'PNG' : 'png'}`));
+}
+fs.writeFileSync(path.join(pokemonGame, 'PBS', 'pokemon.txt'), '[VULPIX]\nName = Vulpix\nEvolution = NINETALES,Item,FIRESTONE\n[NINETALES]\nName = Ninetales\n');
+fs.writeFileSync(path.join(pokemonGame, 'PBS', 'pokemon_forms.txt'), '[VULPIX,1]\nFormName = Alolan\n[NINETALES,1]\nFormName = Alolan\n');
+
 fs.mkdirSync(corpusDir, { recursive: true });
 let corpusN = 0;
 for (const dir of ['Ejemplos', path.join('Ejemplos', 'Plantillas'), 'Guias', '.']) {
@@ -155,6 +166,14 @@ async function writePdfFixture() {
   const otherFont = await other.embedFont(StandardFonts.Helvetica);
   other.addPage([400, 300]).drawText('Otro PDF', { x: 40, y: 250, size: 20, font: otherFont });
   fs.writeFileSync(path.join(fixturesDir, 'otro.pdf'), await other.save());
+  const selectionPdf = await PDFDocument.create();
+  const selectionFont = await selectionPdf.embedFont(StandardFonts.Helvetica);
+  selectionPdf.addPage([400, 300]).drawText('Selección para una nota', { x: 40, y: 200, size: 14, font: selectionFont });
+  const rotated = selectionPdf.addPage([400, 300]);
+  rotated.setRotation(degrees(90));
+  rotated.drawText('Texto girado página dos', { x: 40, y: 200, size: 14, font: selectionFont });
+  selectionPdf.addPage([400, 300]);
+  fs.writeFileSync(path.join(fixturesDir, 'selección (PDF)#.pdf'), await selectionPdf.save());
 
   // Audio WAV de 2 s (tono de 440 Hz, 8 kHz, 8 bits mono) generado a mano,
   // para probar el visor y el adelantar/retroceder (pedidos por rango).
@@ -248,6 +267,7 @@ function runElectron() {
     }
 
     console.log(`\n${results.length - failCount}/${results.length} checks OK (${Math.round((Date.now() - startedAt) / 1000)} s)`);
+    if (results.some((r) => r.name === 'harness' && !r.pass)) console.error(stdout);
     process.exit(failCount === 0 && code === 0 ? 0 : 1);
   });
 
