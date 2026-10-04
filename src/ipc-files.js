@@ -14,6 +14,44 @@ const crypto = require('crypto');
 const os = require('os');
 const ctx = require('./mainctx');
 const guard = require('./pathguard');
+const { writeTextAtomic } = require('./atomicwrite');
+const drawingLogic = require('./shared/drawinglogic');
+const drawingWrites = new Map();
+
+ipcMain.handle('drawing:read', async (_event, filePath) => {
+  try {
+    if (typeof filePath !== 'string' || !/\.excalidraw$/i.test(filePath) || !guard.check(filePath, 'drawing:read')) return null;
+    if ((await fsp.stat(filePath)).size > 25 * 1024 * 1024) throw new Error('La pizarra supera 25 MB.');
+    const content = await fsp.readFile(filePath, 'utf8'); drawingLogic.validate(content);
+    return { content };
+  } catch (error) { return { error: error.message }; }
+});
+ipcMain.handle('drawing:save', async (_event, payload) => {
+  try {
+    const { content, filePath, expected, forceDialog } = payload || {};
+    drawingLogic.validate(content);
+    if (Buffer.byteLength(content, 'utf8') > 25 * 1024 * 1024) throw new Error('La pizarra supera 25 MB.');
+    let target = filePath;
+    const chosen = !target || forceDialog;
+    if (chosen) {
+      const result = await dialog.showSaveDialog(ctx.mainWindow, { defaultPath: target || path.join(ctx.getOpenFolder() || app.getPath('documents'), 'Pizarra.excalidraw'), filters: [{ name: 'Excalidraw', extensions: ['excalidraw'] }] });
+      if (result.canceled || !result.filePath) return null;
+      target = result.filePath; guard.grantFile(target);
+    }
+    if (typeof target !== 'string' || !/\.excalidraw$/i.test(target) || !guard.check(target, 'drawing:save')) throw new Error('Ruta de pizarra no autorizada o extensión incorrecta.');
+    const previous = drawingWrites.get(target) || Promise.resolve();
+    const job = previous.catch(() => {}).then(async () => {
+      if (!chosen) {
+        const actual = await fsp.readFile(target, 'utf8');
+        if (actual !== expected) throw new Error('La pizarra cambió en disco. Usa Guardar como para conservar tus cambios sin sobrescribirla.');
+      }
+      await makeBackup(target); await writeTextAtomic(target, content);
+      return { path: target };
+    });
+    drawingWrites.set(target, job);
+    try { return await job; } finally { if (drawingWrites.get(target) === job) drawingWrites.delete(target); }
+  } catch (error) { return { error: error.message }; }
+});
 const { createFolderWatcher } = require('./folderwatch');
 const { createFolderIndex } = require('./folderindex');
 
@@ -44,6 +82,7 @@ async function readTree(dirPath, isRoot = true) {
 
 ipcMain.handle('file:open', async () => {
   const result = await dialog.showOpenDialog(ctx.mainWindow, {
+    defaultPath: ctx.getOpenFolder(),
     filters: [
       { name: 'Markdown y LaTeX', extensions: ['md', 'markdown', 'txt', 'tex'] },
       { name: 'Word', extensions: ['docx'] },
@@ -135,7 +174,7 @@ ipcMain.handle('file:save', async (event, { content, filePath, forceDialog }) =>
   let target = filePath;
   if (!target || forceDialog) {
     const result = await dialog.showSaveDialog(ctx.mainWindow, {
-      defaultPath: target || undefined,
+      defaultPath: target || ctx.getOpenFolder(),
       filters: [
         { name: 'Markdown', extensions: ['md'] },
         { name: 'LaTeX', extensions: ['tex'] }
@@ -150,7 +189,7 @@ ipcMain.handle('file:save', async (event, { content, filePath, forceDialog }) =>
   const existed = await fsp.access(target).then(() => true, () => false);
   await makeBackup(target);
   try {
-    await fsp.writeFile(target, content, 'utf-8');
+    await writeTextAtomic(target, content);
   } catch (e) {
     // Disco lleno, sin permiso, carpeta borrada...: antes la promesa se
     // rechazaba y el autoguardado fallaba en silencio. null = no guardado
@@ -211,7 +250,7 @@ ipcMain.handle('file:read', async (event, filePath) => {
 });
 
 ipcMain.handle('folder:open', async () => {
-  const result = await dialog.showOpenDialog(ctx.mainWindow, { properties: ['openDirectory'] });
+  const result = await dialog.showOpenDialog(ctx.mainWindow, { defaultPath: ctx.getOpenFolder(), properties: ['openDirectory'] });
   if (result.canceled || result.filePaths.length === 0) return null;
   const rootPath = result.filePaths[0];
   guard.grantDir(rootPath);
