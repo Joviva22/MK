@@ -288,6 +288,8 @@ function newTab(content) {
 }
 
 async function openTab(filePath) {
+  if (/\.pdf$/i.test(filePath)) { window.showPdfPreview(filePath); return; }
+  if (window.mdMedia.kindOf(filePath)) { window.showMediaPreview(filePath); return; }
   if (/\.excalidraw$/i.test(filePath)) return window.mdDrawing.open(filePath);
   const started = window.performance.now();
   const existing = findTabByPath(filePath);
@@ -315,6 +317,7 @@ async function openTab(filePath) {
       `No se puede editar "${name}": formato desconocido o binario.\n\nEste archivo no se abrió — lo que escribas acá no lo va a sobreescribir. Si es una imagen, hacé clic en ella desde el árbol de la izquierda para verla.`
     );
     activateTab(tab.id);
+    window.mdNoteAccess?.record(filePath);
     return;
   }
   const tab = createTab(filePath, result.content, result.content);

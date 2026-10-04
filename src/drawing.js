@@ -35,7 +35,7 @@ async function save(as = false) {
   try {
     const result = await window.mdEditor.drawingSave({ content: snapshot, filePath, expected: disk, forceDialog: as });
     if (result?.error) throw new Error(result.error);
-    if (result?.path) { filePath = result.path; disk = snapshot; clean = snapshot; feedback = 'Guardada'; document.dispatchEvent(new CustomEvent('mk:drawing-saved', { detail: { path: filePath } })); }
+    if (result?.path) { filePath = result.path; disk = snapshot; clean = snapshot; feedback = 'Guardada'; window.mdNoteAccess?.record(filePath); document.dispatchEvent(new CustomEvent('mk:drawing-saved', { detail: { path: filePath } })); }
     else feedback = 'Guardado cancelado';
     status();
   } catch (error) { status(error.message); }
@@ -95,6 +95,7 @@ async function openScene(path) {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); event.stopPropagation(); save(event.shiftKey); }
     else if (event.key === 'Escape' && event.target.closest('button')) close();
   });
+  if (path) window.mdNoteAccess?.record(path);
   status(); return true;
 }
 window.addEventListener('beforeunload', (event) => { if (dirty() || saving) { event.preventDefault(); event.returnValue = false; } });

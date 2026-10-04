@@ -1,7 +1,7 @@
 (function () {
 'use strict';
 
-const MAX_RECENT = 30;
+const MAX_RECENT = 20;
 const MAX_FAVORITES = 200;
 let state = { recent: [], favorites: [] };
 let host;
@@ -9,16 +9,23 @@ let treePaths = new Set();
 let recentOpen = true;
 let favoritesOpen = true;
 let queue = Promise.resolve();
-const isNote = path => typeof path === 'string' && path.startsWith('/') && /\.(md|markdown|txt|tex)$/i.test(path);
+const isFile = path => typeof path === 'string' && path.startsWith('/') && path.length > 1 && !path.includes('\0');
 const inFolder = path => {
   const root = window.mdState.rootFolder;
   return !!root && path.startsWith(root.replace(/\/$/, '') + '/');
 };
 function normalize(value) {
-  const list = (items, limit) => [...new Set(Array.isArray(items) ? items.filter(isNote) : [])].slice(0, limit);
+  const list = (items, limit) => [...new Set(Array.isArray(items) ? items.filter(isFile) : [])].slice(0, limit);
   return { recent: list(value?.recent, MAX_RECENT), favorites: list(value?.favorites, MAX_FAVORITES) };
 }
-const ready = window.mdEditor.getConfig().then(config => { state = normalize(config.noteAccess); render(); });
+const ready = window.mdEditor.getConfig().then(async config => {
+  state = normalize(config.noteAccess);
+  if (config.noteAccess && JSON.stringify(state) !== JSON.stringify(config.noteAccess)) {
+    const saved = await window.mdEditor.setConfig({ noteAccess: state });
+    if (JSON.stringify(normalize(saved?.noteAccess)) !== JSON.stringify(state)) throw new Error('No se confirmó la actualización del historial.');
+  }
+  render();
+});
 
 function change(update) {
   const job = queue.then(async () => {
@@ -35,11 +42,11 @@ function change(update) {
 }
 
 function record(path) {
-  if (!isNote(path)) return Promise.resolve();
+  if (!isFile(path)) return Promise.resolve();
   return change(next => { next.recent = [path, ...next.recent.filter(p => p !== path)].slice(0, MAX_RECENT); return next; });
 }
 function toggle(path) {
-  if (!isNote(path) || !inFolder(path)) return Promise.resolve();
+  if (!isFile(path) || !inFolder(path)) return Promise.resolve();
   return change(next => {
     if (next.favorites.includes(path)) next.favorites = next.favorites.filter(p => p !== path);
     else if (next.favorites.length >= MAX_FAVORITES) throw new Error('Puedes guardar hasta 200 favoritas. Quita alguna para añadir otra.');
@@ -71,7 +78,7 @@ function group(title, paths, kind) {
   if (!paths.length) {
     const empty = document.createElement('p');
     empty.className = 'note-access-empty';
-    empty.textContent = kind === 'recent' ? 'Aquí aparecerán las notas que abras.' : 'Marca una nota con la estrella para tenerla a mano.';
+    empty.textContent = kind === 'recent' ? 'Aquí aparecerán los archivos que abras.' : 'Marca un archivo con la estrella para tenerlo a mano.';
     details.appendChild(empty);
   }
   paths.forEach(path => {
@@ -96,9 +103,9 @@ function group(title, paths, kind) {
     open.addEventListener('click', async () => {
       try {
         await window.openFileAtPath(path);
-        if (window.mdState.currentFilePath === path) window.mdCodeMirror.focus();
+        if (window.mdState.currentFilePath === path && window.mdCodeMirror.getWrapperElement().getClientRects().length) window.mdCodeMirror.focus();
       } catch (error) {
-        window.mdErrorToast.show({ message: 'No se pudo abrir la nota', detail: error.message });
+        window.mdErrorToast.show({ message: 'No se pudo abrir el archivo', detail: error.message });
       }
     });
     const star = document.createElement('button');
@@ -134,9 +141,9 @@ function render() {
   pin.type = 'button';
   pin.className = 'note-access-star';
   const path = window.mdState.currentFilePath;
-  pin.disabled = !isNote(path) || !inFolder(path);
+  pin.disabled = !isFile(path) || !inFolder(path);
   const favorite = state.favorites.includes(path);
-  pin.title = pin.disabled ? 'Abre o guarda una nota en esta carpeta para marcarla' : favorite ? 'Quitar la nota actual de favoritas' : 'Añadir la nota actual a favoritas';
+  pin.title = pin.disabled ? 'Abre o guarda un archivo en esta carpeta para marcarla' : favorite ? 'Quitar el archivo actual de favoritas' : 'Añadir el archivo actual a favoritas';
   pin.setAttribute('aria-pressed', String(favorite));
   window.mdIcons.button(pin, 'star');
   pin.addEventListener('click', () => toggle(path));
@@ -155,7 +162,7 @@ function mount(pane, tree = []) {
   walk(tree);
   host = document.createElement('section');
   host.className = 'note-access';
-  host.setAttribute('aria-label', 'Notas favoritas y recientes de esta carpeta');
+  host.setAttribute('aria-label', 'Archivos favoritos y recientes de esta carpeta');
   pane.prepend(host);
   render();
 }

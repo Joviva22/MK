@@ -366,9 +366,7 @@ function showSidebarMenu(x, y, node, multiNodes) {
   }
 
   if (node && !node.esCarpeta) {
-    if (/\.(md|markdown|txt|tex)$/i.test(node.ruta)) {
-      addMenuItem(window.mdNoteAccess.isFavorite(node.ruta) ? 'Quitar de favoritas' : 'Añadir a favoritas', () => window.mdNoteAccess.toggle(node.ruta));
-    }
+    addMenuItem(window.mdNoteAccess.isFavorite(node.ruta) ? 'Quitar de favoritas' : 'Añadir a favoritas', () => window.mdNoteAccess.toggle(node.ruta));
     addMenuItem('Abrir en panel secundario', () => window.mdSecondaryPane.open(node.ruta));
     addMenuItem('Abrir con la aplicación del sistema', () => window.mdEditor.openWithSystem(node.ruta));
     if (extOf(node) === 'pdf' && window.mdPdfHighlight) {

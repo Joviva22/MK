@@ -5404,6 +5404,37 @@
       await S.deleteEntry({ ruta: renamed, nombre: 'Renombrada.md', esCarpeta: false });
       const afterDelete = (await window.mdEditor.getConfig()).noteAccess;
       check('Acceso rápido: eliminar una nota retira sus accesos guardados', !afterDelete.favorites.includes(renamed) && !afterDelete.recent.includes(renamed));
+      S.renderFolder(await window.mdEditor.readFolder(folder));
+      for (const name of ['Datos.json', 'SIN_EXTENSION', 'Contenido.otro']) {
+        const path = window.mdEditor.joinPath(folder, name);
+        await window.mdEditor.saveFile('contenido de ' + name, path, false);
+        S.renderFolder(await window.mdEditor.readFolder(folder));
+        await A.toggle(path);
+        const button = [...document.querySelectorAll('.note-access-open')].find(el => el.closest('.note-access-row').dataset.path === path);
+        button.click();
+        await waitFor(() => window.mdState.currentFilePath === path);
+        await A.whenIdle();
+        const saved = (await window.mdEditor.getConfig()).noteAccess;
+        check('Acceso rápido: abre y recuerda ' + name, window.mdCodeMirror.getValue() === 'contenido de ' + name && saved.recent[0] === path && saved.favorites.includes(path));
+      }
+      const image = window.mdEditor.joinPath(folder, 'Imagen.SVG');
+      await window.mdEditor.saveFile('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="20" height="20" fill="red"/></svg>', image, false);
+      S.renderFolder(await window.mdEditor.readFolder(folder));
+      await A.toggle(image);
+      [...document.querySelectorAll('.note-access-open')].find(el => el.closest('.note-access-row').dataset.path === image).click();
+      await waitFor(() => document.querySelector('.media-viewer-image img')?.complete);
+      await A.whenIdle();
+      check('Acceso rápido: abre imágenes en su visor y las recuerda', window.mdState.currentFilePath === image && document.querySelector('.media-viewer-image img')?.naturalWidth === 20 && (await window.mdEditor.getConfig()).noteAccess.recent[0] === image);
+      S.renderFolder(await window.mdEditor.readFolder(fixturesDir));
+      await A.toggle(fixturePdfPath);
+      [...document.querySelectorAll('.note-access-open')].find(el => el.closest('.note-access-row').dataset.path === fixturePdfPath).click();
+      await waitFor(() => window.mdState.currentFilePath === fixturePdfPath);
+      await A.whenIdle();
+      check('Acceso rápido: abre PDF en su visor y los recuerda', !!document.querySelector('.pdf-embed') && (await window.mdEditor.getConfig()).noteAccess.recent[0] === fixturePdfPath);
+      await window.openFileAtPath(second);
+      for (let i = 0; i < 25; i++) await A.record(window.mdEditor.joinPath(folder, 'historial-' + i + '.bin'));
+      const capped = (await window.mdEditor.getConfig()).noteAccess;
+      check('Acceso rápido: limita el historial global a 20 archivos de cualquier extensión', capped.recent.length === 20 && capped.recent[0].endsWith('historial-24.bin') && capped.recent[19].endsWith('historial-5.bin'));
     } finally {
       window.mdAsk = originalAsk;
       window.confirm = originalConfirm;

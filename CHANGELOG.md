@@ -6,6 +6,8 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ## Sin publicar
 
+- Recientes limitado a 20 archivos en total y acceso rápido para cualquier extensión: texto, PDF, imágenes, audio, vídeo, Word y pizarras usan su apertura habitual en MK. Favoritas disponible para todos los archivos del explorador.
+
 - Acceso rápido en el explorador con notas favoritas y recientes por carpeta. Estrella para la nota actual y menú contextual; historial sin duplicados, persistencia confirmada y actualización de accesos al renombrar, mover o eliminar desde MK.
 
 - Revisión visual en claro, oscuro y Kingdom Hearts: más espacio para notas en ventanas estrechas, Home con desplazamiento único, PDF con controles compactos y pizarra que sigue el tema sin modificar la escena. Menús recolocados para permanecer dentro de la ventana, foco visible en Opciones y estados desactivados más claros. Centrado nativo del cursor en modo máquina de escribir, incluso al saltar a líneas fuera de pantalla.

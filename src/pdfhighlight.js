@@ -599,6 +599,7 @@ async function loadPdfFromPath(filePath) {
   await loadFormFields();
   if (id !== loadId) return false;
   await goToPage(1);
+  window.mdNoteAccess?.record(filePath);
   return true;
 }
 

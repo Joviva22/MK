@@ -640,6 +640,7 @@ function forceReadModeForPdf(filePath) {
   containerEl.classList.remove('code-file');
   window.mdState.currentFilePath = filePath;
   if (window.mdModes) window.mdModes.setLayoutMode('read', { forcedByPdf: true });
+  document.dispatchEvent(new CustomEvent('mk:active-file-changed'));
 }
 
 window.showPdfPreview = function (filePath) {

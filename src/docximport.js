@@ -70,6 +70,7 @@ async function openAsMarkdown(filePath) {
   }
   const markdown = htmlToMarkdown(html);
   window.mdTabs.newTab(markdown);
+  window.mdNoteAccess?.record(filePath);
 }
 
 window.mdDocxImport = { openAsMarkdown, htmlToMarkdown };
