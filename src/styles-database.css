@@ -784,3 +784,47 @@ table.db-embed-table th {
   .database-toolbar { padding: 8px 12px; }
   .database-toolbar .database-filter-input { flex: 1 0 160px; }
 }
+
+/* Referencias locales: nombre clicable y acciones discretas. */
+.database-file-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.database-file-cell .database-cell-input { flex: 1 1 120px; min-width: 0; }
+.database-file-open, .database-file-action { font: inherit; border: 0; border-radius: 5px; background: transparent; cursor: pointer; padding: 4px 6px; }
+.database-file-open { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; text-align: left; }
+.database-file-action { color: var(--text-muted); font-size: 12px; }
+.database-file-open:hover, .database-file-action:hover { background: var(--surface-2); }
+.database-file-open:focus-visible, .database-file-action:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+td.database-file-cell { display: table-cell; white-space: normal; }
+td.database-file-cell .database-cell-input { display: block; }
+
+/* Ficha lateral: encabezado y navegación siempre accesibles. */
+.database-row-overlay { align-items: stretch; justify-content: flex-end; padding: 12px; }
+.database-row-modal { width: min(680px, calc(100vw - 24px)); max-width: min(680px, calc(100vw - 24px)); max-height: calc(100vh - 24px); padding: 0; gap: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.database-row-header { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.database-row-header small { color: var(--text-muted); }
+.database-row-header h2 { font-size: 24px; line-height: 1.3; margin-top: 6px; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.database-row-header p { margin: 10px 0 0; font-size: 12px; }
+.database-row-details { min-height: 0; overflow-y: auto; padding: 20px 24px; }
+.database-row-section + .database-row-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.database-row-section h3 { font-size: 14px; margin: 0 0 14px; }
+.database-row-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.database-row-field-wide, .database-row-fields > p { grid-column: 1 / -1; }
+.database-row-modal-field { min-width: 0; }
+.database-row-modal-field label { text-transform: none; letter-spacing: normal; font-size: 12px; margin-bottom: 6px; }
+.database-row-modal-cell { padding: 6px; min-height: 34px; }
+.database-row-footer { display: flex; align-items: center; gap: 8px; padding: 12px 24px; border-top: 1px solid var(--border); margin-top: auto; }
+.database-row-footer .database-row-modal-close { margin: 0 0 0 auto; }
+.database-row-footer span { font-size: 12px; }
+.database-row-open { display: inline-block; font: inherit; font-size: 11px; padding: 3px 6px; margin-top: 4px; color: var(--text-muted); background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; cursor: pointer; }
+.database-row-open:hover { color: var(--accent); border-color: var(--accent); }
+.database-row-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 560px) {
+  .database-row-overlay { padding: 6px; }
+  .database-row-modal { width: calc(100vw - 12px); max-width: calc(100vw - 12px); max-height: calc(100vh - 12px); }
+  .database-row-header, .database-row-details { padding: 16px; }
+  .database-row-fields { grid-template-columns: minmax(0, 1fr); }
+  .database-row-footer { padding: 12px; gap: 6px; flex-wrap: wrap; }
+}
+
+.database-row-modal-cell:focus-within { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.database-row-modal .database-cell-input { padding: 8px; font-size: 14px; }

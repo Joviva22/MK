@@ -126,3 +126,6 @@ Primera versión: editor de Markdown y LaTeX local con pestañas, preview, búsq
 
 [2.0.0]: https://github.com/Joviva22/MK/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/Joviva22/MK/releases/tag/v1.0.0
+
+- Bases de datos: columnas Archivo con selector, rutas relativas, apertura por formato y avisos para referencias inexistentes; apertura también desde rutas de texto y bases incrustadas.
+- Bases de datos: fichas con acceso desde la tabla, datos y archivos separados, navegación entre filas y teclado con retorno de foco.

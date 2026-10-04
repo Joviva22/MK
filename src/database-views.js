@@ -676,6 +676,10 @@ export function renderTableView() {
       const td = document.createElement('td');
       td.className = 'database-td';
       renderCell(td, col, row);
+      if (col === state.columns[0]) {
+        const open = document.createElement('button'); open.type = 'button'; open.className = 'database-row-open'; open.textContent = 'Abrir ficha'; open.title = 'Ver todos los datos y archivos de esta fila';
+        open.addEventListener('click', () => openRowEditor(row)); td.appendChild(open);
+      }
       tr.appendChild(td);
     });
     const tdDel = document.createElement('td');

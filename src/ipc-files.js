@@ -95,6 +95,22 @@ ipcMain.handle('file:open', async () => {
   return result.filePaths[0];
 });
 
+// Referencias de bases: resolver sin leer el contenido ni ampliar permisos.
+ipcMain.handle('file:resolveReference', async (_event, { root, reference }) => {
+  if (typeof root !== 'string' || typeof reference !== 'string' || !reference.trim() || reference.includes('\0') || /^[a-z][a-z0-9+.-]*:/i.test(reference)) throw new Error('Escribe una ruta local válida.');
+  const target = path.resolve(root, reference.trim());
+  if (!guard.check(target, 'file:resolveReference')) throw new Error('Abre la carpeta del archivo o elígelo con «Elegir archivo» para acceder a él.');
+  try { if (!(await fsp.stat(target)).isFile()) throw new Error('La ruta corresponde a una carpeta. Elige un archivo.'); }
+  catch (error) { if (error.code === 'ENOENT') throw new Error('El archivo ya no está en esa ubicación. Corrige la ruta o vuelve a elegirlo.'); throw error; }
+  return target;
+});
+ipcMain.handle('file:pickReference', async () => {
+  const result = await dialog.showOpenDialog(ctx.mainWindow, { title: 'Vincular archivo a la base de datos', defaultPath: ctx.getOpenFolder(), filters: [{ name: 'Todos los archivos', extensions: ['*'] }], properties: ['openFile'] });
+  if (result.canceled || !result.filePaths.length) return null;
+  guard.grantFile(result.filePaths[0]);
+  return result.filePaths[0];
+});
+
 // Historial local de versiones: antes de pisar un archivo, guarda una copia
 // del contenido previo bajo userData/backups/<hash de la ruta>/. Así un
 // autoguardado con contenido no deseado no borra el trabajo anterior sin

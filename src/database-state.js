@@ -20,6 +20,7 @@ export const filtersBtn = document.getElementById('database-filters-btn');
 
 export const COLUMN_TYPES = [
   { value: 'text', label: 'Texto' },
+  { value: 'file', label: 'Archivo' },
   { value: 'number', label: 'Número' },
   { value: 'date', label: 'Fecha' },
   { value: 'checkbox', label: 'Casilla' },

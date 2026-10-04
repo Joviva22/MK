@@ -219,3 +219,13 @@ Cualquier columna **Fecha** hace que la fila aparezca en el calendario del [Home
 3. En Proyectos aparece la columna espejo `Tareas`. Agregá `Horas totales` = Rollup(Tareas → Horas, Suma) y `Nº tareas` = Rollup(Tareas → cualquier columna, Cantidad).
 4. En Proyectos, **+ Vista → Tablero** agrupado por `Estado`.
 5. Abrí el **Home**: las fechas límite ya están en el calendario.
+
+### Vincular archivos
+
+Añade una columna de tipo **Archivo**. En cada fila, pulsa **Elegir archivo** para vincular una nota, PDF, imagen o pizarra, y haz clic en su nombre para abrirlo. **Cambiar** selecciona otro archivo; **Ruta** permite escribir una ruta o dejarla vacía para quitar el vínculo. Quitar el vínculo no elimina el archivo.
+
+Las rutas relativas parten de la carpeta de la base y se conservan al mover toda esa carpeta. Los archivos externos guardan su ruta absoluta. Si cambias el nombre o mueves un archivo, corrige su ruta con **Cambiar** o **Ruta**. Las columnas de Texto con rutas también ofrecen un botón para abrirlas.
+
+### Ficha de cada fila
+
+Pulsa **Abrir ficha** bajo el primer dato de una fila de la tabla, o abre una tarjeta del tablero, galería o calendario. La ficha reúne **Datos** y **Archivos vinculados**. Puedes editar y navegar con **Anterior** y **Siguiente** entre las filas visibles de la vista, respetando sus filtros y orden. **Cerrar** o Escape vuelve a la base. Si aún no tienes una columna Archivo, puedes añadirla desde la ficha.

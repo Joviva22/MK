@@ -1,6 +1,6 @@
 import { state, root, parseOptions, parseJsonArray, findChoice, displayText, COLUMN_TYPES, CHOICE_COLORS, AGGREGATIONS } from './database-state.js';
 import { cellDisplayValue, relatedRowTitle, loadRelatedData, openPopover } from './database-helpers.js';
-import { renderView } from './database-views.js';
+import { renderView, filteredRows } from './database-views.js';
 
 'use strict';
 
@@ -8,49 +8,91 @@ import { renderView } from './database-views.js';
 // multiselección, relación), el editor de fila completa y el editor de
 // columnas (tipo + configuración según el tipo).
 
-// Editor simple de fila completa, usado desde tablero/galería (la vista
-// tabla ya edita celda por celda inline).
+// Ficha de una fila: mantiene los mismos datos y editores que la tabla.
 export function openRowEditor(row) {
   if (!row) return;
   const previousFocus = document.activeElement;
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay palette-overlay';
-  const box = document.createElement('div');
-  box.className = 'command-palette database-row-modal';
-  const heading = document.createElement('h2'); heading.id = 'database-row-title'; heading.textContent = 'Datos de la fila';
-  box.setAttribute('role', 'dialog'); box.setAttribute('aria-labelledby', heading.id);
-  const hint = document.createElement('p'); hint.className = 'database-muted'; hint.textContent = 'Completa los datos. Los cambios se guardan automáticamente al salir de cada campo.';
-  box.append(heading, hint);
-  modal.appendChild(box);
-
-  state.columns.forEach((col) => {
-    const field = document.createElement('div');
-    field.className = 'database-row-modal-field';
-    const label = document.createElement('label');
-    label.textContent = col.name;
-    field.appendChild(label);
-    const cellHost = document.createElement('div');
-    cellHost.className = 'database-td database-row-modal-cell';
-    renderCell(cellHost, col, row, () => renderView());
-    field.appendChild(cellHost);
-    box.appendChild(field);
+  const visibleRows = filteredRows();
+  const ids = visibleRows.some(item => item.id === row.id) ? visibleRows.map(item => item.id) : [row.id];
+  const modal = document.createElement('div'); modal.className = 'modal-overlay palette-overlay database-row-overlay';
+  const box = document.createElement('div'); box.className = 'command-palette database-row-modal';
+  box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'database-row-title');
+  const header = document.createElement('header'); header.className = 'database-row-header';
+  const context = document.createElement('small'); context.textContent = state.databases.find(db => db.id === state.databaseId)?.name || 'Base de datos';
+  const heading = document.createElement('h2'); heading.id = 'database-row-title';
+  const hint = document.createElement('p'); hint.className = 'database-muted'; hint.textContent = 'Los cambios se guardan automáticamente al salir de cada campo.';
+  header.append(context, heading, hint);
+  const body = document.createElement('div'); body.className = 'database-row-details';
+  const footer = document.createElement('footer'); footer.className = 'database-row-footer';
+  const prev = document.createElement('button'); prev.type = 'button'; prev.className = 'toolbar-button'; prev.textContent = 'Anterior';
+  const position = document.createElement('span'); position.className = 'database-muted'; position.setAttribute('aria-live', 'polite');
+  const next = document.createElement('button'); next.type = 'button'; next.className = 'toolbar-button'; next.textContent = 'Siguiente';
+  const closeBtn = document.createElement('button'); closeBtn.type = 'button'; closeBtn.className = 'toolbar-button database-row-modal-close'; closeBtn.textContent = 'Cerrar';
+  function updateHeading() {
+    const latest = state.rows.find(item => item.id === row.id) || row;
+    const titleCol = state.columns.find(col => col.type === 'text') || state.columns[0];
+    heading.textContent = titleCol ? displayText(cellDisplayValue(titleCol, latest, state.columns)) || 'Fila sin título' : 'Fila sin título';
+    heading.title = heading.textContent;
+  }
+  function renderDetails() {
+    body.replaceChildren(); updateHeading();
+    const index = ids.indexOf(row.id); prev.disabled = index <= 0; next.disabled = index >= ids.length - 1; position.textContent = `${index + 1} de ${ids.length}`;
+    const sections = [['Datos', state.columns.filter(col => col.type !== 'file')], ['Archivos vinculados', state.columns.filter(col => col.type === 'file')]];
+    sections.forEach(([title, columns]) => {
+      const section = document.createElement('section'); section.className = 'database-row-section';
+      const label = document.createElement('h3'); label.textContent = title; section.appendChild(label);
+      const fields = document.createElement('div'); fields.className = 'database-row-fields';
+      columns.forEach(col => {
+        const editingId = row.id;
+        const field = document.createElement('div'); field.className = 'database-row-modal-field';
+        if (col.type === 'file' || col.id === state.columns[0]?.id) field.classList.add('database-row-field-wide');
+        const label = document.createElement('label'); label.textContent = col.name;
+        const cellHost = document.createElement('div'); cellHost.className = 'database-td database-row-modal-cell';
+        const refreshField = () => {
+          renderCell(cellHost, col, state.rows.find(item => item.id === editingId) || row, () => { renderView(); updateHeading(); refreshField(); });
+          const input = cellHost.querySelector('input'); if (input) { input.id = `database-row-field-${col.id}`; label.htmlFor = input.id; }
+        };
+        refreshField();
+        field.append(label, cellHost); fields.appendChild(field);
+      });
+      if (!columns.length) {
+        const help = document.createElement('p'); help.className = 'database-muted'; help.textContent = 'Añade una columna de tipo Archivo para vincular apuntes, PDF, imágenes o pizarras a esta fila.'; fields.appendChild(help);
+        const add = document.createElement('button'); add.type = 'button'; add.className = 'toolbar-button'; add.textContent = 'Añadir columna Archivo';
+        add.addEventListener('click', async () => {
+          add.disabled = true;
+          try { await window.mdEditor.db.createColumn(root(), state.databaseId, { name: 'Archivo', type: 'file' }); state.columns = await window.mdEditor.db.listColumns(root(), state.databaseId); renderView(); renderDetails(); }
+          catch (error) { window.mdErrorToast.show({ message: 'No se pudo añadir la columna', detail: error.message }); add.disabled = false; }
+        }); fields.appendChild(add);
+      }
+      section.appendChild(fields); body.appendChild(section);
+    });
+  }
+  function navigate(step) { const target = state.rows.find(item => item.id === ids[ids.indexOf(row.id) + step]); if (target) { row = target; renderDetails(); body.scrollTop = 0; } }
+  prev.addEventListener('click', () => navigate(-1)); next.addEventListener('click', () => navigate(1));
+  function finish() {
+    if (box.contains(document.activeElement)) document.activeElement.blur();
+    modal.remove(); renderView();
+    if (previousFocus?.isConnected) previousFocus.focus();
+    else [...document.querySelectorAll('.database-row-open')].find(button => button.closest('tr')?.dataset.rowId === row.id)?.focus();
+  }
+  closeBtn.addEventListener('click', finish); footer.append(prev, position, next, closeBtn);
+  box.append(header, body, footer); modal.appendChild(box); renderDetails();
+  modal.addEventListener('mousedown', event => { if (event.target === modal) finish(); });
+  modal.addEventListener('keydown', event => {
+    if (event.key !== 'Tab') event.stopPropagation();
+    if (event.key === 'Escape') { event.preventDefault(); finish(); }
+    if (event.key === 'Tab' && !document.querySelector('.database-popover, .ask-overlay')) {
+      const controls = [...box.querySelectorAll('input, select, textarea, button')].filter(el => !el.disabled && el.getClientRects().length);
+      const target = event.shiftKey && document.activeElement === controls[0] ? controls.at(-1) : !event.shiftKey && document.activeElement === controls.at(-1) ? controls[0] : null;
+      if (target) { event.preventDefault(); target.focus(); }
+    }
   });
-
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'toolbar-button database-row-modal-close';
-  closeBtn.textContent = 'Cerrar';
-  function finish() { modal.remove(); renderView(); if (previousFocus?.isConnected) previousFocus.focus(); }
-  closeBtn.addEventListener('click', finish);
-  box.appendChild(closeBtn);
-
-  modal.addEventListener('mousedown', (e) => { if (e.target === modal) finish(); });
-  modal.addEventListener('keydown', e => { if (e.key !== 'Tab') e.stopPropagation(); if (e.key === 'Escape') { e.preventDefault(); finish(); } });
-  document.body.appendChild(modal);
-  box.querySelector('input, button')?.focus();
+  document.body.appendChild(modal); box.querySelector('input, button')?.focus();
 }
 
 export function renderCell(host, column, row, onChange) {
   host.innerHTML = '';
+  host.classList.remove('database-file-cell');
   const refresh = async () => {
     state.rows = await window.mdEditor.db.listRows(root(), state.databaseId);
     if (state.relatedData[state.databaseId]) state.relatedData[state.databaseId].rows = state.rows;
@@ -60,6 +102,9 @@ export function renderCell(host, column, row, onChange) {
   switch (column.type) {
     case 'text':
       renderTextCell(host, column, row, refresh);
+      return;
+    case 'file':
+      renderFileCell(host, column, row, refresh);
       return;
     case 'number':
       renderNumberCell(host, column, row, refresh);
@@ -99,6 +144,51 @@ export function renderTextCell(host, column, row, refresh) {
     await refresh();
   });
   host.appendChild(input);
+  const value = input.value.trim();
+  if (value && !/^[a-z][a-z0-9+.-]*:/i.test(value) && (value.includes('/') || /\.[a-z0-9]{1,12}$/i.test(value))) {
+    host.classList.add('database-file-cell'); host.appendChild(referenceButton(value));
+  }
+}
+
+// Archivo mantiene una ruta de texto: compatible con CSV, filtros y bases existentes.
+export function referenceButton(reference, folder = root()) {
+  const button = document.createElement('button'); button.type = 'button'; button.className = 'database-file-open';
+  const name = reference.split('/').pop() || reference;
+  button.textContent = name; button.title = `Abrir ${reference}`; button.setAttribute('aria-label', `Abrir ${reference}`);
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      const target = await window.mdEditor.resolveFileReference(folder, reference);
+      await window.openFileAtPath(target);
+      document.querySelector('.database-row-modal')?.closest('.modal-overlay')?.remove();
+      window.mdDatabase.close();
+    } catch (error) { window.mdErrorToast.show({ message: 'No se pudo abrir el archivo vinculado', detail: error.message }); }
+    finally { button.disabled = false; }
+  });
+  return button;
+}
+
+export function renderFileCell(host, column, row, refresh) {
+  const folder = root();
+  const reference = row.cells[column.id] || '';
+  host.classList.add('database-file-cell');
+  if (reference) host.appendChild(referenceButton(reference));
+  const save = async value => { await window.mdEditor.db.setCell(folder, row.id, column.id, value || null); await refresh(); };
+  const pick = document.createElement('button'); pick.type = 'button'; pick.className = 'database-file-action'; pick.textContent = reference ? 'Cambiar' : 'Elegir archivo'; pick.title = 'Elegir archivo';
+  pick.addEventListener('click', async () => {
+    try {
+      const chosen = await window.mdEditor.pickFileReference(); if (!chosen) return;
+      const prefix = folder.replace(/\/$/, '') + '/';
+      await save(chosen.startsWith(prefix) ? chosen.slice(prefix.length) : chosen);
+    } catch (error) { window.mdErrorToast.show({ message: 'No se pudo vincular el archivo', detail: error.message }); }
+  });
+  const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'database-file-action'; edit.textContent = 'Ruta'; edit.title = 'Escribir o quitar la ruta del archivo';
+  edit.addEventListener('click', async () => {
+    const value = await window.mdAsk('Ruta del archivo', reference, { context: root(), description: 'Ruta absoluta o relativa a esta carpeta. Déjala vacía para quitar el vínculo.', actionLabel: 'Guardar vínculo', inputLabel: 'Ruta' });
+    if (value === null) return;
+    try { await save(value.trim()); } catch (error) { window.mdErrorToast.show({ message: 'No se pudo guardar el vínculo', detail: error.message }); }
+  });
+  host.append(pick, edit);
 }
 
 export function renderNumberCell(host, column, row, refresh) {
@@ -338,7 +428,7 @@ export function openColumnEditor(anchorEl, column) {
 
     let getConfig = () => ({});
     function renderConfig() {
-      const tips = { text: 'Texto libre, como un título, autor o comentario.', number: 'Una cantidad: minutos, precio, puntuación… Se puede ordenar y sumar.', date: 'Un día concreto, como una entrega o un repaso. Se puede usar en una vista Calendario.', checkbox: 'Sí o no: hecho, pagado, revisado…', select: 'Una opción por fila. Por ejemplo: Pendiente, En curso o Terminado.', multiselect: 'Varias opciones por fila, como etiquetas o temas.', relation: 'Enlaza esta fila con elementos de otra base. Úsala cuando ya tengas dos bases organizadas.', formula: 'Calcula un valor a partir de otras columnas. No se escribe manualmente en las filas.', rollup: 'Resume datos de las filas enlazadas mediante una Relación, por ejemplo su suma o cantidad.', created_time: 'Registra automáticamente cuándo se creó cada fila.' };
+      const tips = { file: 'Vincula una nota, PDF, imagen o pizarra. Haz clic en su nombre para abrirla. Las rutas relativas parten de la carpeta de esta base.', text: 'Texto libre, como un título, autor o comentario.', number: 'Una cantidad: minutos, precio, puntuación… Se puede ordenar y sumar.', date: 'Un día concreto, como una entrega o un repaso. Se puede usar en una vista Calendario.', checkbox: 'Sí o no: hecho, pagado, revisado…', select: 'Una opción por fila. Por ejemplo: Pendiente, En curso o Terminado.', multiselect: 'Varias opciones por fila, como etiquetas o temas.', relation: 'Enlaza esta fila con elementos de otra base. Úsala cuando ya tengas dos bases organizadas.', formula: 'Calcula un valor a partir de otras columnas. No se escribe manualmente en las filas.', rollup: 'Resume datos de las filas enlazadas mediante una Relación, por ejemplo su suma o cantidad.', created_time: 'Registra automáticamente cuándo se creó cada fila.' };
       typeHelp.textContent = tips[typeSelect.value] || '';
       configHost.innerHTML = '';
       getConfig = buildColumnConfigEditor(configHost, typeSelect.value, column);

@@ -1,7 +1,7 @@
 import { state, root, parseOptions, parseView, parseJsonArray, findChoice, displayText, filterInput } from './database-state.js';
 import { cellDisplayValue } from './database-helpers.js';
 import { chartData, filteredRows, renderView } from './database-views.js';
-import { petXpForCheck } from './database-cells.js';
+import { petXpForCheck, referenceButton } from './database-cells.js';
 import { open } from './database.js';
 
 'use strict';
@@ -75,6 +75,10 @@ export function embedCell(column, row, shown, r, onSaved) {
   const td = document.createElement('td');
   const stop = (e) => e.stopPropagation();
   td.addEventListener('mousedown', stop);
+  if (column.type === 'file') {
+    if (row.cells[column.id]) td.appendChild(referenceButton(row.cells[column.id], r));
+    return td;
+  }
   if (!EMBED_EDITABLE.has(column.type)) {
     td.textContent = shown;
     return td;

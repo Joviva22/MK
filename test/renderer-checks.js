@@ -5623,6 +5623,70 @@
         const createdColumns = await window.mdEditor.db.listColumns(folder, created.id);
         check('Bases guiadas: ' + template + ' sin ejemplos conserva calendario y tipos', (await window.mdEditor.db.listRows(folder, created.id)).length === 0 && createdColumns.some(c => c.type === 'date') && createdViews.some(v => v.type === 'calendar' && JSON.parse(v.config).dateColumn === createdColumns.find(c => c.type === 'date').id));
       }
+      // Referencias reales: persistencia, rutas relativas y apertura mediante el flujo común.
+      const activeDb = (await window.mdEditor.db.listDatabases(folder)).find(d => d.name === 'Plantilla study');
+      const fileCol = await window.mdEditor.db.createColumn(folder, activeDb.id, { name: 'Apuntes', type: 'file' });
+      const rowId = await window.mdEditor.db.createRow(folder, activeDb.id);
+      const notePath = window.mdEditor.joinPath(folder, 'Apuntes con ñ.md');
+      await window.mdEditor.saveFile('# Apuntes vinculados', notePath, false);
+      await window.mdEditor.db.setCell(folder, rowId, fileCol.id, 'Apuntes con ñ.md');
+      await window.mdDatabase.open(activeDb.id);
+      check('Archivos en bases: columna Archivo conserva la ruta y muestra nombre clicable', document.querySelector('.database-file-open')?.textContent === 'Apuntes con ñ.md' && (await window.mdEditor.db.listRows(folder, activeDb.id))[0].cells[fileCol.id] === 'Apuntes con ñ.md');
+      document.querySelector('.database-file-open').click();
+      await waitFor(() => window.mdState.currentFilePath === notePath && document.getElementById('database-panel').hidden);
+      check('Archivos en bases: abre una nota relativa con espacios y acentos y cierra el panel', window.mdState.currentFilePath === notePath && window.mdCodeMirror.getValue().includes('Apuntes vinculados') && document.getElementById('database-panel').hidden);
+      await window.mdDatabase.open(activeDb.id);
+      document.querySelector('.database-file-action[title^="Escribir"]').click(); await answerAsk('no-existe.pdf');
+      await waitFor(() => document.querySelector('.database-file-open')?.textContent === 'no-existe.pdf');
+      document.querySelector('.database-file-open').click();
+      await waitFor(() => [...document.querySelectorAll('.app-error-toast')].some(t => t.textContent.includes('ya no está')));
+      check('Archivos en bases: ruta inexistente explica cómo corregirla y conserva el panel', !document.getElementById('database-panel').hidden && document.querySelector('.database-file-open').textContent === 'no-existe.pdf');
+      document.querySelector('.database-file-action[title^="Escribir"]').click(); await answerAsk('');
+      await waitFor(() => !document.querySelector('.database-file-open'));
+      check('Archivos en bases: quitar el vínculo conserva el archivo original', (await window.mdEditor.readFile(notePath)).content.includes('Apuntes vinculados') && !(await window.mdEditor.db.listRows(folder, activeDb.id))[0].cells[fileCol.id]);
+      const textCol = (await window.mdEditor.db.listColumns(folder, activeDb.id)).find(c => c.type === 'text');
+      await window.mdEditor.db.setCell(folder, rowId, textCol.id, notePath); await window.mdDatabase.open(activeDb.id);
+      check('Archivos en bases: rutas existentes de Texto también ofrecen apertura', document.querySelector('.database-file-open')?.title === 'Abrir ' + notePath);
+      await window.mdEditor.db.setCell(folder, rowId, textCol.id, 'Apuntes con ñ.md'); await window.mdDatabase.open(activeDb.id);
+      check('Archivos en bases: rutas de Texto relativas admiten espacios y acentos', document.querySelector('.database-file-open')?.textContent === 'Apuntes con ñ.md');
+      let denied = false; try { await window.mdEditor.resolveFileReference(folder, '/etc/shadow'); } catch { denied = true; }
+      let directory = false; try { await window.mdEditor.resolveFileReference(folder, '.'); } catch { directory = true; }
+      let url = false; try { await window.mdEditor.resolveFileReference(folder, 'https://example.com/test.pdf'); } catch { url = true; }
+      check('Archivos en bases: rechaza carpetas, URLs y rutas no autorizadas', denied && directory && url);
+      const openFile = window.openFileAtPath;
+      const calls = [];
+      window.openFileAtPath = async path => { calls.push(path); };
+      try {
+        for (const name of ['referencia.pdf', 'referencia.png', 'referencia.excalidraw']) {
+          await window.mdEditor.saveFile('fixture', window.mdEditor.joinPath(folder, name), false);
+          await window.mdEditor.db.setCell(folder, rowId, fileCol.id, name); await window.mdDatabase.open(activeDb.id);
+          [...document.querySelectorAll('.database-file-open')].find(b => b.textContent === name).click();
+          await waitFor(() => document.getElementById('database-panel').hidden);
+        }
+      } finally { window.openFileAtPath = openFile; }
+      check('Archivos en bases: PDF, imagen y pizarra usan el mismo abridor por formato', calls.length === 3 && calls.every((path, i) => path === window.mdEditor.joinPath(folder, ['referencia.pdf', 'referencia.png', 'referencia.excalidraw'][i])));
+      await window.mdDatabase.open(activeDb.id);
+      const secondId = await window.mdEditor.db.createRow(folder, activeDb.id, { [textCol.id]: 'Segundo tema' });
+      await window.mdDatabase.open(activeDb.id);
+      document.querySelector('.database-row-open').focus(); document.querySelector('.database-row-open').click();
+      await waitFor(() => document.querySelector('.database-row-modal'));
+      check('Fichas: acceso desde tabla muestra datos, archivos y posición', document.querySelector('.database-row-modal').getAttribute('aria-modal') === 'true' && [...document.querySelectorAll('.database-row-section h3')].map(h => h.textContent).join('|') === 'Datos|Archivos vinculados' && document.querySelector('.database-row-footer').textContent.includes('1 de 2'));
+      const titleField = document.querySelector('.database-row-modal input'); titleField.value = 'Tema actualizado'; titleField.dispatchEvent(new Event('change'));
+      await waitFor(() => document.getElementById('database-row-title').textContent === 'Tema actualizado');
+      check('Fichas: editar actualiza título y guarda en la misma fila de la base', (await window.mdEditor.db.listRows(folder, activeDb.id)).find(r => r.id === rowId).cells[textCol.id] === 'Tema actualizado');
+      [...document.querySelectorAll('.database-row-footer button')].find(b => b.textContent === 'Siguiente').click();
+      check('Fichas: navegación conserva orden y desactiva el último siguiente', document.getElementById('database-row-title').textContent === 'Segundo tema' && [...document.querySelectorAll('.database-row-footer button')].find(b => b.textContent === 'Siguiente').disabled && document.querySelector('.database-row-footer').textContent.includes('2 de 2') && (await window.mdEditor.db.listRows(folder, activeDb.id)).some(r => r.id === secondId));
+      const close = document.querySelector('.database-row-modal-close'); close.focus(); close.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+      check('Fichas: Tab mantiene el foco dentro del panel', document.activeElement === document.querySelector('.database-row-modal input'));
+      document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      check('Fichas: Escape cierra la ficha, mantiene la base y devuelve el foco', !document.querySelector('.database-row-modal') && !document.getElementById('database-panel').hidden && document.activeElement.classList.contains('database-row-open'));
+      const projectDb = (await window.mdEditor.db.listDatabases(folder)).find(d => d.name === 'Plantilla projects');
+      await window.mdEditor.db.createRow(folder, projectDb.id); await window.mdDatabase.open(projectDb.id);
+      document.querySelector('.database-row-open').click();
+      [...document.querySelectorAll('.database-row-modal button')].find(b => b.textContent === 'Añadir columna Archivo').click();
+      await waitFor(() => document.querySelector('.database-row-modal .database-file-action'));
+      check('Fichas: primer archivo se prepara desde la ficha sin crear otra fila', (await window.mdEditor.db.listColumns(folder, projectDb.id)).some(c => c.type === 'file') && (await window.mdEditor.db.listRows(folder, projectDb.id)).length === 1);
+      document.querySelector('.database-row-modal-close').click();
       const before = (await window.mdEditor.db.listDatabases(folder)).length;
       let invalid = false; try { await window.mdEditor.db.createDatabase(folder, 'Inválida', { template: 'no-existe' }); } catch { invalid = true; }
       check('Bases guiadas: plantilla inválida no deja una base incompleta', invalid && (await window.mdEditor.db.listDatabases(folder)).length === before);
