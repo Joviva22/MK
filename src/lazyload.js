@@ -12,6 +12,7 @@
 // misma promesa); si falla, se puede reintentar.
 
 const LIBS = {
+  drawing: ['drawing-bundle.js'],
   mermaid: ['../node_modules/mermaid/dist/mermaid.min.js'],
   docx: ['../node_modules/docx/dist/index.iife.js'],
   mammoth: ['../node_modules/mammoth/mammoth.browser.min.js'],
@@ -62,6 +63,7 @@ const CM_MODE_FILES = {
 
 async function mdLoadCmMode(name) {
   if (!/^[a-z0-9-]+$/.test(name)) throw new Error(`Modo inválido: ${name}`);
+  if (window.mdCM6) return; // CM6 incluye sus lenguajes; no cargar addons de CM5
   const files = CM_MODE_FILES[name] || [`mode/${name}/${name}.js`];
   for (const f of files) await loadScript(CM + f);
 }

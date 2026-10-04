@@ -1,0 +1,27 @@
+.modal.conflict-dialog {
+  width: min(1000px, 94vw);
+  max-width: 1000px;
+  max-height: 90vh;
+  overflow: auto;
+}
+.conflict-versions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.conflict-versions section { min-width: 0; }
+.conflict-versions pre {
+  max-height: 45vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  user-select: text;
+}
+.conflict-dialog .modal-actions { flex-wrap: wrap; }
+@media (max-width: 650px) {
+  .conflict-versions { grid-template-columns: 1fr; }
+  .conflict-versions pre { max-height: 25vh; }
+}

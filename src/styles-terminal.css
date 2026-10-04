@@ -1,0 +1,221 @@
+/* Terminal integrada: separado de styles.css. */
+
+/* ---- Terminal integrada (ver terminal.js) ---- */
+.terminal-panel {
+  position: relative;
+  flex: none;
+  height: 260px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.terminal-panel[hidden] {
+  display: none;
+}
+
+.terminal-resizer {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: row-resize;
+  z-index: 5;
+}
+
+.terminal-resizer:hover,
+.terminal-resizer.active {
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+.terminal-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 12px;
+}
+
+.terminal-heading {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.terminal-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.terminal-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 5px;
+  padding: 2px 6px 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.terminal-tab-active {
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.terminal-tab-close {
+  opacity: 0.6;
+}
+
+.terminal-tab-close:hover {
+  opacity: 1;
+  color: #ef476f;
+}
+
+.terminal-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.terminal-header-btn.toolbar-button {
+  height: 24px;
+  padding: 0 8px;
+}
+
+.terminal-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  padding: 4px 0 0 8px;
+}
+
+.terminal-group {
+  position: absolute;
+  inset: 4px 0 0 8px;
+  display: flex;
+}
+
+.terminal-group[hidden] {
+  display: none;
+}
+
+.terminal-instance {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Pantalla dividida: separador entre paneles y el activo marcado arriba. */
+/* Sin padding/borde en el panel: FitAddon mide su ancho y los contaría. */
+.terminal-group-split {
+  gap: 9px;
+}
+
+.terminal-group-split .terminal-instance + .terminal-instance::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.terminal-group-split .terminal-instance-focused::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 8px;
+  top: -3px;
+  height: 2px;
+  z-index: 4;
+  background: var(--accent);
+}
+
+.terminal-pane-close {
+  display: none;
+  position: absolute;
+  top: 2px;
+  right: 14px;
+  z-index: 5;
+  border: none;
+  border-radius: 4px;
+  background: var(--bg-secondary, var(--bg));
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 5px;
+  opacity: 0;
+}
+
+.terminal-group-split .terminal-pane-close {
+  display: block;
+}
+
+.terminal-group-split .terminal-instance:hover .terminal-pane-close {
+  opacity: 1;
+}
+
+/* ---- Terminal: buscar en la salida ---- */
+.terminal-search {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.terminal-search[hidden] {
+  display: none;
+}
+
+.terminal-search input {
+  width: 200px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+}
+
+.terminal-search-status {
+  font-size: 11px;
+  color: #ef476f;
+}
+
+/* ---- Terminal: renombrar pestaña ---- */
+.terminal-tab-rename {
+  width: 110px;
+  padding: 0 4px;
+  font-size: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.home-side-buttons {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.home-editor-actions {
+  flex-wrap: wrap;
+}
+
