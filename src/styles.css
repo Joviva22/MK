@@ -3991,3 +3991,6 @@ ul.tree ul.tree { margin-left: 10px; padding-left: 10px; border-left: 1px solid 
   .chart-plot-pie svg { width: min(220px, 100%); }
   .chart-legend { flex-basis: 100%; }
 }
+
+.pdf-sticky-box { background: #fff08c; box-shadow: 2px 3px 8px #0003; }
+.pdf-sticky-box .pdf-text-edit { min-width: 4em; }

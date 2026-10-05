@@ -33,6 +33,7 @@ const nextBtn = document.getElementById('pdfhighlight-next');
 const undoBtn = document.getElementById('pdfhighlight-undo');
 const saveBtn = document.getElementById('pdfhighlight-save');
 const modeHighlightBtn = document.getElementById('pdfhighlight-mode-highlight');
+const modeStickyBtn = document.getElementById('pdfhighlight-mode-sticky');
 const modeTextBtn = document.getElementById('pdfhighlight-mode-text');
 const modeSelectBtn = document.getElementById('pdfhighlight-mode-select');
 const copyBtn = document.getElementById('pdfhighlight-copy');
@@ -218,7 +219,8 @@ function hasChanges() {
 
 function textBoxFor(t) {
   const box = document.createElement('div');
-  box.className = 'pdf-text-box';
+  box.className = 'pdf-text-box' + (t.sticky ? ' pdf-sticky-box' : '');
+  if (t.sticky) box.style.padding = `${6 * scale}px`;
   box.dataset.id = t.id;
   box.style.left = `${t.x * 100}%`;
   box.style.top = `${t.y * 100}%`;
@@ -241,7 +243,7 @@ function textBoxFor(t) {
   box.append(handle, edit, del);
 
   edit.setAttribute('role', 'textbox');
-  edit.setAttribute('aria-label', 'Texto añadido al PDF');
+  edit.setAttribute('aria-label', t.sticky ? 'Post-it añadido al PDF' : 'Texto añadido al PDF');
   edit.addEventListener('input', () => { t.text = edit.innerText.replace(/\n$/, ''); saveError = ''; updateDocumentStatus(); });
   edit.addEventListener('keydown', (e) => {
     e.stopPropagation(); // Escape/atajos globales: no cerrar el panel mientras se escribe
@@ -286,6 +288,7 @@ function renderTexts() {
 
 function addText(xNorm, yNorm, initialText) {
   const t = {
+    sticky: mode === 'sticky',
     id: nextTextId++,
     x: xNorm,
     y: yNorm,
@@ -375,28 +378,30 @@ async function goToPage(n) {
 }
 
 function setMode(next) {
-  if (!['highlight', 'text', 'select'].includes(next)) return;
+  if (!['highlight', 'text', 'sticky', 'select'].includes(next)) return;
   dragStart = dragCurrent = null;
   clearSelection();
   mode = next;
   modeHighlightBtn.classList.toggle('pdfhighlight-mode-active', mode === 'highlight');
+  modeStickyBtn.classList.toggle('pdfhighlight-mode-active', mode === 'sticky');
   modeTextBtn.classList.toggle('pdfhighlight-mode-active', mode === 'text');
-  canvasWrap.classList.toggle('pdfhighlight-text-mode', mode === 'text');
+  canvasWrap.classList.toggle('pdfhighlight-text-mode', (mode === 'text' || mode === 'sticky'));
   canvasWrap.classList.toggle('pdfhighlight-select-mode', mode === 'select');
   modeSelectBtn.classList.toggle('pdfhighlight-mode-active', mode === 'select');
-  textOptions.hidden = mode !== 'text';
+  textOptions.hidden = mode !== 'text' && mode !== 'sticky';
   selectionActions.hidden = mode !== 'select';
   modeHelp.textContent = mode === 'highlight' ? 'Arrastra sobre la página para subrayar. Puedes deshacer el último subrayado de esta página.' :
+    mode === 'sticky' ? 'Haz clic para añadir un post-it. Escribe tu nota, arrastra el asa para moverla y usa × para borrarla.' :
     mode === 'text' ? 'Haz clic en la página para escribir. Usa el asa del cuadro para moverlo y × para borrarlo.' :
     'Selecciona texto para copiarlo o llevarlo a tus notas.';
-  [modeSelectBtn, modeHighlightBtn, modeTextBtn].forEach((button) => button.setAttribute('aria-pressed', String(button.classList.contains('pdfhighlight-mode-active'))));
+  [modeSelectBtn, modeHighlightBtn, modeTextBtn, modeStickyBtn].forEach((button) => button.setAttribute('aria-pressed', String(button.classList.contains('pdfhighlight-mode-active'))));
   updateSelection();
 }
 
 canvas.addEventListener('mousedown', (e) => {
   if (!pageReady || mode === 'select' || e.button !== 0) return;
   const rect = canvas.getBoundingClientRect();
-  if (mode === 'text') {
+  if (mode === 'text' || mode === 'sticky') {
     e.preventDefault();
     addText((e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height);
     return;
@@ -655,10 +660,17 @@ async function buildPdf() {
       if (!t.text.trim()) return;
       // Misma caja que en pantalla: esquina superior izquierda en (x, y),
       // interlineado 1.2; la línea base queda ~0.8 del tamaño abajo del borde.
-      t.text.split('\n').forEach((line, i) => {
+      const lines = t.text.split('\n');
+      const padding = t.sticky ? 6 : 0;
+      if (t.sticky) {
+        const noteWidth = Math.max(t.size * 4, ...lines.map((line) => font.widthOfTextAtSize(drawableText(font, line), t.size))) + padding * 2;
+        const noteHeight = Math.max(t.size * 1.2, lines.length * t.size * 1.2) + padding * 2;
+        page.drawRectangle({ x: t.x * width, y: height - t.y * height - noteHeight, width: noteWidth, height: noteHeight, color: PDFLib.rgb(1, 0.94, 0.55) });
+      }
+      lines.forEach((line, i) => {
         page.drawText(drawableText(font, line), {
-          x: t.x * width,
-          y: height - t.y * height - t.size * (0.8 + i * 1.2),
+          x: t.x * width + padding,
+          y: height - t.y * height - padding - t.size * (0.8 + i * 1.2),
           size: t.size,
           font,
           color: hexToRgb(t.color)
@@ -717,6 +729,7 @@ zoomSelect.addEventListener('change', () => { if (pdfDoc) goToPage(pageNum); });
 prevBtn.addEventListener('click', () => goToPage(pageNum - 1));
 nextBtn.addEventListener('click', () => goToPage(pageNum + 1));
 modeHighlightBtn.addEventListener('click', () => setMode('highlight'));
+modeStickyBtn.addEventListener('click', () => setMode('sticky'));
 modeTextBtn.addEventListener('click', () => setMode('text'));
 modeSelectBtn.addEventListener('click', () => setMode('select'));
 

@@ -159,6 +159,10 @@
                 <option value="8">8 espacios</option>
               </select></div>
           </div>
+          <div class="set-row" data-keywords="autocompletar palabras sugerencias enter tab">
+            <div class="set-text"><label class="set-title" for="completion-key-select">Aceptar autocompletado</label><div class="set-desc">Tecla para completar las palabras sugeridas del documento.</div></div>
+            <div class="set-control"><select id="completion-key-select"><option value="enter">Enter</option><option value="tab">Tab</option><option value="both">Enter y Tab</option></select></div>
+          </div>
           <div class="set-row" data-keywords="wrap">
             <div class="set-text"><label class="set-title" for="wordwrap-toggle">Ajuste de línea</label><div class="set-desc">Las líneas largas continúan abajo en vez de salirse a la derecha.</div></div>
             <div class="set-control"><input type="checkbox" id="wordwrap-toggle" class="set-switch" role="switch" /></div>
@@ -783,6 +787,7 @@
         <div class="pdf-editor-group" role="group" aria-label="Herramientas de anotación">
         <button id="pdfhighlight-mode-select" class="toolbar-button" title="Seleccionar y copiar texto original del PDF">Seleccionar</button>
         <button id="pdfhighlight-mode-highlight" class="toolbar-button pdfhighlight-mode-active" title="Arrastrar sobre el texto para subrayarlo">Subrayar</button>
+        <button id="pdfhighlight-mode-sticky" class="toolbar-button" title="Clic en la página para añadir un post-it">Post-it</button>
         <button id="pdfhighlight-mode-text" class="toolbar-button" title="Clic en la página para escribir ahí">Escribir</button>
         </div>
         <label class="pdf-zoom-label">Zoom <select id="pdfhighlight-zoom" class="pdfhighlight-size" aria-label="Zoom del PDF"><option value="fit">Ajustar al ancho</option><option value="0.75">75 %</option><option value="1">100 %</option><option value="1.25">125 %</option><option value="1.5">150 %</option><option value="2">200 %</option></select></label>

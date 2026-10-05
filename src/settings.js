@@ -13,6 +13,11 @@ window.mdGetGitSyncEnabled = () => gitSyncEnabled;
 const autosaveSelect = document.getElementById('autosave-select');
 const fontSizeSelect = document.getElementById('fontsize-select');
 const fontFamilySelect = document.getElementById('fontfamily-select');
+const completionKeySelect = document.getElementById('completion-key-select');
+completionKeySelect.addEventListener('change', async () => {
+  window.mdCodeMirror.setOption('completionAcceptKey', completionKeySelect.value);
+  await window.mdEditor.setConfig({ completionAcceptKey: completionKeySelect.value });
+});
 const tabSizeSelect = document.getElementById('tabsize-select');
 const wordWrapToggle = document.getElementById('wordwrap-toggle');
 const snippetsTextarea = document.getElementById('snippets-textarea');
@@ -159,6 +164,9 @@ pomodoroBreakSelect.addEventListener('change', async (e) => {
   const fontFamily = config.editorFontFamily || fontFamilySelect.options[0].value;
   fontFamilySelect.value = fontFamily;
   document.documentElement.style.setProperty('--editor-font-family', fontFamily);
+
+  completionKeySelect.value = ['enter', 'tab', 'both'].includes(config.completionAcceptKey) ? config.completionAcceptKey : 'enter';
+  window.mdCodeMirror.setOption('completionAcceptKey', completionKeySelect.value);
 
   const tabSize = config.editorTabSize != null ? config.editorTabSize : 2;
   tabSizeSelect.value = String(tabSize);

@@ -236,6 +236,17 @@
     await wait(100);
     check('Autocompletado nativo: sugerencias del documento', !!el.querySelector('.cm-tooltip-autocomplete'));
     cm.state.completionActive?.close();
+    for (const [setting, key] of [['enter', 'Enter'], ['tab', 'Tab'], ['both', 'Tab']]) {
+      cm.setOption('completionAcceptKey', setting);
+      cm.setValue('palabraNueva\npala');
+      cm.setCursor({ line: 1, ch: 4 });
+      cm.showHint();
+      await wait(150);
+      el.querySelector('.cm-content').dispatchEvent(new KeyboardEvent('keydown', { key, code: key, bubbles: true, cancelable: true }));
+      check(`Autocompletado: aceptar con ${key} (${setting})`, cm.getLine(1) === 'palabraNueva');
+      cm.state.completionActive?.close();
+    }
+    cm.setOption('completionAcceptKey', 'enter');
 
     window.mdCodeMirror = cm;
     window.mdState = { currentFilePath: null, rootFolder: null };

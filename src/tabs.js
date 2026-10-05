@@ -720,6 +720,7 @@ function showTabMenu(x, y, tab) {
     b.addEventListener('click', () => { hideTabMenu(); fn(); });
     tabMenuEl.appendChild(b);
   };
+  add('Abrir en panel secundario', () => window.mdSecondaryPane.open(tab.filePath), !tab.filePath || tab.kind === 'drawing');
   add('Cerrar', () => closeTab(tab.id));
   add('Cerrar las otras', () => closeTabs(tabs.filter((t) => t.id !== tab.id).map((t) => t.id)), tabs.length < 2);
   add('Cerrar las de la derecha', () => closeTabs(tabs.slice(idx + 1).map((t) => t.id)), idx === tabs.length - 1);
@@ -899,6 +900,7 @@ function syncPaths(paths) {
 }
 
 window.mdTabs = { trackViewer, activatePreviousDocument: () => { const tab = tabs.find(t => t.id === drawingReturnId && t.kind !== 'drawing') || tabs.find(t => t.id === lastDocumentId && !t.kind) || tabs.find(t => !t.kind); if (tab) activateTab(tab.id); else newTab(''); }, reopenClosed, closedCount: () => closedTabs.length, getActiveState, getModifiedPaths, syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
+window.mdTabs.getOpenText = (filePath) => { const tab = tabs.find(t => t.filePath === filePath && !t.kind); return tab ? tab.doc.getValue() : null; };
 window.mdTabs.updateDrawing = (path, modified) => { const tab = tabs.find(t => t.kind === 'drawing' && t.filePath === path); if (tab) markModified(tab.id, modified); };
 window.mdTabs.timings = () => lastOpenTimings ? JSON.parse(JSON.stringify(lastOpenTimings)) : null;
 window.openFileAtPath = openTab;

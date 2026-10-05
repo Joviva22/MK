@@ -2480,6 +2480,12 @@
       edit.textContent = 'Hola ñandú, ¿qué tal? 😀';
       edit.dispatchEvent(new Event('input', { bubbles: true }));
     }
+    window.mdPdfHighlight.setMode('sticky');
+    canvasEl.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, clientX: r.left + r.width * 0.2, clientY: r.top + r.height * 0.3 }));
+    const sticky = document.querySelector('.pdf-sticky-box .pdf-text-edit');
+    sticky.textContent = 'Recordar repasar';
+    sticky.dispatchEvent(new Event('input', { bubbles: true }));
+    check('PDF: post-it editable con fondo amarillo', !!sticky && !document.getElementById('pdfhighlight-text-options').hidden);
     window.mdPdfHighlight.setFormValueForTest('nombre', 'Julián');
     window.mdPdfHighlight.setFormValueForTest('acepto', true);
     window.mdPdfHighlight.setFormValueForTest('pais', 'España');
@@ -2491,6 +2497,7 @@
     const doc = await window.pdfjsLib.getDocument({ data: bytes }).promise;
     const content = await (await doc.getPage(1)).getTextContent();
     const allText = content.items.map((it) => it.str).join(' ');
+    check('PDF: post-it conserva su texto al guardar', allText.includes('Recordar repasar'));
     const textOk = allText.includes('Hola ñandú, ¿qué tal? ?'); // el emoji no entra en Helvetica: queda "?"
     window.mdPdfHighlight.setMode('highlight');
     window.mdPdfHighlight.close();

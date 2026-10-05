@@ -234,7 +234,7 @@ function lineNumberOfHandle(view, handle) {
 // ---------- ajustes globales (persisten al cambiar de pestaña, como en CM5) ----------
 const wrapCompartment = new Compartment();
 const tabSizeCompartment = new Compartment();
-const globalSettings = { lineWrapping: true, lineNumbers: true, tabSize: 4 };
+const globalSettings = { lineWrapping: true, lineNumbers: true, tabSize: 4, completionAcceptKey: 'enter' };
 
 function globalExtensions() {
   return [
@@ -352,7 +352,12 @@ function baseExtensions(compartment, lineNumCompartment, modeSpec) {
     lineMarksField,
     ...globalExtensions(),
     compartment.of(langAndHighlight(modeSpec)),
-    keymap.of([...completionKeymap, ...defaultKeymap, ...historyKeymap, indentWithTab]),
+    keymap.of([
+      ...completionKeymap.filter((binding) => binding.key !== 'Enter'),
+      { key: 'Enter', run: (editor) => globalSettings.completionAcceptKey !== 'tab' && completionKeymap.find((binding) => binding.key === 'Enter').run(editor) },
+      { key: 'Tab', run: (editor) => globalSettings.completionAcceptKey !== 'enter' && completionKeymap.find((binding) => binding.key === 'Enter').run(editor) },
+      ...defaultKeymap, ...historyKeymap, indentWithTab
+    ]),
     EditorView.updateListener.of((update) => {
       if (currentDoc && update.state === view.state) currentDoc.state = update.state;
     }),
@@ -509,6 +514,7 @@ function CodeMirrorCtor(el, options) {
       return old;
     },
     getOption(name) {
+      if (name === 'completionAcceptKey') return globalSettings.completionAcceptKey;
       if (name === 'mode') return currentDoc.modeSpec;
       if (name === 'lineNumbers') return globalSettings.lineNumbers;
       if (name === 'lineWrapping') return globalSettings.lineWrapping;
@@ -516,7 +522,9 @@ function CodeMirrorCtor(el, options) {
       return undefined;
     },
     setOption(name, value) {
-      if (name === 'mode') {
+      if (name === 'completionAcceptKey') {
+        globalSettings.completionAcceptKey = ['enter', 'tab', 'both'].includes(value) ? value : 'enter';
+      } else if (name === 'mode') {
         if (currentDoc.modeSpec === value) return;
         currentDoc.modeSpec = value;
         const effect = currentDoc.langCompartment.reconfigure(langAndHighlight(value));

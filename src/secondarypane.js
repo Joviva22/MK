@@ -84,7 +84,8 @@ async function renderContent(filePath) {
   }
 
   if (MD_EXT.test(filePath)) {
-    const result = await window.mdEditor.readFile(filePath);
+    const openText = window.mdTabs?.getOpenText(filePath);
+    const result = openText != null ? { content: openText } : await window.mdEditor.readFile(filePath);
     if (!result || result.binary) {
       bodyEl.textContent = 'No se pudo leer el archivo.';
       return;
