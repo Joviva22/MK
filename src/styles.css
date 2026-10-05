@@ -914,6 +914,14 @@ ul.tree.collapsed {
   max-width: none;
 }
 
+#preview-pane:has(.pdf-tab-toolbar), #preview-pane:has(.pdf-tab-docked) { display: flex; flex-direction: column; min-height: 0; }
+.pdf-tab-toolbar { display: flex; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+#preview-pane:has(.pdf-tab-toolbar) .pdf-embed { flex: 1; min-height: 0; }
+#preview-pane > .pdf-tab-docked { width: 100%; height: 100%; max-width: none; max-height: none; box-sizing: border-box; box-shadow: none; border: 0; border-radius: 0; }
+.pdf-tab-docked #pdfhighlight-open, .pdf-tab-docked #pdfhighlight-close, .pdf-tab-docked .pdf-note-links { display: none; }
+.pdf-tab-reading [aria-label="Herramientas de anotación"], .pdf-tab-reading #pdfhighlight-text-options, .pdf-tab-reading #pdfhighlight-undo { display: none; }
+.pdf-tab-reading .pdf-text-box { pointer-events: none; }
+
 .pdf-embed {
   width: 100%;
   height: 100%;

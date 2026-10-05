@@ -228,6 +228,7 @@ function renderTabbar() {
     el.title = tab.conflict
       ? `${tab.filePath}\n⚠ Cambió fuera de MK mientras tenías cambios sin guardar: el autoguardado está en pausa. Guardá (Ctrl+S) para elegir qué versión queda.`
       : `${tab.filePath || 'Sin título'}${tab.modified ? '\nCambios sin guardar' : ''}`;
+    if (tab.kind === 'pdf') el.title += '\nDoble clic para editar el PDF';
 
     const icon = document.createElement('span');
     icon.className = 'tab-icon';
@@ -258,7 +259,16 @@ function renderTabbar() {
     });
     el.appendChild(closeBtn);
 
-    el.addEventListener('click', () => activateTab(tab.id));
+    el.addEventListener('click', (e) => {
+      if (tab.kind === 'pdf' && e.detail === 2) {
+        openPdfEditor(tab);
+      } else if (tab.id !== activeId) activateTab(tab.id);
+    });
+    el.addEventListener('dblclick', (e) => {
+      if (tab.kind !== 'pdf' || e.target.closest('.tab-close')) return;
+      e.preventDefault();
+      openPdfEditor(tab);
+    });
     el.addEventListener('keydown', (e) => {
       if (e.target === el && (e.key === 'Enter' || e.key === ' ')) {
         e.preventDefault();
@@ -281,6 +291,19 @@ function renderTabbar() {
   }
 }
 
+let openingPdfEditor = false;
+async function openPdfEditor(tab) {
+  if (openingPdfEditor || !window.mdPdfHighlight) return;
+  openingPdfEditor = true;
+  try {
+    await window.mdPdfHighlight.showInTab(document.getElementById('preview-pane'), tab.filePath, true);
+  } catch (error) {
+    window.mdErrorToast.show({ message: 'No se pudo abrir el editor PDF', detail: error.message });
+  } finally {
+    openingPdfEditor = false;
+  }
+}
+
 function activateTab(id) {
   const tab = tabs.find((t) => t.id === id);
   if (!tab) return;
@@ -294,6 +317,7 @@ function activateTab(id) {
     return;
   }
   const started = window.performance.now();
+  window.mdPdfHighlight?.suspendTab();
   activeId = id;
   lastDocumentId = id;
   window.mdState.currentFilePath = tab.filePath;
@@ -547,6 +571,10 @@ async function saveActiveOnce(forceDialog = false) {
   const tab = tabs.find((t) => t.id === activeId);
   if (!tab) return;
   if (tab.kind === 'drawing') { await window.mdDrawing.save(forceDialog); return; }
+  if (tab.kind === 'pdf') {
+    if (window.mdPdfHighlight?.getState()?.sourcePath === tab.filePath) await window.mdPdfHighlight.saveCopy();
+    return;
+  }
   if (tab.kind) return;
   clearTimeout(tab.autosaveTimer);
   if (!forceDialog && await diskChangedSince(tab)) {
@@ -902,6 +930,7 @@ function syncPaths(paths) {
 window.mdTabs = { trackViewer, activatePreviousDocument: () => { const tab = tabs.find(t => t.id === drawingReturnId && t.kind !== 'drawing') || tabs.find(t => t.id === lastDocumentId && !t.kind) || tabs.find(t => !t.kind); if (tab) activateTab(tab.id); else newTab(''); }, reopenClosed, closedCount: () => closedTabs.length, getActiveState, getModifiedPaths, syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
 window.mdTabs.getOpenText = (filePath) => { const tab = tabs.find(t => t.filePath === filePath && !t.kind); return tab ? tab.doc.getValue() : null; };
 window.mdTabs.updateDrawing = (path, modified) => { const tab = tabs.find(t => t.kind === 'drawing' && t.filePath === path); if (tab) markModified(tab.id, modified); };
+window.mdTabs.updatePdf = (path, modified) => { const tab = tabs.find(t => t.kind === 'pdf' && t.filePath === path); if (tab && tab.modified !== modified) markModified(tab.id, modified); };
 window.mdTabs.timings = () => lastOpenTimings ? JSON.parse(JSON.stringify(lastOpenTimings)) : null;
 window.openFileAtPath = openTab;
 

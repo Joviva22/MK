@@ -2413,7 +2413,44 @@
   let pdfHighlightOk = false;
   let pdfHighlightDetail = 'sin fixturesDir';
   if (fixturePdfPath) {
+    window.showPdfPreview(fixturePdfPath);
+    const pdfTab = document.querySelector('#tabbar .tab.active');
+    pdfTab.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+    const singleClickReads = document.getElementById('pdfhighlight-panel').hidden;
+    pdfTab.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 2 }));
+    pdfTab.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }));
+    await waitFor(() => document.querySelector('#preview-pane .pdf-tab-docked') && window.mdPdfHighlight.getState()?.sourcePath === fixturePdfPath && window.mdPdfHighlight.getState().pageReady);
+    check('PDF: doble clic en su pestaña abre la edición y un clic mantiene la lectura', singleClickReads && window.mdPdfHighlight.getState().sourcePath === fixturePdfPath);
+    await window.mdPdfHighlight.goToPage(2);
+    const tabZoom = document.getElementById('pdfhighlight-zoom');
+    tabZoom.value = '1.5'; tabZoom.dispatchEvent(new Event('change'));
+    await waitFor(() => window.mdPdfHighlight.getState().pageReady);
+    window.mdPdfHighlight.addHighlightForTest(0.1, 0.1, 0.2, 0.1);
+    document.getElementById('pdfhighlight-view-toggle').click();
+    check('PDF integrado: lectura restaura el visor original y conserva anotaciones pendientes', document.querySelector('#preview-pane .pdf-embed') && !document.querySelector('#preview-pane .pdf-tab-docked') && window.mdPdfHighlight.getState().highlightCount === 1 && document.querySelector('#tabbar .tab.active.tab-modified') && !document.getElementById('pdfhighlight-save').disabled);
+    window.mdTabs.newTab('# Nota junto al PDF');
+    check('PDF integrado: cambiar a una nota retira el visor de su pestaña', !document.querySelector('#preview-pane .pdf-tab-docked'));
+    window.showPdfPreview(fixturePdfPath);
+    check('PDF integrado: volver mantiene el visor original', !!document.querySelector('#preview-pane .pdf-embed'));
+    document.querySelector('.pdf-tab-toolbar button').click();
+    await waitFor(() => document.querySelector('#preview-pane .pdf-tab-docked') && window.mdPdfHighlight.getState().pageReady);
+    check('PDF integrado: reabrir edición conserva página, zoom y anotaciones', window.mdPdfHighlight.getState().pageNum === 2 && window.mdPdfHighlight.getState().zoom === '1.5' && window.mdPdfHighlight.getState().highlightCount === 1 && !document.querySelector('.pdf-tab-reading'));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    check('PDF integrado: Escape sale de edición al visor normal sin perder anotaciones', !!document.querySelector('#preview-pane .pdf-embed') && !document.querySelector('#preview-pane .pdf-tab-docked') && window.mdPdfHighlight.getState().highlightCount === 1);
+    document.querySelector('.pdf-tab-toolbar button').click();
+    await waitFor(() => document.querySelector('#preview-pane .pdf-tab-docked') && window.mdPdfHighlight.getState().pageReady);
+    if (fixturePdf2Path) {
+      window.showPdfPreview(fixturePdf2Path);
+      document.querySelector('.pdf-tab-toolbar button').click();
+      await waitFor(() => window.mdPdfHighlight.getState()?.sourcePath === fixturePdf2Path && document.querySelector('#preview-pane .pdf-tab-docked'));
+      window.showPdfPreview(fixturePdfPath);
+      await waitFor(() => window.mdPdfHighlight.getState()?.sourcePath === fixturePdfPath && document.querySelector('#preview-pane .pdf-tab-docked') && window.mdPdfHighlight.getState().pageReady);
+      check('PDF integrado: cambiar entre PDFs conserva la edición de cada archivo', window.mdPdfHighlight.getState().highlightCount === 1 && window.mdPdfHighlight.getState().pageNum === 2 && window.mdPdfHighlight.getState().zoom === '1.5');
+    }
+    window.mdPdfHighlight.suspendTab();
+    const oldConfirm = window.confirm; window.confirm = () => true;
     await window.mdPdfHighlight.loadFromPath(fixturePdfPath);
+    window.confirm = oldConfirm;
     await window.mdPdfHighlight.open();
     window.mdPdfHighlight.setMode('text');
     const formatVisible = !document.getElementById('pdfhighlight-text-options').hidden && document.querySelector('.pdfhighlight-selection-actions').hidden;
@@ -2652,6 +2689,17 @@
       await new Promise((r) => setTimeout(r, 100));
       ctrlWOk = document.querySelectorAll('#tabbar .tab').length === tabsBefore;
     }
+    const terminalPanel = document.getElementById('terminal-panel');
+    const grip = document.getElementById('terminal-resizer');
+    const originalHeight = terminalPanel.style.height;
+    grip.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, cancelable: true }));
+    const minimumOk = terminalPanel.style.height === '100px';
+    grip.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+    const growingOk = terminalPanel.style.height === '120px';
+    grip.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, cancelable: true }));
+    const maximumOk = Number.parseFloat(terminalPanel.style.height) === Math.max(100, window.innerHeight - 120);
+    check('Terminal: altura ajustable por teclado y límites para mantener visible el editor', minimumOk && growingOk && maximumOk && grip.getAttribute('aria-valuenow') === String(Math.round(terminalPanel.getBoundingClientRect().height)));
+    terminalPanel.style.height = originalHeight;
     const panelShown = !document.getElementById('terminal-panel').hidden;
     // Tope de vueltas: si cerrar una pestaña no la saca del DOM, que falle el
     // check en vez de colgar toda la suite.
@@ -5464,8 +5512,9 @@
       await A.toggle(fixturePdfPath);
       [...document.querySelectorAll('.note-access-open')].find(el => el.closest('.note-access-row').dataset.path === fixturePdfPath).click();
       await waitFor(() => window.mdState.currentFilePath === fixturePdfPath);
+      await waitFor(() => document.querySelector('#preview-pane .pdf-tab-docked, #preview-pane .pdf-embed'));
       await A.whenIdle();
-      check('Acceso rápido: abre PDF en su visor y los recuerda', !!document.querySelector('.pdf-embed') && (await window.mdEditor.getConfig()).noteAccess.recent[0] === fixturePdfPath);
+      check('Acceso rápido: abre PDF en su visor y los recuerda', !!document.querySelector('#preview-pane .pdf-tab-docked, #preview-pane .pdf-embed') && (await window.mdEditor.getConfig()).noteAccess.recent[0] === fixturePdfPath);
       await window.openFileAtPath(second);
       for (let i = 0; i < 25; i++) await A.record(window.mdEditor.joinPath(folder, 'historial-' + i + '.bin'));
       const capped = (await window.mdEditor.getConfig()).noteAccess;
@@ -5502,11 +5551,13 @@
       await window.openFileAtPath(fixturePdfPath);
       await window.mdTabs.saveActive();
       const afterPdf = new Uint8Array(await window.mdEditor.pdfReadBytes(fixturePdfPath)).join(',');
-      check('Pestañas: PDF sin duplicados y guardar no sobrescribe el archivo', document.querySelector('.tab.active').dataset.kind === 'pdf' && document.querySelectorAll('#tabbar .tab').length === count && beforePdf === afterPdf && !!document.querySelector('.pdf-embed'));
+      await waitFor(() => document.querySelector('#preview-pane .pdf-tab-docked, #preview-pane .pdf-embed'));
+      check('Pestañas: PDF sin duplicados y guardar no sobrescribe el archivo', document.querySelector('.tab.active').dataset.kind === 'pdf' && document.querySelectorAll('#tabbar .tab').length === count && beforePdf === afterPdf && !!document.querySelector('#preview-pane .pdf-tab-docked, #preview-pane .pdf-embed'));
       document.querySelector('#tabbar .tab.active .tab-close').click();
       document.getElementById('tab-reopen-button').click();
       await waitFor(() => window.mdState.currentFilePath === fixturePdfPath);
-      check('Pestañas: botón visible reabre el PDF cerrado con su visor', document.querySelector('.tab.active').dataset.kind === 'pdf' && !!document.querySelector('.pdf-embed'));
+      await waitFor(() => document.querySelector('#preview-pane .pdf-tab-docked, #preview-pane .pdf-embed'));
+      check('Pestañas: botón visible reabre el PDF cerrado con su visor', document.querySelector('.tab.active').dataset.kind === 'pdf' && !!document.querySelector('#preview-pane .pdf-tab-docked, #preview-pane .pdf-embed'));
       for (let i = 0; i < 18; i++) window.mdTabs.newTab('Documento ' + i);
       const strip = document.querySelector('.tab-strip');
       const bounds = strip.getBoundingClientRect();

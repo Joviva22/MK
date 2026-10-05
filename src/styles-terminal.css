@@ -18,10 +18,11 @@
 
 .terminal-resizer {
   position: absolute;
-  top: -3px;
+  top: -6px;
   left: 0;
   right: 0;
-  height: 6px;
+  height: 12px;
+  touch-action: none;
   cursor: row-resize;
   z-index: 5;
 }
@@ -233,3 +234,8 @@
 
 .terminal-group-split .terminal-instance:focus-within .terminal-pane-close { opacity: 1; }
 @media (hover: none) { .terminal-group-split .terminal-pane-close { opacity: 1; } }
+
+.terminal-resizer:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+body.terminal-resizing, body.terminal-resizing * { cursor: row-resize !important; user-select: none !important; }
+.terminal-panel:fullscreen { width: 100%; height: 100% !important; border: 0; }
+.terminal-panel:fullscreen .terminal-resizer { display: none; }

@@ -393,6 +393,7 @@ async function show() {
 }
 
 function hide() {
+  if (document.fullscreenElement === panel) document.exitFullscreen();
   panel.hidden = true;
   if (window.mdCodeMirror) {
     window.mdCodeMirror.refresh();
@@ -693,29 +694,80 @@ document.getElementById('terminal-hide').addEventListener('click', hide);
 document.getElementById('btn-terminal').addEventListener('click', toggle);
 document.getElementById('btn-run-file').addEventListener('click', runActiveFile);
 
-// Alto del panel: arrastrar el borde de arriba. Se guarda en la config.
-resizer.addEventListener('mousedown', (e) => {
-  e.preventDefault();
-  const startY = e.clientY;
-  const startH = panel.getBoundingClientRect().height;
-  resizer.classList.add('active');
-  document.body.classList.add('resizing');
-  const onMove = (ev) => {
-    const max = window.innerHeight - 200;
-    const h = Math.max(MIN_HEIGHT, Math.min(max, startH - (ev.clientY - startY)));
-    panel.style.height = `${h}px`;
+// Pantalla completa conserva el tamaño del panel al volver (Escape o botón).
+const fullscreenButton = document.getElementById('terminal-fullscreen');
+async function toggleFullscreen() {
+  try {
+    if (document.fullscreenElement === panel) await document.exitFullscreen();
+    else await panel.requestFullscreen();
+  } catch {
+    window.mdErrorToast.show({ message: 'No se pudo abrir la terminal en pantalla completa.' });
+  }
+}
+fullscreenButton.addEventListener('click', toggleFullscreen);
+document.addEventListener('fullscreenchange', () => {
+  const full = document.fullscreenElement === panel;
+  const label = full ? 'Salir de pantalla completa (Escape)' : 'Terminal en pantalla completa';
+  fullscreenButton.title = label;
+  fullscreenButton.setAttribute('aria-label', label);
+  fullscreenButton.setAttribute('aria-pressed', String(full));
+  window.mdIcons.button(fullscreenButton, full ? 'minimize' : 'maximize');
+  requestAnimationFrame(() => {
     fitActive();
-  };
-  const onUp = () => {
-    resizer.classList.remove('active');
-    document.body.classList.remove('resizing');
-    document.removeEventListener('mousemove', onMove);
-    document.removeEventListener('mouseup', onUp);
+    if (activeSession() && !panel.hidden) activeSession().term.focus();
     if (window.mdCodeMirror) window.mdCodeMirror.refresh();
-    window.mdEditor.setConfig({ terminalHeight: Math.round(panel.getBoundingClientRect().height) });
-  };
-  document.addEventListener('mousemove', onMove);
-  document.addEventListener('mouseup', onUp);
+  });
+});
+
+// Captura del puntero: el arrastre continúa al pasar sobre el editor o PDF.
+function maxPanelHeight() { return Math.max(MIN_HEIGHT, window.innerHeight - 120); }
+function setPanelHeight(height) {
+  const value = Math.max(MIN_HEIGHT, Math.min(maxPanelHeight(), height));
+  panel.style.height = `${value}px`;
+  resizer.setAttribute('aria-valuemin', String(MIN_HEIGHT));
+  resizer.setAttribute('aria-valuemax', String(maxPanelHeight()));
+  resizer.setAttribute('aria-valuenow', String(Math.round(value)));
+}
+function savePanelHeight() {
+  if (window.mdCodeMirror) window.mdCodeMirror.refresh();
+  window.mdEditor.setConfig({ terminalHeight: Math.round(panel.getBoundingClientRect().height) });
+}
+let drag = null;
+resizer.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0 || drag || document.fullscreenElement === panel) return;
+  e.preventDefault();
+  resizer.setPointerCapture(e.pointerId);
+  drag = { id: e.pointerId, y: e.clientY, height: panel.getBoundingClientRect().height };
+  resizer.classList.add('active');
+  document.body.classList.add('terminal-resizing');
+});
+resizer.addEventListener('pointermove', (e) => {
+  if (!drag || e.pointerId !== drag.id) return;
+  setPanelHeight(drag.height + drag.y - e.clientY);
+});
+function finishResize(e) {
+  if (!drag || (e.pointerId != null && e.pointerId !== drag.id)) return;
+  const id = drag.id;
+  drag = null;
+  if (resizer.hasPointerCapture(id)) resizer.releasePointerCapture(id);
+  resizer.classList.remove('active');
+  document.body.classList.remove('terminal-resizing');
+  savePanelHeight();
+}
+resizer.addEventListener('pointerup', finishResize);
+resizer.addEventListener('pointercancel', finishResize);
+resizer.addEventListener('lostpointercapture', finishResize);
+window.addEventListener('blur', finishResize);
+resizer.addEventListener('keydown', (e) => {
+  if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
+  e.preventDefault();
+  const height = panel.getBoundingClientRect().height;
+  const step = e.shiftKey ? 50 : 20;
+  setPanelHeight(e.key === 'Home' ? MIN_HEIGHT : e.key === 'End' ? maxPanelHeight() : height + (e.key === 'ArrowUp' ? step : -step));
+  savePanelHeight();
+});
+window.addEventListener('resize', () => {
+  if (document.fullscreenElement !== panel) setPanelHeight(parseFloat(panel.style.height) || 260);
 });
 
 new ResizeObserver(() => fitActive()).observe(body);
@@ -728,7 +780,7 @@ new MutationObserver(() => {
 
 (async () => {
   const config = await window.mdEditor.getConfig();
-  if (config.terminalHeight) panel.style.height = `${config.terminalHeight}px`;
+  setPanelHeight(Number(config.terminalHeight) || 260);
 })();
 
 window.mdTerminal = { shellQuote, RUNNERS, RUNNER_PROGRAMS, AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, splitTerminal, listShells, getPreferredShell: () => preferredShell, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };

@@ -476,7 +476,7 @@
   </div>
 
   <div id="terminal-panel" class="terminal-panel" hidden>
-    <div id="terminal-resizer" class="terminal-resizer" title="Arrastrar para cambiar el alto"></div>
+    <div id="terminal-resizer" class="terminal-resizer" role="separator" aria-label="Altura de la terminal" aria-orientation="horizontal" tabindex="0" title="Arrastrar para cambiar el alto · Flechas arriba/abajo para ajustar"></div>
     <div class="terminal-header">
       <span class="terminal-heading">Terminal</span>
       <div id="terminal-tabs" class="terminal-tabs"></div>
@@ -496,6 +496,7 @@
         <div id="terminal-shell-menu" class="dropdown-menu dropdown-menu-up" hidden></div>
       </div>
       <button id="terminal-split" class="toolbar-button terminal-header-btn" title="Dividir: otra terminal al lado, en la misma pestaña (Ctrl+Shift+5)" aria-label="Dividir: otra terminal al lado, en la misma pestaña (Ctrl+Shift+5)"><i data-lucide="columns-2"></i></button>
+      <button id="terminal-fullscreen" class="toolbar-button terminal-header-btn" title="Terminal en pantalla completa" aria-label="Terminal en pantalla completa" aria-pressed="false"><i data-lucide="maximize"></i></button>
       <button id="terminal-hide" class="toolbar-button terminal-header-btn" title="Ocultar panel (Ctrl+` / Ctrl+Ñ) — las terminales siguen abiertas" aria-label="Ocultar panel (Ctrl+` / Ctrl+Ñ) — las terminales siguen abiertas"><i data-lucide="panel-bottom-close"></i></button>
     </div>
     <div id="terminal-body" class="terminal-body"></div>

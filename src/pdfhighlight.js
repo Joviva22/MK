@@ -16,6 +16,74 @@
 const overlay = document.getElementById('pdfhighlight-panel');
 const modal = overlay.querySelector('.pdfhighlight-modal');
 let dockHost = null;
+const tabDocuments = new Map();
+let tabEditing = true;
+let tabRequest = 0;
+const viewToggle = document.createElement('button');
+viewToggle.type = 'button';
+viewToggle.className = 'toolbar-button';
+viewToggle.id = 'pdfhighlight-view-toggle';
+viewToggle.hidden = true;
+document.getElementById('pdfhighlight-save').before(viewToggle);
+viewToggle.addEventListener('click', () => {
+  if (tabEditing) returnToPdfPreview();
+  else setTabEditing(true);
+});
+
+function returnToPdfPreview() {
+  const filePath = sourcePath;
+  setTabEditing(false);
+  suspendTab();
+  window.showPdfPreview(filePath);
+}
+
+function setTabEditing(editing) {
+  tabEditing = editing;
+  modal.classList.toggle('pdf-tab-reading', !editing);
+  viewToggle.textContent = editing ? 'Volver al PDF' : 'Editar PDF';
+  viewToggle.setAttribute('aria-label', editing ? 'Volver al visor normal del PDF' : 'Cambiar a edición');
+  viewToggle.title = editing ? 'Salir de edición y volver al visor normal (Escape)' : 'Editar PDF';
+  if (!editing) setMode('select');
+  formPanel.querySelectorAll('input, select').forEach(input => { input.disabled = !editing; });
+}
+
+function rememberTabDocument() {
+  if (!pdfDoc || !sourcePath || !tabDocuments.has(sourcePath)) return;
+  tabDocuments.set(sourcePath, {
+    bytes: originalBytes, highlights, texts, formValues, savedEdits, savedPath,
+    pageNum, zoom: zoomSelect.value, mode, nextTextId, editing: tabEditing,
+    scrollTop: scrollHost.scrollTop, scrollLeft: scrollHost.scrollLeft
+  });
+}
+
+function suspendTab() {
+  tabRequest++;
+  if (!modal.classList.contains('pdf-tab-docked')) return;
+  rememberTabDocument();
+  undock();
+}
+
+async function showInTab(host, filePath, editing) {
+  suspendTab();
+  const request = ++tabRequest;
+  if (dockHost) { await open(true); return false; } // El espacio de estudio conserva su visor.
+  if (sourcePath !== filePath || !pdfDoc) {
+    rememberTabDocument();
+    if (!await loadFromPath(filePath, { preserveTabs: true })) return false;
+  }
+  if (request !== tabRequest || window.mdTabs.getActiveState()?.filePath !== filePath) return false;
+  const cached = tabDocuments.get(filePath);
+  tabDocuments.set(filePath, cached || {});
+  modal.classList.add('pdf-tab-docked');
+  viewToggle.hidden = false;
+  setTabEditing(editing ?? cached?.editing ?? true);
+  host.replaceChildren();
+  await dock(host);
+  if (request !== tabRequest) return false;
+  if (cached) { scrollHost.scrollTop = cached.scrollTop || 0; scrollHost.scrollLeft = cached.scrollLeft || 0; }
+  updateDocumentStatus();
+  return true;
+}
 let dockWidth = 0, dockResizeTimer = null;
 const dockResize = new ResizeObserver(() => {
   if (!dockHost || Math.abs(dockHost.clientWidth - dockWidth) < 8) return;
@@ -103,6 +171,7 @@ function updateDocumentStatus() {
     (!originalBytes ? 'Sin documento abierto' : dirty ? `${count} ${count === 1 ? 'anotación' : 'anotaciones'} sin guardar` : savedPath ? `Copia guardada: ${savedPath.split(/[\\/]/).pop()}` : 'Listo para anotar');
   saveStatus.title = savedPath || '';
   saveStatus.dataset.state = saveError ? 'error' : dirty ? 'pending' : savedPath ? 'saved' : 'ready';
+  if (sourcePath && tabDocuments.has(sourcePath)) window.mdTabs?.updatePdf(sourcePath, dirty);
 }
 
 function editsSnapshot() { return JSON.stringify([highlights, texts, formValues]); }
@@ -551,28 +620,29 @@ function renderFormPanel() {
 
 // ---- abrir / guardar ----
 
-async function loadFromPath(filePath) {
+async function loadFromPath(filePath, options = {}) {
   if (saving) return false;
   loadingCount++;
   updateDocumentStatus();
-  try { return await loadPdfFromPath(filePath); }
+  try { return await loadPdfFromPath(filePath, options); }
   finally { loadingCount--; updateDocumentStatus(); }
 }
 
-async function loadPdfFromPath(filePath) {
-  if (sourcePath && hasUnsavedChanges() && !confirm('Hay anotaciones sin guardar. ¿Abrir otro PDF y descartarlas?')) return false;
+async function loadPdfFromPath(filePath, { preserveTabs = false } = {}) {
+  if (!preserveTabs && sourcePath && hasUnsavedChanges() && !confirm('Hay anotaciones sin guardar. ¿Abrir otro PDF y descartarlas?')) return false;
   const id = ++loadId;
   const initialEdits = editsSnapshot();
   if (!window.pdfjsLib) {
     alert('El visor de PDF todavía está cargando, probá de nuevo en un segundo.');
     return;
   }
-  const base64 = await window.mdEditor.pdfReadBytes(filePath);
-  if (!base64) {
+  const cached = preserveTabs ? tabDocuments.get(filePath) : null;
+  const base64 = cached?.bytes ? null : await window.mdEditor.pdfReadBytes(filePath);
+  if (!base64 && !cached?.bytes) {
     alert('No se pudo leer el PDF.');
     return;
   }
-  const bytes = base64ToBytes(base64);
+  const bytes = cached?.bytes || base64ToBytes(base64);
   let loaded;
   try {
     loaded = await window.pdfjsLib.getDocument({ data: bytes.slice() }).promise;
@@ -582,11 +652,12 @@ async function loadPdfFromPath(filePath) {
     return;
   }
   if (id !== loadId) { await loaded.loadingTask.destroy(); return false; }
-  if (initialEdits !== editsSnapshot() && hasUnsavedChanges() && !confirm('Has cambiado anotaciones mientras se abría el PDF. ¿Descartarlas?')) {
+  if (!preserveTabs && initialEdits !== editsSnapshot() && hasUnsavedChanges() && !confirm('Has cambiado anotaciones mientras se abría el PDF. ¿Descartarlas?')) {
     await loaded.loadingTask.destroy();
     return false;
   }
   const previous = pdfDoc;
+  if (preserveTabs) rememberTabDocument();
   pdfDoc = loaded;
   originalBytes = bytes;
   sourcePath = filePath;
@@ -603,8 +674,14 @@ async function loadPdfFromPath(filePath) {
   saveBtn.disabled = false;
   await loadFormFields();
   if (id !== loadId) return false;
-  await goToPage(1);
-  window.mdNoteAccess?.record(filePath);
+  if (cached?.bytes) {
+    ({ highlights, texts, formValues, savedEdits, savedPath, nextTextId } = cached);
+    zoomSelect.value = cached.zoom;
+    setMode(cached.mode);
+    renderFormPanel();
+  }
+  await goToPage(cached?.pageNum || 1);
+  if (!preserveTabs) window.mdNoteAccess?.record(filePath);
   return true;
 }
 
@@ -778,7 +855,8 @@ modal.addEventListener('keydown', (event) => {
   }
 });
 
-async function open() {
+async function open(keepTabDock = false) {
+  if (!keepTabDock && modal.classList.contains('pdf-tab-docked')) suspendTab();
   const box = modal;
   let tabs = box.querySelector('.pdf-document-tabs');
   if (!tabs) {
@@ -813,13 +891,14 @@ async function open() {
 }
 
 function close() {
+  if (modal.classList.contains('pdf-tab-docked')) { returnToPdfPreview(); return; }
   if (dockHost) undock();
   overlay.hidden = true;
 }
 async function dock(host) {
   const changed = dockHost !== host;
   dockResize.disconnect(); clearTimeout(dockResizeTimer);
-  dockHost = host; dockWidth = host.clientWidth; host.append(modal); modal.classList.add('pdf-study-docked'); await open();
+  dockHost = host; dockWidth = host.clientWidth; host.append(modal); modal.classList.add('pdf-study-docked'); await open(true);
   dockResize.observe(host);
   if (changed && pdfDoc) await goToPage(pageNum);
 }
@@ -827,11 +906,14 @@ function undock() {
   const wasDocked = !!dockHost;
   dockResize.disconnect(); clearTimeout(dockResizeTimer);
   dockHost = null; overlay.append(modal); modal.classList.remove('pdf-study-docked'); overlay.hidden = true;
+  modal.classList.remove('pdf-tab-docked', 'pdf-tab-reading');
+  viewToggle.hidden = true;
+  formPanel.querySelectorAll('input, select').forEach(input => { input.disabled = false; });
   if (wasDocked && pdfDoc) goToPage(pageNum);
 }
 // Las pestañas se reconstruyen al editar o cambiar de nota: no conservar
 // botones que apunten a nodos antiguos mientras el PDF siga visible.
-new MutationObserver(() => { if (dockHost || !overlay.hidden) open(); }).observe(document.getElementById('tabbar'), { childList: true, subtree: true });
+new MutationObserver(() => { if (dockHost || !overlay.hidden) open(true); }).observe(document.getElementById('tabbar'), { childList: true, subtree: true });
 
 async function openLink(href, basePath) {
   if (/^[a-z][a-z0-9+.-]*:/i.test(href) && !href.startsWith('md-local://file/')) return false;
@@ -856,7 +938,11 @@ overlay.addEventListener('mousedown', (e) => {
   if (e.target === overlay) close();
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !overlay.hidden) close();
+  if (e.key !== 'Escape' || e.defaultPrevented || e.target.closest?.('input, textarea, select, [contenteditable]')) return;
+  if (modal.classList.contains('pdf-tab-docked') || !overlay.hidden) {
+    e.preventDefault();
+    close();
+  }
 });
 
 document.getElementById('btn-pdfhighlight').addEventListener('click', async () => {
@@ -866,6 +952,10 @@ document.getElementById('btn-pdfhighlight').addEventListener('click', async () =
 });
 
 window.mdPdfHighlight = {
+  showInTab,
+  suspendTab,
+  hasTab: path => tabDocuments.has(path) && tabDocuments.get(path).editing !== false,
+  saveCopy,
   open,
   dock,
   undock,

@@ -645,16 +645,35 @@ function forceReadModeForPdf(filePath) {
 }
 
 window.showPdfPreview = function (filePath) {
+  window.mdPdfHighlight?.suspendTab();
   if (window.mdTabs?.trackViewer(filePath, 'pdf') === false) return;
   const url = window.mdEditor.toLocalUrl(filePath);
   previewPane.classList.add('pdf-mode');
   previewPane.innerHTML = `<embed src="${url}" type="application/pdf" class="pdf-embed">`;
   forceReadModeForPdf(filePath);
+  if (window.mdPdfHighlight?.hasTab(filePath)) {
+    previewPane.replaceChildren();
+    window.mdPdfHighlight.showInTab(previewPane, filePath).catch(error => window.mdErrorToast.show({ message: 'No se pudo abrir el PDF', detail: error.message }));
+  } else {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'pdf-tab-toolbar';
+    const edit = document.createElement('button');
+    edit.type = 'button'; edit.className = 'toolbar-button'; edit.textContent = 'Editar PDF';
+    edit.addEventListener('click', async () => {
+      try {
+        if (await window.mdPdfHighlight.showInTab(previewPane, filePath, true)) {
+          toolbar.remove(); previewPane.querySelector('.pdf-embed')?.remove();
+        }
+      } catch (error) { window.mdErrorToast.show({ message: 'No se pudo abrir el editor PDF', detail: error.message }); }
+    });
+    toolbar.append(edit); previewPane.prepend(toolbar);
+  }
 };
 
 // Clic en una foto, video o audio del sidebar: mostrarlo en el preview (ver
 // media.js) en vez de intentar "editarlo" como texto.
 window.showMediaPreview = function (filePath) {
+  window.mdPdfHighlight?.suspendTab();
   if (window.mdTabs?.trackViewer(filePath, window.mdMedia.kindOf(filePath)) === false) return;
   previewPane.classList.add('pdf-mode');
   previewPane.replaceChildren(window.mdMedia.createViewer(filePath));

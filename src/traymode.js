@@ -106,6 +106,15 @@ function setupTray({ getWindow, iconPath, ipcMain, isTestMode }) {
 // Llamar al crear la ventana: intercepta el cierre para ocultarla.
 function attachWindow(win, { loadConfig, saveConfig, isTestMode }) {
   if (isTestMode) return;
+  // Capturarlo antes del renderer: editores, terminales y diálogos pueden
+  // detener keydown y evitar que llegue al listener de settings.js.
+  win.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || !(input.control || input.meta) ||
+        input.shift || input.alt || String(input.key).toLowerCase() !== 'q') return;
+    event.preventDefault();
+    quitting = true;
+    app.quit();
+  });
   win.on('close', (event) => {
     if (quitting) return;
     const config = loadConfig();
