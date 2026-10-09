@@ -6,7 +6,7 @@ const homeButton = document.getElementById('btn-home');
 const preview = document.getElementById('preview-scroll');
 let snapshot = null;
 // Home occupies the same flex slot as the editor; dialogs remain above both.
-document.body.insertBefore(host, document.getElementById('terminal-panel'));
+document.getElementById('terminal-workspace').insertBefore(host, document.getElementById('terminal-panel'));
 
 function sync() {
   const active = !host.hidden;

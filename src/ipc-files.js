@@ -85,7 +85,7 @@ ipcMain.handle('file:open', async () => {
     defaultPath: ctx.getOpenFolder(),
     filters: [
       { name: 'Markdown y LaTeX', extensions: ['md', 'markdown', 'txt', 'tex'] },
-      { name: 'Word', extensions: ['docx'] },
+      { name: 'Office (Word, Excel y PowerPoint)', extensions: ['docx', 'xlsx', 'pptx'] },
       { name: 'Todos los archivos', extensions: ['*'] }
     ],
     properties: ['openFile']
@@ -341,7 +341,7 @@ ipcMain.handle('folder:getLast', async () => {
 // contiene (".." para subir) o la última usada. Cualquier otra, no.
 ipcMain.handle('folder:read', async (event, rootPath) => {
   const { lastFolder } = ctx.loadConfig();
-  if (guard.isAllowed(rootPath) || guard.isAncestorOfGranted(rootPath) || (rootPath && rootPath === lastFolder)) {
+  if (guard.isAllowed(rootPath) || guard.isParentOfGranted(rootPath) || (rootPath && rootPath === lastFolder)) {
     guard.grantDir(rootPath);
   } else {
     guard.check(rootPath, 'folder:read'); // registra el intento

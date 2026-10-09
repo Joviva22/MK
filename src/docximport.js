@@ -48,8 +48,21 @@ function base64ToArrayBuffer(base64) {
   return bytes.buffer;
 }
 
+// Markdown no expresa estos estilos ni las celdas combinadas: conservamos HTML seguro.
+turndownService.addRule('wordInlineStyles', {
+  filter: ['u', 'sup', 'sub', 'mark'],
+  replacement: (content, node) => `<${node.nodeName.toLowerCase()}>${content}</${node.nodeName.toLowerCase()}>`
+});
+turndownService.addRule('wordComplexTables', {
+  filter: (node) => node.nodeName === 'TABLE' && !!node.querySelector('[colspan], [rowspan], table'),
+  replacement: (_content, node) => '\n\n' + node.outerHTML + '\n\n'
+});
+const conversionOptions = {
+  styleMap: ["u => u", "r[style-name='Subtle Emphasis'] => em"],
+  includeDefaultStyleMap: true
+};
 function htmlToMarkdown(html) {
-  return turndownService.turndown(html);
+  return turndownService.turndown(DOMPurify.sanitize(html));
 }
 
 async function openAsMarkdown(filePath) {
@@ -61,7 +74,7 @@ async function openAsMarkdown(filePath) {
   let html;
   try {
     await window.mdLoadLib('mammoth'); // 620 KB: se carga recién al abrir un .docx
-    const result = await mammoth.convertToHtml({ arrayBuffer: base64ToArrayBuffer(base64) });
+    const result = await mammoth.convertToHtml({ arrayBuffer: base64ToArrayBuffer(base64) }, conversionOptions);
     html = result.value;
   } catch (e) {
     window.mdEditor.logError('docx:abrir', (e && e.stack) || String(e));
@@ -73,6 +86,6 @@ async function openAsMarkdown(filePath) {
   window.mdNoteAccess?.record(filePath);
 }
 
-window.mdDocxImport = { openAsMarkdown, htmlToMarkdown };
+window.mdDocxImport = { openAsMarkdown, htmlToMarkdown, conversionOptions };
 
 })();

@@ -29,3 +29,12 @@ Cada archivo de esta carpeta muestra una función distinta con contenido real, l
 Para una guía especializada de cada función (cómo usarla y para qué sirve), ver la carpeta [`../Guias/`](../Guias/README.md).
 
 Ver también `MANUAL.md` en la raíz del proyecto para la explicación completa de cada función.
+
+## Documentos de Word
+
+[Ejemplo completo de Word](Word/README.md): informe `.docx` con formatos, listas, tablas combinadas, enlace e imagen, y una nota para probar opciones de exportación.
+
+## Excel y PowerPoint
+
+- [Excel completo](Excel/README.md): presupuesto con fórmulas, calendario y seguimiento.
+- [PowerPoint completo](PowerPoint/README.md): ocho diapositivas con textos, tabla, gráfico e imagen.

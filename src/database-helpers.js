@@ -73,8 +73,7 @@ export function evalFormula(column, row, columns, ctx) {
     return v;
   };
   try {
-    const fn = new Function('prop', 'Math', '"use strict"; return (' + expr + ');');
-    return fn(propFn, Math);
+    return window.mdFormula.run(expr, propFn);
   } catch {
     return '#ERROR';
   }

@@ -10,6 +10,8 @@
 
 Minutos en ⚙ Ajustes.
 
+Cada foco completado concede **1 XP por minuto efectivo de estudio** a las mascotas del equipo y a los huevos: 25 minutos dan 25 XP, 1 hora da 60 XP y 2 horas dan 120 XP. Solo cuentan los minutos completos; las pausas y los descansos no suman experiencia. Finalizar un foco parcial guarda el tiempo, pero no concede XP.
+
 ## Categorías y estadísticas
 
 Abre **Tiempo de estudio** en la toolbar. Crea **PCP**, elígela en el temporizador y pulsa **Aplicar**. Dos focos de 25 minutos suman **PCP: 50 min**. Consulta todo el historial, hoy, esta semana o este mes y filtra por categoría. Puedes renombrar/fusionar categorías.

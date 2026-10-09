@@ -20,7 +20,8 @@
 - Programas interactivos funcionan: `vim`, `nano`, `htop`, `less`, `git log`, `python` interactivo, `ssh`.
 - **Varias terminales**: botón **+**, cada una en su pestaña (`1: zsh`, `2: zsh`…). **Doble clic en el nombre** de una pestaña para renombrarla ("servidor", "git"…).
 - **Pantalla dividida**: botón **◫** o `Ctrl+Shift+5` pone otra terminal **al lado**, en la misma pestaña (hasta 4 paneles; la pestaña se ve como `1: zsh │ zsh`). Ideal para un servidor corriendo a la izquierda y comandos a la derecha. Clic en un panel lo activa (raya de color arriba); la **×** que aparece en su esquina al pasar el mouse cierra solo ese panel; la **×** de la pestaña cierra todos.
-- **Alto del panel**: arrastrá el borde de arriba. Se recuerda.
+- **Posición del panel**: el botón de posición de la cabecera alterna entre abajo y el lado derecho, conservando las terminales abiertas. Se recuerda al volver a abrir MK.
+- **Tamaño del panel**: arrastrá el borde de arriba (abajo) o el borde izquierdo (a la derecha). También podés enfocar el separador y usar las flechas; Shift ajusta más rápido. El alto y el ancho se recuerdan por separado.
 - Usa una fuente **Nerd Font** si tenés alguna instalada (JetBrainsMono / FiraCode / MesloLGS Nerd Font), así los prompts con íconos (Powerlevel10k, Starship) se ven bien.
 - Sigue los colores del **tema** de MK (fondo, texto, cursor), con una paleta de colores ANSI distinta para temas claros y oscuros, para que todo se lea bien.
 
@@ -35,7 +36,7 @@ Con un archivo de código abierto, **F5** (o el botón ▶ de la toolbar, o la p
 | `.js`, `.mjs` | `node archivo.js` |
 | `.c` | `gcc archivo.c -o /tmp/mk-run-archivo && /tmp/mk-run-archivo` |
 | `.cpp`, `.cc`, `.cxx` | igual con `g++` |
-| `.java` | `java Archivo.java` |
+| `.java` | `javac` → busca la clase con `main` → `java` (requiere JDK) |
 | `.rb`, `.go` | `ruby` / `go run` |
 | `.ts` | `npx tsx archivo.ts` (Node.js) |
 | `.rs` | `rustc` y lo ejecuta |

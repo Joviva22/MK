@@ -17,11 +17,14 @@ test('solo lo que está dentro de lo autorizado', () => {
   assert.equal(G.isAllowed(null), false);
 });
 
-test('archivo abierto: autoriza su carpeta; subir con ".." a un ancestro', () => {
+test('archivo abierto: autoriza su carpeta; subir con ".." de a un nivel', () => {
   G.grantFile('/tmp/descargas/informe.md');
   assert.equal(G.isAllowed('/tmp/descargas/img.png'), true);
-  assert.equal(G.isAncestorOfGranted('/home/ana'), true);
-  assert.equal(G.isAncestorOfGranted('/opt'), false);
+  assert.equal(G.isAllowed('/home/ana/notas/..notas-viejas.md'), true, 'nombre que empieza con ".." sí está adentro');
+  assert.equal(G.isParentOfGranted('/home/ana'), true);
+  assert.equal(G.isParentOfGranted('/home'), false, 'no salta varios niveles');
+  assert.equal(G.isParentOfGranted('/'), false);
+  assert.equal(G.isParentOfGranted('/opt'), false);
 });
 
 test('check registra los rechazos', () => {

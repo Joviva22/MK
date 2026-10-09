@@ -15,6 +15,11 @@ const ctx = require('./mainctx');
 const { buildMatcher, replaceIn } = require('./shared/replace');
 
 const SEARCH_MAX_RESULTS = 200;
+const { searchOffice } = require('./office-search');
+ipcMain.handle('search:office', async (_event, { root, query } = {}) => {
+  if (typeof root !== 'string' || typeof query !== 'string' || query.trim().length < 2 || query.length > 300 || !guard.check(root, 'search:office')) return { results:[], skipped:[] };
+  return searchOffice(root, query);
+});
 
 // Recorre los archivos "de texto" (md/markdown/txt/tex) de una carpeta,
 // saltando ocultos, y llama onFile(fullPath, content) para cada uno.

@@ -131,7 +131,7 @@ async function switchPhase() {
   stopInterval(); // corta ya mismo — el round-trip de config de abajo es async
   const endedPhase = phase;
   saveFocus(true);
-  if (endedPhase === 'focus' && window.mdPet) window.mdPet.gain('pomodoro', null);
+  if (endedPhase === 'focus' && window.mdPet) window.mdPet.gain('pomodoro', null, elapsedMs / 1000);
   if (endedPhase === 'focus' && linked) {
     const keep = linked.onFocusEnd();
     if (keep === false) linked = null;

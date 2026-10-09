@@ -1,4 +1,4 @@
-import { REMIND_OPTIONS, REPEAT_OPTIONS, addDays, addTask, categoryById, data, findItem, iso, itemFor, loadDbItems, loadDbReminders, matchesFilter, mode, moveItem, moveNoteItem, newId, noteItems, openLinkedNote, overdueTasks, parseIso, periodKey, priorityColor, save, sendPlanToDailyNote, setItemDone, todayIso, toggleNoteItem, updateTask } from './home-data.js';
+import { REMIND_OPTIONS, REPEAT_OPTIONS, addDays, addTask, categoryById, data, findItem, iso, itemFor, loadDbItems, loadDbReminders, matchesFilter, mode, moveItem, moveNoteItem, newId, noteItems, openLinkedNote, overdueTasks, parseIso, periodKey, priorityColor, save, sendPlanToDailyNote, setItemDone, setItemSubtaskDone, todayIso, toggleNoteItem, updateTask } from './home-data.js';
 import { openTaskEditor } from './home-taskeditor.js';
 
 'use strict';
@@ -137,7 +137,8 @@ export function taskCard(item, compact) {
   box.setAttribute('aria-label', `Hecha: ${task.title}`);
   box.addEventListener('click', (e) => e.stopPropagation());
   box.addEventListener('change', () => setItemDone(item, box.checked));
-  card.appendChild(box);
+  if (task.kind === 'reminder') card.appendChild(el('span', null, '🔔'));
+  else card.appendChild(box);
 
   if (task.time) card.appendChild(el('span', 'home-task-time', task.time));
   const titleEl = el('span', 'home-task-title', task.title);
@@ -148,11 +149,17 @@ export function taskCard(item, compact) {
     startInlineRename(card, titleEl, task);
   });
   card.appendChild(titleEl);
-  if (!compact) {
+  if (!compact && task.kind !== 'reminder') {
     const priority = task.priority || 'media';
     const badge = el('span', 'home-priority-label', priority === 'alta' ? 'Alta' : priority === 'baja' ? 'Baja' : 'Media');
     badge.title = `Prioridad ${badge.textContent.toLowerCase()}`;
     card.appendChild(badge);
+  }
+  const subtasks = task.subtasks || [];
+  if (subtasks.length) {
+    const count = subtasks.filter((subtask) => window.mdHomeLogic.subtaskDone(subtask, item)).length;
+    const progress = el('span', 'home-task-subtask-progress', `${count}/${subtasks.length} subtareas`);
+    card.appendChild(progress);
   }
   const cat = categoryById(task.category);
   if (cat) {
@@ -203,8 +210,26 @@ export function taskCard(item, compact) {
     const body = el('div', 'home-task-content');
     const metadata = el('div', 'home-task-meta');
     body.appendChild(titleEl);
-    card.querySelectorAll('.home-task-time, .home-priority-label, .home-task-cat, .home-task-badges').forEach((node) => metadata.appendChild(node));
+    card.querySelectorAll('.home-task-time, .home-priority-label, .home-task-cat, .home-task-badges, .home-task-subtask-progress').forEach((node) => metadata.appendChild(node));
     body.appendChild(metadata);
+    if (subtasks.length) {
+      const list = el('div', 'home-subtask-list');
+      list.addEventListener('click', (event) => event.stopPropagation());
+      list.addEventListener('dblclick', (event) => event.stopPropagation());
+      list.addEventListener('dragstart', (event) => { event.preventDefault(); event.stopPropagation(); });
+      subtasks.forEach((subtask) => {
+        const row = el('label', 'home-subtask-row');
+        const check = el('input');
+        check.type = 'checkbox';
+        check.checked = window.mdHomeLogic.subtaskDone(subtask, item);
+        check.addEventListener('change', () => setItemSubtaskDone(item, subtask.id, check.checked));
+        const title = el('span', check.checked ? 'home-subtask-done' : '', subtask.title);
+        row.append(check, title);
+        list.appendChild(row);
+      });
+      body.appendChild(list);
+    }
+
     card.insertBefore(body, box.nextSibling);
     const actions = el('div', 'home-task-actions');
     const edit = el('button', 'home-icon-button', '✎');
@@ -294,6 +319,7 @@ export function dbChip(item) {
 }
 
 export function progressBar(tasks) {
+  tasks = tasks.filter((item) => item.task?.kind !== 'reminder');
   const done = tasks.filter((t) => t.done).length;
   const total = tasks.length;
   const pct = total ? Math.round((done / total) * 100) : 0;

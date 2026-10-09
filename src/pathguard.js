@@ -26,7 +26,7 @@ function norm(p) {
 
 function inside(dir, p) {
   const rel = path.relative(dir, p);
-  return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+  return rel === '' || (rel !== '..' && !rel.startsWith('..' + path.sep) && !path.isAbsolute(rel));
 }
 
 function grantDir(p) {
@@ -46,11 +46,12 @@ function isAllowed(p) {
   return false;
 }
 
-// "Subir a la carpeta superior": una carpeta que contiene a una autorizada.
-function isAncestorOfGranted(p) {
+// "Subir a la carpeta superior": solo un nivel por vez (la madre directa de
+// una autorizada), no saltar de golpe a "/" o a la carpeta personal.
+function isParentOfGranted(p) {
   const n = norm(p);
   if (!n) return false;
-  for (const d of dirs) if (inside(n, d)) return true;
+  for (const d of dirs) if (path.dirname(d) === n) return true;
   return false;
 }
 
@@ -66,4 +67,4 @@ function setOnDenied(fn) {
   onDenied = fn;
 }
 
-module.exports = { grantDir, grantFile, isAllowed, isAncestorOfGranted, check, setOnDenied, _dirs: dirs };
+module.exports = { grantDir, grantFile, isAllowed, isParentOfGranted, check, setOnDenied, _dirs: dirs };

@@ -35,7 +35,7 @@ function updateSave() {
     return;
   }
   let text;
-  if (info.kind && info.kind !== 'drawing') text = 'Visor · Solo lectura';
+  if (info.kind && !['drawing', 'docx', 'xlsx', 'pptx'].includes(info.kind)) text = 'Visor · Solo lectura';
   else if (info.conflict) text = '⚠ Cambió afuera';
   else if (!info.filePath) text = info.modified ? '● Sin guardar (nuevo)' : 'Sin guardar (nuevo)';
   else text = info.modified ? '● Sin guardar' : '✓ Guardado';

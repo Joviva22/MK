@@ -64,7 +64,7 @@ test('historial: fallo de disco conserva el cambio en memoria y permite reintent
   assert.equal(s.config().pomodoroHistory.records[0].seconds, 60);
 });
 
-function timer() {
+function timer(focusMinutes = 1) {
   let now = 0;
   let tick;
   const records = new Map();
@@ -73,8 +73,8 @@ function timer() {
   const window = {
     mdPomodoroLogic: L,
     mdLuckyEmblem: { mini: () => 'emblem' },
-    mdPet: { gain: (kind) => gains.push(kind) },
-    mdEditor: { getConfig: async () => ({ pomodoroFocusMinutes: 1, pomodoroBreakMinutes: 0.5 }), logError() {} },
+    mdPet: { gain: (kind, key, seconds) => gains.push({ kind, key, seconds }) },
+    mdEditor: { getConfig: async () => ({ pomodoroFocusMinutes: focusMinutes, pomodoroBreakMinutes: 0.5 }), logError() {} },
     mdPomodoroHistory: { ready: Promise.resolve(), getState: () => ({ selectedCategory: 'PCP' }), selectCategory: async () => {}, record: async (r) => { records.set(r.id, r); } }
   };
   const ctx = { window, document: { getElementById(id) {
@@ -101,9 +101,19 @@ test('temporizador: pausa y descanso no cuentan, foco completado cuenta una sola
   assert.equal([...t.records.values()][0].seconds, 60);
   assert.equal([...t.records.values()][0].completed, true);
   assert.equal(t.gains.length, 1);
+  assert.deepEqual(t.gains[0], { kind: 'pomodoro', key: null, seconds: 60 });
   await t.advance(30000);
   assert.equal(t.api.getState().phase, 'focus');
   assert.equal(t.records.size, 1);
+  await t.api.reset();
+});
+test('temporizador: un foco de dos horas entrega 7200 segundos efectivos para calcular XP', async () => {
+  const t = timer(120);
+  await t.api.toggle();
+  await t.advance(7200000);
+  assert.equal(t.api.getState().phase, 'break');
+  assert.equal(t.gains.length, 1);
+  assert.equal(t.gains[0].seconds, 7200);
   await t.api.reset();
 });
 test('temporizador: editar lo restante no inventa tiempo; finalizar guarda un parcial', async () => {
@@ -124,6 +134,7 @@ test('temporizador: retraso del intervalo no cuenta más que la duración del fo
   await t.api.toggle();
   await t.advance(600000);
   assert.equal([...t.records.values()][0].seconds, 60);
+  assert.equal(t.gains[0].seconds, 60);
   assert.equal(t.api.getState().remainingSeconds, 30);
   await t.api.reset();
 });

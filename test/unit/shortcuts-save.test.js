@@ -28,7 +28,7 @@ test('un guardado rechazado mantiene los atajos activos y permite reintentar el 
   vm.runInNewContext(fs.readFileSync(require.resolve('../../src/shortcuts.js'), 'utf8'), { window, document, alert: () => {} });
   await window.mdShortcuts.ready;
   const input = nodes.get('shortcut-quickOpen');
-  window.keydown({ target: { closest: () => input }, key: 'j', ctrlKey: true, altKey: true, preventDefault() {}, stopImmediatePropagation() {} });
+  window.keydown({ target: { closest: selector => selector === '[data-shortcut]' ? input : null }, key: 'j', ctrlKey: true, altKey: true, preventDefault() {}, stopImmediatePropagation() {} });
   await nodes.get('shortcut-apply').events.click();
   assert.equal(window.mdShortcuts.getBindings().quickOpen, 'Ctrl+P');
   assert.equal(input.value, 'Ctrl+Alt+J'); assert.match(nodes.get('shortcut-status').textContent, /No se confirmó/);

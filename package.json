@@ -1,6 +1,6 @@
 {
   "name": "md-editor-local",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Editor de Markdown sencillo para usar en local, sin depender de servicios externos ni conexión a internet.",
   "main": "src/main.js",
   "desktopName": "mk-editor.desktop",
@@ -17,7 +17,11 @@
     "pretest:cm6": "npm run build:cm6",
     "predist": "npm run build:cm6 && npm run build:drawing",
     "dist": "electron-builder --linux AppImage",
-    "install-desktop": "node scripts/install-desktop.js"
+    "install-desktop": "node scripts/install-desktop.js",
+    "test:office": "MK_TEST_SCRIPT=office node test/run.js",
+    "pretest:office": "npm run build:cm6 && npm run build:drawing",
+    "test:office-recovery": "node scripts/check-office-recovery.js",
+    "pretest:office-recovery": "npm run build:cm6 && npm run build:drawing"
   },
   "license": "MIT",
   "devDependencies": {
@@ -49,6 +53,7 @@
     "diff": "^9.0.0",
     "docx": "^9.7.1",
     "dompurify": "^3.4.16",
+    "exceljs": "^4.4.0",
     "highlight.js": "^11.12.0",
     "jszip": "^3.10.2",
     "katex": "^0.18.7",
@@ -61,6 +66,7 @@
     "nspell": "^2.1.5",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.3.289",
+    "pptxgenjs": "^4.0.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "sql.js": "^1.14.2",

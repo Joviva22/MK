@@ -98,5 +98,16 @@
     return { title: text.replace(m[0], ' ').replace(/\s+/g, ' ').trim(), category: cat.id };
   }
 
-  return { pad, iso, parseIso, addDays, weekdayIdx, occursOn, NOTE_TASK_RE, dateOutsideCode, parseNoteTasks, normalize, parseCategoryToken };
+  function subtaskDone(subtask, item) {
+    return item.recurring ? (subtask.doneDates || []).includes(item.date) : !!subtask.done;
+  }
+
+  function setSubtaskDone(subtask, item, done) {
+    if (!item.recurring) return { ...subtask, done };
+    const dates = new Set(subtask.doneDates || []);
+    if (done) dates.add(item.date); else dates.delete(item.date);
+    return { ...subtask, doneDates: Array.from(dates) };
+  }
+
+  return { pad, iso, parseIso, addDays, weekdayIdx, occursOn, NOTE_TASK_RE, dateOutsideCode, parseNoteTasks, normalize, parseCategoryToken, subtaskDone, setSubtaskDone };
 });

@@ -5,8 +5,8 @@
   <!-- Content Security Policy: aunque un .md ajeno lograra colar HTML en el
        preview, no puede ejecutar scripts (solo los archivos locales de MK,
        nada inline) ni mandar datos a internet (connect-src sin http).
-       'unsafe-eval': las fórmulas de las bases de datos (new Function). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' md-local: data: blob: https: http:; media-src 'self' md-local: data: blob:; font-src 'self' data:; connect-src 'self' md-local: data: blob:; worker-src 'self' blob:; object-src md-local:; frame-src md-local:; base-uri 'none'; form-action 'none'" />
+       Sin 'unsafe-eval': las fórmulas usan su propio intérprete (shared/formula.js). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' md-local: data: blob: https: http:; media-src 'self' md-local: data: blob:; font-src 'self' data:; connect-src 'self' md-local: data: blob:; worker-src 'self' blob:; object-src md-local:; frame-src md-local:; base-uri 'none'; form-action 'none'" />
   <title>Editor de Markdown Local</title>
   <link rel="stylesheet" href="styles-conflicts.css" />
   <link rel="stylesheet" href="styles-pomodoro.css" />
@@ -15,6 +15,9 @@
   <script src="shared/studylogic.js"></script>
   <script src="shared/pomodorologic.js"></script>
   <script src="shared/csv.js"></script>
+  <script src="shared/formula.js"></script>
+  <script src="shared/spreadsheet.js"></script>
+  <link rel="stylesheet" href="styles-office.css" />
   <link rel="stylesheet" href="../node_modules/katex/dist/katex.min.css" />
   <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css" />
   <link rel="stylesheet" href="styles.css" />
@@ -33,6 +36,10 @@
     <div class="dropdown">
       <button id="btn-new" class="toolbar-button" title="Nuevo (Ctrl+N)"><i data-lucide="file-plus"></i> Nuevo ▾</button>
       <div id="new-menu" class="dropdown-menu" hidden>
+        <button id="btn-office-templates">Plantillas completas…</button>
+        <button data-office="docx">Documento de Word</button>
+        <button data-office="xlsx">Libro de Excel</button>
+        <button data-office="pptx">Presentación de PowerPoint</button>
         <button data-template="vacio">Markdown vacío</button>
         <button data-template="apuntes">Apuntes</button>
         <button data-template="documentacion">Documentación</button>
@@ -42,6 +49,7 @@
       </div>
     </div>
 
+    <button id="btn-integrated-help" class="toolbar-button" title="Ayuda práctica (F1)">Ayuda</button>
     <button id="btn-open" class="toolbar-button" title="Abrir (Ctrl+O)"><i data-lucide="file"></i> Abrir</button>
     <button id="btn-save" class="toolbar-button" title="Guardar (Ctrl+S)"><i data-lucide="save"></i> Guardar</button>
     <button id="btn-save-as" class="toolbar-button" title="Guardar como (Ctrl+Shift+S)"><i data-lucide="save-all"></i> Guardar como</button>
@@ -83,6 +91,8 @@
         <button id="btn-export-epub-book">Exportar carpeta a EPUB (libro)</button>
         <button id="btn-export-anki">Exportar a tarjetas (Anki)</button>
         <button id="btn-export-docx">Exportar a Word (.docx)</button>
+        <button id="btn-export-xlsx" hidden>Guardar copia de Excel (.xlsx)</button>
+        <button id="btn-export-pptx" hidden>Guardar copia de PowerPoint (.pptx)</button>
       </div>
     </div>
 
@@ -338,15 +348,8 @@
             <div class="set-control"><button type="button" id="pet-open-collection" class="toolbar-button set-primary">🐾 Abrir colección</button></div>
           </div>
           <div class="set-row" data-keywords="especie apariencia fuego agua planta electrico hielo roca fantasma">
-            <div class="set-text"><label class="set-title" for="pet-species">Apariencia de la líder</label><div class="set-desc">Criatura de MK, un personaje de un juego o tus imágenes. Cambiarla conserva el nivel.</div></div>
+            <div class="set-text"><label class="set-title" for="pet-species">Apariencia de la líder</label><div class="set-desc">Un personaje de un juego o tus imágenes. Cambiarla conserva el nivel.</div></div>
             <div class="set-control"><select id="pet-species">
-                <option value="fuego">🔥 Chispi → Chispón → Brasadrake</option>
-                <option value="agua">💧 Gotín → Olaquín → Marejón</option>
-                <option value="planta">🌱 Brotito → Hojarín → Robleón</option>
-                <option value="electrico">⚡ Voltín → Voltarón → Tronador</option>
-                <option value="hielo">❄ Copito → Escarchín → Glaciarca</option>
-                <option value="roca">🪨 Guijarro → Peñasco → Montarón</option>
-                <option value="fantasma">👻 Sombrín → Espectrín → Umbralord</option>
                 <option value="game">🎮 De un juego (RPG Maker)…</option>
                 <option value="custom">🖼 Imágenes propias (PNG / GIF)</option>
               </select></div>
@@ -371,9 +374,8 @@
             </div>
           </div>
           <div class="set-row" data-keywords="origen crias huevos nuevas juego">
-            <div class="set-text"><label class="set-title" for="pet-source">Origen de las crías</label><div class="set-desc">De dónde salen las criaturas de los huevos: las de MK, o las del juego (sus legendarios son los marcados así en el juego).</div></div>
+            <div class="set-text"><label class="set-title" for="pet-source">Origen de las crías</label><div class="set-desc">Las crías salen del juego importado; sus legendarios son los marcados así en el juego.</div></div>
             <div class="set-control"><select id="pet-source">
-                <option value="mk">Criaturas de MK</option>
                 <option value="game">Del juego (RPG Maker)</option>
               </select></div>
           </div>
@@ -431,6 +433,7 @@
     </div>
   </div>
 
+  <div id="terminal-workspace" class="terminal-workspace">
   <div class="container">
     <div id="sidebar-pane"><div class="sidebar-empty"><p>Organiza tus notas en una carpeta.</p><button id="sidebar-empty-open" type="button" class="toolbar-button">Abrir carpeta</button></div></div>
     <div class="resizer" id="resizer-sidebar"></div>
@@ -496,10 +499,13 @@
         <div id="terminal-shell-menu" class="dropdown-menu dropdown-menu-up" hidden></div>
       </div>
       <button id="terminal-split" class="toolbar-button terminal-header-btn" title="Dividir: otra terminal al lado, en la misma pestaña (Ctrl+Shift+5)" aria-label="Dividir: otra terminal al lado, en la misma pestaña (Ctrl+Shift+5)"><i data-lucide="columns-2"></i></button>
+      <button id="terminal-position" class="toolbar-button terminal-header-btn" title="Mover terminal a la derecha" aria-label="Mover terminal a la derecha" aria-pressed="false"><i data-lucide="panel-right"></i></button>
       <button id="terminal-fullscreen" class="toolbar-button terminal-header-btn" title="Terminal en pantalla completa" aria-label="Terminal en pantalla completa" aria-pressed="false"><i data-lucide="maximize"></i></button>
       <button id="terminal-hide" class="toolbar-button terminal-header-btn" title="Ocultar panel (Ctrl+` / Ctrl+Ñ) — las terminales siguen abiertas" aria-label="Ocultar panel (Ctrl+` / Ctrl+Ñ) — las terminales siguen abiertas"><i data-lucide="panel-bottom-close"></i></button>
     </div>
     <div id="terminal-body" class="terminal-body"></div>
+  </div>
+
   </div>
 
   <div class="statusbar">
@@ -922,6 +928,10 @@
   <script src="pdfhighlight.js"></script>
   <script src="gitpanel.js"></script>
   <script src="docximport.js"></script>
+  <script src="presentation.js"></script>
+  <script src="shared/officecompat.js"></script>
+  <script src="office-tools.js"></script>
+  <script src="office.js"></script>
   <script src="docxexport.js"></script>
   <script src="exportdoc.js"></script>
   <script src="sidebar.js"></script>

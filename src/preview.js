@@ -654,19 +654,6 @@ window.showPdfPreview = function (filePath) {
   if (window.mdPdfHighlight?.hasTab(filePath)) {
     previewPane.replaceChildren();
     window.mdPdfHighlight.showInTab(previewPane, filePath).catch(error => window.mdErrorToast.show({ message: 'No se pudo abrir el PDF', detail: error.message }));
-  } else {
-    const toolbar = document.createElement('div');
-    toolbar.className = 'pdf-tab-toolbar';
-    const edit = document.createElement('button');
-    edit.type = 'button'; edit.className = 'toolbar-button'; edit.textContent = 'Editar PDF';
-    edit.addEventListener('click', async () => {
-      try {
-        if (await window.mdPdfHighlight.showInTab(previewPane, filePath, true)) {
-          toolbar.remove(); previewPane.querySelector('.pdf-embed')?.remove();
-        }
-      } catch (error) { window.mdErrorToast.show({ message: 'No se pudo abrir el editor PDF', detail: error.message }); }
-    });
-    toolbar.append(edit); previewPane.prepend(toolbar);
   }
 };
 

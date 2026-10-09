@@ -1593,7 +1593,7 @@
   if (fixturesDir) {
     const docxPath = window.mdEditor.joinPath(fixturesDir, 'prueba.docx');
     const tabsBefore = document.querySelectorAll('#tabbar .tab').length;
-    await window.openFileAtPath(docxPath);
+    await window.mdDocxImport.openAsMarkdown(docxPath);
     await waitFor(() => document.querySelectorAll('#tabbar .tab').length > tabsBefore);
     await waitFor(() => window.mdCodeMirror.getValue().includes('Walking on imported air'));
     const contentOk = window.mdCodeMirror.getValue().includes('Walking on imported air');
@@ -1610,7 +1610,7 @@
   let foldDetail = 'sin fixturesDir';
   if (fixturesDir) {
     const docxImgPath = window.mdEditor.joinPath(fixturesDir, 'prueba-imagen.docx');
-    await window.openFileAtPath(docxImgPath);
+    await window.mdDocxImport.openAsMarkdown(docxImgPath);
     await waitFor(() => window.mdCodeMirror.getValue().includes('data:image'));
     await waitFor(() => document.querySelector('.folded-image-data'));
     const foldedWidgetOk = !!document.querySelector('.folded-image-data');
@@ -1627,7 +1627,7 @@
   let foldTableDetail = 'sin fixturesDir';
   if (fixturesDir) {
     const docxTablePath = window.mdEditor.joinPath(fixturesDir, 'prueba-tabla.docx');
-    await window.openFileAtPath(docxTablePath);
+    await window.mdDocxImport.openAsMarkdown(docxTablePath);
     await waitFor(() => window.mdCodeMirror.getValue().includes('<table'));
     await waitFor(() => document.querySelector('.folded-html-table'));
     const foldedTableWidgetOk = !!document.querySelector('.folded-html-table');
@@ -1696,6 +1696,29 @@
     docxExportDetail = `guardado=${!!savedPath} releidoOk=${roundtripOk} html="${roundtripText.slice(0, 80)}"`;
   }
   check('Exportar a Word (.docx): genera un .docx real, releído con mammoth', docxExportOk, docxExportDetail);
+
+  // Word: comprobar la conservación real al empaquetar y volver a importar.
+  {
+    const source = '<p>H<sub>2</sub>O, m<sup>2</sup> y <u>subrayado</u>.</p>\n\n' +
+      '<ol start="4"><li>Cuarto paso</li></ol>\n\n' +
+      '<table><tr><th colspan="2">Cabecera combinada</th></tr><tr><td>Uno</td><td>Dos</td></tr></table>\n\n' +
+      '<div>Texto directo que antes se perdía.</div>\n\n' +
+      '- [x] Tarea completada\n- [ ] Tarea pendiente';
+    let ok = false, detail = '';
+    try {
+      const base64 = await window.mdDocxExport.buildBase64(source);
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const result = await mammoth.convertToHtml({ arrayBuffer: bytes.buffer }, window.mdDocxImport.conversionOptions);
+      const markdown = window.mdDocxImport.htmlToMarkdown(result.value);
+      ok = /<sub>2<\/sub>/.test(markdown) && /<sup>2<\/sup>/.test(markdown) &&
+        /<u>subrayado<\/u>/.test(markdown) && /colspan="2"/.test(markdown) &&
+        /Texto directo que antes se perdía/.test(markdown) && /☑/.test(markdown) && /☐/.test(markdown);
+      detail = markdown.slice(0, 500);
+    } catch (error) { detail = error.stack || String(error); }
+    check('Word: estilos, celdas combinadas, tareas y texto sobreviven a exportar e importar', ok, detail);
+    const safe = window.mdDocxImport.htmlToMarkdown('<p>Seguro<script>alert(1)</script><u>visible</u></p>');
+    check('Word: importación elimina scripts y conserva subrayado', !safe.includes('alert(1)') && safe.includes('<u>visible</u>'), safe);
+  }
 
   // 27. Clic en una imagen del árbol la muestra en el preview (antes
   // intentaba "editarla" como texto)
@@ -2416,11 +2439,14 @@
     window.showPdfPreview(fixturePdfPath);
     const pdfTab = document.querySelector('#tabbar .tab.active');
     pdfTab.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
-    const singleClickReads = document.getElementById('pdfhighlight-panel').hidden;
-    pdfTab.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 2 }));
-    pdfTab.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }));
+    check('PDF: un clic en la pestaña mantiene la lectura', !document.querySelector('#preview-pane .pdf-tab-docked'));
+    const editPdfFromTabMenu = () => {
+      document.querySelector('#tabbar .tab.active').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+      Array.from(document.querySelectorAll('.tab-menu button')).find(button => button.textContent === 'Editar PDF').click();
+    };
+    editPdfFromTabMenu();
     await waitFor(() => document.querySelector('#preview-pane .pdf-tab-docked') && window.mdPdfHighlight.getState()?.sourcePath === fixturePdfPath && window.mdPdfHighlight.getState().pageReady);
-    check('PDF: doble clic en su pestaña abre la edición y un clic mantiene la lectura', singleClickReads && window.mdPdfHighlight.getState().sourcePath === fixturePdfPath);
+    check('PDF: Editar PDF en el menú de la pestaña abre la edición', window.mdPdfHighlight.getState().sourcePath === fixturePdfPath && !document.querySelector('.pdf-tab-toolbar'));
     await window.mdPdfHighlight.goToPage(2);
     const tabZoom = document.getElementById('pdfhighlight-zoom');
     tabZoom.value = '1.5'; tabZoom.dispatchEvent(new Event('change'));
@@ -2432,16 +2458,16 @@
     check('PDF integrado: cambiar a una nota retira el visor de su pestaña', !document.querySelector('#preview-pane .pdf-tab-docked'));
     window.showPdfPreview(fixturePdfPath);
     check('PDF integrado: volver mantiene el visor original', !!document.querySelector('#preview-pane .pdf-embed'));
-    document.querySelector('.pdf-tab-toolbar button').click();
+    editPdfFromTabMenu();
     await waitFor(() => document.querySelector('#preview-pane .pdf-tab-docked') && window.mdPdfHighlight.getState().pageReady);
     check('PDF integrado: reabrir edición conserva página, zoom y anotaciones', window.mdPdfHighlight.getState().pageNum === 2 && window.mdPdfHighlight.getState().zoom === '1.5' && window.mdPdfHighlight.getState().highlightCount === 1 && !document.querySelector('.pdf-tab-reading'));
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     check('PDF integrado: Escape sale de edición al visor normal sin perder anotaciones', !!document.querySelector('#preview-pane .pdf-embed') && !document.querySelector('#preview-pane .pdf-tab-docked') && window.mdPdfHighlight.getState().highlightCount === 1);
-    document.querySelector('.pdf-tab-toolbar button').click();
+    editPdfFromTabMenu();
     await waitFor(() => document.querySelector('#preview-pane .pdf-tab-docked') && window.mdPdfHighlight.getState().pageReady);
     if (fixturePdf2Path) {
       window.showPdfPreview(fixturePdf2Path);
-      document.querySelector('.pdf-tab-toolbar button').click();
+      editPdfFromTabMenu();
       await waitFor(() => window.mdPdfHighlight.getState()?.sourcePath === fixturePdf2Path && document.querySelector('#preview-pane .pdf-tab-docked'));
       window.showPdfPreview(fixturePdfPath);
       await waitFor(() => window.mdPdfHighlight.getState()?.sourcePath === fixturePdfPath && document.querySelector('#preview-pane .pdf-tab-docked') && window.mdPdfHighlight.getState().pageReady);
@@ -2699,6 +2725,19 @@
     grip.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, cancelable: true }));
     const maximumOk = Number.parseFloat(terminalPanel.style.height) === Math.max(100, window.innerHeight - 120);
     check('Terminal: altura ajustable por teclado y límites para mantener visible el editor', minimumOk && growingOk && maximumOk && grip.getAttribute('aria-valuenow') === String(Math.round(terminalPanel.getBoundingClientRect().height)));
+    const shellId = session && session.id;
+    window.mdTerminal.setPosition('right');
+    await new Promise((r) => requestAnimationFrame(r));
+    const editorRect = document.querySelector('.container').getBoundingClientRect();
+    const terminalRect = terminalPanel.getBoundingClientRect();
+    const rightOk = grip.getAttribute('aria-orientation') === 'vertical' && terminalRect.left >= editorRect.right - 1 && terminalRect.height > 100;
+    grip.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, cancelable: true }));
+    const widthMin = terminalPanel.style.width === '240px';
+    grip.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+    const widthGrows = terminalPanel.style.width === '260px';
+    const savedPosition = (await window.mdEditor.getConfig()).terminalPosition;
+    window.mdTerminal.setPosition('bottom');
+    check('Terminal: derecha, ancho por teclado, posición persistida y mismo shell al volver abajo', rightOk && widthMin && widthGrows && savedPosition === 'right' && window.mdTerminal.getSessions().some((s) => s.id === shellId) && grip.getAttribute('aria-orientation') === 'horizontal');
     terminalPanel.style.height = originalHeight;
     const panelShown = !document.getElementById('terminal-panel').hidden;
     // Tope de vueltas: si cerrar una pestaña no la saca del DOM, que falle el
@@ -3040,6 +3079,47 @@
       layoutOk && hashHidden && boldHidden && tableWidget && taskToggled && rawOnActive && tableRawWhenActive && cycleOk && restoredOk,
       `layout=${layoutOk} #oculto=${hashHidden} **oculto=${boldHidden} tabla=${tableWidget} casilla=${taskToggled} lineaActivaCruda=${rawOnActive} tablaCruda=${tableRawWhenActive} ciclo=${cycle.join(',')} restaurado=${restoredOk}`
     );
+  }
+
+  // Subtareas: crear, editar, cancelar y completar desde la tarjeta.
+  {
+    await window.mdHome.open();
+    window.mdHome.setMode('day');
+    const { openTaskEditor } = await import('../src/home-taskeditor.js');
+    const { todayIso, deleteTask, findItem } = await import('../src/home-data.js');
+    const title = 'Recoger la casa ' + Date.now();
+    let task;
+    try {
+      openTaskEditor({ task: { title, date: todayIso() }, date: todayIso(), recurring: false }, { creating: true });
+      let editor = document.querySelector('.home-editor');
+      const button = (label) => Array.from(editor.querySelectorAll('button')).find((node) => node.textContent === label);
+      for (const name of ['Recoger cocina', 'Recoger cuarto']) {
+        button('+ Añadir subtarea').click();
+        const input = editor.querySelector('.home-subtask-list').lastElementChild.querySelector('.home-editor-input');
+        input.value = name;
+        input.dispatchEvent(new Event('input'));
+      }
+      button('Crear tarea').click();
+      task = window.mdHome.getData().tasks.find((entry) => entry.title === title);
+      const card = () => Array.from(document.querySelectorAll('#home-main .home-task')).find((node) => node.textContent.includes(title));
+      const created = task.subtasks.length === 2 && card().textContent.includes('0/2 subtareas');
+      card().querySelector('.home-subtask-row input').click();
+      const partial = task.subtasks[0].done && !task.done && card().textContent.includes('1/2 subtareas');
+      openTaskEditor(findItem(task.id, todayIso()));
+      editor = document.querySelector('.home-editor');
+      editor.querySelector('.home-subtask-row .home-editor-input').value = 'Cambio cancelado';
+      editor.querySelector('.home-subtask-row .home-editor-input').dispatchEvent(new Event('input'));
+      button('Cancelar').click();
+      const cancelled = task.subtasks[0].title === 'Recoger cocina';
+      card().querySelector(':scope > input[type="checkbox"]').click();
+      const completed = task.done && task.subtasks.every((entry) => entry.done);
+      card().querySelector('.home-subtask-row input').click();
+      const reopened = !task.done && !task.subtasks[0].done && task.subtasks[1].done;
+      check('Home: subtareas anidadas, progreso, cancelar y reabrir principal', created && partial && cancelled && completed && reopened);
+    } finally {
+      if (task) deleteTask(task.id);
+      window.mdHome.close();
+    }
   }
 
   // Avisos anticipados: tarea del Home con aviso "3 días antes" y fila de
@@ -3866,10 +3946,12 @@
     const renamedOk = (await window.mdEditor.db.listRows(fixturesDir, edb.id)).some((row) => row.cells[eName.id] === 'Ficciones (ed. 1944)');
     const box = await waitFor(() => embeds[0].querySelector('table.db-embed-table tr:nth-child(2) input[type="checkbox"]'));
     const xpBefore = window.mdPet.info().xp;
+    const hadPet = window.mdPet.getState().pets.length > 0;
+    const tasksBefore = window.mdPet.getState().stats.tasks;
     box.checked = true;
     box.dispatchEvent(new Event('change'));
     const leftView = await waitFor(() => !embeds[0].textContent.includes('Ficciones') && embeds[0].querySelectorAll('table.db-embed-table tr').length - 1 === 2, 3000);
-    const petOk = window.mdPet.info().xp === xpBefore + 10; // tildar una fila da XP a la mascota
+    const petOk = hadPet ? window.mdPet.info().xp === xpBefore + 10 : window.mdPet.getState().stats.tasks === tasksBefore + 1;
     const editOk = renamedOk && !!leftView && petOk;
     embeds[0].querySelector('.db-embed-open').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
     const opened = await waitFor(() => !document.getElementById('database-panel').hidden && document.getElementById('database-name-input').value === 'Libros Embed');
@@ -4549,6 +4631,16 @@
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     const created = H.getData().tasks.find((t) => t.title === 'Nueva hr');
     const createdOk = !!created && created.time === '14:00' && created.duration === 90 && created.date === day;
+    const reminderInput = H.hoursApi.promptNewAt(document.querySelector(`.home-hour-col[data-date="${day}"]`), day, 17 * 60, 18 * 60);
+    const kind = document.querySelector('.home-editor select');
+    kind.value = 'reminder';
+    kind.dispatchEvent(new Event('change'));
+    reminderInput.value = 'Aviso hr';
+    reminderInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const reminder = H.getData().tasks.find((task) => task.title === 'Aviso hr');
+    const reminderNode = reminder && document.querySelector(`.home-hour-event[data-task-id="${reminder.id}"]`);
+    check('Home → Horario: recordatorio independiente con aviso y sin casilla de tarea',
+      reminder?.kind === 'reminder' && reminder.remind === 0 && reminder.time === '17:00' && !!reminderNode && !reminderNode.querySelector('input[type="checkbox"]'));
     H.hoursApi.retime({ task: H.getData().tasks.find((t) => t.id === 'hr-b'), date: day, recurring: false }, day, 16 * 60 + 15, 45);
     const moved = H.getData().tasks.find((t) => t.id === 'hr-b');
     const movedOk = moved.time === '16:15' && moved.duration === 45;
@@ -4860,27 +4952,39 @@
   {
     const P = window.mdPet;
     const before = P.getState();
-    await P.setState({ version: 2, enabled: true, source: 'mk', pets: [{ id: 'p1', kind: 'mk', species: 'agua', mkSpecies: 'agua', name: '', xp: 0, legendary: false }], team: ['p1'], eggs: [], awarded: [], achievements: [], stats: { tasks: 0, pomodoros: 0, taskDays: [] }, nextId: 2, fed: {} });
+    await P.loadCatalog(window.mdEditor.joinPath(fixturesDir, 'sin-catalogo-mascotas'));
+    await P.setState({ pets: [{ id: 'retirada', kind: 'mk', species: 'fuego', xp: 20 }, { id: 'conservada', kind: 'kh', species: 'roxas', xp: 145 }], team: ['retirada', 'conservada'], eggs: [{ id: 'retirado', pick: { kind: 'mk', species: 'agua' } }], source: 'mk' });
+    const migrated = P.getState();
+    check('Mascotas: retira criaturas y huevos inventados conservando personajes y su XP', migrated.pets.length === 1 && migrated.pets[0].xp === 145 && migrated.team.join() === 'conservada' && migrated.eggs.length === 0 && !document.querySelector('#pet-species option[value="fuego"]'));
+    await P.setState({ pets: [], team: [], eggs: [] });
+    await P.gain('task', 'test:empty-collection');
+    check('Mascotas: colección vacía gana estadísticas sin crear criaturas inventadas', P.getState().pets.length === 0 && P.getState().eggs.length === 0);
+    await P.setState({ version: 2, enabled: true, source: 'game', pets: [{ id: 'p1', kind: 'custom', species: 'agua', mkSpecies: 'agua', name: '', xp: 0, legendary: false }], team: ['p1'], eggs: [], awarded: [], achievements: [], stats: { tasks: 0, pomodoros: 0, taskDays: [] }, nextId: 2, fed: {} });
     const a = await P.gain('task', 'test:t1');
     const dup = await P.gain('task', 'test:t1');
     const pomo = await P.gain('pomodoro', null);
     const xpOk = a.xp === 10 && dup.duplicate && pomo.xp === 35;
+    const shortFocus = await P.gain('pomodoro', null, 10 * 60);
+    const longFocus = await P.gain('pomodoro', null, 120 * 60);
+    const secondsFocus = await P.gain('pomodoro', null, 30);
+    check('Mascotas: XP proporcional al estudio (10 min = 10 XP, 2 h = 120 XP, sin mínimo por foco)', shortFocus.xp === 45 && longFocus.xp === 165 && secondsFocus.xp === 165 && P.getState().stats.pomodoros === 4);
 
     // Evoluciona (nivel 5) → aparece un huevo; el huevo nace a los 60 XP.
     await P.setState({ pets: [{ ...P.getState().pets[0], xp: 235 }] });
     const evo = await P.gain('task', 'test:t2');
     const petEl = document.querySelector('.pet');
-    const evolveOk = evo.evolved && evo.stage === 2 && evo.name === 'Olaquín' && petEl && petEl.dataset.stage === '2';
-    const eggOk = P.getState().eggs.length === 1 && P.getState().eggs[0].type === 'normal';
+    const evolveOk = evo.evolved && evo.stage === 2 && evo.name === 'Mascota propia' && petEl && petEl.dataset.stage === '2';
+    const eggOk = P.getState().eggs.length === 0;
     for (let i = 3; i <= 8; i++) await P.gain('task', `test:t${i}`); // 60 XP
     const st1 = P.getState();
-    const hatchOk = st1.eggs.length === 0 && st1.pets.length === 2 && st1.team.length === 2 && st1.pets[1].species !== 'agua' && document.querySelectorAll('.pet').length === 2;
+    const hatchOk = st1.eggs.length === 0 && st1.pets.length === 1 && !document.querySelector('.pet svg');
+    await P.setState({ pets: [...st1.pets, { id: 'p2', kind: 'custom', xp: 0, legendary: false }], team: ['p1', 'p2'] });
 
     // Logro (50 Pomodoros) → huevo legendario.
     await P.setState({ stats: { ...P.getState().stats, pomodoros: 49 } });
     await P.gain('pomodoro', null);
     const st2 = P.getState();
-    const legendOk = st2.achievements.includes('concentracion') && st2.eggs.some((e) => e.type === 'legendary' && e.pick.kind === 'mk');
+    const legendOk = st2.achievements.includes('concentracion') && st2.eggs.length === 0;
 
     // Ocultas: siguen ganando experiencia.
     await P.setState({ enabled: false });
@@ -4900,7 +5004,7 @@
     // Colección: tarjetas, equipo y logros.
     P.openCollection();
     const col = document.querySelector('.pet-collection-overlay');
-    const colOk = !col.hidden && col.querySelectorAll('.pet-col-card[data-pet-id]').length === 2 && col.textContent.includes('Concentración') && col.textContent.includes('Huevo legendario');
+    const colOk = !col.hidden && col.querySelectorAll('.pet-col-card[data-pet-id]').length === 2 && col.textContent.includes('Concentración') && !col.textContent.includes('Brasadrake');
     col.querySelector('.pet-col-card[data-pet-id="p1"] .pet-col-team').click(); // p1 descansa
     const restOk = !P.getState().team.includes('p1') && document.querySelectorAll('.pet').length === 1;
     col.hidden = true;
@@ -4922,7 +5026,7 @@
     }
 
     // Home: tildar una tarea da XP a la líder; destildar y tildar no suma.
-    await P.setState({ pets: [{ id: 'p1', kind: 'mk', species: 'fuego', name: '', xp: 0, legendary: false }], team: ['p1'], eggs: [], awarded: [] });
+    await P.setState({ pets: [{ id: 'p1', kind: 'custom', species: 'fuego', name: '', xp: 0, legendary: false }], team: ['p1'], eggs: [], awarded: [] });
     await window.mdHome.open();
     window.mdHome.setMode('week');
     const title = 'Mascota ' + Date.now();
@@ -4946,7 +5050,7 @@
     window.mdHome.close();
 
     await P.setState({ ...before, enabled: false });
-    check('Mascotas: XP sin duplicar, evoluciona → huevo → nace otra, logro → huevo legendario, ocultas siguen ganando, ánimo, colección y equipo, imágenes propias, Home',
+    check('Mascotas importadas: XP, evolución sin criaturas inventadas, logros, equipo, imágenes propias y Home',
       xpOk && evolveOk && eggOk && hatchOk && legendOk && hiddenOk && sadOk && colOk && restOk && customOk === true && homeXp && noFarm,
       `xp=${xpOk} evoluciona=${evolveOk} huevo=${eggOk} nace=${hatchOk} legendario=${legendOk} ocultaGana=${hiddenOk} triste=${sadOk} colección=${colOk} descansa=${restOk} propia=${customOk} home=${homeXp} sinTrampa=${noFarm}`);
   }
@@ -5166,7 +5270,7 @@
     const dir = window.mdEditor.joinPath(`${fixturesDir}-pokemon`, 'Graphics', 'Characters');
     const col = document.querySelector('.pet-collection-overlay');
     try {
-      await P.setState({ pets: [{ id: 'p1', kind: 'mk', species: 'agua', xp: 200 }, { id: 'p2', kind: 'kh', species: 'roxas', xp: 145 }], team: ['p1', 'p2'], nextId: 3, source: 'mk' });
+      await P.setState({ pets: [{ id: 'p1', kind: 'custom', species: 'agua', xp: 200 }, { id: 'p2', kind: 'kh', species: 'roxas', xp: 145 }], team: ['p1', 'p2'], nextId: 3, source: 'mk' });
       await P.loadCatalog(dir);
       P.openCollection();
       const chooser = col.querySelector('#pet-chooser');

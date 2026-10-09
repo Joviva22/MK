@@ -20,7 +20,9 @@ const ctx = require('./mainctx');
 // no es un error.
 function runGitOnce(args, cwd) {
   return new Promise((resolve) => {
-    execFile('git', args, { cwd }, (error, stdout, stderr) => {
+    // Un repo descargado puede traer en .git/config un core.fsmonitor que
+    // ejecuta un comando en cada status/add: acá nunca se usa.
+    execFile('git', ['-c', 'core.fsmonitor=false', ...args], { cwd }, (error, stdout, stderr) => {
       resolve({ error, stdout, stderr });
     });
   });
@@ -84,7 +86,7 @@ ipcMain.handle('git:status', async (event, root) => {
 // de selección vive en el panel en vez de un prompt de terminal), y
 // git:commitStaged simplemente commitea lo que haya quedado en el índice.
 ipcMain.handle('git:diffFile', async (event, { root, file }) => {
-  const result = await runGit(['diff', '--no-color', '--', file], root);
+  const result = await runGit(['diff', '--no-color', '--no-ext-diff', '--no-textconv', '--', file], root);
   if (result.error) return null;
   return result.stdout;
 });

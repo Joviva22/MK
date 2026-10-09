@@ -75,7 +75,7 @@ async function renderContent(filePath) {
     }
     try {
       await window.mdLoadLib('mammoth');
-      const result = await mammoth.convertToHtml({ arrayBuffer: base64ToArrayBuffer(base64) });
+      const result = await mammoth.convertToHtml({ arrayBuffer: base64ToArrayBuffer(base64) }, window.mdDocxImport.conversionOptions);
       bodyEl.innerHTML = DOMPurify.sanitize(result.value);
     } catch {
       bodyEl.textContent = 'Ese archivo no parece ser un .docx válido.';

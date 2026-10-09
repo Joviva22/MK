@@ -14,7 +14,7 @@ Editor (CodeMirror) con preview en vivo al lado, pestañas con autoguardado, y r
 También se pueden abrir y editar archivos de código (`.py`, `.c`/`.cpp`, `.java`, `.sh`) con resaltado de sintaxis propio para cada lenguaje — el preview (que renderiza Markdown) se oculta solo en esos casos, no tiene sentido ahí.
 
 ### Buscar y moverte rápido
-`Ctrl+F` busca y reemplaza dentro del archivo actual; `Ctrl+Shift+F` busca en toda la carpeta abierta; `Ctrl+P` abre un archivo por nombre sin tocar el mouse. Paleta de comandos (`Ctrl+Shift+P`) para no memorizar dónde está cada botón. Ver [`COMANDOS.md`](./COMANDOS.md) para la lista completa de atajos.
+`Ctrl+F` busca y reemplaza dentro del archivo actual; `Ctrl+Shift+F` reúne notas, tareas, filas de bases de datos y contenido de Word, Excel y PowerPoint, con acceso al texto, celda o diapositiva; `Ctrl+P` abre un archivo por nombre sin tocar el mouse. Paleta de comandos (`Ctrl+Shift+P`) para no memorizar dónde está cada botón. Ver [`COMANDOS.md`](./COMANDOS.md) para la lista completa de atajos.
 
 ### Planificar: Home, bases de datos y gráficos
 - **Home** (`Ctrl+Shift+H`): planificador semanal y mensual con calendario, tareas con hora y prioridad, recurrentes (hábitos), arrastrar tareas de día, tareas `📅` escritas en tus notas, estadísticas 📈 y **recordatorios** (a la hora, días antes y **1 semana antes automático** para todo lo que tenga fecha, aunque MK esté en la bandeja), también **por correo (Gmail)** con resumen diario opcional.
@@ -33,8 +33,8 @@ La carpeta abierta **se vigila sola** (lo que cambie git, otra app o una IA apar
 ### Un segundo archivo al lado (split view)
 El **panel secundario** muestra un segundo archivo (Markdown, PDF, `.docx` o imagen) de solo lectura junto al principal, del mismo ancho y con su propio divisor para repartir el espacio. Un clic en el título lo "promueve" a principal — sin necesidad de una segunda instancia del editor.
 
-### Word y PDF
-Abrir un `.docx` lo convierte a Markdown editable al vuelo (con tablas), y se puede exportar de vuelta a un `.docx` real. Del lado de PDF: **escribir encima y rellenar formularios**, unir, separar, rotar, reordenar páginas, agregar marca de agua o firma, y subrayar texto arrastrando el mouse. Fotos, video y audio de cualquier formato común se abren con su visor (y los que Chromium no reproduce ofrecen la app del sistema). Exportar notas a PDF, HTML, EPUB o tarjetas de Anki.
+### Word, Excel, PowerPoint y PDF
+Word (`.docx`), Excel (`.xlsx`) y PowerPoint (`.pptx`) tienen editores visuales locales con guardado en su formato, recuperación de cambios, búsqueda y deshacer/rehacer. Word permite texto, estilos, imágenes y tablas; Excel incluye celdas, hojas y fórmulas básicas; PowerPoint permite editar textos e imágenes y organizar diapositivas. Antes de guardar documentos importados con riesgo de conversión, MK permite revisar las limitaciones y guardar una copia. La barra de formato se puede plegar con **Herramientas**. Ver [compatibilidad y guía de Office](Guias/office-como-usar.md). Del lado de PDF: **escribir encima y rellenar formularios**, unir, separar, rotar, reordenar páginas, agregar marca de agua o firma, y subrayar texto arrastrando el mouse. Fotos, video y audio de cualquier formato común se abren con su visor (y los que Chromium no reproduce ofrecen la app del sistema). Exportar notas a PDF, HTML, EPUB o tarjetas de Anki.
 
 ### Herramientas integradas
 Todo esto viene ya armado en la app, no son plugins de terceros:

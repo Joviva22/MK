@@ -44,7 +44,7 @@ function resultItem(pathText, snippetText, onPick, nameText, query) {
 
 // Tres fuentes: archivos de la carpeta, tareas del Home y filas de bases de
 // datos (estas dos no son .md, antes no aparecían).
-function renderResults({ files, tasks, rows }, query) {
+function renderResults({ files, tasks, rows, documents = [], notices = [] }, query) {
   input.removeAttribute('aria-activedescendant');
   resultsEl.innerHTML = '';
   picks = [];
@@ -56,11 +56,12 @@ function renderResults({ files, tasks, rows }, query) {
     resultsEl.appendChild(el);
   };
   if ((query || '').trim().length < 2) {
-    empty(window.mdState.rootFolder ? 'Escribí al menos 2 caracteres...' : 'Escribí al menos 2 caracteres... (sin carpeta abierta solo se buscan las tareas del Home)');
+    empty(window.mdState.rootFolder ? 'Escribe al menos 2 caracteres para buscar notas, tareas y documentos…' : 'Escribí al menos 2 caracteres... (sin carpeta abierta solo se buscan las tareas del Home)');
     return;
   }
-  if (!files.length && !tasks.length && !rows.length) {
+  if (!files.length && !tasks.length && !rows.length && !documents.length) {
     empty('No hay coincidencias. Prueba con menos palabras o con otro término.');
+    notices.forEach(empty);
     return;
   }
   if (files.length) {
@@ -73,6 +74,10 @@ function renderResults({ files, tasks, rows }, query) {
       cm.focus();
     }, r.relPath.split(/[\\/]/).pop(), query));
   }
+  if (documents.length) {
+    sectionTitle(`Documentos Office (${documents.length})`);
+    documents.forEach(r => resultItem(`${r.relPath} · ${r.label}`, r.snippet, () => window.mdOffice.reveal(r, query), r.relPath.split(/[\\/]/).pop(), query));
+  }
   if (tasks.length) {
     sectionTitle(`Tareas del Home (${tasks.length})`);
     tasks.forEach((t) => {
@@ -84,6 +89,7 @@ function renderResults({ files, tasks, rows }, query) {
     sectionTitle(`Bases de datos (${rows.length})`);
     rows.forEach((r) => resultItem(`▤ ${r.databaseName} › ${r.title} · ${r.column}`, r.snippet, () => window.mdDatabase.openWithFilter(r.databaseId, query.trim()), r.title, query));
   }
+  notices.forEach(empty);
   selectResult(0);
 }
 
@@ -115,13 +121,24 @@ async function runSearch() {
   }
   resultsEl.setAttribute('aria-busy', 'true');
   try {
+    const officeJob = root ? window.mdEditor.searchOffice(root, query).catch(error => ({ results:[], skipped:[], error:error.message })) : Promise.resolve({ results:[], skipped:[] });
     const [files, tasks, rows] = await Promise.all([
       root ? window.mdEditor.searchInFolder(root, query) : [],
       window.mdHome ? window.mdHome.searchTasks(query) : [],
       root && window.mdDatabase ? window.mdDatabase.searchRows(query).catch(() => []) : []
     ]);
-    if (id !== requestId || overlay.hidden || input.value !== query) return; // ya escribió otra cosa: esta respuesta quedó vieja
-    renderResults({ files, tasks, rows }, query);
+    if (id !== requestId || overlay.hidden || input.value !== query || window.mdState.rootFolder !== root) return; // ya escribió otra cosa: esta respuesta quedó vieja
+    renderResults({ files, tasks, rows, notices:root ? ['Buscando documentos Office…'] : [] }, query);
+    const office = await officeJob;
+    if (id !== requestId || overlay.hidden || input.value !== query || window.mdState.rootFolder !== root) return;
+    const selected = picks[selectedIndex]?.item.textContent;
+    const notices = [];
+    if (office.error) notices.push('No se pudo buscar en Office: ' + office.error);
+    if (office.skipped?.length) notices.push(`${office.skipped.length} documento(s) no se pudieron leer: ` + office.skipped.slice(0, 3).map(item => `${item.relPath} (${item.reason})`).join('; '));
+    if (office.truncated) notices.push('Se alcanzó el límite de búsqueda de Office. Abre una carpeta más pequeña para ver más resultados.');
+    renderResults({ files, tasks, rows, documents:office.results || [], notices }, query);
+    const index = picks.findIndex(pick => pick.item.textContent === selected);
+    if (index >= 0) selectResult(index);
   } catch {
     if (id !== requestId || overlay.hidden) return;
     resultsEl.textContent = '';

@@ -487,7 +487,7 @@ const RUNNERS = {
   mjs: 'node {f}',
   rb: 'ruby {f}',
   go: 'go run {f}',
-  java: 'java {f}',
+  java: 'bash -c {javaRunner} -- {f}',
   c: 'gcc {f} -o {bin} && {bin}',
   cpp: 'g++ {f} -o {bin} && {bin}',
   cc: 'g++ {f} -o {bin} && {bin}',
@@ -515,6 +515,11 @@ const RUNNERS = {
 // Qué programa hace falta para cada tipo (para el aviso si no está).
 const RUNNER_PROGRAMS = { ts: 'Node.js (npx)', mts: 'Node.js (npx)', rs: 'rustc', kt: 'kotlinc y Java', hs: 'GHC (runghc)', sql: 'sqlite3', r: 'R (Rscript)', ps1: 'PowerShell (pwsh)' };
 
+// Compilar primero evita que Java elija la primera clase del archivo.
+// javap identifica el main real, incluso con package o clases auxiliares.
+// Una sola línea: el PTY interpreta los saltos como Enter incluso entre comillas.
+const JAVA_RUNNER = `set -e; output=$(mktemp -d); trap 'rm -rf -- "$output"' EXIT; javac -encoding UTF-8 -d "$output" "$1"; entry=''; preferred=$(basename -- "$1" .java); while IFS= read -r -d '' compiled; do name=\${compiled#"$output"/}; name=\${name%.class}; name=\${name//\\//.}; if javap -classpath "$output" "$name" | grep -Eq 'public static void main\\(java\\.lang\\.String(\\[\\]|\\.\\.\\.)\\)'; then if [[ -z "$entry" ]]; then entry=$name; fi; if [[ "\${name##*.}" == "$preferred" ]]; then entry=$name; break; fi; fi; done < <(find "$output" -type f -name '*.class' -print0 | sort -z); if [[ -z "$entry" ]]; then echo 'No se encontró un método public static void main(String[] args) en el archivo.' >&2; exit 1; fi; java -classpath "$output:$PWD" "$entry"`;
+
 function commandForFile(filePath) {
   const baseName = filePath.split(/[\\/]/).pop();
   // Makefile / GNUmakefile: make en su carpeta.
@@ -525,7 +530,7 @@ function commandForFile(filePath) {
   const dir = window.mdEditor.dirName(filePath);
   const base = filePath.split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
   const bin = `/tmp/mk-run-${base.replace(/[^\w.-]/g, '_')}`;
-  return `cd ${shellQuote(dir)} && ` + template.replace(/\{f\}/g, shellQuote(filePath)).replace(/\{bin\}/g, shellQuote(bin));
+  return `cd ${shellQuote(dir)} && ` + template.replace(/\{javaRunner\}/g, () => shellQuote(JAVA_RUNNER)).replace(/\{f\}/g, () => shellQuote(filePath)).replace(/\{bin\}/g, () => shellQuote(bin));
 }
 
 // "▶ Ejecutar archivo" (F5): guarda y corre el archivo activo en la terminal.
@@ -719,31 +724,68 @@ document.addEventListener('fullscreenchange', () => {
   });
 });
 
-// Captura del puntero: el arrastre continúa al pasar sobre el editor o PDF.
-function maxPanelHeight() { return Math.max(MIN_HEIGHT, window.innerHeight - 120); }
-function setPanelHeight(height) {
-  const value = Math.max(MIN_HEIGHT, Math.min(maxPanelHeight(), height));
-  panel.style.height = `${value}px`;
-  resizer.setAttribute('aria-valuemin', String(MIN_HEIGHT));
-  resizer.setAttribute('aria-valuemax', String(maxPanelHeight()));
+// Posición y tamaño independientes: cambiar de lado conserva los shells.
+const workspace = document.getElementById('terminal-workspace');
+const positionButton = document.getElementById('terminal-position');
+let position = 'bottom';
+let panelHeight = 260;
+let panelWidth = 440;
+let drag = null;
+function maxPanelSize() {
+  return position === 'right' ? Math.max(240, workspace.clientWidth - 280) : Math.max(MIN_HEIGHT, window.innerHeight - 120);
+}
+function setPanelSize(size) {
+  const min = position === 'right' ? 240 : MIN_HEIGHT;
+  const value = Math.max(min, Math.min(maxPanelSize(), size));
+  if (position === 'right') {
+    panelWidth = value;
+    panel.style.width = `${value}px`;
+    panel.style.height = '';
+  } else {
+    panelHeight = value;
+    panel.style.height = `${value}px`;
+    panel.style.width = '';
+  }
+  resizer.setAttribute('aria-valuemin', String(min));
+  resizer.setAttribute('aria-valuemax', String(maxPanelSize()));
   resizer.setAttribute('aria-valuenow', String(Math.round(value)));
 }
-function savePanelHeight() {
-  if (window.mdCodeMirror) window.mdCodeMirror.refresh();
-  window.mdEditor.setConfig({ terminalHeight: Math.round(panel.getBoundingClientRect().height) });
+function setPosition(value, persist = true) {
+  position = value === 'right' ? 'right' : 'bottom';
+  workspace.classList.toggle('terminal-right', position === 'right');
+  const right = position === 'right';
+  const label = right ? 'Mover terminal abajo' : 'Mover terminal a la derecha';
+  positionButton.title = label;
+  positionButton.setAttribute('aria-label', label);
+  positionButton.setAttribute('aria-pressed', String(right));
+  window.mdIcons.button(positionButton, right ? 'panel-bottom' : 'panel-right');
+  resizer.setAttribute('aria-orientation', right ? 'vertical' : 'horizontal');
+  resizer.setAttribute('aria-label', right ? 'Ancho de la terminal' : 'Altura de la terminal');
+  resizer.title = right ? 'Arrastrar para cambiar el ancho · Flechas izquierda/derecha para ajustar' : 'Arrastrar para cambiar el alto · Flechas arriba/abajo para ajustar';
+  setPanelSize(right ? panelWidth : panelHeight);
+  if (persist) window.mdEditor.setConfig({ terminalPosition: position });
+  requestAnimationFrame(() => {
+    fitActive();
+    if (window.mdCodeMirror) window.mdCodeMirror.refresh();
+  });
 }
-let drag = null;
+positionButton.addEventListener('click', () => setPosition(position === 'right' ? 'bottom' : 'right'));
+function savePanelSize() {
+  if (window.mdCodeMirror) window.mdCodeMirror.refresh();
+  window.mdEditor.setConfig({ terminalHeight: Math.round(panelHeight), terminalWidth: Math.round(panelWidth) });
+}
 resizer.addEventListener('pointerdown', (e) => {
   if (e.button !== 0 || drag || document.fullscreenElement === panel) return;
   e.preventDefault();
   resizer.setPointerCapture(e.pointerId);
-  drag = { id: e.pointerId, y: e.clientY, height: panel.getBoundingClientRect().height };
+  drag = { id: e.pointerId, coord: position === 'right' ? e.clientX : e.clientY, size: position === 'right' ? panelWidth : panelHeight };
   resizer.classList.add('active');
   document.body.classList.add('terminal-resizing');
+  document.body.classList.toggle('terminal-resizing-right', position === 'right');
 });
 resizer.addEventListener('pointermove', (e) => {
   if (!drag || e.pointerId !== drag.id) return;
-  setPanelHeight(drag.height + drag.y - e.clientY);
+  setPanelSize(drag.size + drag.coord - (position === 'right' ? e.clientX : e.clientY));
 });
 function finishResize(e) {
   if (!drag || (e.pointerId != null && e.pointerId !== drag.id)) return;
@@ -751,23 +793,25 @@ function finishResize(e) {
   drag = null;
   if (resizer.hasPointerCapture(id)) resizer.releasePointerCapture(id);
   resizer.classList.remove('active');
-  document.body.classList.remove('terminal-resizing');
-  savePanelHeight();
+  document.body.classList.remove('terminal-resizing', 'terminal-resizing-right');
+  savePanelSize();
 }
 resizer.addEventListener('pointerup', finishResize);
 resizer.addEventListener('pointercancel', finishResize);
 resizer.addEventListener('lostpointercapture', finishResize);
 window.addEventListener('blur', finishResize);
 resizer.addEventListener('keydown', (e) => {
-  if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
+  const increase = position === 'right' ? 'ArrowLeft' : 'ArrowUp';
+  const decrease = position === 'right' ? 'ArrowRight' : 'ArrowDown';
+  if (![increase, decrease, 'Home', 'End'].includes(e.key) || document.fullscreenElement === panel) return;
   e.preventDefault();
-  const height = panel.getBoundingClientRect().height;
+  const size = position === 'right' ? panelWidth : panelHeight;
   const step = e.shiftKey ? 50 : 20;
-  setPanelHeight(e.key === 'Home' ? MIN_HEIGHT : e.key === 'End' ? maxPanelHeight() : height + (e.key === 'ArrowUp' ? step : -step));
-  savePanelHeight();
+  setPanelSize(e.key === 'Home' ? 0 : e.key === 'End' ? maxPanelSize() : size + (e.key === increase ? step : -step));
+  savePanelSize();
 });
 window.addEventListener('resize', () => {
-  if (document.fullscreenElement !== panel) setPanelHeight(parseFloat(panel.style.height) || 260);
+  if (document.fullscreenElement !== panel) setPanelSize(position === 'right' ? panelWidth : panelHeight);
 });
 
 new ResizeObserver(() => fitActive()).observe(body);
@@ -780,9 +824,11 @@ new MutationObserver(() => {
 
 (async () => {
   const config = await window.mdEditor.getConfig();
-  setPanelHeight(Number(config.terminalHeight) || 260);
+  panelHeight = Number(config.terminalHeight) || 260;
+  panelWidth = Number(config.terminalWidth) || 440;
+  setPosition(config.terminalPosition, false);
 })();
 
-window.mdTerminal = { shellQuote, RUNNERS, RUNNER_PROGRAMS, AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, splitTerminal, listShells, getPreferredShell: () => preferredShell, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
+window.mdTerminal = { setPosition, getPosition: () => position, shellQuote, RUNNERS, RUNNER_PROGRAMS, AI_TOOLS, aiCommand, openWithAI, openActiveWithAI, show, hide, toggle, newTerminal, splitTerminal, listShells, getPreferredShell: () => preferredShell, renameTab, runCommand, openSearch, runSearch, runActiveFile, commandForFile, getSessions: () => sessions.slice() };
 
 })();

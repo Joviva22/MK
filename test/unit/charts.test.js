@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const sandbox = { window: {}, console };
+const sandbox = { window: { addEventListener() {} }, document: { addEventListener() {} }, ResizeObserver: class { observe() {} unobserve() {} }, console };
 vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../src/charts.js'), 'utf-8'), sandbox);
 const C = sandbox.window.mdCharts;

@@ -6,6 +6,39 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 ## Sin publicar
 
+## [2.1.0] — 2026-10-08
+
+### Office, búsqueda y guardado
+
+- Editores visuales locales para Word, Excel y PowerPoint, con plantillas completas y ejemplos nativos con estilos, imágenes, tablas y fórmulas. Guardado atómico, deshacer/rehacer y recuperación de sesión e historial.
+- Revisión antes de guardar un Word importado o un Excel/PowerPoint con elementos de riesgo detectados: cancelar, guardar copia o continuar. La confirmación se recuerda en la recuperación y se renueva al recargar una versión externa.
+- Corrección de celdas combinadas de Excel que se perdían al restaurar el modelo desde el trabajador. Conservación de combinaciones, saltos de página y opciones de cálculo.
+- Recuperación tras cierre inesperado: el arranque espera a que los editores estén cargados antes de activar pestañas Office. Prueba en perfil temporal con SIGKILL y reapertura real de los tres formatos, incluido el historial de deshacer.
+- Cambios externos de Office: recarga de pestañas limpias y aviso conservando la edición cuando hay cambios propios. El guardado sigue bloqueando versiones externas distintas.
+- Búsqueda global de notas, tareas, bases de datos y contenido de `.docx`, `.xlsx` y `.pptx`, con acceso al texto, celda o diapositiva. Los resultados de notas se muestran mientras se buscan documentos; índice acotado en un trabajador, avisos de archivos omitidos y límites alcanzados.
+- Herramientas de formato Office plegables, con preferencia por formato. Ctrl+Shift+F funciona dentro de Office; Shift+Enter retrocede en la búsqueda del documento y Escape devuelve el foco. Presentación de diapositivas modal con retorno de foco al cerrar.
+- Validación de paquetes antes de guardar: extensión, partes esenciales del formato y tamaño descomprimido.
+
+### Otras mejoras pendientes incorporadas
+
+- Home: subtareas con progreso y finalización; recordatorios independientes con fecha/hora, sin contarlos como tareas o atrasos. Deshacer conserva el estado de las subtareas.
+- Terminal: ejecución de Java con paquetes y clases auxiliares, selección del método principal y limpieza de archivos compilados temporales. Controles y estados adaptados al tema.
+- Mascotas: crías del catálogo importado y huevo al evolucionar; eliminación de ofertas de criaturas genéricas del flujo actual.
+- Git: desactivación de fsmonitor, diffs externos y textconv en las consultas de MK. Rutas que empiezan por dos puntos se validan sin confundirlas con subir de carpeta.
+
+### Límites conocidos
+
+- Office es un editor parcial. Word reconstruye el documento y puede modificar maquetación y perder elementos no compatibles. Excel conserva las fórmulas no admitidas para recalcular en otra aplicación; gráficos, tablas dinámicas y conexiones pueden perderse. PowerPoint usa una vista simplificada, puede unificar estilos al cambiar textos y no copia notas al duplicar diapositivas. Ver [guía de Office](Guias/office-como-usar.md).
+- La búsqueda Office usa archivos guardados, sin OCR ni notas del presentador. Omite ocultos y enlaces simbólicos; limita archivos, tamaño y resultados, e informa de las omisiones.
+- Distribución AppImage para Linux. Esta preparación no publica una release remota.
+
+### Editor, estudio e interfaz
+
+- Bases de datos: columnas Archivo con selector, rutas relativas, apertura por formato y avisos para referencias inexistentes; apertura también desde rutas de texto y bases incrustadas.
+- Bases de datos: fichas con acceso desde la tabla, datos y archivos separados, navegación entre filas y teclado con retorno de foco.
+- Bases de datos: renombrar y mover archivos o carpetas actualiza sus referencias, con iconos por formato, detección de vínculos rotos y acción Localizar archivo.
+- Gráficos: colores integrados con el tema, leyendas y etiquetas más claras, redibujado al cambiar el ancho y controles de bases de datos adaptados a pantallas pequeñas.
+
 - Bases de datos con bienvenida y creación guiada desde Lecturas, Proyectos, Estudio o una base vacía. Vista previa y filas de ejemplo opcionales, guía integrada de filas/columnas/vistas, explicaciones de tipos y opciones avanzadas agrupadas. La vista activa muestra cantidades y filtros legibles, con acceso para ver todas las filas. Creación completa en una transacción y selección correcta al cambiar de carpeta.
 
 - Diálogos de archivos unificados para crear, renombrar, elegir destino al mover y confirmar eliminaciones, con ubicación visible, validación de nombres, foco y cancelación con Escape. Avisos breves de guardado con nombre, carpeta y copia de ruta; errores sin duplicados, explicaciones y acciones para reintentar o copiar detalles.
@@ -44,7 +77,7 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 - Modo examen: preguntas en orden aleatorio, intento antes de revelar la referencia, autoevaluación, historial persistente y práctica de errores. No altera el calendario de repaso ni modifica los apuntes.
 
 - Estudio por asignatura: materiales Markdown/PDF, próximas entregas, tareas y tiempo por categoría de Pomodoro. Plan de hoy con presupuesto de foco y prioridades por vencimiento, sin modificar tareas automáticamente.
-- Primera pizarra Excalidraw local, cargada bajo demanda: creación, apertura y guardado manual `.excalidraw`, protección ante cambios externos y aviso al descartar cambios. Sin cuenta ni servicio de pago; dibujos en panel independiente, todavía sin incrustación en notas.
+- Primera pizarra Excalidraw local, cargada bajo demanda: creación, apertura y guardado manual `.excalidraw`, protección ante cambios externos y aviso al descartar cambios. Sin cuenta ni servicio de pago; dibujos en panel independiente o incrustados en notas.
 - Dependencias de la pizarra actualizadas mediante overrides y DOMPurify actualizado para corregir avisos de seguridad de producción.
 
 - Mascotas Pokémon: variantes regionales desde PBS de formas, selección individual de cualquier sprite —incluidas evoluciones y especies fuera del catálogo—, búsqueda por identificador y Mostrar más. Importación de Pokémon propios/futuros con nombre, región e imagen libres, sin reemplazar la colección. Se validan todas las imágenes de una línea antes de sustituir etapas existentes.
@@ -124,10 +157,6 @@ Para publicar una versión nueva: sumar una sección acá, `npm version <mayor|m
 
 Primera versión: editor de Markdown y LaTeX local con pestañas, preview, búsqueda, etiquetas, wikilinks, backlinks y grafo, Kanban, Mermaid, historial de versiones, git, Pomodoro, herramientas de PDF, importar/exportar `.docx`, exportar a PDF / HTML / EPUB / Anki, panel secundario y 26 temas.
 
+[2.1.0]: https://github.com/Joviva22/MK/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/Joviva22/MK/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/Joviva22/MK/releases/tag/v1.0.0
-
-- Bases de datos: columnas Archivo con selector, rutas relativas, apertura por formato y avisos para referencias inexistentes; apertura también desde rutas de texto y bases incrustadas.
-- Bases de datos: fichas con acceso desde la tabla, datos y archivos separados, navegación entre filas y teclado con retorno de foco.
-- Bases de datos: renombrar y mover archivos o carpetas actualiza sus referencias, con iconos por formato, detección de vínculos rotos y acción Localizar archivo.
-- Gráficos: colores integrados con el tema, leyendas y etiquetas más claras, redibujado al cambiar el ancho y controles de bases de datos adaptados a pantallas pequeñas.

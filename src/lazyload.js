@@ -12,6 +12,9 @@
 // misma promesa); si falla, se puede reintentar.
 
 const LIBS = {
+  zip: ['../node_modules/jszip/dist/jszip.min.js'],
+  excel: ['../node_modules/exceljs/dist/exceljs.min.js'],
+  pptx: ['../node_modules/pptxgenjs/dist/pptxgen.bundle.js'],
   drawing: ['drawing-bundle.js'],
   mermaid: ['../node_modules/mermaid/dist/mermaid.min.js'],
   docx: ['../node_modules/docx/dist/index.iife.js'],

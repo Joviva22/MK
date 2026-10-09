@@ -91,7 +91,8 @@ async function resolveImageRun(imgEl) {
   }
 
   const size = (await imageNaturalSize(probeSrc)) || { width: 300, height: 200 };
-  const width = Math.min(size.width, MAX_IMAGE_WIDTH);
+  const requestedWidth = Number(imgEl.getAttribute('width')) || parseFloat(imgEl.style.width) || size.width;
+  const width = Math.min(requestedWidth, MAX_IMAGE_WIDTH);
   const height = Math.round(size.height * (width / size.width));
   try {
     return new ImageRun({ type, data: bytes, transformation: { width, height } });
@@ -102,7 +103,25 @@ async function resolveImageRun(imgEl) {
 
 // Texto/estilos inline (negrita, cursiva, tachado, código, links, imágenes)
 // dentro de un párrafo/celda/ítem de lista.
+function runStyle(element, opts) {
+  const localOpts = { ...opts };
+  const color = element.style?.color;
+  if (color) {
+    const rgb = color.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+    if (rgb) localOpts.color = rgb.slice(1).map(v => Number(v).toString(16).padStart(2, '0')).join('');
+    else if (/^#[a-f0-9]{6}$/i.test(color)) localOpts.color = color.slice(1);
+  }
+  if (element.style?.fontWeight === 'bold' || Number(element.style?.fontWeight) >= 600) localOpts.bold = true;
+  if (element.style?.fontStyle === 'italic') localOpts.italics = true;
+  if (element.style?.textDecoration?.includes('underline')) localOpts.underline = {};
+  const size = parseFloat(element.style?.fontSize);
+  if (size > 0) localOpts.size = Math.round(size * (element.style.fontSize.endsWith('pt') ? 2 : 1.5));
+  if (element.style?.fontFamily) localOpts.font = element.style.fontFamily.replace(/[\"']/g, '').split(',')[0];
+  return localOpts;
+}
+
 async function inlineRunsFromNode(node, opts = {}) {
+  opts = runStyle(node, opts);
   const parts = [];
   for (const child of Array.from(node.childNodes)) {
     if (child.nodeType === Node.TEXT_NODE) {
@@ -111,26 +130,35 @@ async function inlineRunsFromNode(node, opts = {}) {
     }
     if (child.nodeType !== Node.ELEMENT_NODE) continue;
     const tag = child.tagName.toLowerCase();
+    const localOpts = runStyle(child, opts);
     if (tag === 'strong' || tag === 'b') {
-      parts.push(...(await inlineRunsFromNode(child, { ...opts, bold: true })));
+      parts.push(...(await inlineRunsFromNode(child, { ...localOpts, bold: true })));
     } else if (tag === 'em' || tag === 'i') {
-      parts.push(...(await inlineRunsFromNode(child, { ...opts, italics: true })));
+      parts.push(...(await inlineRunsFromNode(child, { ...localOpts, italics: true })));
     } else if (tag === 'del' || tag === 's') {
-      parts.push(...(await inlineRunsFromNode(child, { ...opts, strike: true })));
+      parts.push(...(await inlineRunsFromNode(child, { ...localOpts, strike: true })));
+    } else if (tag === 'u' || tag === 'sup' || tag === 'sub') {
+      const style = tag === 'u' ? { underline: {} } : tag === 'sup' ? { superScript: true } : { subScript: true };
+      parts.push(...(await inlineRunsFromNode(child, { ...localOpts, ...style })));
+    } else if (tag === 'input' && child.type === 'checkbox') {
+      parts.push(new TextRun({ text: child.checked ? '☑ ' : '☐ ', ...opts }));
+    } else if (tag === 'p') {
+      if (parts.length) parts.push(new TextRun({ break: 1 }));
+      parts.push(...(await inlineRunsFromNode(child, localOpts)));
     } else if (tag === 'mark') {
-      parts.push(...(await inlineRunsFromNode(child, { ...opts, highlight: 'yellow' })));
+      parts.push(...(await inlineRunsFromNode(child, { ...localOpts, highlight: 'yellow' })));
     } else if (tag === 'code') {
       parts.push(new TextRun({ text: child.textContent, font: 'Consolas', ...opts }));
     } else if (tag === 'br') {
       parts.push(new TextRun({ text: '', break: 1 }));
     } else if (tag === 'a') {
-      const inner = await inlineRunsFromNode(child, opts);
+      const inner = await inlineRunsFromNode(child, localOpts);
       parts.push(new ExternalHyperlink({ link: child.getAttribute('href') || '#', children: inner.length ? inner : [new TextRun(child.textContent)] }));
     } else if (tag === 'img') {
       const run = await resolveImageRun(child);
       if (run) parts.push(run);
     } else {
-      parts.push(...(await inlineRunsFromNode(child, opts)));
+      parts.push(...(await inlineRunsFromNode(child, localOpts)));
     }
   }
   return parts;
@@ -148,6 +176,7 @@ async function listToParagraphs(el, level, ordered) {
       reference: numberingRef,
       levels: [{
         level: 0,
+        start: Math.max(1, Number(el.getAttribute('start')) || 1),
         format: LevelFormat.DECIMAL,
         text: '%1.',
         alignment: AlignmentType.START,
@@ -165,7 +194,7 @@ async function listToParagraphs(el, level, ordered) {
     const runs = await inlineRunsFromNode(liClone);
     out.push(new Paragraph({
       children: runs.length ? runs : [new TextRun('')],
-      bullet: ordered ? undefined : { level },
+      bullet: ordered ? undefined : { level: Math.min(level, 8) },
       numbering: ordered ? { reference: numberingRef, level: 0 } : undefined
     }));
     for (const nested of nestedLists) {
@@ -184,13 +213,22 @@ async function tableToDocxTable(el) {
     for (const cell of tds) {
       const runs = await inlineRunsFromNode(cell, cell.tagName.toLowerCase() === 'th' ? { bold: true } : {});
       cells.push(new TableCell({
-        children: [new Paragraph({ children: runs.length ? runs : [new TextRun('')] })],
+        children: cell.querySelector('table, ul, ol') ? await blockNodeToParagraphs(cell) : [new Paragraph({ children: runs.length ? runs : [new TextRun('')], alignment: paragraphAlignment(cell) })],
+        columnSpan: Math.max(1, Number(cell.getAttribute('colspan')) || 1),
+        rowSpan: Math.max(1, Number(cell.getAttribute('rowspan')) || 1),
+        shading: cell.tagName.toLowerCase() === 'th' ? { fill: 'E8EEF7' } : undefined,
+        margins: { top: 100, bottom: 100, left: 120, right: 120 },
         width: { size: Math.floor(100 / Math.max(tds.length, 1)), type: WidthType.PERCENTAGE }
       }));
     }
-    rows.push(new TableRow({ children: cells }));
+    rows.push(new TableRow({ children: cells, tableHeader: tr.parentElement.tagName === 'THEAD' || tds.every((c) => c.tagName === 'TH') }));
   }
   return new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } });
+}
+
+function paragraphAlignment(el) {
+  const value = el.style.textAlign || el.getAttribute('align');
+  return ({ center: AlignmentType.CENTER, right: AlignmentType.RIGHT, justify: AlignmentType.JUSTIFIED, left: AlignmentType.LEFT })[value];
 }
 
 async function blockNodeToParagraphs(el, opts = {}) {
@@ -199,9 +237,14 @@ async function blockNodeToParagraphs(el, opts = {}) {
     const runs = await inlineRunsFromNode(el);
     return [new Paragraph({ heading: HEADING_MAP[tag], children: runs })];
   }
+  if (el.style.breakBefore === 'page' || el.style.pageBreakBefore === 'always') {
+    const clone = el.cloneNode(true);
+    clone.style.breakBefore = ''; clone.style.pageBreakBefore = '';
+    return [new Paragraph({ pageBreakBefore: true }), ...await blockNodeToParagraphs(clone, opts)];
+  }
   if (tag === 'p') {
     const runs = await inlineRunsFromNode(el, opts.blockquote ? { italics: true } : {});
-    return [new Paragraph({ children: runs.length ? runs : [new TextRun('')], indent: opts.blockquote ? { left: 400 } : undefined })];
+    return [new Paragraph({ alignment: paragraphAlignment(el), children: runs.length ? runs : [new TextRun('')], indent: opts.blockquote ? { left: 400 } : undefined })];
   }
   if (tag === 'ul' || tag === 'ol') {
     return listToParagraphs(el, 0, tag === 'ol');
@@ -227,15 +270,21 @@ async function blockNodeToParagraphs(el, opts = {}) {
   // Tag desconocido (div suelto, span de tag/callout, etc.): perdemos el
   // estilo específico pero seguimos bajando para no perder el contenido.
   const out = [];
-  for (const child of Array.from(el.children)) {
-    out.push(...(await blockNodeToParagraphs(child, opts)));
+  for (const child of Array.from(el.childNodes)) {
+    if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) out.push(new Paragraph({ children: [new TextRun(child.textContent)] }));
+    else if (child.nodeType === Node.ELEMENT_NODE) {
+      if (['span', 'strong', 'em', 'a', 'u', 'sup', 'sub', 'img'].includes(child.tagName.toLowerCase())) {
+        const wrapper = document.createElement('p'); wrapper.appendChild(child.cloneNode(true));
+        out.push(new Paragraph({ children: await inlineRunsFromNode(wrapper) }));
+      } else out.push(...await blockNodeToParagraphs(child, opts));
+    }
   }
   return out;
 }
 
 async function buildDocxParagraphs(html) {
   const container = document.createElement('div');
-  container.innerHTML = html;
+  container.innerHTML = DOMPurify.sanitize(html);
   const out = [];
   for (const child of Array.from(container.children)) {
     out.push(...(await blockNodeToParagraphs(child)));
@@ -243,28 +292,47 @@ async function buildDocxParagraphs(html) {
   return out;
 }
 
-async function exportToDocx() {
+async function buildBase64(raw) {
   await loadDocxLib();
   numberingConfigs = [];
   numberingCounter = 0;
-  const raw = window.mdCodeMirror.getValue();
-  const html = marked.parse(raw);
+  return buildHtmlBase64(marked.parse(raw));
+}
+
+async function buildHtmlBase64(html) {
+  await loadDocxLib();
+  numberingConfigs = []; numberingCounter = 0;
   const children = await buildDocxParagraphs(html);
   const doc = new Document({
+    styles: { default: {
+      document: { run: { font: 'Calibri', size: 22 }, paragraph: { spacing: { after: 160, line: 276 } } },
+      heading1: { run: { color: '234E70', size: 36 }, paragraph: { spacing: { before: 280, after: 160 }, keepNext: true } },
+      heading2: { run: { color: '234E70', size: 28 }, paragraph: { spacing: { before: 240, after: 120 }, keepNext: true } }
+    } },
     numbering: { config: numberingConfigs },
-    sections: [{ children: children.length ? children : [new Paragraph('')] }]
+    sections: [{ properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 } } }, children: children.length ? children : [new Paragraph('')] }]
   });
-  const base64 = await Packer.toBase64String(doc);
+  return Packer.toBase64String(doc);
+}
+
+async function exportToDocx() {
+  if (window.mdOffice?.getState()?.kind === 'docx') { await window.mdOffice.save(true); return null; }
+  const base64 = await buildBase64(window.mdCodeMirror.getValue());
   const baseName = (window.mdState.currentFilePath || 'documento.md').split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
   return window.mdEditor.exportDocx(base64, `${baseName}.docx`);
 }
 
 document.getElementById('btn-export-docx').addEventListener('click', async () => {
   document.getElementById('export-menu').hidden = true;
-  const savedPath = await exportToDocx();
-  if (savedPath) alert(`Exportado a: ${savedPath}`);
+  try {
+    const savedPath = await exportToDocx();
+    if (savedPath) alert(`Exportado a: ${savedPath}`);
+  } catch (error) {
+    window.mdEditor.logError('docx:exportar', error.stack || String(error));
+    alert('No se pudo exportar a Word. Comprueba las imágenes y vuelve a intentarlo.');
+  }
 });
 
-window.mdDocxExport = { exportToDocx };
+window.mdDocxExport = { exportToDocx, buildBase64, buildHtmlBase64 };
 
 })();

@@ -1,0 +1,73 @@
+/* Office conserva las pestañas y utiliza el espacio del editor y la vista. */
+.container.office-active .primary-pane { display: grid !important; grid-template-columns: minmax(0,1fr) !important; grid-template-rows: auto minmax(0,1fr) !important; }
+.container.office-active .editor-column { display: contents !important; }
+.container.office-active #tabbar { grid-column: 1 !important; grid-row: 1 !important; }
+.container.office-active #editor-pane, .container.office-active #resizer-editor, .container.office-active .preview-wrapper, .container.office-active #find-widget { display: none !important; }
+#office-panel { grid-column:1; grid-row:2; display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden; background:var(--bg); color:var(--text); }
+.office-toolbar, .office-formatbar, .office-formula-bar, .office-grid-pages { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 12px; border-bottom:1px solid var(--border); }
+.office-name { max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.office-status, .office-grid-pages span { font-size:12px; color:var(--text-muted); }
+.office-search { flex:1; min-width:150px; max-width:260px; }
+#office-panel input, #office-panel select, #office-panel textarea { color:var(--text); background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:6px; font:inherit; }
+#office-panel input:focus, #office-panel select:focus, #office-panel textarea:focus, .office-slide-item:focus { outline:2px solid var(--accent); outline-offset:1px; }
+.office-control { display:flex; align-items:center; gap:6px; font-size:12px; }
+.office-control input[type=color] { width:36px; height:30px; padding:2px !important; }
+.office-compatibility { margin:0; padding:6px 12px; font-size:12px; color:var(--text-muted); background:var(--surface); border-bottom:1px solid var(--border); }
+.office-content { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+.office-word-scroll { flex:1; overflow:auto; padding:24px; background:var(--surface); }
+.office-word-page { box-sizing:border-box; max-width:794px; min-height:900px; margin:0 auto; padding:64px 60px; color:#243247; background:white; box-shadow:0 2px 14px #0002; font:15px/1.6 Calibri,Arial,sans-serif; overflow-wrap:anywhere; }
+.office-word-page:focus { outline:2px solid var(--accent); }
+.office-word-page h1, .office-word-page h2, .office-word-page h3 { color:#234e70; }
+.office-word-page img { max-width:100%; height:auto; }
+.office-word-page table { width:100%; border-collapse:collapse; margin:16px 0; }
+.office-word-page td, .office-word-page th { border:1px solid #b9c6d6; padding:8px; min-width:30px; }
+.office-word-page th { background:#e8eef7; }
+.office-word-page blockquote { border-left:4px solid #abc4dc; padding-left:16px; margin-left:0; }
+.office-word-page mark { background:#fff2a3; }
+.office-formula-bar .office-control:last-child { flex:1; }
+.office-cell-address { width:75px; }
+.office-cell-formula { flex:1; min-width:150px; }
+.office-grid-scroll { flex:1; overflow:auto; min-height:0; }
+.office-grid { border-collapse:separate; border-spacing:0; table-layout:fixed; min-width:100%; }
+.office-grid th, .office-grid td { min-width:100px; height:30px; max-width:300px; border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:5px 8px; white-space:pre-wrap; overflow:hidden; font-size:13px; }
+.office-grid th { background:var(--surface); text-align:center; position:sticky; top:0; z-index:2; }
+.office-grid tbody th { left:0; top:auto; min-width:45px; }
+.office-grid th:first-child { min-width:45px; }
+.office-grid td { cursor:cell; background:var(--bg); }
+.office-grid td.office-cell-selected { outline:2px solid var(--accent); outline-offset:-2px; }
+.office-cell-edit { width:100%; min-width:90px; box-sizing:border-box; }
+.office-slides-layout { flex:1; display:grid; grid-template-columns:190px minmax(0,1fr) 210px; min-height:0; }
+.office-slide-list, .office-slide-properties { overflow:auto; padding:12px; border-right:1px solid var(--border); }
+.office-slide-list { display:flex; flex-direction:column; gap:8px; }
+.office-slide-list button { text-align:left; white-space:normal; min-height:65px; flex-shrink:0; border:1px solid var(--border); }
+.office-slide-list button.office-slide-active { border:2px solid var(--accent); }
+.office-slide-work { padding:28px; background:var(--surface); overflow:auto; display:flex; align-items:center; }
+.office-slide-canvas { position:relative; container-type:inline-size; width:100%; flex-shrink:0; box-shadow:0 4px 20px #0003; overflow:hidden; color:#334155; background:white; }
+.office-slide-item { position:absolute; box-sizing:border-box; white-space:pre-wrap; overflow-wrap:anywhere; padding:.3%; line-height:1.15; cursor:move; touch-action:none; }
+img.office-slide-item { padding:0; object-fit:fill; }
+.office-slide-item.office-object-selected { outline:2px dashed #4d89d5; }
+.office-slide-properties { display:flex; flex-direction:column; gap:12px; border-right:0; border-left:1px solid var(--border); }
+.office-slide-properties .office-control { flex-direction:column; align-items:stretch; }
+.office-slide-text { width:100%; min-height:130px; box-sizing:border-box; margin-top:8px; }
+.office-present-overlay { position:fixed; inset:0; z-index:1500; background:#101722; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
+.office-present-toolbar { display:flex; gap:20px; align-items:center; color:white; }
+.office-present-canvas { width:min(94vw, calc(82vh * 16 / 9)); }
+@media (max-width:1000px) { .office-slides-layout { grid-template-columns:140px minmax(0,1fr); } .office-slide-properties { grid-column:1 / -1; max-height:210px; flex-direction:row; flex-wrap:wrap; border-top:1px solid var(--border); } .office-word-page { padding:32px; } .office-slide-work { padding:12px; } }
+/* La visibilidad contextual respeta los ajustes personales de la barra. */
+body.office-context :is(#btn-diff,#btn-toc,#btn-focus,#btn-run-file,#btn-tags,#btn-backlinks,#btn-pdfpages,#btn-pdfhighlight,#btn-ai) { display:none !important; }
+#office-panel :is(button,input,select), .office-guide button { min-height:36px; }
+#office-panel :is(button,input,select,textarea):focus-visible, .office-guide :focus-visible, .toolbar button:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+.office-guide { width:min(680px,calc(100vw - 48px)); max-height:80vh; overflow:auto; padding:24px; border:1px solid var(--border); border-radius:12px; background:var(--bg); color:var(--text); }
+.office-guide::backdrop { background:#0008; }
+.office-guide p { line-height:1.6; }
+.office-template { display:flex; flex-direction:column; gap:8px; text-align:left; width:100%; margin:12px 0; padding:16px; color:var(--text); background:var(--surface); border:1px solid var(--border); border-radius:8px; cursor:pointer; }
+.office-opening { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); z-index:10000; display:flex; gap:16px; align-items:center; padding:18px 24px; background:var(--bg); color:var(--text); border:2px solid var(--accent); border-radius:10px; box-shadow:0 4px 24px #0004; }
+.office-word-page { content-visibility:auto; }
+@media (prefers-contrast:more) { #office-panel :is(button,input,select,textarea), .office-template { border:2px solid currentColor; } .office-status,.office-compatibility { color:var(--text); } }
+@media (prefers-reduced-motion:reduce) { .office-opening { animation:none; } }
+.office-format-context { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.office-format-context[hidden] { display:none; }
+.office-formatbar[hidden] { display:none; }
+dialog.office-present-overlay { max-width:none; max-height:none; width:100%; height:100%; box-sizing:border-box; margin:0; border:0; padding:20px; }
+dialog.office-present-overlay:not([open]) { display:none; }
+.toolbar > .toolbar-button, .toolbar > .dropdown > .toolbar-button { min-height:36px; }

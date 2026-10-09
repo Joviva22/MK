@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { Readable } = require('stream');
+const { pathToFileURL } = require('url');
 const { registerDatabaseIpc, flushAll: flushDatabases, stats: dbStats } = require('./dbengine');
 const { registerTerminalIpc, killAllTerminals } = require('./ptyhost');
 const trayMode = require('./traymode');
@@ -63,7 +64,7 @@ const homePath = path.join(app.getPath('userData'), 'home.json');
 // argumento: la posición cambia entre dev ("electron . archivo.md") y
 // empaquetado ("MK archivo.md"), pero esto funciona igual en ambos casos.
 function getFileArgFromArgv(argv) {
-  return argv.find((arg) => /\.(md|markdown|tex|docx)$/i.test(arg) && fs.existsSync(arg)) || null;
+  return argv.find((arg) => /\.(md|markdown|tex|docx|xlsx|pptx)$/i.test(arg) && fs.existsSync(arg)) || null;
 }
 
 let pendingFilePath = getFileArgFromArgv(process.argv);
@@ -151,9 +152,10 @@ function createWindow() {
       backgroundThrottling: false
     }
   });
+  if (isTestMode) mainWindow.webContents.on('console-message', details => { if (details.message?.startsWith('MK_TEST_PROGRESS:')) console.log(details.message); });
   trayMode.attachWindow(mainWindow, { loadConfig, saveConfig, isTestMode });
 
-  const loadOptions = isTestMode ? { query: { mkTestFixtures: testFixturesDir } } : undefined;
+  const loadOptions = isTestMode ? { query: { mkTestFixtures: testFixturesDir, mkTestScript:process.env.MK_TEST_SCRIPT || '' } } : undefined;
   mainWindow.loadFile(path.join(__dirname, 'index.html'), loadOptions);
   // Terminales integradas (ptyhost.js): si la página se recarga o la ventana
   // se cierra, sus shells quedarían huérfanos sin nadie que los lea.
@@ -193,14 +195,23 @@ function createWindow() {
 async function runTests() {
   try {
     // npm run bench usa el mismo mecanismo con otro script (test/bench-checks.js).
-    const checksPath = path.join(__dirname, '..', 'test', process.env.MK_TEST_SCRIPT === 'bench' ? 'bench-checks.js' : 'renderer-checks.js');
+    const recoveryTest = ['office-recovery-write', 'office-recovery-read'].includes(process.env.MK_TEST_SCRIPT);
+    const checksPath = path.join(__dirname, '..', 'test', recoveryTest ? 'office-recovery-checks.js' : process.env.MK_TEST_SCRIPT === 'bench' ? 'bench-checks.js' : process.env.MK_TEST_SCRIPT === 'office' ? 'office-checks.js' : 'renderer-checks.js');
     const code = fs.readFileSync(checksPath, 'utf-8');
     // Si la suite revienta, executeJavaScript pierde el stack: capturarlo
     // adentro de la ventana para saber en qué línea fue.
     const wrapped = `Promise.resolve().then(() => ${code.trim().replace(/;\s*$/, '')}\n).catch((e) => [{ name: 'harness', pass: false, detail: String((e && e.stack) || e) }])`;
     const results = await mainWindow.webContents.executeJavaScript(wrapped);
+    if (!process.env.MK_TEST_SCRIPT) {
+      const officeCode = fs.readFileSync(path.join(__dirname, '..', 'test', 'office-checks.js'), 'utf8');
+      const officeResults = await mainWindow.webContents.executeJavaScript(officeCode);
+      results.push(...officeResults);
+    }
     console.log('MK_TEST_RESULTS_JSON:' + JSON.stringify(results));
     const failed = Array.isArray(results) ? results.filter((r) => !r.pass) : [{ name: 'harness', pass: false }];
+    // El corredor mata esta instancia de prueba después de confirmar que
+    // la sesión está en disco: sin eventos de cierre ni guardado final.
+    if (!failed.length && process.env.MK_TEST_SCRIPT === 'office-recovery-write') return;
     app.exit(failed.length ? 1 : 0);
   } catch (e) {
     console.log('MK_TEST_RESULTS_JSON:' + JSON.stringify([{ name: 'harness', pass: false, detail: String((e && e.stack) || e) }]));
@@ -247,9 +258,19 @@ ipcMain.handle('shell:openExternal', (event, url) => {
   }
 });
 
+let sessionLoaded = false;
+
+// grantedPaths lo calcula main: al volver a abrir solo se autorizan las
+// pestañas que ya estaban autorizadas, no lo que la ventana escriba en tabs.
+function sessionGrants(data) {
+  const tabs = data && Array.isArray(data.tabs) ? data.tabs : [];
+  return tabs.map((t) => t && t.filePath).filter((p) => typeof p === 'string' && guard.isAllowed(p));
+}
+
 ipcMain.handle('session:save', (event, data) => {
   try {
-    errlog.writeJsonAtomic(sessionPath, data);
+    const safe = data && typeof data === 'object' ? { ...data, grantedPaths: sessionGrants(data) } : data;
+    errlog.writeJsonAtomic(sessionPath, safe);
   } catch (e) {
     errlog.logError('session:save', e); // no romper la app por la sesión
   }
@@ -315,7 +336,14 @@ ipcMain.handle('home:archiveSave', (event, data, root) => {
 // cuentan como abiertos por el usuario.
 ipcMain.handle('session:load', () => {
   const data = errlog.readJsonSafe(sessionPath, null);
-  if (data && Array.isArray(data.tabs)) data.tabs.forEach((t) => { if (t && t.filePath) guard.grantFile(t.filePath); });
+  if (data && Array.isArray(data.grantedPaths)) {
+    data.grantedPaths.forEach((p) => { if (typeof p === 'string') guard.grantFile(p); });
+  } else if (data && Array.isArray(data.tabs) && !sessionLoaded) {
+    // Sesión de una versión anterior (sin grantedPaths): se confía una vez.
+    data.tabs.forEach((t) => { if (t && t.filePath) guard.grantFile(t.filePath); });
+  }
+  sessionLoaded = true;
+  if (data) delete data.grantedPaths;
   return data;
 });
 
@@ -334,6 +362,12 @@ ipcMain.handle('config:get', () => loadConfig());
 
 ipcMain.handle('config:set', (event, partial) => {
   if (ctx.writesFrozen) return loadConfig(); // importando un respaldo (ipc-backup.js)
+  // lastFolder se autoriza solo al arrancar (folder:getLast): no puede
+  // apuntar a una carpeta que el usuario no abrió.
+  if (partial && typeof partial.lastFolder === 'string' && partial.lastFolder && !guard.check(partial.lastFolder, 'config:lastFolder')) {
+    partial = { ...partial };
+    delete partial.lastFolder;
+  }
   const next = { ...loadConfig(), ...partial };
   saveConfig(next);
   return next;
@@ -344,6 +378,7 @@ ipcMain.handle('config:set', (event, partial) => {
 // para la carpeta de backups).
 require('./ipc-files'); // abrir/guardar, historial, árbol, vigilancia e índice, crear/mover/borrar
 require('./ipc-notes'); // búsqueda, etiquetas, wikilinks, backlinks, grafo, Kanban de carpeta
+require('./ipc-office');
 require('./ipc-export'); // CSV, PDF, docx, HTML, EPUB, Anki
 require('./ipc-system'); // git y reproductor del sistema (playerctl)
 require('./ipc-mail'); // recordatorios por correo (Gmail)
@@ -399,7 +434,7 @@ app.whenReady().then(() => {
     // los respetaba, y en archivos largos no se podía saltar a otra parte.
     const range = request.headers.get('range');
     if (range) return serveRange(filePath, range);
-    return net.fetch('file://' + filePath);
+    return net.fetch(pathToFileURL(filePath).href);
   });
   createWindow();
   trayMode.setupTray({ getWindow: () => mainWindow, iconPath: APP_ICON, ipcMain, isTestMode });

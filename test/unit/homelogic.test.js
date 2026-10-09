@@ -65,3 +65,24 @@ test('parseCategoryToken: prefijo, sin tildes, en cualquier lugar; desconocida s
   assert.deepEqual(H.parseCategoryToken('mail a juan@empresa.com', cats), { title: 'mail a juan@empresa.com', category: null });
   assert.deepEqual(H.parseCategoryToken('algo @xyz', cats), { title: 'algo @xyz', category: null });
 });
+
+test('subtareas: completar un paso conserva su título y el original', () => {
+  const subtask = { id: 'cocina', title: 'Recoger cocina', done: false };
+  const item = { recurring: false };
+  const updated = H.setSubtaskDone(subtask, item, true);
+  assert.equal(H.subtaskDone(updated, item), true);
+  assert.equal(updated.title, subtask.title);
+  assert.equal(subtask.done, false);
+  assert.equal(H.subtaskDone(H.setSubtaskDone(updated, item, false), item), false);
+});
+
+test('subtareas recurrentes: cada día conserva su progreso independiente', () => {
+  const subtask = { id: 'cuarto', title: 'Recoger cuarto', doneDates: ['2026-10-05'] };
+  const today = { recurring: true, date: '2026-10-06' };
+  assert.equal(H.subtaskDone(subtask, today), false);
+  const updated = H.setSubtaskDone(subtask, today, true);
+  assert.deepEqual(updated.doneDates, ['2026-10-05', '2026-10-06']);
+  assert.equal(H.subtaskDone(updated, today), true);
+  assert.deepEqual(H.setSubtaskDone(updated, today, false).doneDates, ['2026-10-05']);
+  assert.deepEqual(subtask.doneDates, ['2026-10-05']);
+});

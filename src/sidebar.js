@@ -14,7 +14,7 @@ const ICONS_BY_EXT = {
   css: 'palette',
   json: 'file-json',
   pdf: 'file', excalidraw: 'pen-tool',
-  docx: 'file-type-2',
+  docx: 'file-type-2', xlsx: 'sheet', pptx: 'presentation',
   svg: 'image'
 };
 const DEFAULT_FILE_ICON = 'paperclip';

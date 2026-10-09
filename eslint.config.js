@@ -84,7 +84,7 @@ module.exports = [
     ignores: ['node_modules/**', 'dist/**', 'build/**', 'src/cm6-bundle.js', 'src/drawing-bundle.js']
   },
   {
-    files: ['src/atomicwrite.js', 'src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/pathguard.js', 'src/petcatalog.js', 'src/spellchecker.js', 'src/backupbundle.js', 'src/problemreport.js', 'src/datamigrate.js', 'src/khslice.js', 'src/khsprites.js', 'src/ipc-*.js', 'scripts/*.js', 'test/run.js', 'test/run-cm6-shim.js', 'test/bench.js', 'eslint.config.js'],
+    files: ['src/office-search.js', 'src/atomicwrite.js', 'src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/traymode.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/pathguard.js', 'src/petcatalog.js', 'src/spellchecker.js', 'src/backupbundle.js', 'src/problemreport.js', 'src/datamigrate.js', 'src/khslice.js', 'src/khsprites.js', 'src/ipc-*.js', 'scripts/*.js', 'test/run.js', 'test/run-cm6-shim.js', 'test/bench.js', 'eslint.config.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',
@@ -108,8 +108,8 @@ module.exports = [
   {
     // src/*.js son <script> del renderer; test/renderer-checks.js corre
     // dentro de esa misma ventana vía executeJavaScript (no es Node).
-    files: ['src/*.js', 'test/renderer-checks.js', 'test/bench-checks.js', 'test/cm6-shim-checks.js'],
-    ignores: ['src/atomicwrite.js', 'src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/pathguard.js', 'src/petcatalog.js', 'src/spellchecker.js', 'src/backupbundle.js', 'src/problemreport.js', 'src/datamigrate.js', 'src/khslice.js', 'src/khsprites.js', 'src/ipc-*.js', 'src/database.js', 'src/database-state.js', 'src/database-helpers.js', 'src/database-views.js', 'src/database-cells.js', 'src/database-csv.js', 'src/database-embed.js', 'src/database-onboarding.js', 'src/home.js', 'src/home-*.js'],
+    files: ['src/*.js', 'test/renderer-checks.js', 'test/office-checks.js', 'test/office-recovery-checks.js', 'test/bench-checks.js', 'test/cm6-shim-checks.js'],
+    ignores: ['src/office-search.js', 'src/atomicwrite.js', 'src/main.js', 'src/preload.js', 'src/dbengine.js', 'src/ptyhost.js', 'src/folderwatch.js', 'src/folderindex.js', 'src/mainctx.js', 'src/errlog.js', 'src/pathguard.js', 'src/petcatalog.js', 'src/spellchecker.js', 'src/backupbundle.js', 'src/problemreport.js', 'src/datamigrate.js', 'src/khslice.js', 'src/khsprites.js', 'src/ipc-*.js', 'src/database.js', 'src/database-state.js', 'src/database-helpers.js', 'src/database-views.js', 'src/database-cells.js', 'src/database-csv.js', 'src/database-embed.js', 'src/database-onboarding.js', 'src/home.js', 'src/home-*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',

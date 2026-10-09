@@ -21,7 +21,7 @@ function contextual(event) {
   return event.target?.closest?.('#drawing-panel, #terminal-body, .pdfhighlight-modal');
 }
 window.addEventListener('keydown', (event) => {
-  if (event.target?.closest?.('.ask-overlay, .database-create-overlay, .database-row-modal')) return;
+  if (event.target?.closest?.('.ask-overlay, .database-create-overlay, .database-row-modal, dialog[open]')) return;
   const input = event.target?.closest?.('[data-shortcut]');
   if (input && list.contains(input)) {
     if (event.key === 'Tab' || event.key === 'Escape') return;
@@ -35,6 +35,7 @@ window.addEventListener('keydown', (event) => {
     }
     input.value = draft[input.dataset.shortcut] || 'Sin atajo'; status.textContent = L.validate(draft) || 'Cambio pendiente: pulsa Guardar atajos.'; return;
   }
+  if (window.mdOffice?.getState() && (event.ctrlKey || event.metaKey) && (['s', 'z', 'y'].includes(event.key.toLowerCase()) || (event.key.toLowerCase() === 'f' && !event.shiftKey))) return;
   const key = L.fromEvent(event); if (!key) return;
   const action = L.actions.find((item) => bindings[item.id] === key);
   if (!action) return;

@@ -14,7 +14,7 @@ const path = require('path');
 const { PDFDocument, StandardFonts, degrees } = require('pdf-lib');
 
 const root = path.join(__dirname, '..');
-const electronBin = path.join(root, 'node_modules', '.bin', 'electron');
+const electronBin = require('electron');
 
 const runId = `mk-test-${Date.now()}`;
 const profileDir = path.join(os.tmpdir(), `${runId}-profile`);
@@ -22,6 +22,11 @@ const fixturesDir = path.join(os.tmpdir(), `${runId}-fixtures`);
 
 fs.mkdirSync(profileDir, { recursive: true });
 fs.mkdirSync(fixturesDir, { recursive: true });
+const officeFixtures = path.join(fixturesDir, 'OfficeCompat');
+fs.mkdirSync(officeFixtures);
+for (const [dir, kind] of [['Word','docx'], ['Excel','xlsx'], ['PowerPoint','pptx']]) {
+  fs.copyFileSync(path.join(root, 'Ejemplos', dir, `proyecto-aula-verde.${kind}`), path.join(officeFixtures, `proyecto-aula-verde.${kind}`));
+}
 // Notas reales del repo (Ejemplos, Guías, manual) para comparar el preview
 // por bloques con el completo. Aparte de los fixtures: no cambian las
 // cuentas de archivos/etiquetas de los otros tests.

@@ -8,13 +8,9 @@
 //   día) y cada Pomodoro de foco (+25) dan XP a TODO el equipo y a los
 //   huevos que se están incubando. Ocultas (Ajustes) siguen ganando.
 // - Nivel = 1 + ⌊√(XP/15)⌋; evolucionan en el nivel 5 y en el 10.
-// - Cada evolución deja un 🥚 con una criatura nueva (60 XP para nacer).
-// - Legendarios 🌟: por logros (racha de 7 días, 50 Pomodoros, 200 tareas,
-//   3 mascotas en etapa final); su huevo necesita 150 XP.
-// - Las crías nuevas salen de las criaturas de MK o de un juego de RPG Maker
-//   (ajuste "Origen"); del juego, los legendarios son los marcados así en
-//   su PBS/pokemon.txt.
-// - Apariencia: criatura de MK, personaje de un juego o imágenes propias.
+// - Las evoluciones y los logros pueden dar huevos del juego importado.
+//   Sin catálogo disponible no se crean huevos ni criaturas de sustitución.
+// - Apariencia: personajes de juegos e imágenes propias.
 
 const ART = window.mdPetArt;
 const XP = { task: 10, pomodoro: 25, feed: 2 };
@@ -22,8 +18,6 @@ const EVOLVE_AT = [5, 10];
 const TEAM_MAX = 3;
 const EGG_NEED = { normal: 60, legendary: 150 };
 const MAX_AWARDED = 3000;
-const NORMAL_KEYS = Object.keys(ART.SPECIES);
-const LEGEND_KEYS = Object.keys(ART.LEGENDS);
 
 const ACHIEVEMENTS = [
   { key: 'constancia', name: 'Constancia', desc: '7 días seguidos con al menos una tarea', goal: 7, value: () => streak() },
@@ -36,7 +30,7 @@ const DEFAULTS = {
   version: 2,
   enabled: true,
   position: 'sidebar',
-  source: 'mk', // de dónde salen las crías: 'mk' | 'game'
+  source: 'game', // las crías proceden del catálogo importado
   charDir: '',
   pets: [],
   team: [],
@@ -102,15 +96,14 @@ function speciesName(p, stage) {
     if (sp && sp.label) return sp.label;
     if (p.line && p.line.names) return p.line.names[Math.min(st, p.line.names.length) - 1];
   }
-  const def = ART.ALL[p.species] || ART.SPECIES.fuego;
-  return def.names[st - 1];
+  return 'Mascota propia';
 }
 
 function typeName(p) {
   if (p.kind === 'kh') return 'Kingdom Hearts';
   if (p.kind === 'game') return p.legendary ? 'Legendario · juego' : 'Del juego';
   if (p.kind === 'custom') return p.pokemon ? `Pokémon propio${p.pokemon.form ? ` · ${p.pokemon.form}` : ''}` : 'Imágenes propias';
-  return (ART.ALL[p.species] || ART.SPECIES.fuego).type;
+  return 'Mascota';
 }
 
 function nameOf(p) {
@@ -142,7 +135,7 @@ function art(p, mood, stage) {
     if (sp && sp.sheet) return `<div class="pet-sheet${shiny}" style="background-image:url('${sp.url}')"></div>${b}`;
     if (sp) return `<img class="pet-img${shiny}" src="${sp.url}" alt="" draggable="false"/>${b}`;
   }
-  return ART.drawSpecies(ART.ALL[p.species] ? p.species : (p.mkSpecies || 'fuego'), st, mood, p.shiny);
+  return '<span class="pet-missing-image">🖼</span>';
 }
 
 async function loadSprites(p) {
@@ -171,9 +164,10 @@ function migrate(saved) {
   if (saved.version === 2) {
     const s = { ...JSON.parse(JSON.stringify(DEFAULTS)), ...saved };
     s.stats = { ...DEFAULTS.stats, ...(saved.stats || {}) };
-    s.pets = Array.isArray(saved.pets) ? saved.pets : [];
+    s.pets = (Array.isArray(saved.pets) ? saved.pets : []).filter((p) => ['game', 'custom', 'kh'].includes(p.kind));
+    s.source = 'game';
     s.team = (Array.isArray(saved.team) ? saved.team : []).filter((id) => s.pets.some((p) => p.id === id)).slice(0, TEAM_MAX);
-    s.eggs = Array.isArray(saved.eggs) ? saved.eggs : [];
+    s.eggs = (Array.isArray(saved.eggs) ? saved.eggs : []).filter((e) => e.pick?.kind === 'game');
     return s;
   }
   const s = JSON.parse(JSON.stringify(DEFAULTS));
@@ -181,21 +175,16 @@ function migrate(saved) {
   s.position = saved.position === 'window' ? 'window' : 'sidebar';
   s.charDir = saved.charDir || '';
   s.awarded = Array.isArray(saved.awarded) ? saved.awarded.slice(-MAX_AWARDED) : [];
-  if ('species' in saved || 'xp' in saved) {
-    const kind = saved.species === 'game' ? 'game' : saved.species === 'custom' ? 'custom' : 'mk';
-    s.pets.push({ id: 'p1', kind, species: kind === 'mk' && ART.SPECIES[saved.species] ? saved.species : 'fuego', mkSpecies: 'fuego', name: saved.name || '', xp: Number(saved.xp) || 0, legendary: false, born: today() });
+  if (saved.species === 'game' || saved.species === 'custom') {
+    const kind = saved.species === 'game' ? 'game' : 'custom';
+    s.pets.push({ id: 'p1', kind, species: saved.species, name: saved.name || '', xp: Number(saved.xp) || 0, legendary: false, born: today() });
     s.team = ['p1'];
     s.nextId = 2;
   }
   return s;
 }
 
-function ensureStarter() {
-  if (state.pets.length) return;
-  state.pets.push({ id: 'p1', kind: 'mk', species: 'fuego', mkSpecies: 'fuego', name: '', xp: 0, legendary: false, born: today() });
-  state.team = ['p1'];
-  state.nextId = Math.max(state.nextId, 2);
-}
+// La colección empieza vacía; las mascotas se importan explícitamente.
 
 // ---------- escena: un "caminante" por mascota del equipo ----------
 
@@ -548,9 +537,9 @@ function addXp(p, amount) {
       void w.el.offsetWidth;
       w.el.classList.add('pet-evolving');
     }
-    notify(`✨ ¡${beforeName} evolucionó!`, `Ahora es ${to}. ¡Y encontraste un huevo! 🥚`);
+    const egg = grantEgg('normal', `la evolución de ${beforeName}`);
+    notify(`✨ ¡${beforeName} evolucionó!`, `Ahora es ${to}.${egg ? " ¡Y encontraste un huevo! 🥚" : ""}`);
     logEvent({ type: 'evolved', petId: p.id, stage });
-    grantEgg('normal', `la evolución de ${beforeName}`);
   } else if (level > beforeLevel) {
     say(w, `¡Nivel ${level}! 🎉`, 3000);
   }
@@ -560,25 +549,21 @@ function addXp(p, amount) {
 
 // Criaturas que ya tenés (para no repetir en los huevos).
 function owned() {
-  const mk = new Set();
   const game = new Set();
   state.pets.forEach((p) => {
-    if (p.kind === 'mk') mk.add(p.species);
     if (p.kind === 'game' && p.line) game.add(p.line.ids[0]);
   });
   state.eggs.forEach((e) => {
-    if (e.pick.kind === 'mk') mk.add(e.pick.species);
     if (e.pick.kind === 'game') game.add(e.pick.line.ids[0]);
   });
-  return { mk, game };
+  return { game };
 }
 
 function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// Qué criatura trae un huevo (del origen elegido; del juego sin catálogo →
-// de MK). null si ya no queda ninguna nueva (legendarios).
+// Los huevos requieren un catálogo del juego; no se crean criaturas de sustitución.
 function choosePick(type) {
   const own = owned();
   if (state.source === 'game' && catalog && catalog.lines.length) {
@@ -587,10 +572,7 @@ function choosePick(type) {
     const line = pickRandom(fresh.length ? fresh : (type === 'legendary' ? [] : pool));
     if (line) return { kind: 'game', line: { ids: line.ids, names: line.names }, dir: catalog.dir };
   }
-  const keys = type === 'legendary' ? LEGEND_KEYS : NORMAL_KEYS;
-  const fresh = keys.filter((k) => !own.mk.has(k));
-  const key = pickRandom(fresh.length ? fresh : (type === 'legendary' ? [] : keys));
-  return key ? { kind: 'mk', species: key } : null;
+  return null;
 }
 
 function grantEgg(type, reason) {
@@ -606,24 +588,20 @@ function grantEgg(type, reason) {
 }
 
 async function hatch(egg) {
-  state.eggs = state.eggs.filter((e) => e.id !== egg.id);
+  if (egg.pick.kind !== 'game') return null;
   const id = `p${state.nextId++}`;
   const p = { id, kind: egg.pick.kind, name: '', xp: 0, legendary: egg.type === 'legendary', born: today(), mkSpecies: 'fuego' };
-  if (egg.pick.kind === 'mk') {
-    p.species = egg.pick.species;
-  } else {
-    p.species = 'fuego';
-    p.line = egg.pick.line;
-  }
+  p.line = egg.pick.line;
   state.pets.push(p);
   if (p.kind === 'game') {
     const res = await window.mdEditor.pet.useChars(id, egg.pick.dir, p.line.ids, p.line.names);
-    if (res && res.error) { // sin el juego a mano: una de MK
-      p.kind = 'mk';
-      p.species = p.legendary ? pickRandom(LEGEND_KEYS) : pickRandom(NORMAL_KEYS);
+    if (res && res.error) {
+      state.pets = state.pets.filter((pet) => pet.id !== id);
+      return null;
     }
     await loadSprites(p);
   }
+  state.eggs = state.eggs.filter((e) => e.id !== egg.id);
   if (state.team.length < TEAM_MAX) state.team.push(id);
   logEvent({ type: 'hatched', petId: id, legendary: p.legendary });
   const who = speciesName(p);
@@ -636,14 +614,12 @@ async function hatch(egg) {
 }
 
 // Agrega directamente la criatura elegida (sin esperar un huevo al azar).
-// pick: { kind: 'mk', key, legendary } | { kind: 'game', line, dir, legendary }
+// pick: { kind: 'game', line, dir, legendary }
 async function addChosen(pick, shiny) {
-  ensureStarter();
+  if (pick.kind !== 'game') return null;
   const id = `p${state.nextId++}`;
   const p = { id, kind: pick.kind, name: '', xp: 0, legendary: !!pick.legendary, shiny: !!shiny, born: today(), mkSpecies: 'fuego' };
-  if (pick.kind === 'mk') {
-    p.species = pick.key;
-  } else {
+  {
     p.species = 'fuego';
     p.line = pick.line;
     const res = await window.mdEditor.pet.useChars(id, pick.dir, pick.line.ids, pick.line.names);
@@ -671,8 +647,7 @@ async function addCustomPokemon(species, form, testPath) {
   if (!name) throw new Error('Escribe el nombre del Pokémon.');
   importingCustom = true;
   try {
-    ensureStarter();
-    const id = `p${state.nextId++}`;
+      const id = `p${state.nextId++}`;
     const res = await window.mdEditor.pet.pickSprite(id, 1, testPath);
     if (res?.error) throw new Error(res.error);
     if (!res?.ok) return null;
@@ -694,16 +669,18 @@ function checkAchievements() {
     if (state.achievements.includes(a.key) || a.value() < a.goal) return;
     state.achievements.push(a.key);
     logEvent({ type: 'achievement', key: a.key });
-    notify(`🏆 Logro: ${a.name}`, `${a.desc}. ¡Ganaste un huevo legendario!`);
-    grantEgg('legendary', `el logro "${a.name}"`);
+    const egg = grantEgg('legendary', `el logro "${a.name}"`);
+    notify(`🏆 Logro: ${a.name}`, `${a.desc}.${egg ? " ¡Ganaste un huevo legendario!" : ""}`);
   });
 }
 
 // kind: 'task' | 'pomodoro'. key: una tarea en un día (no vuelve a sumar).
-async function gain(kind, key) {
-  const amount = XP[kind] || 0;
-  if (!amount) return null;
-  ensureStarter();
+async function gain(kind, key, studySeconds = 25 * 60) {
+  // Un XP por minuto efectivo de foco, sin premiar pausas ni tiempo editado.
+  const amount = kind === 'pomodoro'
+    ? (Number.isFinite(studySeconds) && studySeconds > 0 ? Math.floor(studySeconds / 60) : 0)
+    : XP[kind] || 0;
+  if (!amount && kind !== 'pomodoro') return null;
   if (key) {
     if (state.awarded.includes(key)) return { ...info(), duplicate: true };
     state.awarded.push(key);
@@ -719,7 +696,7 @@ async function gain(kind, key) {
   // keyblades.js: golpe al tildar y desbloqueos del llavero.
   document.dispatchEvent(new CustomEvent('mk:pet-gain', { detail: { kind } }));
   lastInteraction = Date.now();
-  const team = teamPets().length ? teamPets() : [leader()];
+  const team = teamPets().length ? teamPets() : [leader()].filter(Boolean);
   const incubating = new Set(state.eggs.map((e) => e.id)); // los de antes de esta vuelta
   let evolved = false;
   let levelUp = false;
@@ -780,7 +757,7 @@ overlay.innerHTML = `<div class="pet-collection" role="dialog" aria-modal="true"
     <button type="button" class="toolbar-button" id="pet-col-custom-pokemon">+ Pokémon propio / regional</button>
     <button type="button" class="toolbar-button pet-col-close" aria-label="Cerrar">✕</button></div>
   <div class="pet-chooser" id="pet-chooser" hidden>
-    <div class="pet-chooser-head"><b>Elegí cualquier criatura, de MK o del juego</b>
+    <div class="pet-chooser-head"><b>Elegí una criatura del juego importado</b>
       <label class="pet-chooser-shiny"><input type="checkbox" id="pet-chooser-shiny" /> ✨ Shiny</label></div>
     <input type="search" id="pet-chooser-search" class="settings-text-input" placeholder="Buscar: fuego, pikachu, legendario…" aria-label="Buscar criatura" autocomplete="off" />
     <div id="pet-chooser-list" class="pet-char-list" role="list"></div>
@@ -822,8 +799,6 @@ overlay.querySelector('#pet-col-add').addEventListener('click', () => {
 
 function chooserPool() {
   const pool = [];
-  NORMAL_KEYS.forEach((k) => pool.push({ kind: 'mk', key: k, names: ART.SPECIES[k].names, legendary: false }));
-  LEGEND_KEYS.forEach((k) => pool.push({ kind: 'mk', key: k, names: ART.LEGENDS[k].names, legendary: true }));
   if (catalog && catalog.lines.length) {
     catalog.lines.forEach((l) => pool.push({ kind: 'game', line: { ids: l.ids, names: l.names }, dir: catalog.dir, legendary: !!l.legendary, names: l.names, single: l.single }));
   }
@@ -857,7 +832,6 @@ function renderChooserList() {
 if (chooserSearch) chooserSearch.addEventListener('input', () => { chooserLimit = 80; renderChooserList(); });
 
 function openCollection() {
-  ensureStarter();
   renderCollection();
   overlay.hidden = false;
 }
@@ -870,11 +844,9 @@ function mk(tag, cls, text) {
 }
 
 function renderCollection() {
-  const totalMk = NORMAL_KEYS.length + LEGEND_KEYS.length;
   const own = owned();
-  const ownedMk = new Set(state.pets.filter((p) => p.kind === 'mk').map((p) => p.species)).size;
   const legends = state.pets.filter((p) => p.legendary).length;
-  overlay.querySelector('.pet-col-summary').textContent = `${state.pets.length} mascota${state.pets.length === 1 ? '' : 's'} · ${legends} legendaria${legends === 1 ? '' : 's'} · MK ${ownedMk}/${totalMk}${catalog ? ` · juego ${own.game.size}/${catalog.lines.length}` : ''}`;
+  overlay.querySelector('.pet-col-summary').textContent = `${state.pets.length} mascota${state.pets.length === 1 ? '' : 's'} · ${legends} legendaria${legends === 1 ? '' : 's'}${catalog ? ` · juego ${own.game.size}/${catalog.lines.length}` : ''}`;
   colBody.innerHTML = '';
 
   colBody.appendChild(mk('h3', 'pet-col-section', `Equipo (${state.team.length}/${TEAM_MAX}) y colección`));
@@ -1004,7 +976,7 @@ const charList = document.getElementById('pet-char-list');
 const charStatus = document.getElementById('pet-char-status');
 
 function lookOf(p) {
-  if (!p) return 'fuego';
+  if (!p) return 'game';
   if (p.kind === 'game') return 'game';
   if (p.kind === 'custom') return 'custom';
   return p.species;
@@ -1049,7 +1021,7 @@ if (enabledEl) enabledEl.addEventListener('change', () => { state.enabled = enab
 if (positionEl) positionEl.addEventListener('change', () => { state.position = positionEl.value === 'window' ? 'window' : 'sidebar'; apply(); save(); });
 if (sourceEl) {
   sourceEl.addEventListener('change', () => {
-    state.source = sourceEl.value === 'game' ? 'game' : 'mk';
+    state.source = 'game';
     save();
     syncSettings();
     if (state.source === 'game' && !catalog) initCharDir();
@@ -1057,9 +1029,13 @@ if (sourceEl) {
 }
 if (lookEl) {
   lookEl.addEventListener('change', async () => {
-    ensureStarter();
-    const p = leader();
+      const p = leader();
     const v = lookEl.value;
+    if (!p) {
+      if (customRow) customRow.hidden = v !== 'custom';
+      if (gameRow) gameRow.hidden = v !== 'game';
+      return;
+    }
     if (v === 'game') {
       if (gameRow) gameRow.hidden = false;
       if (charStatus) charStatus.textContent = 'Elegí una línea de la lista para tu líder.';
@@ -1068,10 +1044,6 @@ if (lookEl) {
     if (v === 'custom') {
       p.kind = 'custom';
       if (customRow) customRow.hidden = false;
-    } else if (ART.ALL[v]) {
-      p.kind = 'mk';
-      p.species = v;
-      p.mkSpecies = v;
     }
     await loadSprites(p);
     save();
@@ -1082,8 +1054,12 @@ if (lookEl) {
 
 document.querySelectorAll('.pet-sprite-picks [data-stage]').forEach((b) => {
   b.addEventListener('click', async () => {
-    ensureStarter();
     const p = leader();
+    if (!p) {
+      await addCustomPokemon('Mascota propia', '');
+      syncSettings();
+      return;
+    }
     const res = await window.mdEditor.pet.pickSprite(p.id, Number(b.dataset.stage));
     if (res && res.error) { if (spriteStatus) spriteStatus.textContent = '⚠ ' + res.error; return; }
     if (!res || res.canceled) return;
@@ -1100,8 +1076,7 @@ if (clearBtn) {
     const p = leader();
     if (!p) return;
     await window.mdEditor.pet.clearSprites(p.id);
-    p.kind = 'mk';
-    p.species = ART.ALL[p.mkSpecies] ? p.mkSpecies : 'fuego';
+    p.kind = 'custom';
     await loadSprites(p);
     save();
     rebuildWalkers();
@@ -1142,8 +1117,12 @@ function renderCharList() {
     b.textContent = (l.legendary ? '🌟 ' : '') + l.names.join(' → ') + (l.single ? ' · forma fija' : '');
     b.title = 'Usar esta línea para tu mascota líder (conserva su nivel)';
     b.addEventListener('click', async () => {
-      ensureStarter();
       const p = leader();
+      if (!p) {
+        await addChosen({ kind: 'game', dir, line: { ids: l.ids, names: l.names }, legendary: l.legendary }, false);
+        syncSettings();
+        return;
+      }
       if (charStatus) charStatus.textContent = 'Copiando…';
       const res = await window.mdEditor.pet.useChars(p.id, dir, l.ids, l.names);
       if (res.error) { if (charStatus) charStatus.textContent = '⚠ ' + res.error; return; }
@@ -1196,7 +1175,6 @@ if (resetEl) {
     for (const p of state.pets) await window.mdEditor.pet.clearSprites(p.id);
     const keep = { enabled: state.enabled, position: state.position, source: state.source, charDir: state.charDir };
     state = { ...JSON.parse(JSON.stringify(DEFAULTS)), ...keep };
-    ensureStarter();
     save();
     apply();
   });
@@ -1207,16 +1185,14 @@ if (resetEl) {
   state = migrate(config.pet);
   // En la suite de tests arrancan ocultas (no se mueven entre los checks).
   if (window.location.search.includes('mkTestFixtures') && !('pet' in config)) state.enabled = false;
-  ensureStarter();
   for (const p of state.pets) await loadSprites(p);
   apply();
-  if (config.pet && config.pet.version !== 2) save(); // guardar ya migrado
+  if (config.pet) save(); // guardar la colección sin criaturas retiradas
   initCharDir();
 })();
 
 // Sora / Roxas llegan a la colección (khchars.js): sin huevo.
 function addKhPet(species) {
-  ensureStarter();
   const existing = state.pets.find((p) => p.kind === 'kh' && p.species === species);
   if (existing) return existing;
   const id = `p${state.nextId++}`;
@@ -1241,7 +1217,7 @@ window.mdPet = {
   throwBall,
   feed: (id) => feed(id || (leader() && leader().id)),
   openCollection,
-  drawPet: (species, stage, mood) => ART.drawSpecies(species, stage, mood),
+  drawPet: () => '<span class="pet-missing-image">🖼</span>',
   levelFor,
   stageFor: stageForLevel,
   loadCatalog,
@@ -1251,12 +1227,12 @@ window.mdPet = {
   teamSummary: () => teamPets().map((p) => ({ name: nameOf(p), level: levelFor(p.xp), stage: stageOf(p), legendary: !!p.legendary, art: art(p, 'normal') })),
   getState: () => JSON.parse(JSON.stringify(state)),
   setState: async (s) => {
-    state = { ...state, ...JSON.parse(JSON.stringify(s)) };
+    state = migrate({ ...state, ...JSON.parse(JSON.stringify(s)) });
     for (const p of state.pets) await loadSprites(p);
     apply();
     save();
   },
-  SPECIES: ART.ALL
+  SPECIES: {}
 };
 
 })();

@@ -25,6 +25,12 @@ Las completadas quedan en un grupo desplegable. Al completar o mover una tarea p
 
 **Opciones** reúne filtros, fuentes del calendario, recordatorios, categorías y estadísticas. Puedes cambiar entre **Día / Semana / Horario / Mes**; las vistas Semana y Mes se apilan cuando falta ancho.
 
+## Subtareas
+
+Al crear o editar una tarea, pulsa **+ Añadir subtarea** para dividirla en pasos. Por ejemplo, «Recoger la casa» puede contener «Recoger cocina» y «Recoger cuarto». Puedes cambiar el título, marcar cada paso o eliminarlo con **×**; pulsa **Guardar** para conservar los cambios. **Cancelar** los descarta.
+
+Las tarjetas muestran el progreso (`1/2 subtareas`) y, en las vistas amplias, las casillas de cada paso. Completar la tarea principal completa todos sus pasos; volver a marcarla como pendiente los reinicia. Desmarcar una subtarea reabre la principal. Al terminar todos los pasos, marca la principal como hecha cuando quieras darla por finalizada. Las tareas recurrentes guardan el progreso de cada día por separado.
+
 ## Las partes de la pantalla
 
 ```
@@ -59,7 +65,8 @@ Las completadas quedan en un grupo desplegable. Al completar o mover una tarea p
 El botón **Horario** muestra la semana como un calendario por horas (al estilo de Google Calendar): una columna por día y las horas hacia abajo.
 
 - Cada tarea **con hora** aparece en su franja; el alto del bloque es su **duración** (en el editor de la tarea: *Duración*, de 15 min a 8 h; 1 h si no elegiste). Si dos se pisan, van lado a lado.
-- **Clic en un hueco**: nueva tarea de 1 h en esa media hora. **Arrastrar en un hueco**: elegís el rango (de 9:00 a 11:30, por ejemplo). Escribís el título y `Enter` (`Esc` cancela). Sirve `@categoría` como en el alta rápida.
+- **Clic en un hueco**: abre el editor con esa fecha y hora. **Arrastrar en un hueco**: eliges el rango (de 9:00 a 11:30, por ejemplo). En **Tipo** puedes elegir **Tarea** o **Recordatorio** y escribir el título. Sirve `@categoría` como en el alta rápida.
+- Los **recordatorios** avisan a la hora indicada por defecto; puedes elegir un aviso previo y repetirlos. No tienen casilla de completar, subtareas ni Pomodoro, y no cuentan en el progreso ni como tareas atrasadas.
 - **Arrastrar un bloque**: a otra hora u otro día (de a 15 min). **Tirar del borde de abajo**: cambia la duración. **Clic**: abre el editor. La casilla del bloque la marca hecha.
 - Arriba, **Todo el día**: las tareas sin hora y las fechas de notas y bases de datos (se pueden arrastrar entre días como en Semana).
 - La **línea roja** es la hora actual (en el día de hoy). Al abrir se muestra desde las 7, o desde una hora antes de ahora.

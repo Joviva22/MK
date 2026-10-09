@@ -1,4 +1,4 @@
-import { PRIORITIES, REMIND_OPTIONS, REPEAT_OPTIONS, addDays, addTask, data, deleteTask, iso, moveItem, noteNames, parseIso, skipOccurrence, startPomodoroFor, todayIso, updateTask } from './home-data.js';
+import { PRIORITIES, REMIND_OPTIONS, REPEAT_OPTIONS, addDays, addTask, data, deleteTask, iso, moveItem, newId, noteNames, parseIso, skipOccurrence, startPomodoroFor, todayIso, updateTask } from './home-data.js';
 import { el } from './home-ui.js';
 import { DAY_NAMES } from './home-views.js';
 
@@ -23,7 +23,8 @@ export function openTaskEditor(item, { creating = false } = {}) {
   const box = el('div', 'command-palette home-editor');
   modal.appendChild(box);
 
-  box.appendChild(el('div', 'backlinks-title', creating ? 'Añadir tarea' : item.recurring ? 'Editar tarea recurrente' : 'Editar tarea'));
+  const heading = el('div', 'backlinks-title', creating ? 'Añadir tarea' : item.recurring ? 'Editar tarea recurrente' : 'Editar tarea');
+  box.appendChild(heading);
   if (item.recurring) {
     box.appendChild(el('div', 'home-editor-hint', 'Los cambios se aplican a todas las repeticiones.'));
   }
@@ -46,11 +47,48 @@ export function openTaskEditor(item, { creating = false } = {}) {
     return sel;
   };
 
+  const kindSelect = field('Tipo', selectOf([{ value: 'task', label: 'Tarea' }, { value: 'reminder', label: 'Recordatorio' }], task.kind || 'task'));
   const titleInput = field('Título', el('input', 'home-editor-input'));
   titleInput.value = task.title;
   titleInput.placeholder = '¿Qué tienes que hacer?';
   titleInput.required = true;
   titleInput.addEventListener('input', () => titleInput.setCustomValidity(''));
+
+  const subtasks = (task.subtasks || []).map((subtask) => ({ ...subtask, doneDates: [...(subtask.doneDates || [])] }));
+  const subtaskSection = el('section', 'home-subtask-editor');
+  subtaskSection.appendChild(el('div', 'home-stats-subtitle', 'Subtareas'));
+  subtaskSection.appendChild(el('p', 'home-editor-hint', 'Divide la tarea en pasos. Al completar la principal se completan todas sus subtareas.'));
+  const subtaskList = el('div', 'home-subtask-list');
+  const drawSubtasks = () => {
+    subtaskList.replaceChildren();
+    subtasks.forEach((subtask) => {
+      const row = el('div', 'home-subtask-row');
+      const check = el('input');
+      check.type = 'checkbox';
+      check.checked = window.mdHomeLogic.subtaskDone(subtask, item);
+      check.setAttribute('aria-label', `Completar subtarea: ${subtask.title}`);
+      check.addEventListener('change', () => Object.assign(subtask, window.mdHomeLogic.setSubtaskDone(subtask, item, check.checked)));
+      const input = el('input', 'home-editor-input');
+      input.value = subtask.title;
+      input.placeholder = 'Por ejemplo: Recoger cocina';
+      input.setAttribute('aria-label', 'Título de la subtarea');
+      input.addEventListener('input', () => { subtask.title = input.value; check.setAttribute('aria-label', `Completar subtarea: ${input.value}`); });
+      const remove = el('button', 'home-icon-button', '×');
+      remove.setAttribute('aria-label', `Eliminar subtarea: ${subtask.title}`);
+      remove.addEventListener('click', () => { subtasks.splice(subtasks.indexOf(subtask), 1); drawSubtasks(); });
+      row.append(check, input, remove);
+      subtaskList.appendChild(row);
+    });
+  };
+  const addSubtask = el('button', 'toolbar-button', '+ Añadir subtarea');
+  addSubtask.addEventListener('click', () => {
+    subtasks.push({ id: newId(), title: '', done: false, doneDates: [] });
+    drawSubtasks();
+    subtaskList.lastElementChild.querySelector('.home-editor-input').focus();
+  });
+  drawSubtasks();
+  subtaskSection.append(subtaskList, addSubtask);
+  box.appendChild(subtaskSection);
 
   const row1 = el('div', 'home-editor-row');
   box.appendChild(row1);
@@ -127,6 +165,7 @@ export function openTaskEditor(item, { creating = false } = {}) {
 
   if (creating) {
     const advanced = el('details', 'home-create-advanced');
+    advanced.open = !!task.time || task.kind === 'reminder';
     advanced.appendChild(el('summary', null, 'Más opciones: hora, categoría y recordatorios'));
     // Keep title/date up front. Advanced controls retain the same data model.
     Array.from(row1.children).slice(1).forEach((child) => advanced.appendChild(child));
@@ -162,24 +201,36 @@ export function openTaskEditor(item, { creating = false } = {}) {
   const ok = el('button', 'toolbar-button home-primary', creating ? 'Crear tarea' : 'Guardar');
   const commit = () => {
     if (!titleInput.value.trim()) { titleInput.setCustomValidity('Escribe un título para la tarea.'); titleInput.reportValidity(); titleInput.focus(); return; }
+    if (kindSelect.value === 'reminder' && (!dateInput.value || !timeInput.value)) {
+      const missing = !dateInput.value ? dateInput : timeInput;
+      missing.setCustomValidity('Indica fecha y hora para el recordatorio.');
+      missing.reportValidity(); missing.focus(); return;
+    }
     const freq = repeatSelect.value;
     // Una serie necesita fecha de inicio: si no hay, arranca hoy.
     const date = dateInput.value || (freq ? (item.date || todayIso()) : null);
     const days = dayBoxes.map((cb, idx) => (cb.checked ? idx : -1)).filter((i) => i >= 0);
     closeTaskEditor();
     const patch = {
+      kind: kindSelect.value,
+      ...(kindSelect.value === 'reminder' ? { done: false, doneAt: null, doneDates: [] } : {}),
       title: titleInput.value.trim() || task.title,
       date,
       time: timeInput.value || null,
       duration: Number(durationSelect.value) || 60,
-      remind: timeInput.value && remindSelect.value !== '' ? Number(remindSelect.value) : null,
+      remind: timeInput.value ? (remindSelect.value !== '' ? Number(remindSelect.value) : kindSelect.value === 'reminder' ? 0 : null) : null,
       advance: getAdvance(),
       repeat: freq ? { freq, until: untilInput.value || null, days: freq === 'weekly' ? days : undefined } : null,
       priority: prioSelect.value,
       category: catSelect.value || null,
+      subtasks: (kindSelect.value === 'reminder' ? [] : subtasks).filter((subtask) => subtask.title.trim()).map((subtask) => ({ ...subtask, title: subtask.title.trim() })),
       notes: notesInput.value,
       note: noteInput.value.trim() || null
     };
+    if (patch.subtasks.some((subtask) => !window.mdHomeLogic.subtaskDone(subtask, item))) {
+      if (item.recurring) patch.doneDates = (task.doneDates || []).filter((date) => date !== item.date);
+      else Object.assign(patch, { done: false, doneAt: null });
+    }
     if (creating) { delete patch.title; addTask(titleInput.value.trim(), date, patch); }
     else updateTask(task.id, patch);
   };
@@ -201,6 +252,20 @@ export function openTaskEditor(item, { creating = false } = {}) {
   if (creating) actions.append(el('span', 'toolbar-spacer'), cancel, ok);
   else actions.append(el('span', 'toolbar-spacer'), tomorrowBtn, pomo, cancel, ok);
   box.appendChild(actions);
+  const syncKind = () => {
+    const reminder = kindSelect.value === 'reminder';
+    heading.textContent = creating ? (reminder ? 'Añadir recordatorio' : 'Añadir tarea') : (reminder ? 'Editar recordatorio' : 'Editar tarea');
+    ok.textContent = creating ? (reminder ? 'Crear recordatorio' : 'Crear tarea') : 'Guardar';
+    titleInput.placeholder = reminder ? '¿Qué quieres recordar?' : '¿Qué tienes que hacer?';
+    subtaskSection.hidden = reminder;
+    prioSelect.closest('label').hidden = reminder;
+    pomo.hidden = reminder;
+    if (reminder && remindSelect.value === '') remindSelect.value = '0';
+    if (reminder) { const advanced = box.querySelector('.home-create-advanced'); if (advanced) advanced.open = true; }
+  };
+  kindSelect.addEventListener('change', syncKind);
+  [dateInput, timeInput].forEach((input) => input.addEventListener('input', () => input.setCustomValidity('')));
+  syncKind();
 
   modal.addEventListener('mousedown', (e) => { if (e.target === modal) closeTaskEditor(); });
   document.body.appendChild(modal);

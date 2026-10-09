@@ -13,6 +13,8 @@ let selectedIndex = 0;
 // desincroniza de lo que la app realmente puede hacer.
 function buildCommands() {
   const cmds = [];
+  cmds.push({ label: 'Plantillas completas de Office', run: () => window.mdOfficeTools.templates() });
+  cmds.push({ label: 'Ayuda práctica del documento', run: () => window.mdOfficeTools.help() });
   cmds.push({ label: 'Estudio: vista dividida PDF, nota y pizarra', run: () => window.mdStudyWorkspace.open().catch((error) => alert(error.message)) });
   cmds.push({ label: 'Insertar PDF o pizarra en la nota', run: () => window.mdStudyEmbed.insert().catch((error) => alert(error.message)) });
   cmds.push({ label: 'Pizarra: nueva Excalidraw (local)', run: () => window.mdDrawing.open().catch((error) => alert(error.message)) });

@@ -312,18 +312,31 @@ export function deleteTask(id) {
 }
 
 export function setItemDone(item, done) {
-  const before = captureFields(item.task, item.recurring ? ['doneDates'] : ['done', 'doneAt']);
+  if (item.task.kind === 'reminder') return;
+  const before = captureFields(item.task, item.recurring ? ['doneDates', 'subtasks'] : ['done', 'doneAt', 'subtasks']);
+  const subtasks = (item.task.subtasks || []).map((subtask) => window.mdHomeLogic.setSubtaskDone(subtask, item, done));
   // La mascota gana experiencia (una vez por tarea y día, ver pet.js).
   if (done && !item.done && window.mdPet) window.mdPet.gain('task', `home:${item.task.id}|${item.date}`);
   if (item.recurring) {
     const dates = new Set(item.task.doneDates || []);
     if (done) dates.add(item.date); else dates.delete(item.date);
-    updateTask(item.task.id, { doneDates: Array.from(dates) });
+    updateTask(item.task.id, { doneDates: Array.from(dates), subtasks });
   } else {
     // doneAt: para archivar después las terminadas sin fecha (ver archiveOld).
-    updateTask(item.task.id, { done, doneAt: done ? todayIso() : null });
+    updateTask(item.task.id, { done, doneAt: done ? todayIso() : null, subtasks });
   }
   offerTaskUndo(done ? 'Tarea completada' : 'Tarea marcada como pendiente', item.task, before);
+}
+
+export function setItemSubtaskDone(item, subtaskId, done) {
+  const subtasks = (item.task.subtasks || []).map((subtask) => subtask.id === subtaskId ? window.mdHomeLogic.setSubtaskDone(subtask, item, done) : subtask);
+  const patch = { subtasks };
+  // Reabrir una subtarea también reabre la tarea principal de ese día.
+  if (!done) {
+    if (item.recurring) patch.doneDates = (item.task.doneDates || []).filter((date) => date !== item.date);
+    else Object.assign(patch, { done: false, doneAt: null });
+  }
+  updateTaskWithUndo(item.task.id, patch, done ? 'Subtarea completada' : 'Subtarea marcada como pendiente');
 }
 
 // ---- archivo de tareas terminadas viejas ----
@@ -449,7 +462,7 @@ export function findItem(taskId, dateIso) {
 // pasadas no cuentan: una tarea diaria llenaría la lista sola).
 export function overdueTasks() {
   const today = todayIso();
-  return data.tasks.filter((t) => !(t.repeat && t.repeat.freq) && t.date && t.date < today && !t.done);
+  return data.tasks.filter((t) => t.kind !== 'reminder' && !(t.repeat && t.repeat.freq) && t.date && t.date < today && !t.done);
 }
 
 // Ánimo de la mascota: preocupada si hay atrasadas (Home + tareas de notas).
@@ -665,7 +678,7 @@ export function showReminderToast(r) {
   if (r.body) toast.appendChild(el('div', 'reminder-toast-body', r.body));
 
   const actions = el('div', 'reminder-toast-actions');
-  const canComplete = r.source && (r.source.kind === 'home' || r.source.kind === 'note' || r.source.doneColumnId);
+  const canComplete = r.source && ((r.source.kind === 'home' && data.tasks.find((task) => task.id === r.source.taskId)?.kind !== 'reminder') || r.source.kind === 'note' || r.source.doneColumnId);
   if (canComplete) {
     const done = el('button', 'reminder-toast-btn reminder-toast-done', '✓ Hecho');
     done.addEventListener('click', async () => {

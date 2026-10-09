@@ -1,4 +1,4 @@
-import { addDays, addTask, categoryById, cursor, dbItemsOn, formatLong, iso, isoWeekNumber, itemsInRange, matchesFilter, mode, mondayOf, moveItem, noteItemsOn, priorityColor, setCursor, setItemDone, setMode, shownOn, todayIso, updateTaskWithUndo } from './home-data.js';
+import { addDays, categoryById, cursor, dbItemsOn, formatLong, iso, isoWeekNumber, itemsInRange, matchesFilter, mode, mondayOf, moveItem, noteItemsOn, priorityColor, setCursor, setItemDone, setMode, shownOn, todayIso, updateTaskWithUndo } from './home-data.js';
 import { appendTaskGroups, dbChip, el, makeDropTarget, noteChip, progressBar, quickAddInput, renderSide, taskCard } from './home-ui.js';
 import { openTaskEditor } from './home-taskeditor.js';
 import { mainEl, overlay, rangeLabel } from './home.js';
@@ -24,7 +24,7 @@ export function renderDay() {
   const welcome = el('div', 'home-agenda-welcome');
   welcome.appendChild(el('p', 'home-eyebrow', today ? 'HOY' : 'AGENDA DEL DÍA'));
   welcome.appendChild(el('h1', null, today ? 'Tu día, con espacio para lo importante.' : formatLong(cursor)));
-  const pending = all.filter((item) => !item.done).length;
+  const pending = all.filter((item) => item.task?.kind !== 'reminder' && !item.done).length;
   welcome.appendChild(el('p', 'home-agenda-description', pending ? `${pending} ${pending === 1 ? 'tarea pendiente' : 'tareas pendientes'} para este día.` : 'Un día despejado. Añade lo que quieras organizar.'));
   agenda.appendChild(welcome);
   const overview = el('div', 'home-agenda-overview');
@@ -35,7 +35,7 @@ export function renderDay() {
   const next = tasks.filter((item) => !item.done && item.task.time && (!today || item.task.time >= new Date().toTimeString().slice(0, 5)))
     .sort((a, b) => a.task.time.localeCompare(b.task.time))[0];
   const nextHost = el('section', 'home-agenda-stat');
-  nextHost.appendChild(el('h2', null, 'Próxima tarea con hora'));
+  nextHost.appendChild(el('h2', null, 'Próximo evento con hora'));
   if (next) {
     const action = el('button', 'home-next-task', `${next.task.time} · ${next.task.title}`);
     action.addEventListener('click', () => openTaskEditor(next));
@@ -73,7 +73,7 @@ export function renderWeek() {
     const header = el('div', 'home-day-header');
     header.appendChild(el('span', 'home-day-name', DAY_NAMES[i]));
     header.appendChild(el('span', 'home-day-number', String(day.getDate())));
-    const dayTasks = shownOn(dayIso);
+    const dayTasks = shownOn(dayIso).filter((item) => item.task.kind !== 'reminder');
     if (dayTasks.length) {
       header.appendChild(el('span', 'home-day-count', `${dayTasks.filter((t) => t.done).length}/${dayTasks.length}`));
     }
@@ -81,7 +81,7 @@ export function renderWeek() {
     col.appendChild(header);
 
     const list = el('div', 'home-task-list');
-    appendTaskGroups(list, dayTasks, noteItemsOn(dayIso), dbItemsOn(dayIso), dayIso);
+    appendTaskGroups(list, shownOn(dayIso), noteItemsOn(dayIso), dbItemsOn(dayIso), dayIso);
     col.appendChild(list);
     col.appendChild(quickAddInput(dayIso));
     makeDropTarget(col, () => dayIso);
@@ -165,7 +165,9 @@ export function scheduleEvent(e, dayIso, colsEl) {
   const time = el('span', 'home-hour-time', range + (it.recurring ? ' · 🔁' : ''));
   const handle = el('div', 'home-hour-resize');
   handle.setAttribute('aria-hidden', 'true');
-  node.append(box, title, time, handle);
+  if (task.kind === 'reminder') node.appendChild(el('span', null, '🔔'));
+  else node.appendChild(box);
+  node.append(title, time, handle);
   node.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') openTaskEditor(it); });
 
   // Arrastrar: mover (cuerpo) o cambiar duración (borde de abajo).
@@ -219,27 +221,8 @@ export function scheduleEvent(e, dayIso, colsEl) {
 
 // Nueva tarea en un rango elegido del horario.
 export function promptNewAt(col, dayIso, startMin, endMin) {
-  col.querySelectorAll('.home-hour-new').forEach((n) => n.remove());
-  const box = el('div', 'home-hour-new');
-  box.style.top = `${(startMin / 60) * HOUR_PX}px`;
-  box.style.height = `${Math.max(24, ((endMin - startMin) / 60) * HOUR_PX - 2)}px`;
-  const input = el('input', 'home-quick-add');
-  input.placeholder = `${toHHMM(startMin)}–${toHHMM(endMin % (24 * 60))} · nueva tarea`;
-  input.setAttribute('aria-label', `Nueva tarea de ${toHHMM(startMin)} a ${toHHMM(endMin % (24 * 60))}`);
-  box.appendChild(input);
-  col.appendChild(box);
-  input.focus();
-  const finish = (ok) => {
-    const value = input.value;
-    box.remove();
-    if (ok && value.trim()) addTask(value, dayIso, { time: toHHMM(startMin), duration: endMin - startMin });
-  };
-  input.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter') finish(true);
-    else if (ev.key === 'Escape') { ev.stopPropagation(); finish(false); }
-  });
-  input.addEventListener('blur', () => setTimeout(() => { if (box.isConnected) finish(true); }, 100));
-  return input;
+  openTaskEditor({ task: { title: '', date: dayIso, time: toHHMM(startMin), duration: endMin - startMin }, date: dayIso, done: false, recurring: false }, { creating: true });
+  return document.querySelector('.home-editor input');
 }
 
 export function renderHours() {

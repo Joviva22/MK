@@ -39,6 +39,9 @@ function iconFor(tab) {
   if (tab.kind === 'video') return 'film';
   if (tab.kind === 'audio') return 'music';
   if (tab.kind === 'drawing') return 'pencil-ruler';
+  if (tab.kind === 'docx') return 'file-type-2';
+  if (tab.kind === 'xlsx') return 'sheet';
+  if (tab.kind === 'pptx') return 'presentation';
   return CODE_MODES.has(tab.mode) ? 'file-code' : 'notebook-pen';
 }
 
@@ -131,7 +134,7 @@ function isActiveTabCode() {
 }
 
 function labelFor(tab) {
-  return tab.filePath ? tab.filePath.split(/[\\/]/).pop() : 'Sin título';
+  return tab.filePath ? tab.filePath.split(/[\\/]/).pop() : ({ docx: 'Documento nuevo', xlsx: 'Libro nuevo', pptx: 'Presentación nueva' })[tab.kind] || 'Sin título';
 }
 
 // diskContent: lo que había en disco la última vez que la pestaña se cargó
@@ -174,6 +177,7 @@ function replaceContent(tab, text) {
 // El archivo cambió afuera: sin cambios propios → se recarga solo; con
 // cambios propios → queda marcado ⚠ (y el autoguardado no lo pisa).
 async function syncWithDisk(tab) {
+  if (tab?.officeKey) return window.mdOffice?.checkDisk(tab.officeKey);
   if (!tab || tab.kind || !tab.filePath || tab.diskContent == null) return;
   const disk = await readDisk(tab);
   if (disk === null || disk === tab.diskContent) return;
@@ -228,7 +232,7 @@ function renderTabbar() {
     el.title = tab.conflict
       ? `${tab.filePath}\n⚠ Cambió fuera de MK mientras tenías cambios sin guardar: el autoguardado está en pausa. Guardá (Ctrl+S) para elegir qué versión queda.`
       : `${tab.filePath || 'Sin título'}${tab.modified ? '\nCambios sin guardar' : ''}`;
-    if (tab.kind === 'pdf') el.title += '\nDoble clic para editar el PDF';
+    if (tab.kind === 'pdf') el.title += '\nClic derecho → Editar PDF';
 
     const icon = document.createElement('span');
     icon.className = 'tab-icon';
@@ -259,15 +263,8 @@ function renderTabbar() {
     });
     el.appendChild(closeBtn);
 
-    el.addEventListener('click', (e) => {
-      if (tab.kind === 'pdf' && e.detail === 2) {
-        openPdfEditor(tab);
-      } else if (tab.id !== activeId) activateTab(tab.id);
-    });
-    el.addEventListener('dblclick', (e) => {
-      if (tab.kind !== 'pdf' || e.target.closest('.tab-close')) return;
-      e.preventDefault();
-      openPdfEditor(tab);
+    el.addEventListener('click', () => {
+      if (tab.id !== activeId) activateTab(tab.id);
     });
     el.addEventListener('keydown', (e) => {
       if (e.target === el && (e.key === 'Enter' || e.key === ' ')) {
@@ -296,6 +293,8 @@ async function openPdfEditor(tab) {
   if (openingPdfEditor || !window.mdPdfHighlight) return;
   openingPdfEditor = true;
   try {
+    if (tab.id !== activeId) activateTab(tab.id);
+    if (tab.id !== activeId) return;
     await window.mdPdfHighlight.showInTab(document.getElementById('preview-pane'), tab.filePath, true);
   } catch (error) {
     window.mdErrorToast.show({ message: 'No se pudo abrir el editor PDF', detail: error.message });
@@ -310,12 +309,16 @@ function activateTab(id) {
   const drawing = window.mdDrawing?.getState();
   if (drawing?.ready && !drawing.docked && drawing.filePath !== tab.filePath && !window.mdDrawing.close()) return;
   if (tab.kind) {
-    if (tab.kind === 'drawing') {
+    if (['docx', 'xlsx', 'pptx'].includes(tab.kind)) {
+      return window.mdOffice.activate(tab.officeKey, tab.filePath, tab.doc.getValue()).catch(error => window.mdErrorToast.show({ message: 'No se pudo abrir el documento Office', detail: error.message }));
+    } else if (tab.kind === 'drawing') {
+      window.mdOffice?.hide();
       window.mdDrawing.open(tab.filePath).catch(error => window.mdErrorToast.show({ message: 'No se pudo abrir la pizarra', detail: error.message }));
     } else if (tab.kind === 'pdf') window.showPdfPreview(tab.filePath);
     else window.showMediaPreview(tab.filePath);
     return;
   }
+  window.mdOffice?.hide();
   const started = window.performance.now();
   window.mdPdfHighlight?.suspendTab();
   activeId = id;
@@ -351,6 +354,7 @@ function revealActive() {
 new ResizeObserver(() => revealActive()).observe(strip);
 
 function trackViewer(filePath, kind) {
+  window.mdOffice?.hide();
   const drawing = window.mdDrawing?.getState();
   if (drawing?.ready && !drawing.docked && drawing.filePath !== filePath && !window.mdDrawing.close()) return false;
   if (kind === 'drawing' && tabs.find(t => t.id === activeId)?.kind !== 'drawing') drawingReturnId = activeId;
@@ -467,8 +471,8 @@ async function openTab(filePath) {
   // .docx no es texto plano (es un .zip con XML adentro) — se convierte a
   // Markdown (mammoth + turndown, ver docximport.js) en vez de pasar por
   // el camino normal de abajo, que lo detectaría como binario.
-  if (/\.docx$/i.test(filePath)) {
-    await window.mdDocxImport.openAsMarkdown(filePath);
+  if (/\.(docx|xlsx|pptx)$/i.test(filePath)) {
+    await window.mdOffice.open(filePath);
     return;
   }
   const result = await window.mdEditor.readFile(filePath);
@@ -570,6 +574,7 @@ async function saveActive(forceDialog = false) {
 async function saveActiveOnce(forceDialog = false) {
   const tab = tabs.find((t) => t.id === activeId);
   if (!tab) return;
+  if (['docx', 'xlsx', 'pptx'].includes(tab.kind)) { await window.mdOffice.save(forceDialog); return; }
   if (tab.kind === 'drawing') { await window.mdDrawing.save(forceDialog); return; }
   if (tab.kind === 'pdf') {
     if (window.mdPdfHighlight?.getState()?.sourcePath === tab.filePath) await window.mdPdfHighlight.saveCopy();
@@ -652,13 +657,14 @@ function rememberClosed(tab) {
   const content = tab.filePath ? null : tab.doc.getValue();
   if (!tab.filePath && (!content.trim() || content === DEFAULT_NEW_TEXT)) return;
   closedTabs = closedTabs.filter((c) => !c.filePath || c.filePath !== tab.filePath);
-  closedTabs.push({ filePath: tab.filePath, content, cursor: tab.doc.getCursor() });
+  closedTabs.push({ filePath: tab.filePath, content: tab.modified && ['docx', 'xlsx', 'pptx'].includes(tab.kind) ? tab.doc.getValue() : content, kind: tab.kind, cursor: tab.doc.getCursor() });
   if (closedTabs.length > CLOSED_MAX) closedTabs.shift();
 }
 
 async function reopenClosed() {
   while (closedTabs.length) {
     const c = closedTabs.pop();
+    if (['docx', 'xlsx', 'pptx'].includes(c.kind) && c.content) { await window.mdOffice.restore(c.content, c.filePath); return true; }
     if (c.filePath) {
       if (findTabByPath(c.filePath)) continue;
       await openTab(c.filePath);
@@ -684,8 +690,10 @@ function closeTab(id) {
   if (tab.modified && !confirm(`"${labelFor(tab)}" tiene cambios sin guardar. ¿Cerrar de todas formas?`)) {
     return;
   }
+  if (tab.officeKey && window.mdOffice.isSaving(tab.officeKey)) return;
   clearTimeout(tab.autosaveTimer);
   rememberClosed(tab);
+  if (tab.officeKey) window.mdOffice.forget(tab.officeKey);
   tabs.splice(idx, 1);
   if (tabs.length === 0) {
     createTab(null, '');
@@ -703,6 +711,7 @@ function closeTab(id) {
 // alguna tiene cambios sin guardar, en vez de una por pestaña.
 function closeTabs(ids) {
   const targets = tabs.filter((t) => ids.includes(t.id));
+  if (targets.some(t => t.officeKey && window.mdOffice.isSaving(t.officeKey))) return;
   if (!targets.length) return;
   const unsaved = targets.filter((t) => t.modified && t.kind !== 'drawing');
   if (unsaved.length) {
@@ -710,7 +719,7 @@ function closeTabs(ids) {
     if (!confirm(`${unsaved.length} pestaña(s) tienen cambios sin guardar:\n${names}\n\n¿Cerrarlas igual (se pierden esos cambios)?`)) return;
   }
   if (targets.some(t => t.kind === 'drawing' && t.filePath === window.mdDrawing?.getState().filePath) && !window.mdDrawing.close()) return;
-  targets.forEach((t) => { clearTimeout(t.autosaveTimer); rememberClosed(t); });
+  targets.forEach((t) => { clearTimeout(t.autosaveTimer); rememberClosed(t); if (t.officeKey) window.mdOffice.forget(t.officeKey); });
   const activeClosing = ids.includes(activeId);
   const activeIdx = tabs.findIndex((t) => t.id === activeId);
   tabs = tabs.filter((t) => !ids.includes(t.id));
@@ -748,6 +757,7 @@ function showTabMenu(x, y, tab) {
     b.addEventListener('click', () => { hideTabMenu(); fn(); });
     tabMenuEl.appendChild(b);
   };
+  if (tab.kind === 'pdf') add('Editar PDF', () => openPdfEditor(tab));
   add('Abrir en panel secundario', () => window.mdSecondaryPane.open(tab.filePath), !tab.filePath || tab.kind === 'drawing');
   add('Cerrar', () => closeTab(tab.id));
   add('Cerrar las otras', () => closeTabs(tabs.filter((t) => t.id !== tab.id).map((t) => t.id)), tabs.length < 2);
@@ -768,6 +778,7 @@ function closeTabSilently(id) {
   const idx = tabs.findIndex((t) => t.id === id);
   if (idx === -1) return;
   clearTimeout(tabs[idx].autosaveTimer);
+  if (tabs[idx].officeKey) window.mdOffice.forget(tabs[idx].officeKey);
   tabs.splice(idx, 1);
   if (tabs.length === 0) createTab(null, '');
   if (activeId === id) {
@@ -875,6 +886,11 @@ function showRestoreDialog(unsavedTabs) {
   document.getElementById('btn-restore-discard').onclick = async () => {
     overlay.hidden = true;
     for (const t of unsavedTabs) {
+      if (t.officeKey) {
+        const path = t.filePath; closeTabSilently(t.id);
+        if (path) await openTab(path);
+        continue;
+      }
       if (t.filePath) {
         const result = await window.mdEditor.readFile(t.filePath);
         if (result !== null && !result.binary) {
@@ -898,10 +914,11 @@ function updateTabPath(oldPath, newPath) {
   const tab = tabs.find((t) => t.filePath === oldPath);
   if (!tab) return;
   tab.filePath = newPath;
+  if (tab.officeKey) window.mdOffice.rename(tab.officeKey, newPath);
   const modeInfo = modeInfoForPath(newPath);
   if (!tab.kind) { tab.mode = modeInfo.mode; tab.modeLabel = modeInfo.label; }
   if (tab.id === activeId) {
-    tabCm.setOption('mode', tab.mode);
+    if (!tab.kind) tabCm.setOption('mode', tab.mode);
     window.mdState.currentFilePath = newPath;
     window.mdStatusMode.textContent = tab.modeLabel;
   }
@@ -928,6 +945,25 @@ function syncPaths(paths) {
 }
 
 window.mdTabs = { trackViewer, activatePreviousDocument: () => { const tab = tabs.find(t => t.id === drawingReturnId && t.kind !== 'drawing') || tabs.find(t => t.id === lastDocumentId && !t.kind) || tabs.find(t => !t.kind); if (tab) activateTab(tab.id); else newTab(''); }, reopenClosed, closedCount: () => closedTabs.length, getActiveState, getModifiedPaths, syncPaths, newTab, openTab, openViaDialog, saveActive, closeTab, closeTabs, updateTabPathsUnder, cycleTab, getActiveTabInfo, updateTabPath, isActiveTabCode, syncActiveWithDisk: () => syncWithDisk(tabs.find((t) => t.id === activeId)) };
+// Los editores Office guardan su recuperación en el Doc de la pestaña,
+// sin pasar su contenido por Markdown ni activar el autoguardado de texto.
+window.mdTabs.trackOffice = (state, activate = true) => {
+  let tab = tabs.find(t => t.officeKey === state.key) || (state.filePath && findTabByPath(state.filePath));
+  if (!tab) tab = createTab(state.filePath, '', null);
+  tab.kind = state.kind; tab.officeKey = state.key; tab.filePath = state.filePath;
+  tab.modeLabel = ({ docx: 'Word', xlsx: 'Excel', pptx: 'PowerPoint' })[state.kind];
+  suppressChange = true;
+  try { tab.doc.setValue(state.content); } finally { suppressChange = false; }
+  tab.modified = state.modified;
+  document.dispatchEvent(new CustomEvent('mk:modified-changed'));
+  if (activate) {
+    activeId = tab.id;
+    window.mdState.currentFilePath = state.filePath;
+    window.mdStatusMode.textContent = tab.modeLabel;
+  }
+  renderTabbar(); persistSession();
+  if (activate) { revealActive(); document.dispatchEvent(new CustomEvent('mk:active-file-changed')); }
+};
 window.mdTabs.getOpenText = (filePath) => { const tab = tabs.find(t => t.filePath === filePath && !t.kind); return tab ? tab.doc.getValue() : null; };
 window.mdTabs.updateDrawing = (path, modified) => { const tab = tabs.find(t => t.kind === 'drawing' && t.filePath === path); if (tab) markModified(tab.id, modified); };
 window.mdTabs.updatePdf = (path, modified) => { const tab = tabs.find(t => t.kind === 'pdf' && t.filePath === path); if (tab && tab.modified !== modified) markModified(tab.id, modified); };
@@ -936,7 +972,10 @@ window.openFileAtPath = openTab;
 
 window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));
 
-(async () => {
+window.mdTabs.ready = (async () => {
+  // La respuesta IPC puede llegar mientras index.html todavía carga los
+  // editores de Office/PDF/pizarra. Restaurar solo cuando estén registrados.
+  if (document.readyState === 'loading') await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once:true }));
   const session = await window.mdEditor.loadSession();
   if (session && Array.isArray(session.tabs) && session.tabs.length) {
     for (const t of session.tabs) {
@@ -946,7 +985,7 @@ window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));
       // guardado pisaba la nueva).
       let content = t.content;
       let disk;
-      const kind = ['pdf', 'image', 'video', 'audio', 'drawing'].includes(t.kind) ? t.kind : null;
+      const kind = ['pdf', 'image', 'video', 'audio', 'drawing', 'docx', 'xlsx', 'pptx'].includes(t.kind) ? t.kind : null;
       if (t.filePath && !kind) {
         const r = await window.mdEditor.readFile(t.filePath);
         disk = r && !r.binary ? r.content : null;
@@ -954,10 +993,11 @@ window.mdEditor.onOpenExternalFile((filePath) => openTab(filePath));
       }
       const tab = createTab(t.filePath, content, t.filePath ? (disk != null ? disk : t.content) : null);
       if (kind) { tab.kind = kind; tab.diskContent = null; tab.modeLabel = kind === 'drawing' ? 'Excalidraw' : kind.toUpperCase(); }
-      tab.modified = !kind && !!t.modified;
+      if (['docx', 'xlsx', 'pptx'].includes(kind)) tab.officeKey = `restored-${tab.id}`;
+      tab.modified = (!kind || !!tab.officeKey) && !!t.modified;
     }
     const idx = Math.min(Math.max(session.activeIndex || 0, 0), tabs.length - 1);
-    activateTab(tabs[idx].id);
+    await activateTab(tabs[idx].id);
 
     const unsavedTabs = tabs.filter((t) => t.modified);
     if (unsavedTabs.length) showRestoreDialog(unsavedTabs);

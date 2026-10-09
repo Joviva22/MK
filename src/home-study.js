@@ -92,7 +92,7 @@ async function openWorkspace(materials) {
 }
 function renderWeekly() {
   const section = el('section', null, 'study-section'); section.id = 'study-weekly';
-  const report = L.weeklySummary(data.study, data.categories, [...archivedTasks, ...data.tasks], window.mdPomodoroHistory.getState().records, new Date(), weekOffset);
+  const report = L.weeklySummary(data.study, data.categories, [...archivedTasks, ...data.tasks].filter((task) => task.kind !== 'reminder'), window.mdPomodoroHistory.getState().records, new Date(), weekOffset);
   section.append(el('h3', `Resumen semanal · desde ${report.from} hasta antes de ${report.until}`));
   section.append(button('Semana anterior', () => { weekOffset--; }), button('Esta semana', () => { weekOffset = 0; }));
   for (const row of report.rows) {
@@ -204,7 +204,7 @@ function render() {
     if (!Number.isInteger(value) || value < 25 || value > 720) throw new Error('Indica entre 25 y 720 minutos.');
     data.study = L.normalize(data.study); data.study.planMinutes = value; await persist();
   }, 'study-plan-update'));
-  const proposed = L.todayPlan(data.tasks, data.categories, todayIso(), window.mdHomeLogic, Number(budget.value));
+  const proposed = L.todayPlan(data.tasks.filter((task) => task.kind !== 'reminder'), data.categories, todayIso(), window.mdHomeLogic, Number(budget.value));
   plan.append(el('p', `Propuesta: ${proposed.items.length} bloques de 25 min · ${proposed.pending} tareas pendientes. Son bloques para avanzar, no estimaciones de cuánto tarda cada tarea. Las pausas no están incluidas.`, 'study-hint'));
   for (const item of proposed.items) {
     const row = el('div', null, 'study-row'); row.dataset.taskId = item.task.id;
@@ -287,7 +287,7 @@ function render() {
     }
     if (!subject(cat).materials.length) list.append(el('p', 'Vincula el primer material de esta asignatura.'));
     materials.append(list); box.append(materials);
-    const tasks = L.pendingTasks(data.tasks, cat.id, todayIso(), window.mdHomeLogic);
+    const tasks = L.pendingTasks(data.tasks.filter((task) => task.kind !== 'reminder'), cat.id, todayIso(), window.mdHomeLogic);
     const until = window.mdHomeLogic.iso(window.mdHomeLogic.addDays(new Date(), 30));
     for (const [title, items, id] of [
       ['Próximas entregas · 30 días', tasks.filter((item) => item.date && item.date >= todayIso() && item.date <= until), 'study-upcoming'],
